@@ -1,0 +1,31 @@
+syntax = "proto3";
+package c2;
+
+service C2 {
+    rpc C2Command (C2Request) returns (C2Response) {}
+}
+
+message C2Request {
+
+    enum Command {
+        NEW_CLIENT = 0;
+        REMOVE_CLIENT = 1;
+        NEW_TOPIC_CLIENT = 2;
+        REMOVE_TOPIC_CLIENT = 3;
+        RESET_CLIENT = 4;
+        NEW_TOPIC = 5;
+        REMOVE_TOPIC = 6;
+        NEW_CLIENT_KEY = 7;
+    }
+
+    Command command = 1;
+    bytes id = 2;
+    bytes key = 3;
+    string topic = 4;
+}
+
+message C2Response {
+
+    bool success = 1;
+    string err = 2;
+}
