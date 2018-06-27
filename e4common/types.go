@@ -37,9 +37,8 @@ func (c *Command) ToByte() byte {
 	case SetTopicKey:
 		return 3
 	}
-    return 255
+	return 255
 }
-
 
 func IsValidId(id []byte) bool {
 

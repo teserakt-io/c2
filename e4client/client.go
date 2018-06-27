@@ -1,14 +1,13 @@
-package c2client
+package e4client
 
 import (
+	"encoding/gob"
 	"errors"
 	"log"
 	"os"
-	"encoding/gob"
 
 	e4 "teserakt/e4common"
 )
-
 
 // structure saved to disk for persistent storage
 type Client struct {
@@ -16,7 +15,7 @@ type Client struct {
 	key       []byte
 	topickeys map[string][]byte
 	// slices []byte can't be map keys, converting to strings
-	filePath  string
+	filePath string
 }
 
 // TODO: init function, restore
@@ -26,24 +25,24 @@ type Client struct {
 func NewClient(id, key []byte, filePath string) *Client {
 	if id == nil {
 		id = e4.RandomId()
-	}	
+	}
 	if key == nil {
 		key = e4.RandomKey()
 	}
 	topickeys := make(map[string][]byte)
 
 	c := &Client{
-		id: id,
-		key: key,
+		id:        id,
+		key:       key,
 		topickeys: topickeys,
-		filePath: filePath,
+		filePath:  filePath,
 	}
-	
+
 	return c
 }
 
 func LoadClient(filePath string) (*Client, error) {
-	var c = new (Client)
+	var c = new(Client)
 	err := readGob(filePath, c)
 	if err != nil {
 		return nil, err
@@ -52,17 +51,17 @@ func LoadClient(filePath string) (*Client, error) {
 }
 
 func (c *Client) save() {
-	err:= writeGob(c.filePath, c)
+	err := writeGob(c.filePath, c)
 	if err != nil {
-		log.Print("client save failed")	
+		log.Print("client save failed")
 	}
 }
 
 func writeGob(filePath string, object interface{}) error {
 	file, err := os.Create(filePath)
 	if err == nil {
-		   encoder := gob.NewEncoder(file)
-		   encoder.Encode(object)
+		encoder := gob.NewEncoder(file)
+		encoder.Encode(object)
 	}
 	file.Close()
 	return err
@@ -71,13 +70,12 @@ func writeGob(filePath string, object interface{}) error {
 func readGob(filePath string, object interface{}) error {
 	file, err := os.Open(filePath)
 	if err == nil {
-		   decoder := gob.NewDecoder(file)
-		   err = decoder.Decode(object)
+		decoder := gob.NewDecoder(file)
+		err = decoder.Decode(object)
 	}
 	file.Close()
 	return err
 }
-
 
 // when se
 func (c *Client) Protect(payload []byte, topic string) ([]byte, error) {
@@ -115,11 +113,11 @@ func (c *Client) ProcessCommand(protected []byte) error {
 	}
 
 	cmd := e4.Command(command[0])
-	
+
 	switch cmd {
 
 	case e4.RemoveTopic:
-		if len(command) != e4.HashLen + 1 {
+		if len(command) != e4.HashLen+1 {
 			return errors.New("invalid RemoveTopic argument")
 		}
 		return c.removeTopic(command[1:])
@@ -131,17 +129,17 @@ func (c *Client) ProcessCommand(protected []byte) error {
 		return c.resetTopics()
 
 	case e4.SetIdKey:
-		if len(command) != e4.KeyLen + 1 {
+		if len(command) != e4.KeyLen+1 {
 			return errors.New("invalid SetIdKey argument")
 		}
 		return c.setIdKey(command[1:])
-	
+
 	case e4.SetTopicKey:
-		if len(command) != e4.KeyLen + e4.HashLen + 1 {
+		if len(command) != e4.KeyLen+e4.HashLen+1 {
 			return errors.New("invalid SetTopicKey argument")
 		}
 		return c.setTopicKey(command[1:1+e4.HashLen], command[1+e4.HashLen:])
-	
+
 	default:
 		return errors.New("invalid command")
 	}
@@ -161,7 +159,7 @@ func (c *Client) resetTopics() error {
 	return nil
 }
 
-func (c* Client) setIdKey(key []byte) error {
+func (c *Client) setIdKey(key []byte) error {
 	c.key = key
 	return nil
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/dgraph-io/badger"
-
 )
 
 func (s *C2) dbDelete(key []byte) error {

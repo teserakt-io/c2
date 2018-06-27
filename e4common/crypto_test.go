@@ -40,7 +40,6 @@ func TestEncDec(t *testing.T) {
 	}
 }
 
-
 func TestProtectUnprotect(t *testing.T) {
 
 	msgLen := 123
@@ -64,5 +63,3 @@ func TestProtectUnprotect(t *testing.T) {
 		t.Fatalf("unprotected message different from the original")
 	}
 }
-
-

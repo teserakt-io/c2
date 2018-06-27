@@ -3,12 +3,11 @@ package e4common
 import (
 	"crypto/rand"
 	"encoding/binary"
-	"time"
 	"errors"
 	"github.com/miscreant/miscreant/go"
 	"golang.org/x/crypto/sha3"
+	"time"
 )
-
 
 func HashTopic(topic string) []byte {
 
@@ -62,7 +61,7 @@ func RandomId() []byte {
 	return id
 }
 
-func Protect(message[]byte, key []byte) ([]byte, error) {
+func Protect(message []byte, key []byte) ([]byte, error) {
 
 	timestamp := make([]byte, TimestampLen)
 	binary.LittleEndian.PutUint64(timestamp, uint64(time.Now().Unix()))

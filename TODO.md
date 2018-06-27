@@ -17,6 +17,8 @@
 
 # TODO
 
+* document dependencies
+* set up dep manager?
 * e4client tests
 * go vet, go lint, goimports
 
