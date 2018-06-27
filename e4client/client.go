@@ -9,16 +9,16 @@ import (
 	e4 "teserakt/e4common"
 )
 
+
 // structure saved to disk for persistent storage
 type Client struct {
-	id        []byte
-	key       []byte
-	topickeys map[string][]byte
+	Id        []byte
+	Key       []byte
+	Topickeys map[string][]byte
 	// slices []byte can't be map keys, converting to strings
-	filePath string
+	FilePath string
 }
 
-// TODO: init function, restore
 // TODO: save client everytime it's changed
 
 // creates a new client, generates random id of key if nil
@@ -32,10 +32,10 @@ func NewClient(id, key []byte, filePath string) *Client {
 	topickeys := make(map[string][]byte)
 
 	c := &Client{
-		id:        id,
-		key:       key,
-		topickeys: topickeys,
-		filePath:  filePath,
+		Id:        id,
+		Key:       key,
+		Topickeys: topickeys,
+		FilePath:  filePath,
 	}
 
 	return c
@@ -50,11 +50,13 @@ func LoadClient(filePath string) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) save() {
-	err := writeGob(c.filePath, c)
+func (c *Client) save() error {
+	err := writeGob(c.FilePath, c)
 	if err != nil {
 		log.Print("client save failed")
+		return err
 	}
+	return nil
 }
 
 func writeGob(filePath string, object interface{}) error {
@@ -80,7 +82,7 @@ func readGob(filePath string, object interface{}) error {
 // when se
 func (c *Client) Protect(payload []byte, topic string) ([]byte, error) {
 	topichash := string(e4.HashTopic(topic))
-	if key, ok := c.topickeys[topichash]; ok {
+	if key, ok := c.Topickeys[topichash]; ok {
 
 		protected, err := e4.Protect(payload, key)
 		if err != nil {
@@ -94,7 +96,7 @@ func (c *Client) Protect(payload []byte, topic string) ([]byte, error) {
 // when receiving with topic other than E4/c.id
 func (c *Client) Unprotect(protected []byte, topic string) ([]byte, error) {
 	topichash := string(e4.HashTopic(topic))
-	if key, ok := c.topickeys[topichash]; ok {
+	if key, ok := c.Topickeys[topichash]; ok {
 
 		message, err := e4.Unprotect(protected, key)
 		if err != nil {
@@ -107,7 +109,7 @@ func (c *Client) Unprotect(protected []byte, topic string) ([]byte, error) {
 
 // when receiving with topic E4/c.id
 func (c *Client) ProcessCommand(protected []byte) error {
-	command, err := e4.Unprotect(protected, c.key)
+	command, err := e4.Unprotect(protected, c.Key)
 	if err != nil {
 		return err
 	}
@@ -149,22 +151,22 @@ func (c *Client) removeTopic(topichash []byte) error {
 	if !e4.IsValidTopicHash(topichash) {
 		return errors.New("invalid topic hash")
 	}
-	delete(c.topickeys, string(topichash))
+	delete(c.Topickeys, string(topichash))
 
 	return nil
 }
 
 func (c *Client) resetTopics() error {
-	c.topickeys = make(map[string][]byte)
+	c.Topickeys = make(map[string][]byte)
 	return nil
 }
 
 func (c *Client) setIdKey(key []byte) error {
-	c.key = key
+	c.Key = key
 	return nil
 }
 
 func (c *Client) setTopicKey(key, topichash []byte) error {
-	c.topickeys[string(topichash)] = key
+	c.Topickeys[string(topichash)] = key
 	return nil
 }
