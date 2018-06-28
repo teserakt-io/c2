@@ -13,12 +13,14 @@ import (
 	pb "teserakt/c2proto"
 )
 
+// C2 is the C2's state, consisting of ID keys, topic keys, and an MQTT connection.
 type C2 struct {
 	dbi      *badger.DB // id:key
 	dbt      *badger.DB // topic:key
 	mqClient mqtt.Client
 }
 
+// C2Command processes a command received over gRPC by the CLI tool.
 func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, error) {
 
 	log.Printf("command received: %s", pb.C2Request_Command_name[int32(in.Command)])
@@ -73,7 +75,7 @@ func main() {
 	// start mqtt client
 	mqOpts := mqtt.NewClientOptions()
 	mqOpts.AddBroker(mqttBroker)
-	mqOpts.SetClientID(mqttId)
+	mqOpts.SetClientID(mqttID)
 	// mqOpts.SetUsername()
 	// mqOpts.SetPassword()
 	mqttClient := mqtt.NewClient(mqOpts)

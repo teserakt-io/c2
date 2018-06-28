@@ -7,5 +7,5 @@ const (
 
 	mqttBroker = "test.mosquitto.org:1883"
 	mqttQoS    = 2
-	mqttId     = "E4C2"
+	mqttID     = "E4C2"
 )

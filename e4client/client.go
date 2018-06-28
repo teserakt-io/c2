@@ -11,13 +11,14 @@ import (
 	e4 "teserakt/e4common"
 )
 
+// ErrTopicKeyNotFound will signal to applications that a key is missing.
 var (
-	E4errTopicKeyNotFound = errors.New("topic key not found")
+	ErrTopicKeyNotFound = errors.New("topic key not found")
 )
 
-// structure saved to disk for persistent storage
+// Client is a structure representing the client state, saved to disk for persistent storage.
 type Client struct {
-	Id        []byte
+	ID        []byte
 	Key       []byte
 	Topickeys map[string][]byte
 	// slices []byte can't be map keys, converting to strings
@@ -27,7 +28,7 @@ type Client struct {
 
 // TODO: save client everytime it's changed
 
-// creates a new client, generates random id of key if nil
+// NewClient creates a new client, generating a random ID or key if they are nil.
 func NewClient(id, key []byte, filePath string) *Client {
 	if id == nil {
 		id = e4.RandomID()
@@ -40,7 +41,7 @@ func NewClient(id, key []byte, filePath string) *Client {
 	receivingTopic := e4.TopicForID(id)
 
 	c := &Client{
-		Id:             id,
+		ID:             id,
 		Key:            key,
 		Topickeys:      topickeys,
 		FilePath:       filePath,
@@ -50,13 +51,14 @@ func NewClient(id, key []byte, filePath string) *Client {
 	return c
 }
 
-// hashes id and key instead of taking raw bytes
+// NewClientPretty is like NewClient but takes an ID alias and a password, rather than raw values.
 func NewClientPretty(idalias, pwd, filePath string) *Client {
 	key := argon2.Key([]byte(pwd), nil, 1, 64*1024, 4, 64)
 	id := e4.HashIDAlias(idalias)
 	return NewClient(id, key, filePath)
 }
 
+// LoadClient loads a client state from the file system.
 func LoadClient(filePath string) (*Client, error) {
 	var c = new(Client)
 	err := readGob(filePath, c)
@@ -95,7 +97,7 @@ func readGob(filePath string, object interface{}) error {
 	return err
 }
 
-// when sending
+// Protect creates the protected payload using the key associated to the topic.
 func (c *Client) Protect(payload []byte, topic string) ([]byte, error) {
 	topichash := string(e4.HashTopic(topic))
 	if key, ok := c.Topickeys[topichash]; ok {
@@ -106,10 +108,10 @@ func (c *Client) Protect(payload []byte, topic string) ([]byte, error) {
 		}
 		return protected, nil
 	}
-	return nil, E4errTopicKeyNotFound
+	return nil, ErrTopicKeyNotFound
 }
 
-// when receiving with topic other than E4/c.id
+// Unprotect decrypts a protected payload using the key associated to the topic.
 func (c *Client) Unprotect(protected []byte, topic string) ([]byte, error) {
 	topichash := string(e4.HashTopic(topic))
 	if key, ok := c.Topickeys[topichash]; ok {
@@ -120,10 +122,10 @@ func (c *Client) Unprotect(protected []byte, topic string) ([]byte, error) {
 		}
 		return message, nil
 	}
-	return nil, E4errTopicKeyNotFound
+	return nil, ErrTopicKeyNotFound
 }
 
-// when receiving with topic E4/c.id
+// ProcessCommand decrypts a C2 commands and modifies the client state according to the command content.
 func (c *Client) ProcessCommand(protected []byte) (string, error) {
 	command, err := e4.Unprotect(protected, c.Key)
 	if err != nil {
@@ -149,9 +151,9 @@ func (c *Client) ProcessCommand(protected []byte) (string, error) {
 
 	case e4.SetIDKey:
 		if len(command) != e4.KeyLen+1 {
-			return "", errors.New("invalid SetIdKey argument")
+			return "", errors.New("invalid SetIDKey argument")
 		}
-		return s, c.setIdKey(command[1:])
+		return s, c.setIDKey(command[1:])
 
 	case e4.SetTopicKey:
 		if len(command) != e4.KeyLen+e4.HashLen+1 {
@@ -178,7 +180,7 @@ func (c *Client) resetTopics() error {
 	return nil
 }
 
-func (c *Client) setIdKey(key []byte) error {
+func (c *Client) setIDKey(key []byte) error {
 	c.Key = key
 	return nil
 }

@@ -111,7 +111,7 @@ func main() {
 				fmt.Println("---- doing publish (E4-protected) ----")
 				token := client.Publish(*topic, byte(*qos), false, protected)
 				token.Wait()
-			} else if err == e4.E4errTopicKeyNotFound {
+			} else if err == e4.ErrTopicKeyNotFound {
 				// E4: if topic key not found, publish unencrypted
 				fmt.Println("---- doing publish (NOT E4-protected) ----")
 				token := client.Publish(*topic, byte(*qos), false, *payload)

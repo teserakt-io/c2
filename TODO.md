@@ -15,8 +15,8 @@
 # WIP
 
 * document exported functions etc.
+* test persistent storage, integrate in demo
 * demo app (add QoS to commands)
-* e4client tests
 * fine-tune MQTT client options
 
 # TODO
