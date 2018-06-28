@@ -52,7 +52,7 @@ func main() {
 	}
 
 	if *idalias != "" {
-		id = e4.HashIdAlias(*idalias)
+		id = e4.HashIDAlias(*idalias)
 	}
 
 	if *keyhex != "" {

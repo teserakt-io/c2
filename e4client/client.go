@@ -21,8 +21,8 @@ type Client struct {
 	Key       []byte
 	Topickeys map[string][]byte
 	// slices []byte can't be map keys, converting to strings
-	FilePath  string
-	ReceivingTopic     string
+	FilePath       string
+	ReceivingTopic string
 }
 
 // TODO: save client everytime it's changed
@@ -40,10 +40,10 @@ func NewClient(id, key []byte, filePath string) *Client {
 	receivingTopic := e4.TopicForID(id)
 
 	c := &Client{
-		Id:        id,
-		Key:       key,
-		Topickeys: topickeys,
-		FilePath:  filePath,
+		Id:             id,
+		Key:            key,
+		Topickeys:      topickeys,
+		FilePath:       filePath,
 		ReceivingTopic: receivingTopic,
 	}
 

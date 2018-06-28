@@ -6,14 +6,14 @@ import (
 
 // ...
 const (
-	IDLen           = 32	
+	IDLen           = 32
 	KeyLen          = 64
 	TagLen          = 16
 	HashLen         = 32
 	TimestampLen    = 8
 	MaxTopicLen     = 512
 	MaxSecondsDelay = 60 * 10
-	idTopicPrefix = "E4/"
+	idTopicPrefix   = "E4/"
 )
 
 // Command is a command sent by C2 to a client.
