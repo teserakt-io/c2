@@ -9,9 +9,9 @@ import (
 )
 
 // helper to check inputs' sanity
-func checkRequest(in *pb.C2Request, needId, needKey, needTopic bool) bool {
-	if needId {
-		if !e4.IsValidId(in.Id) {
+func checkRequest(in *pb.C2Request, needID, needKey, needTopic bool) bool {
+	if needID {
+		if !e4.IsValidID(in.Id) {
 			log.Print("invalid id: ", hex.EncodeToString(in.Key))
 			return false
 		}
@@ -39,7 +39,7 @@ func checkRequest(in *pb.C2Request, needId, needKey, needTopic bool) bool {
 		}
 	} else {
 		if in.Topic != "" {
-			log.Print("unexpected topic: %s", in.Topic)
+			log.Printf("unexpected topic: %s", in.Topic)
 			return false
 		}
 	}
@@ -53,7 +53,7 @@ func (s *C2) newClient(in *pb.C2Request) (*pb.C2Response, error) {
 		return &pb.C2Response{Success: false, Err: "invalid request"}, nil
 	}
 
-	err := s.insertIdKey(in.Id, in.Key)
+	err := s.insertIDKey(in.Id, in.Key)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "db update failed"}, nil
@@ -69,7 +69,7 @@ func (s *C2) removeClient(in *pb.C2Request) (*pb.C2Response, error) {
 		return &pb.C2Response{Success: false, Err: "invalid request"}, nil
 	}
 
-	err := s.deleteIdKey(in.Id)
+	err := s.deleteIDKey(in.Id)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "deletion error"}, nil
@@ -93,7 +93,7 @@ func (s *C2) newTopicClient(in *pb.C2Request) (*pb.C2Response, error) {
 		return &pb.C2Response{Success: false, Err: "unknown topic"}, nil
 	}
 
-	payload, err := s.CreateAndProtectForId(e4.SetTopicKey, topichash, key, in.Id)
+	payload, err := s.CreateAndProtectForID(e4.SetTopicKey, topichash, key, in.Id)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "payload creation failed"}, nil
@@ -117,7 +117,7 @@ func (s *C2) removeTopicClient(in *pb.C2Request) (*pb.C2Response, error) {
 
 	topichash := e4.HashTopic(in.Topic)
 
-	payload, err := s.CreateAndProtectForId(e4.RemoveTopic, topichash, nil, in.Id)
+	payload, err := s.CreateAndProtectForID(e4.RemoveTopic, topichash, nil, in.Id)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "payload creation failed"}, nil
@@ -138,7 +138,7 @@ func (s *C2) resetClient(in *pb.C2Request) (*pb.C2Response, error) {
 		return &pb.C2Response{Success: false, Err: "invalid request"}, nil
 	}
 
-	payload, err := s.CreateAndProtectForId(e4.ResetTopics, nil, nil, in.Id)
+	payload, err := s.CreateAndProtectForID(e4.ResetTopics, nil, nil, in.Id)
 	err = s.sendToClient(in.Id, payload)
 	if err != nil {
 		log.Print(err)
@@ -192,20 +192,18 @@ func (s *C2) newClientKey(in *pb.C2Request) (*pb.C2Response, error) {
 	key := e4.RandomKey()
 
 	// first send to the client, and only update locally afterwards
-	payload, err := s.CreateAndProtectForId(e4.SetIdKey, nil, key, in.Id)
+	payload, err := s.CreateAndProtectForID(e4.SetIDKey, nil, key, in.Id)
 	err = s.sendToClient(in.Id, payload)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "mqtt publish fail"}, nil
 	}
 
-	err = s.insertIdKey(in.Id, key)
+	err = s.insertIDKey(in.Id, key)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "db update failed"}, nil
 	}
 	log.Printf("updated key for client %s", hex.EncodeToString(in.Id))
 	return &pb.C2Response{Success: true, Err: ""}, nil
-
-	return nil, nil
 }

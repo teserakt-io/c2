@@ -14,18 +14,20 @@
 
 # WIP
 
+* document exported functions etc.
+* demo app (add QoS to commands)
+* e4client tests
+* fine-tune MQTT client options
 
 # TODO
 
 * document dependencies
 * set up dep manager?
-* e4client tests
 * go vet, go lint, goimports
+* <https://github.com/golang/go/wiki/CodeReviewComments#error-strings>
 
-* monitoring of all topics' messages
+* monitoring of all topics' messages (c2monitor service)
 
 # FUTURE
 
-* fine-tune MQTT client options
 * secure grpc: encrypt + auth
-* demo with 2 rpis, c2 showing unenc then enc data

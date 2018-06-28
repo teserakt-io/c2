@@ -71,7 +71,11 @@ func main() {
 	log.Print("topic database open")
 
 	// start mqtt client
-	mqOpts := mqtt.NewClientOptions().AddBroker(mqttBroker)
+	mqOpts := mqtt.NewClientOptions()
+	mqOpts.AddBroker(mqttBroker)
+	mqOpts.SetClientID(mqttId)
+	// mqOpts.SetUsername()
+	// mqOpts.SetPassword()
 	mqttClient := mqtt.NewClient(mqOpts)
 	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatal("MQTT connection failed")
@@ -88,7 +92,7 @@ func main() {
 	c2 := C2{dbi, dbt, mqttClient}
 	pb.RegisterC2Server(s, &c2)
 
-	count, err := c2.countIdKeys()
+	count, err := c2.countIDKeys()
 	if err != nil {
 		log.Fatal("failed to iterated over the id db")
 	}

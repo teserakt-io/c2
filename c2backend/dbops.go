@@ -4,7 +4,7 @@ import (
 	"github.com/dgraph-io/badger"
 )
 
-func (s *C2) deleteIdKey(id []byte) error {
+func (s *C2) deleteIDKey(id []byte) error {
 	return dbDelete(s.dbi, id)
 }
 
@@ -25,7 +25,7 @@ func dbDelete(db *badger.DB, key []byte) error {
 	return err
 }
 
-func (s *C2) insertIdKey(id, key []byte) error {
+func (s *C2) insertIDKey(id, key []byte) error {
 	return dbInsertErase(s.dbi, id, key)
 }
 
@@ -40,7 +40,7 @@ func dbInsertErase(db *badger.DB, key, value []byte) error {
 	return err
 }
 
-func (s *C2) getIdKey(id []byte) ([]byte, error) {
+func (s *C2) getIDKey(id []byte) ([]byte, error) {
 	return dbGetValue(s.dbi, id)
 }
 
@@ -64,7 +64,7 @@ func dbGetValue(db *badger.DB, key []byte) ([]byte, error) {
 	return value, nil
 }
 
-func (s *C2) countIdKeys() (int, error) {
+func (s *C2) countIDKeys() (int, error) {
 	return dbCountKeys(s.dbi)
 }
 

@@ -6,7 +6,8 @@ import (
 	e4 "teserakt/e4common"
 )
 
-func (s *C2) CreateAndProtectForId(cmd e4.Command, topichash, key, id []byte) ([]byte, error) {
+// CreateAndProtectForID creates a protected command for a given ID.
+func (s *C2) CreateAndProtectForID(cmd e4.Command, topichash, key, id []byte) ([]byte, error) {
 
 	// call CreateCommand
 	command, err := CreateCommand(cmd, topichash, key)
@@ -15,7 +16,7 @@ func (s *C2) CreateAndProtectForId(cmd e4.Command, topichash, key, id []byte) ([
 	}
 
 	// get key of the given id
-	idkey, err := s.getIdKey(id)
+	idkey, err := s.getIDKey(id)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +30,7 @@ func (s *C2) CreateAndProtectForId(cmd e4.Command, topichash, key, id []byte) ([
 	return payload, nil
 }
 
-// create []byte to encrypt from client command id and arguments
+// CreateCommand assembles a command's arguments to create an encoded command.
 func CreateCommand(cmd e4.Command, topichash, key []byte) ([]byte, error) {
 	switch cmd {
 
@@ -48,7 +49,7 @@ func CreateCommand(cmd e4.Command, topichash, key []byte) ([]byte, error) {
 		}
 		return []byte{cmd.ToByte()}, nil
 
-	case e4.SetIdKey:
+	case e4.SetIDKey:
 		if !e4.IsValidKey(key) {
 			return nil, errors.New("invalid key for SetIdKey")
 		}

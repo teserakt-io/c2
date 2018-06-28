@@ -15,20 +15,11 @@
 package main
 
 import (
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"os"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	e4 "teserakt/e4client"
-)
-
-// E4: hardcoded values for testing
-const (
-	E4IdAlias  = "testid"
-	E4Pwd      = "testpwd"
-	E4FilePath = "./"
 )
 
 /*
@@ -49,7 +40,7 @@ const (
 
 func main() {
 	topic := flag.String("topic", "", "The topic name to/from which to publish/subscribe")
-	broker := flag.String("broker", "tcp://test.mosquitto.org:1883", "The broker URI. ex: tcp://10.10.1.1:1883")
+	broker := flag.String("broker", "tcp://iot.eclipse.org:1883", "The broker URI. ex: tcp://10.10.1.1:1883")
 	password := flag.String("password", "", "The password (optional)")
 	user := flag.String("user", "", "The User (optional)")
 	id := flag.String("id", "testgoid", "The ClientID (optional)")
@@ -94,10 +85,6 @@ func main() {
 		opts.SetStore(MQTT.NewFileStore(*store))
 	}
 
-	// E4: creating a fresh client, rather than loading from disk
-	e4Client := e4.NewClientPretty(E4IdAlias, E4Pwd, E4FilePath)
-	fmt.Printf("E4 client created with id %s\n", hex.EncodeToString(e4Client.Id))
-
 	if *action == "pub" {
 		client := MQTT.NewClient(opts)
 		if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -105,21 +92,9 @@ func main() {
 		}
 		fmt.Println("Sample Publisher Started")
 		for i := 0; i < *num; i++ {
-			// E4: if topic key available, encrypt payload
-			protected, err := e4Client.Protect([]byte(*payload), *topic)
-			if err == nil {
-				fmt.Println("---- doing publish (E4-protected) ----")
-				token := client.Publish(*topic, byte(*qos), false, protected)
-				token.Wait()
-			} else if err == e4.E4errTopicKeyNotFound {
-				// E4: if topic key not found, publish unencrypted
-				fmt.Println("---- doing publish (NOT E4-protected) ----")
-				token := client.Publish(*topic, byte(*qos), false, *payload)
-				token.Wait()
-			} else {
-				// another error occured, don't publish
-				fmt.Println("E4 error: %s", err)
-			}
+			fmt.Println("---- doing publish ----")
+			token := client.Publish(*topic, byte(*qos), false, *payload)
+			token.Wait()
 		}
 
 		client.Disconnect(250)
@@ -144,25 +119,7 @@ func main() {
 
 		for receiveCount < *num {
 			incoming := <-choke
-			// E4: if topic is E4/<id>, the process as a command
-			if incoming[0] == e4Client.ReceivingTopic {
-				cmd, err := e4Client.ProcessCommand([]byte(incoming[1]))
-				if err != nil {
-					fmt.Printf("E4 error in ProcessCommand: %s", err)
-				} else {
-					fmt.Printf("RECEIVED E4 COMMAND: %s\n", cmd)
-				}
-			} else {
-				// E4: attempt to decrypt
-				message, err := e4Client.Unprotect([]byte(incoming[1]), incoming[0])
-				if err == nil {
-					fmt.Printf("RECEIVED (E4-protected) TOPIC: %s MESSAGE: %s\n", incoming[0], message)
-				} else if err == e4.E4errTopicKeyNotFound {
-					fmt.Printf("RECEIVED (NOT E4-protected) TOPIC: %s MESSAGE: %s\n", incoming[0], incoming[1])
-				} else {
-					fmt.Printf("E4 error: %s", err)
-				}
-			}
+			fmt.Printf("RECEIVED TOPIC: %s MESSAGE: %s\n", incoming[0], incoming[1])
 			receiveCount++
 		}
 

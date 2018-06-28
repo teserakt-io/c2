@@ -9,12 +9,14 @@ import (
 	"time"
 )
 
+// HashTopic creates a topic hash from a topic string.
 func HashTopic(topic string) []byte {
 
 	return hashStuff([]byte(topic))
 }
 
-func HashIdAlias(idalias string) []byte {
+// HashIDAlias creates an ID from an ID alias string.
+func HashIDAlias(idalias string) []byte {
 
 	return hashStuff([]byte(idalias))
 }
@@ -24,6 +26,7 @@ func hashStuff(data []byte) []byte {
 	return h[:]
 }
 
+// Encrypt creates an authenticated ciphertext.
 func Encrypt(key []byte, ad []byte, pt []byte) ([]byte, error) {
 
 	c, err := miscreant.NewAESCMACSIV(key)
@@ -35,6 +38,7 @@ func Encrypt(key []byte, ad []byte, pt []byte) ([]byte, error) {
 	return c.Seal(nil, pt, ads...)
 }
 
+// Decrypt decrypts and verifies an authenticated ciphertext.
 func Decrypt(key []byte, ad []byte, ct []byte) ([]byte, error) {
 
 	c, err := miscreant.NewAESCMACSIV(key)
@@ -49,18 +53,21 @@ func Decrypt(key []byte, ad []byte, ct []byte) ([]byte, error) {
 	return c.Open(nil, ct, ads...)
 }
 
+// RandomKey generates a random 64-byte key usable by Encrypt and Decrypt.
 func RandomKey() []byte {
 	key := make([]byte, KeyLen)
 	rand.Read(key)
 	return key
 }
 
-func RandomId() []byte {
-	id := make([]byte, IdLen)
+// RandomID generates a random 32-byte ID.
+func RandomID() []byte {
+	id := make([]byte, IDLen)
 	rand.Read(id)
 	return id
 }
 
+// Protect creates a protected messages, generating a timestamp and a ciphertext.
 func Protect(message []byte, key []byte) ([]byte, error) {
 
 	timestamp := make([]byte, TimestampLen)
@@ -75,6 +82,7 @@ func Protect(message []byte, key []byte) ([]byte, error) {
 	return protected, nil
 }
 
+// Unprotect verifies a protected message's timestamp and ciphertext and decrypts it.
 func Unprotect(protected []byte, key []byte) ([]byte, error) {
 
 	ct := protected[TimestampLen:]
