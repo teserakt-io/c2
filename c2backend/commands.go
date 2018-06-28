@@ -15,7 +15,7 @@ func (s *C2) CreateAndProtectForId(cmd e4.Command, topichash, key, id []byte) ([
 	}
 
 	// get key of the given id
-	idkey, err := s.dbGetValue(id)
+	idkey, err := s.getIdKey(id)
 	if err != nil {
 		return nil, err
 	}

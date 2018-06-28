@@ -9,7 +9,6 @@ import (
 	e4 "teserakt/e4common"
 )
 
-
 // structure saved to disk for persistent storage
 type Client struct {
 	Id        []byte

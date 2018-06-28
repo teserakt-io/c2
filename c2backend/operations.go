@@ -53,7 +53,7 @@ func (s *C2) newClient(in *pb.C2Request) (*pb.C2Response, error) {
 		return &pb.C2Response{Success: false, Err: "invalid request"}, nil
 	}
 
-	err := s.dbInsertErase(in.Id, in.Key)
+	err := s.insertIdKey(in.Id, in.Key)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "db update failed"}, nil
@@ -69,7 +69,7 @@ func (s *C2) removeClient(in *pb.C2Request) (*pb.C2Response, error) {
 		return &pb.C2Response{Success: false, Err: "invalid request"}, nil
 	}
 
-	err := s.dbDelete(in.Id)
+	err := s.deleteIdKey(in.Id)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "deletion error"}, nil
@@ -87,7 +87,7 @@ func (s *C2) newTopicClient(in *pb.C2Request) (*pb.C2Response, error) {
 	}
 
 	topichash := e4.HashTopic(in.Topic)
-	key, err := s.dbGetValue(topichash)
+	key, err := s.getTopicKey(topichash)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "unknown topic"}, nil
@@ -158,7 +158,7 @@ func (s *C2) newTopic(in *pb.C2Request) (*pb.C2Response, error) {
 	topichash := e4.HashTopic(in.Topic)
 	key := e4.RandomKey()
 
-	err := s.dbInsertErase(topichash, key)
+	err := s.insertTopicKey(topichash, key)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "db update failed"}, nil
@@ -174,7 +174,7 @@ func (s *C2) removeTopic(in *pb.C2Request) (*pb.C2Response, error) {
 	}
 	topichash := e4.HashTopic(in.Topic)
 
-	err := s.dbDelete(topichash)
+	err := s.deleteTopicKey(topichash)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "deletion error"}, nil
@@ -199,7 +199,7 @@ func (s *C2) newClientKey(in *pb.C2Request) (*pb.C2Response, error) {
 		return &pb.C2Response{Success: false, Err: "mqtt publish fail"}, nil
 	}
 
-	err = s.dbInsertErase(in.Id, key)
+	err = s.insertIdKey(in.Id, key)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "db update failed"}, nil
