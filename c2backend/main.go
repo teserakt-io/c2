@@ -14,7 +14,8 @@ import (
 )
 
 type C2 struct {
-	db       *badger.DB
+	dbi      *badger.DB // id:key
+	dbt      *badger.DB // topic:key
 	mqClient mqtt.Client
 }
 
@@ -47,17 +48,27 @@ func main() {
 
 	log.SetPrefix("c2backend\t")
 
-	// open db
-	dbOpts := badger.DefaultOptions
-	dbOpts.Dir = dbDir
-	dbOpts.ValueDir = dbDir
-	db, err := badger.Open(dbOpts)
+	// open id keys db
+	dbiOpts := badger.DefaultOptions
+	dbiOpts.Dir = dbiDir
+	dbiOpts.ValueDir = dbiDir
+	dbi, err := badger.Open(dbiOpts)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	defer dbi.Close()
+	log.Print("id database open")
 
-	log.Print("database open")
+	// open topic keys db
+	dbtOpts := badger.DefaultOptions
+	dbtOpts.Dir = dbtDir
+	dbtOpts.ValueDir = dbtDir
+	dbt, err := badger.Open(dbtOpts)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer dbt.Close()
+	log.Print("topic database open")
 
 	// start mqtt client
 	mqOpts := mqtt.NewClientOptions().AddBroker(mqttBroker)
@@ -74,13 +85,20 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	c2 := C2{db, mqttClient}
+	c2 := C2{dbi, dbt, mqttClient}
 	pb.RegisterC2Server(s, &c2)
-	log.Print("starting server")
-	count, err := c2.dbCountKeys()
+
+	count, err := c2.countIdKeys()
 	if err != nil {
-		log.Fatal("failed to iterated over the db")
+		log.Fatal("failed to iterated over the id db")
 	}
-	log.Printf("%d key-value records in the db", count)
+	log.Printf("%d ids in the db", count)
+	count, err = c2.countTopicKeys()
+	if err != nil {
+		log.Fatal("failed to iterated over the topic db")
+	}
+	log.Printf("%d topics in the db", count)
+
+	log.Print("starting server")
 	s.Serve(lis)
 }
