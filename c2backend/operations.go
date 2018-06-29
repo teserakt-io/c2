@@ -86,12 +86,13 @@ func (s *C2) newTopicClient(in *pb.C2Request) (*pb.C2Response, error) {
 		return &pb.C2Response{Success: false, Err: "invalid request"}, nil
 	}
 
-	topichash := e4.HashTopic(in.Topic)
-	key, err := s.getTopicKey(topichash)
+	key, err := s.getTopicKey(in.Topic)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "unknown topic"}, nil
 	}
+	
+	topichash := e4.HashTopic(in.Topic)
 
 	payload, err := s.CreateAndProtectForID(e4.SetTopicKey, topichash, key, in.Id)
 	if err != nil {
@@ -155,10 +156,9 @@ func (s *C2) newTopic(in *pb.C2Request) (*pb.C2Response, error) {
 	if !checkRequest(in, false, false, true) {
 		return &pb.C2Response{Success: false, Err: "invalid request"}, nil
 	}
-	topichash := e4.HashTopic(in.Topic)
 	key := e4.RandomKey()
 
-	err := s.insertTopicKey(topichash, key)
+	err := s.insertTopicKey(in.Topic, key)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "db update failed"}, nil
@@ -172,9 +172,8 @@ func (s *C2) removeTopic(in *pb.C2Request) (*pb.C2Response, error) {
 	if !checkRequest(in, true, false, true) {
 		return &pb.C2Response{Success: false, Err: "invalid request"}, nil
 	}
-	topichash := e4.HashTopic(in.Topic)
 
-	err := s.deleteTopicKey(topichash)
+	err := s.deleteTopicKey(in.Topic)
 	if err != nil {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "deletion error"}, nil

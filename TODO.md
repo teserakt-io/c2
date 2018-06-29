@@ -22,6 +22,7 @@
 
 # TODO
 
+* moar tests of dbops
 * C2 DB with topics instead of topichashes (revise specs)
 * <https://github.com/golang/go/wiki/CodeReviewComments#error-strings>
 

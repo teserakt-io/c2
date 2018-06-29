@@ -8,8 +8,8 @@ func (s *C2) deleteIDKey(id []byte) error {
 	return dbDelete(s.dbi, id)
 }
 
-func (s *C2) deleteTopicKey(topic []byte) error {
-	return dbDelete(s.dbt, topic)
+func (s *C2) deleteTopicKey(topic string) error {
+	return dbDelete(s.dbt, []byte(topic))
 }
 
 func dbDelete(db *badger.DB, key []byte) error {
@@ -29,8 +29,8 @@ func (s *C2) insertIDKey(id, key []byte) error {
 	return dbInsertErase(s.dbi, id, key)
 }
 
-func (s *C2) insertTopicKey(topic, key []byte) error {
-	return dbInsertErase(s.dbt, topic, key)
+func (s *C2) insertTopicKey(topic string, key []byte) error {
+	return dbInsertErase(s.dbt, []byte(topic), key)
 }
 
 func dbInsertErase(db *badger.DB, key, value []byte) error {
@@ -44,8 +44,8 @@ func (s *C2) getIDKey(id []byte) ([]byte, error) {
 	return dbGetValue(s.dbi, id)
 }
 
-func (s *C2) getTopicKey(topichash []byte) ([]byte, error) {
-	return dbGetValue(s.dbt, topichash)
+func (s *C2) getTopicKey(topic string) ([]byte, error) {
+	return dbGetValue(s.dbt, []byte(topic))
 }
 
 func dbGetValue(db *badger.DB, key []byte) ([]byte, error) {
