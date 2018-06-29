@@ -22,6 +22,7 @@
 
 # TODO
 
+* REST endpoints for frontend, https://github.com/cloudtrust/flaki-service/blob/1.2/cmd/flakid.go#L535
 * moar tests of dbops
 * C2 DB with topics instead of topichashes (revise specs)
 * <https://github.com/golang/go/wiki/CodeReviewComments#error-strings>
