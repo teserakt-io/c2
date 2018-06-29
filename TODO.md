@@ -10,20 +10,19 @@
 * support for all commands wrt db
 * basic tester using cli 
 * e4client
+* document exported functions etc.
+* demo app (add QoS to commands)
+* go vet, go lint, goimports
 
 
 # WIP
 
-* document exported functions etc.
 * test persistent storage, integrate in demo
-* demo app (add QoS to commands)
 * fine-tune MQTT client options
 
 # TODO
 
-* document dependencies
-* set up dep manager?
-* go vet, go lint, goimports
+* C2 DB with topics instead of topichashes (revise specs)
 * <https://github.com/golang/go/wiki/CodeReviewComments#error-strings>
 
 * monitoring of all topics' messages (c2monitor service)
@@ -31,3 +30,7 @@
 # FUTURE
 
 * secure grpc: encrypt + auth
+* binary packaging
+    - https://stackoverflow.com/a/29600086
+    - https://stackoverflow.com/a/45003378
+    - https://github.com/goreleaser/nfpm ?
