@@ -7,7 +7,7 @@ import (
 func TestWriteRead(t *testing.T) {
 	filePath := "./e4clienttest"
 
-	c := NewClient(nil, nil, filePath)
+	c := NewClientPretty("someid", "somepwd", filePath)
 	err := writeGob(filePath, c)
 	if err != nil {
 		t.Fatalf("save failed: %s", err)
@@ -18,7 +18,7 @@ func TestWriteRead(t *testing.T) {
 		t.Fatalf("client loading failed: %s", err)
 	}
 
-	if string(cc.Id) != string(c.Id) {
+	if string(cc.ID) != string(c.ID) {
 		t.Fatal("id doesnt match")
 	}
 	if string(cc.Key) != string(c.Key) {

@@ -43,8 +43,8 @@ func main() {
 
 	flag.Parse()
 
-	var id []byte = nil
-	var key []byte = nil
+	var id []byte
+	var key []byte
 	var err error
 
 	if *command == "" {
@@ -52,7 +52,7 @@ func main() {
 	}
 
 	if *idalias != "" {
-		id = e4.HashIdAlias(*idalias)
+		id = e4.HashIDAlias(*idalias)
 	}
 
 	if *keyhex != "" {
