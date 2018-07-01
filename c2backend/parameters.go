@@ -2,8 +2,7 @@ package main
 
 const (
 	port   = ":50051"
-	dbiDir = "../dbs/id/"
-	dbtDir = "../dbs/topic/"
+	dbDir = "/tmp/e4/db/"
 
 	mqttBroker = "test.mosquitto.org:1883"
 	mqttQoS    = 2

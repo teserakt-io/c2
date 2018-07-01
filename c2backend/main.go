@@ -15,8 +15,7 @@ import (
 
 // C2 is the C2's state, consisting of ID keys, topic keys, and an MQTT connection.
 type C2 struct {
-	dbi      *badger.DB // id:key
-	dbt      *badger.DB // topic:key
+	db      *badger.DB 
 	mqClient mqtt.Client
 }
 
@@ -46,31 +45,24 @@ func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, e
 	return &pb.C2Response{Success: false, Err: "unknown command"}, nil
 }
 
+func showState(db *badger.DB) {
+	
+}
+
 func main() {
 
 	log.SetPrefix("c2backend\t")
 
 	// open id keys db
-	dbiOpts := badger.DefaultOptions
-	dbiOpts.Dir = dbiDir
-	dbiOpts.ValueDir = dbiDir
-	dbi, err := badger.Open(dbiOpts)
+	dbOpts := badger.DefaultOptions
+	dbOpts.Dir = dbDir
+	dbOpts.ValueDir = dbDir
+	db, err := badger.Open(dbOpts)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer dbi.Close()
-	log.Print("id database open")
-
-	// open topic keys db
-	dbtOpts := badger.DefaultOptions
-	dbtOpts.Dir = dbtDir
-	dbtOpts.ValueDir = dbtDir
-	dbt, err := badger.Open(dbtOpts)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer dbt.Close()
-	log.Print("topic database open")
+	defer db.Close()
+	log.Print("database open")
 
 	// start mqtt client
 	mqOpts := mqtt.NewClientOptions()
@@ -91,7 +83,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	c2 := C2{dbi, dbt, mqttClient}
+	c2 := C2{db, mqttClient}
 	pb.RegisterC2Server(s, &c2)
 
 	count, err := c2.countIDKeys()

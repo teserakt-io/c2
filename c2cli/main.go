@@ -60,7 +60,9 @@ func main() {
 			log.Fatal("choose between key and password")
 		}
 		key, err = hex.DecodeString(*keyhex)
-		log.Print(len(key))
+		if len(key) != e4.KeyLen {
+			log.Fatalf("incorrect key size: %d bytes, expected %d", len(key), e4.KeyLen)
+		}
 		if err != nil {
 			log.Fatalf("key decoding failed: %s", err)
 		}

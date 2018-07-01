@@ -2,56 +2,69 @@ package main
 
 import (
 	"github.com/dgraph-io/badger"
+	"fmt"
 )
 
+const (
+	IDByte = 0
+	TopicByte = 1
+)
+
+
 func (s *C2) deleteIDKey(id []byte) error {
-	return dbDelete(s.dbi, id)
+	dbkey := append(id, IDByte)
+	return s.dbDelete(dbkey)
 }
 
 func (s *C2) deleteTopicKey(topic string) error {
-	return dbDelete(s.dbt, []byte(topic))
+	dbkey := append([]byte(topic), TopicByte)
+	return s.dbDelete(dbkey)
 }
 
-func dbDelete(db *badger.DB, key []byte) error {
+func (s *C2) dbDelete(dbkey []byte) error {
 
-	_, err := dbGetValue(db, key)
+	_, err := s.dbGetValue(dbkey)
 	if err != nil {
 		return err
 	}
 
-	err = db.Update(func(txn *badger.Txn) error {
-		return txn.Delete(key)
+	err = s.db.Update(func(txn *badger.Txn) error {
+		return txn.Delete(dbkey)
 	})
 	return err
 }
 
 func (s *C2) insertIDKey(id, key []byte) error {
-	return dbInsertErase(s.dbi, id, key)
+	dbkey := append(id, IDByte)
+	return s.dbInsertErase(dbkey, key)
 }
 
 func (s *C2) insertTopicKey(topic string, key []byte) error {
-	return dbInsertErase(s.dbt, []byte(topic), key)
+	dbkey := append([]byte(topic), TopicByte)
+	return s.dbInsertErase(dbkey, key)
 }
 
-func dbInsertErase(db *badger.DB, key, value []byte) error {
-	err := db.Update(func(txn *badger.Txn) error {
-		return txn.Set(key, value)
+func (s *C2) dbInsertErase(dbkey, value []byte) error {
+	err := s.db.Update(func(txn *badger.Txn) error {
+		return txn.Set(dbkey, value)
 	})
 	return err
 }
 
 func (s *C2) getIDKey(id []byte) ([]byte, error) {
-	return dbGetValue(s.dbi, id)
+	dbkey := append(id, IDByte)
+	return s.dbGetValue(dbkey)
 }
 
 func (s *C2) getTopicKey(topic string) ([]byte, error) {
-	return dbGetValue(s.dbt, []byte(topic))
+	dbkey := append([]byte(topic), TopicByte)
+	return s.dbGetValue(dbkey)
 }
 
-func dbGetValue(db *badger.DB, key []byte) ([]byte, error) {
+func (s *C2) dbGetValue(dbkey []byte) ([]byte, error) {
 	var value []byte
-	err := db.View(func(txn *badger.Txn) error {
-		v, err := txn.Get(key)
+	err := s.db.View(func(txn *badger.Txn) error {
+		v, err := txn.Get(dbkey)
 		if err != nil {
 			return err
 		}
@@ -65,23 +78,31 @@ func dbGetValue(db *badger.DB, key []byte) ([]byte, error) {
 }
 
 func (s *C2) countIDKeys() (int, error) {
-	return dbCountKeys(s.dbi)
+	return s.dbCountKeys(IDByte)
 }
 
 func (s *C2) countTopicKeys() (int, error) {
-	return dbCountKeys(s.dbt)
+	return s.dbCountKeys(TopicByte)
 }
 
-func dbCountKeys(db *badger.DB) (int, error) {
+func (s *C2) dbCountKeys(b byte) (int, error) {
 
 	itOpts := badger.DefaultIteratorOptions
 	itOpts.PrefetchSize = 10
 	var count int
-	err := db.View(func(txn *badger.Txn) error {
+	err := s.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(itOpts)
 		defer it.Close()
 		for it.Rewind(); it.Valid(); it.Next() {
-			count++
+			item := it.Item()
+			dbkey, err := item.Value()
+			if err != nil {
+				return err
+			}
+			//if dbkey[32] == b {
+				count++
+				fmt.Printf("go %d\n", dbkey[32])
+			//}
 		}
 		return nil
 	})
