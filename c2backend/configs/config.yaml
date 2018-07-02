@@ -1,9 +1,12 @@
-title: C2 backend
 
-mqtt:
-broker: test.mosquitto.org:1883
-QoS: 2
-ID: e4
+mqtt-broker: test.mosquitto.org:1883
+mqtt-QoS: 2
+mqtt-ID: e4
 
-db:
+db-dir: /tmp/e4/db
+
+grpc-host-port: 5555
+
+http-host-port: 8888
+
 

@@ -45,13 +45,31 @@ func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, e
 	return &pb.C2Response{Success: false, Err: "unknown command"}, nil
 }
 
-func showState(db *badger.DB) {
-	
+func config () *viper.Viper {
+	var v = viper.New()
+	v.SetDefault("mqtt-broker", "test.mosquitto.org:1803")	
+	v.SetDefault("mqtt-QoS, 2")
+	v.SetDefault("mqtt-ID", "E4C2")
+	v.SetDefault("db-dir", "/tmp/E4/db")
+	v.SetDefault("grpc-host-port", "0.0.0.0:5555")
+	v.SetDefault("http-host-port", "0.0.0.0:8888")
+	var keys = v.AllKeys()
+	sort.Strings(keys)
+	for _, k := range keys {
+		log.Print(k, v.Get(k))
+	}
 }
 
 func main() {
 
 	log.SetPrefix("c2backend\t")
+
+	// load config
+	v := config()
+	var (
+
+	)
+	log.Print("config loaded")
 
 	// open id keys db
 	dbOpts := badger.DefaultOptions

@@ -1,5 +1,12 @@
 #!/bin/bash
 
+mkdir -p /tmp/E4/db
+
+# sync workspace for dev outside GOPATH
+cp -p -r c2proto  $GOPATH/src/teserakt
+cp -p -r e4common $GOPATH/src/teserakt
+cp -p -r e4client $GOPATH/src/teserakt
+
 echo "building c2backend.."
 cd c2backend && go build && cd ..
 
@@ -22,7 +29,6 @@ function terminate() {
 
 echo "running c2cli.."
 cd ../c2cli
-
 
 echo ""
 echo "# adding a client"

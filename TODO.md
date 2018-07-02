@@ -14,33 +14,36 @@
 * demo app (add QoS to commands)
 * go vet, go lint, goimports
 * test persistent storage
-
+* fix key length bug (size in db is 32?)
+* C2 DB with topics instead of topichashes (revise specs)
+* single db mode with data type signalling
 
 # WIP
 
-* FIX KEY LENGTH BUG (size in db is 32?)
-
-* single db mode with data type signalling
 * yaml config using https://github.com/spf13/viper, see flaki examples
+* create interface Storage, instantiate with badger.go, element of C2
+* finish client persistence storage (write to disk every change)
+* AES-SIV using same 256b key for both
 
 # TODO
 
 * generate test vectors for e4client
 * REST endpoints for frontend, https://github.com/cloudtrust/flaki-service/blob/1.2/cmd/flakid.go#L535
+* structure as https://github.com/prometheus/prometheus?
+* make diagram using https://draw.io/
 
 * moar tests of dbops
-* C2 DB with topics instead of topichashes (revise specs)
-* apply https://github.com/golang/go/wiki/CodeReviewComments
+* apply 
+* interactive CLI with https://github.com/manifoldco/promptui
 * fine-tune MQTT client options
 
-* interactive CLI with https://github.com/manifoldco/promptui
-
-* monitoring of all topics' messages (c2monitor service)
-
-* golint/go vet
+* QA: golint, go vet, https://github.com/golang/go/wiki/CodeReviewComments
 
 # FUTURE
 
+* monitoring/tracing (OpenCensus, Jaeger, Sentry?)
+
+* monitoring of all topics' messages (c2monitor service)
 * secure grpc: encrypt + auth
 * binary packaging
     - binary in /opt/e4/, db in /var/lib/e4/db/
