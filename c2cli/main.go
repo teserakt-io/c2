@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	address = "localhost:50051"
+	address = "localhost:5555"
 )
 
 func sendCommand(client pb.C2Client, req *pb.C2Request) {

@@ -91,7 +91,7 @@ func (s *C2) newTopicClient(in *pb.C2Request) (*pb.C2Response, error) {
 		log.Print(err)
 		return &pb.C2Response{Success: false, Err: "unknown topic"}, nil
 	}
-	
+
 	topichash := e4.HashTopic(in.Topic)
 
 	payload, err := s.CreateAndProtectForID(e4.SetTopicKey, topichash, key, in.Id)

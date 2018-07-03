@@ -2,22 +2,21 @@ package main
 
 import (
 	"github.com/dgraph-io/badger"
-	"fmt"
 )
 
+// signalling the type of key in the k-v store
 const (
-	IDByte = 0
+	IDByte    = 0
 	TopicByte = 1
 )
 
-
 func (s *C2) deleteIDKey(id []byte) error {
-	dbkey := append(id, IDByte)
+	dbkey := append([]byte{IDByte}, id...)
 	return s.dbDelete(dbkey)
 }
 
 func (s *C2) deleteTopicKey(topic string) error {
-	dbkey := append([]byte(topic), TopicByte)
+	dbkey := append([]byte{TopicByte}, []byte(topic)...)
 	return s.dbDelete(dbkey)
 }
 
@@ -35,12 +34,12 @@ func (s *C2) dbDelete(dbkey []byte) error {
 }
 
 func (s *C2) insertIDKey(id, key []byte) error {
-	dbkey := append(id, IDByte)
+	dbkey := append([]byte{IDByte}, id...)
 	return s.dbInsertErase(dbkey, key)
 }
 
 func (s *C2) insertTopicKey(topic string, key []byte) error {
-	dbkey := append([]byte(topic), TopicByte)
+	dbkey := append([]byte{TopicByte}, []byte(topic)...)
 	return s.dbInsertErase(dbkey, key)
 }
 
@@ -52,12 +51,12 @@ func (s *C2) dbInsertErase(dbkey, value []byte) error {
 }
 
 func (s *C2) getIDKey(id []byte) ([]byte, error) {
-	dbkey := append(id, IDByte)
+	dbkey := append([]byte{IDByte}, id...)
 	return s.dbGetValue(dbkey)
 }
 
 func (s *C2) getTopicKey(topic string) ([]byte, error) {
-	dbkey := append([]byte(topic), TopicByte)
+	dbkey := append([]byte{TopicByte}, []byte(topic)...)
 	return s.dbGetValue(dbkey)
 }
 
@@ -95,14 +94,10 @@ func (s *C2) dbCountKeys(b byte) (int, error) {
 		defer it.Close()
 		for it.Rewind(); it.Valid(); it.Next() {
 			item := it.Item()
-			dbkey, err := item.Value()
-			if err != nil {
-				return err
-			}
-			//if dbkey[32] == b {
+			dbkey := item.Key()
+			if dbkey[0] == b {
 				count++
-				fmt.Printf("go %d\n", dbkey[32])
-			//}
+			}
 		}
 		return nil
 	})
