@@ -17,13 +17,12 @@
 * fix key length bug (size in db is 32?)
 * C2 DB with topics instead of topichashes (revise specs)
 * single db mode with data type signalling
+* yaml config using https://github.com/spf13/viper, see flaki examples
 
 # WIP
 
-* yaml config using https://github.com/spf13/viper, see flaki examples
 * http server
 * REST endpoints for frontend, https://github.com/cloudtrust/flaki-service/blob/1.2/cmd/flakid.go#L535
-* create interface Storage, instantiate with badger.go, element of C2
 * finish client persistence storage (write to disk every change)
 
 # TODO

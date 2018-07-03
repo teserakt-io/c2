@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -28,7 +32,7 @@ func main() {
 	c := config()
 	var (
 		grpcAddr = c.GetString("grpc-host-port")
-		//httpAddr = c.GetString("http-host-port")
+		//httpAddr   = c.GetString("http-host-port")
 		dbDir      = c.GetString("db-dir")
 		mqttBroker = c.GetString("mqtt-broker")
 		mqttID     = c.GetString("mqtt-ID")
@@ -46,6 +50,14 @@ func main() {
 	defer db.Close()
 	log.Print("database open")
 
+	// critical error channel
+	var errc = make(chan error)
+	go func() {
+		var c = make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+		errc <- fmt.Errorf("%s", <-c)
+	}()
+
 	// start mqtt client
 	mqOpts := mqtt.NewClientOptions()
 	mqOpts.AddBroker(mqttBroker)
@@ -58,28 +70,35 @@ func main() {
 
 	log.Printf("connected to mqtt broker")
 
-	// create server
-	lis, err := net.Listen("tcp", grpcAddr)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	s := grpc.NewServer()
+	// instantiate C2
 	c2 := C2{db, mqttClient}
-	pb.RegisterC2Server(s, &c2)
 
-	count, err := c2.countIDKeys()
-	if err != nil {
-		log.Fatal("failed to iterated over the id db")
-	}
-	log.Printf("%d ids in the db", count)
-	count, err = c2.countTopicKeys()
-	if err != nil {
-		log.Fatal("failed to iterated over the topic db")
-	}
-	log.Printf("%d topics in the db", count)
+	// create grpc server
+	go func() {
+		lis, err := net.Listen("tcp", grpcAddr)
+		if err != nil {
+			log.Fatalf("failed to listen: %v", err)
+		}
+		s := grpc.NewServer()
+		pb.RegisterC2Server(s, &c2)
 
-	log.Print("starting grpc server")
-	s.Serve(lis)
+		count, err := c2.countIDKeys()
+		if err != nil {
+			log.Fatal("failed to iterated over the id db")
+		}
+		log.Printf("%d ids in the db", count)
+		count, err = c2.countTopicKeys()
+		if err != nil {
+			log.Fatal("failed to iterated over the topic db")
+		}
+		log.Printf("%d topics in the db", count)
+
+		log.Print("starting grpc server")
+
+		errc <- s.Serve(lis)
+	}()
+
+	log.Print("error", <-errc)
 }
 
 // C2Command processes a command received over gRPC by the CLI tool.
