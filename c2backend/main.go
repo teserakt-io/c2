@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,9 +14,10 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/dgraph-io/badger"
+	"github.com/gorilla/mux"
+	"github.com/spf13/viper"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/spf13/viper"
 	pb "teserakt/c2proto"
 )
 
@@ -31,8 +34,8 @@ func main() {
 	// load config
 	c := config()
 	var (
-		grpcAddr = c.GetString("grpc-host-port")
-		//httpAddr   = c.GetString("http-host-port")
+		grpcAddr   = c.GetString("grpc-host-port")
+		httpAddr   = c.GetString("http-host-port")
 		dbDir      = c.GetString("db-dir")
 		mqttBroker = c.GetString("mqtt-broker")
 		mqttID     = c.GetString("mqtt-ID")
@@ -98,6 +101,19 @@ func main() {
 		errc <- s.Serve(lis)
 	}()
 
+	// create grpc server
+	go func() {
+		route := mux.NewRouter()
+
+		route.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			resp := Response{w}
+			resp.Text(http.StatusNotFound, "Not found")
+		}))
+
+		log.Print("starting http server")
+		errc <- http.ListenAndServe(httpAddr, route)
+	}()
+
 	log.Print("error", <-errc)
 }
 
@@ -143,4 +159,17 @@ func config() *viper.Viper {
 	}
 
 	return v
+}
+
+// Response ...
+type Response struct {
+	http.ResponseWriter
+}
+
+// Text is a helper to write raw text as an HTTP response
+func (r *Response) Text(code int, body string) {
+	r.Header().Set("Content-Type", "text/plain")
+	r.WriteHeader(code)
+
+	io.WriteString(r, fmt.Sprintf("%s\n", body))
 }
