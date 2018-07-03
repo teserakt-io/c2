@@ -21,12 +21,11 @@ type Client struct {
 	ID        []byte
 	Key       []byte
 	Topickeys map[string][]byte
-	// slices []byte can't be map keys, converting to strings
+	// Topickeys maps a topic hash to a key
+	// (slices []byte can't be map keys, converting to strings)
 	FilePath       string
 	ReceivingTopic string
 }
-
-// TODO: save client everytime it's changed
 
 // NewClient creates a new client, generating a random ID or key if they are nil.
 func NewClient(id, key []byte, filePath string) *Client {
@@ -141,51 +140,55 @@ func (c *Client) ProcessCommand(protected []byte) (string, error) {
 		if len(command) != e4.HashLen+1 {
 			return "", errors.New("invalid RemoveTopic argument")
 		}
-		return s, c.removeTopic(command[1:])
+		return s, c.RemoveTopic(command[1:])
 
 	case e4.ResetTopics:
 		if len(command) != 1 {
 			return "", errors.New("invalid ResetTopics argument")
 		}
-		return s, c.resetTopics()
+		return s, c.ResetTopics()
 
 	case e4.SetIDKey:
 		if len(command) != e4.KeyLen+1 {
 			return "", errors.New("invalid SetIDKey argument")
 		}
-		return s, c.setIDKey(command[1:])
+		return s, c.SetIDKey(command[1:])
 
 	case e4.SetTopicKey:
 		if len(command) != e4.KeyLen+e4.HashLen+1 {
 			return "", errors.New("invalid SetTopicKey argument")
 		}
-		return s, c.setTopicKey(command[1:1+e4.HashLen], command[1+e4.HashLen:])
+		return s, c.SetTopicKey(command[1:1+e4.HashLen], command[1+e4.HashLen:])
 
 	default:
 		return "", errors.New("invalid command")
 	}
 }
 
-func (c *Client) removeTopic(topichash []byte) error {
+// RemoveTopic removes the key of the given topic hash
+func (c *Client) RemoveTopic(topichash []byte) error {
 	if !e4.IsValidTopicHash(topichash) {
 		return errors.New("invalid topic hash")
 	}
 	delete(c.Topickeys, string(topichash))
 
-	return nil
+	return c.save()
 }
 
-func (c *Client) resetTopics() error {
+// ResetTopics removes all topic keys
+func (c *Client) ResetTopics() error {
 	c.Topickeys = make(map[string][]byte)
-	return nil
+	return c.save()
 }
 
-func (c *Client) setIDKey(key []byte) error {
+// SetIDKey replaces the current ID key with a new one
+func (c *Client) SetIDKey(key []byte) error {
 	c.Key = key
-	return nil
+	return c.save()
 }
 
-func (c *Client) setTopicKey(key, topichash []byte) error {
+// SetTopicKey adds a key to the given topic hash, erasing any previous entry
+func (c *Client) SetTopicKey(key, topichash []byte) error {
 	c.Topickeys[string(topichash)] = key
-	return nil
+	return c.save()
 }

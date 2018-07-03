@@ -18,21 +18,19 @@
 * C2 DB with topics instead of topichashes (revise specs)
 * single db mode with data type signalling
 * yaml config using https://github.com/spf13/viper, see flaki examples
+* basic http server
+* finish client persistence storage (write to disk every change)
 
 # WIP
 
-* http server
-* REST endpoints for frontend, https://github.com/cloudtrust/flaki-service/blob/1.2/cmd/flakid.go#L535
-* finish client persistence storage (write to disk every change)
+* REST endpoints for frontend
 
 # TODO
 
 * generate test vectors to encrypt() and protect()
-* test client encryption/decryption
-* structure as https://github.com/prometheus/prometheus?
+* test client encryption/decryption in demoapp
 * make diagram using https://draw.io/
 
-* make config common to all apps
 * moar tests of dbops
 * interactive CLI with https://github.com/manifoldco/promptui
 * fine-tune MQTT client options
@@ -45,6 +43,7 @@
 
 * monitoring of all topics' messages (c2monitor service)
 * secure grpc: encrypt + auth
+* https + auth
 * binary packaging
     - binary in /opt/e4/, db in /var/lib/e4/db/
     - https://stackoverflow.com/a/29600086
