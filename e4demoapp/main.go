@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"log"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	e4 "teserakt/e4client"
@@ -28,7 +29,7 @@ import (
 const (
 	E4IdAlias  = "testid"
 	E4Pwd      = "testpwd"
-	E4FilePath = "./"
+	E4FilePath = "./client.e4"
 )
 
 /*
@@ -94,9 +95,11 @@ func main() {
 		opts.SetStore(MQTT.NewFileStore(*store))
 	}
 
+	log.SetPrefix("e4demoapp\t")
+
 	// E4: creating a fresh client, rather than loading from disk
 	e4Client := e4.NewClientPretty(E4IdAlias, E4Pwd, E4FilePath)
-	fmt.Printf("E4 client created with id %s\n", hex.EncodeToString(e4Client.Id))
+	fmt.Printf("E4 client created with id %s\n", hex.EncodeToString(e4Client.ID))
 
 	if *action == "pub" {
 		client := MQTT.NewClient(opts)
@@ -148,19 +151,19 @@ func main() {
 			if incoming[0] == e4Client.ReceivingTopic {
 				cmd, err := e4Client.ProcessCommand([]byte(incoming[1]))
 				if err != nil {
-					fmt.Printf("E4 error in ProcessCommand: %s", err)
+					log.Printf("E4 error in ProcessCommand: %s", err)
 				} else {
-					fmt.Printf("RECEIVED E4 COMMAND: %s\n", cmd)
+					log.Printf("RECEIVED E4 COMMAND: %s\n", cmd)
 				}
 			} else {
 				// E4: attempt to decrypt
 				message, err := e4Client.Unprotect([]byte(incoming[1]), incoming[0])
 				if err == nil {
-					fmt.Printf("RECEIVED (E4-protected) TOPIC: %s MESSAGE: %s\n", incoming[0], message)
-				} else if err == e4.E4errTopicKeyNotFound {
-					fmt.Printf("RECEIVED (NOT E4-protected) TOPIC: %s MESSAGE: %s\n", incoming[0], incoming[1])
+					log.Printf("RECEIVED (E4-protected) TOPIC: %s MESSAGE: %s\n", incoming[0], message)
+				} else if err == e4.ErrTopicKeyNotFound {
+					log.Printf("RECEIVED (NOT E4-protected) TOPIC: %s MESSAGE: %s\n", incoming[0], incoming[1])
 				} else {
-					fmt.Printf("E4 error: %s", err)
+					log.Printf("E4 error: %s", err)
 				}
 			}
 			receiveCount++

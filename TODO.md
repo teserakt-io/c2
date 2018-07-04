@@ -21,10 +21,11 @@
 * basic http server
 * finish client persistence storage (write to disk every change)
 * generate test vectors for encrypt() 
+* moar tests of e4 ops
+* refactor ops: make interface agnostic, with wrappers for gRPC and HTTP
 
 # WIP
 
-* refactor ops: make interface agnostic, with wrappers for gRPC and HTTP
 * REST endpoints for frontend
     - GET all topics
     - GET all ids
@@ -33,9 +34,8 @@
 # TODO
 
 * test client encryption/decryption in demoapp
-* make diagram using https://draw.io/
 
-* moar tests of dbops
+* make diagram using https://draw.io/
 * interactive CLI with https://github.com/manifoldco/promptui
 * fine-tune MQTT client options
 

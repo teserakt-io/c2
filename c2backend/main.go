@@ -126,19 +126,19 @@ func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, e
 	case pb.C2Request_NEW_CLIENT:
 		return s.gRPCnewClient(in)
 	case pb.C2Request_REMOVE_CLIENT:
-		return s.removeClient(in)
+		return s.gRPCremoveClient(in)
 	case pb.C2Request_NEW_TOPIC_CLIENT:
-		return s.newTopicClient(in)
+		return s.gRPCnewTopicClient(in)
 	case pb.C2Request_REMOVE_TOPIC_CLIENT:
-		return s.removeTopicClient(in)
+		return s.gRPCremoveTopicClient(in)
 	case pb.C2Request_RESET_CLIENT:
-		return s.resetClient(in)
+		return s.gRPCresetClient(in)
 	case pb.C2Request_NEW_TOPIC:
-		return s.newTopic(in)
+		return s.gRPCnewTopic(in)
 	case pb.C2Request_REMOVE_TOPIC:
-		return s.removeTopicClient(in)
+		return s.gRPCremoveTopic(in)
 	case pb.C2Request_NEW_CLIENT_KEY:
-		return s.newClientKey(in)
+		return s.gRPCnewClientKey(in)
 	}
 	return &pb.C2Response{Success: false, Err: "unknown command"}, nil
 }

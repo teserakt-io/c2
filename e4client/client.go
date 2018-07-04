@@ -47,6 +47,8 @@ func NewClient(id, key []byte, filePath string) *Client {
 		ReceivingTopic: receivingTopic,
 	}
 
+	log.SetPrefix("e4client\t")
+
 	return c
 }
 
