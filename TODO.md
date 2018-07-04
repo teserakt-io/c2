@@ -20,14 +20,15 @@
 * yaml config using https://github.com/spf13/viper, see flaki examples
 * basic http server
 * finish client persistence storage (write to disk every change)
+* generate test vectors for encrypt() 
 
 # WIP
 
 * REST endpoints for frontend
+* 512b -> 256b key, cf mjos suggestion
 
 # TODO
 
-* generate test vectors to encrypt() and protect()
 * test client encryption/decryption in demoapp
 * make diagram using https://draw.io/
 

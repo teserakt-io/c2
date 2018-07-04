@@ -8,44 +8,6 @@ import (
 	e4 "teserakt/e4common"
 )
 
-// helper to check inputs' sanity
-func checkRequest(in *pb.C2Request, needID, needKey, needTopic bool) bool {
-	if needID {
-		if !e4.IsValidID(in.Id) {
-			log.Print("invalid id: ", hex.EncodeToString(in.Key))
-			return false
-		}
-	} else {
-		if in.Id != nil {
-			log.Print("unexpected id: ", hex.EncodeToString(in.Key))
-			return false
-		}
-	}
-	if needKey {
-		if !e4.IsValidKey(in.Key) {
-			log.Print("invalid key")
-			return false
-		}
-	} else {
-		if in.Key != nil {
-			log.Print("unexpected key")
-			return false
-		}
-	}
-	if needTopic {
-		if !e4.IsValidTopic(in.Topic) {
-			log.Printf("invalid topic: %s", in.Topic)
-			return false
-		}
-	} else {
-		if in.Topic != "" {
-			log.Printf("unexpected topic: %s", in.Topic)
-			return false
-		}
-	}
-	return true
-}
-
 // local
 func (s *C2) newClient(in *pb.C2Request) (*pb.C2Response, error) {
 
@@ -133,6 +95,7 @@ func (s *C2) removeTopicClient(in *pb.C2Request) (*pb.C2Response, error) {
 	return &pb.C2Response{Success: true, Err: ""}, nil
 }
 
+// remote
 func (s *C2) resetClient(in *pb.C2Request) (*pb.C2Response, error) {
 
 	if !checkRequest(in, true, false, false) {
@@ -167,6 +130,7 @@ func (s *C2) newTopic(in *pb.C2Request) (*pb.C2Response, error) {
 	return &pb.C2Response{Success: true, Err: ""}, nil
 }
 
+// local
 func (s *C2) removeTopic(in *pb.C2Request) (*pb.C2Response, error) {
 
 	if !checkRequest(in, true, false, true) {
@@ -183,6 +147,7 @@ func (s *C2) removeTopic(in *pb.C2Request) (*pb.C2Response, error) {
 	return &pb.C2Response{Success: true, Err: ""}, nil
 }
 
+// remote
 func (s *C2) newClientKey(in *pb.C2Request) (*pb.C2Response, error) {
 
 	if !checkRequest(in, true, false, false) {
@@ -205,4 +170,42 @@ func (s *C2) newClientKey(in *pb.C2Request) (*pb.C2Response, error) {
 	}
 	log.Printf("updated key for client %s", hex.EncodeToString(in.Id))
 	return &pb.C2Response{Success: true, Err: ""}, nil
+}
+
+// helper to check inputs' sanity
+func checkRequest(in *pb.C2Request, needID, needKey, needTopic bool) bool {
+	if needID {
+		if !e4.IsValidID(in.Id) {
+			log.Print("invalid id: ", hex.EncodeToString(in.Key))
+			return false
+		}
+	} else {
+		if in.Id != nil {
+			log.Print("unexpected id: ", hex.EncodeToString(in.Key))
+			return false
+		}
+	}
+	if needKey {
+		if !e4.IsValidKey(in.Key) {
+			log.Print("invalid key")
+			return false
+		}
+	} else {
+		if in.Key != nil {
+			log.Print("unexpected key")
+			return false
+		}
+	}
+	if needTopic {
+		if !e4.IsValidTopic(in.Topic) {
+			log.Printf("invalid topic: %s", in.Topic)
+			return false
+		}
+	} else {
+		if in.Topic != "" {
+			log.Printf("unexpected topic: %s", in.Topic)
+			return false
+		}
+	}
+	return true
 }

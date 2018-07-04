@@ -24,7 +24,6 @@ cd c2backend
 ./c2backend &
 BEPID=$!
 sleep 3
-echo $BEPID
 
 trap terminate INT
 

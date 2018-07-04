@@ -105,10 +105,10 @@ func main() {
 	go func() {
 		route := mux.NewRouter()
 
-		route.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		route.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			resp := Response{w}
 			resp.Text(http.StatusNotFound, "Not found")
-		}))
+		})
 
 		log.Print("starting http server")
 		errc <- http.ListenAndServe(httpAddr, route)
