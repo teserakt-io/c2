@@ -24,7 +24,10 @@
 
 # WIP
 
+* refactor ops: make interface agnostic, with wrappers for gRPC and HTTP
 * REST endpoints for frontend
+    - GET all topics
+    - GET all ids
 * 512b -> 256b key, cf mjos suggestion
 
 # TODO

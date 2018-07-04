@@ -124,7 +124,7 @@ func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, e
 
 	switch in.Command {
 	case pb.C2Request_NEW_CLIENT:
-		return s.newClient(in)
+		return s.gRPCnewClient(in)
 	case pb.C2Request_REMOVE_CLIENT:
 		return s.removeClient(in)
 	case pb.C2Request_NEW_TOPIC_CLIENT:
@@ -173,3 +173,20 @@ func (r *Response) Text(code int, body string) {
 
 	io.WriteString(r, fmt.Sprintf("%s\n", body))
 }
+
+/*
+// filter handlers by allowed method, as in https://www.codementor.io/codehakase/building-a-restful-api-with-golang-a6yivzqdo
+func handleNewClient(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id := params["id"]
+	key := params["key"]
+}
+
+func handleRemoveClient(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func handleNewTopicClient(w http.ResponseWriter, r *http.Request) {
+
+}
+*/

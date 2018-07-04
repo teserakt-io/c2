@@ -11,7 +11,7 @@ Serves HTTP on TCP 8888, receiving requests to the following endpoints:
 
 * DELETE /e4/client/{id}: `remove_client(id)`
 
-* PUT /e4/client/{id}/key/{key}: `new_topic_client(id, topic)`
+* PUT /e4/client/{id}/topic/{topic}: `new_topic_client(id, topic)`
 
 * DELETE /e4/client/{id}/topic/{topic}: `remove_topic_client(id, topic)`
 
@@ -21,4 +21,4 @@ Serves HTTP on TCP 8888, receiving requests to the following endpoints:
 
 * DELETE /e4/topic/{topic}: `remove_topic(topic)` 
 
-* PUT /e4/client/{id}/topic/{topic}: `new_client_key(id)` 
+* PUT /e4/client/{id}/: `new_client_key(id)` 

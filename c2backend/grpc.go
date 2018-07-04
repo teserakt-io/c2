@@ -9,18 +9,17 @@ import (
 )
 
 // local
-func (s *C2) newClient(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCnewClient(in *pb.C2Request) (*pb.C2Response, error) {
 
 	if !checkRequest(in, true, true, false) {
 		return &pb.C2Response{Success: false, Err: "invalid request"}, nil
 	}
 
-	err := s.insertIDKey(in.Id, in.Key)
+	err := s.newClient(in.Id, in.Key)
 	if err != nil {
-		log.Print(err)
-		return &pb.C2Response{Success: false, Err: "db update failed"}, nil
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
 	}
-	log.Printf("added client %s", hex.EncodeToString(in.Id))
+
 	return &pb.C2Response{Success: true, Err: ""}, nil
 }
 
