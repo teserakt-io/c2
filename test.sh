@@ -3,15 +3,10 @@
 rm -rf /tmp/e4/db
 mkdir -p /tmp/e4/db
 
-# lint
-gofmt -w .
-golint c2backend c2cli c2proto e4client e4common e4demoapp
-
 # sync workspace for dev outside GOPATH
 cp -p -r c2proto  $GOPATH/src/teserakt
 cp -p -r e4common $GOPATH/src/teserakt
 cp -p -r e4client $GOPATH/src/teserakt
-
 
 echo "building c2backend.."
 cd c2backend && go build && cd ..

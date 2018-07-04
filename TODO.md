@@ -44,7 +44,7 @@
 # FUTURE
 
 * monitoring/tracing (OpenCensus, Jaeger)
-
+* go-kit? https://github.com/go-kit/kit
 * monitoring of all topics' messages (c2monitor service)
 * secure grpc: encrypt + auth
 * https + auth

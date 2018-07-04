@@ -7,6 +7,8 @@ messages as per [c2.proto](https://gitlab.com/Teserakt/e4go/tree/master/c2proto)
 
 Serves HTTP on TCP 8888, receiving requests to the following endpoints:
 
+E4 C2 API:
+
 * POST /e4/client/{id}/key/{key}: `new_client(id, key)`
 
 * DELETE /e4/client/{id}: `remove_client(id)`
@@ -22,3 +24,13 @@ Serves HTTP on TCP 8888, receiving requests to the following endpoints:
 * DELETE /e4/topic/{topic}: `remove_topic(topic)` 
 
 * PUT /e4/client/{id}/: `new_client_key(id)` 
+
+Other endpoints:
+
+* GET /e4/topic/: lists of all topics
+
+* GET /e4/client/: lists all client ids
+
+* GET /e4/client/{id}: lists the topics support by id
+
+* GET /e4/topic/{topic}: lists the ids supporting topic

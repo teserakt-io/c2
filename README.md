@@ -34,6 +34,8 @@ https://peter.bourgon.org/go-best-practices-2016/
 
 https://peter.bourgon.org/go-in-production/
 
+https://peter.bourgon.org/go-for-industrial-programming/
+
 https://12factor.net/
 
 https://github.com/bahlo/go-styleguide/blob/master/README.md
