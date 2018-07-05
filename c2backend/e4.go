@@ -121,6 +121,10 @@ func (s *C2) newClientKey(id []byte) error {
 
 	// first send to the client, and only update locally afterwards
 	payload, err := s.CreateAndProtectForID(e4.SetIDKey, nil, key, id)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
 	err = s.sendToClient(id, payload)
 	if err != nil {
 		log.Print(err)

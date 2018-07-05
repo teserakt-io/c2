@@ -55,4 +55,14 @@ printf "\n# resetting client\n"
 
 sleep 1
 
+printf "\n# changing client key\n"
+./c2cli -c nck -id "testid"
+
+sleep 1
+
+printf "\n# adding topic to client\n"
+./c2cli -c ntc -topic "atopic" -id "testid"
+
+sleep 1
+
 terminate

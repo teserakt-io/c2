@@ -101,7 +101,7 @@ func main() {
 		errc <- s.Serve(lis)
 	}()
 
-	// create grpc server
+	// create http server
 	go func() {
 		route := mux.NewRouter()
 
@@ -171,7 +171,10 @@ func (r *Response) Text(code int, body string) {
 	r.Header().Set("Content-Type", "text/plain")
 	r.WriteHeader(code)
 
-	io.WriteString(r, fmt.Sprintf("%s\n", body))
+	_, err := io.WriteString(r, fmt.Sprintf("%s\n", body))
+	if err != nil {
+		log.Printf(err.Error())
+	}
 }
 
 /*

@@ -23,6 +23,7 @@
 * generate test vectors for encrypt() 
 * moar tests of e4 ops
 * refactor ops: make interface agnostic, with wrappers for gRPC and HTTP
+* demo client command processing
 
 # WIP
 
@@ -30,6 +31,8 @@
     - GET all topics
     - GET all ids
 * 512b -> 256b key, cf mjos suggestion
+* get VPS
+* fix specs (key size)
 
 # TODO
 

@@ -18,8 +18,8 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"os"
 	"log"
+	"os"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	e4 "teserakt/e4client"
@@ -111,17 +111,17 @@ func main() {
 			// E4: if topic key available, encrypt payload
 			protected, err := e4Client.Protect([]byte(*payload), *topic)
 			if err == nil {
-				fmt.Println("---- doing publish (E4-protected) ----")
+				log.Println("---- doing publish (E4-protected) ----")
 				token := client.Publish(*topic, byte(*qos), false, protected)
 				token.Wait()
 			} else if err == e4.ErrTopicKeyNotFound {
 				// E4: if topic key not found, publish unencrypted
-				fmt.Println("---- doing publish (NOT E4-protected) ----")
+				log.Println("---- doing publish (NOT E4-protected) ----")
 				token := client.Publish(*topic, byte(*qos), false, *payload)
 				token.Wait()
 			} else {
 				// another error occured, don't publish
-				fmt.Println("E4 error: %s", err)
+				log.Printf("E4 error: %s", err)
 			}
 		}
 
@@ -151,7 +151,7 @@ func main() {
 			if incoming[0] == e4Client.ReceivingTopic {
 				cmd, err := e4Client.ProcessCommand([]byte(incoming[1]))
 				if err != nil {
-					log.Printf("E4 error in ProcessCommand: %s", err)
+					log.Printf("E4 error in ProcessCommand: %s\n", err)
 				} else {
 					log.Printf("RECEIVED E4 COMMAND: %s\n", cmd)
 				}
