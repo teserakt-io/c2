@@ -23,7 +23,7 @@ E4 C2 API:
 
 * DELETE /e4/topic/{topic}: `remove_topic(topic)` 
 
-* PUT /e4/client/{id}/: `new_client_key(id)` 
+* PATCH /e4/client/{id}/: `new_client_key(id)` 
 
 Other endpoints:
 

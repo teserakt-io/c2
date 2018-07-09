@@ -30,13 +30,13 @@
 * REST endpoints for frontend
     - GET all topics
     - GET all ids
-* 512b -> 256b key, cf mjos suggestion
-* get VPS
-* fix specs (key size)
 
 # TODO
 
+* let C2/c2cli support sending of protect messages like another client
+* fix specs (key size)
 * test client encryption/decryption in demoapp
+* get VPS
 
 * make diagram using https://draw.io/
 * interactive CLI with https://github.com/manifoldco/promptui
@@ -46,6 +46,7 @@
 
 # FUTURE
 
+* 512b -> 256b key, cf mjos suggestion
 * monitoring/tracing (OpenCensus, Jaeger)
 * go-kit? https://github.com/go-kit/kit
 * monitoring of all topics' messages (c2monitor service)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -107,8 +106,17 @@ func main() {
 
 		route.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			resp := Response{w}
-			resp.Text(http.StatusNotFound, "Not found")
+			resp.Text(http.StatusNotFound, "Nothing here")
 		})
+
+		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/key/{key:[0-9a-f]{128}}", c2.handleNewClient).Methods("POST")
+		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", c2.handleRemoveClient).Methods("DELETE")
+		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topic/{topic}", c2.handleNewTopicClient).Methods("PUT")
+		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topic/{topic}", c2.handleRemoveTopicClient).Methods("DELETE")
+		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", c2.handleResetClient).Methods("PUT")
+		route.HandleFunc("/e4/topic/{topic}", c2.handleNewTopic).Methods("POST")
+		route.HandleFunc("/e4/topic/{topic}", c2.handleRemoveTopic).Methods("DELETE")
+		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", c2.handleNewClientKey).Methods("PATCH")
 
 		log.Print("starting http server")
 		errc <- http.ListenAndServe(httpAddr, route)
@@ -161,35 +169,3 @@ func config() *viper.Viper {
 	return v
 }
 
-// Response ...
-type Response struct {
-	http.ResponseWriter
-}
-
-// Text is a helper to write raw text as an HTTP response
-func (r *Response) Text(code int, body string) {
-	r.Header().Set("Content-Type", "text/plain")
-	r.WriteHeader(code)
-
-	_, err := io.WriteString(r, fmt.Sprintf("%s\n", body))
-	if err != nil {
-		log.Printf(err.Error())
-	}
-}
-
-/*
-// filter handlers by allowed method, as in https://www.codementor.io/codehakase/building-a-restful-api-with-golang-a6yivzqdo
-func handleNewClient(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id := params["id"]
-	key := params["key"]
-}
-
-func handleRemoveClient(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func handleNewTopicClient(w http.ResponseWriter, r *http.Request) {
-
-}
-*/

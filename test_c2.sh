@@ -29,6 +29,8 @@ function terminate() {
 
 cd ../c2cli
 
+printf "\ntesting gRPC interface\n"
+
 printf "\n# newClient\n"
 ./c2cli -c nc -id "testid" -pwd "testpwd"
 
@@ -58,6 +60,21 @@ printf "\n# newTopicClient: add 'anothertopic' to 'anotherclient'\n"
 
 printf "\n# removeTopicClient: remove 'anothertopic' from 'anotherclient'\n"
 ./c2cli -c rtc -id "anotherclient" -topic "anothertopic"
+
+
+# do the same with http interface
+printf "\ntesting HTTP interface\n"
+
+C2HTTP="localhost:8888"
+
+CLIENT1="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+CLIENT1KEY="fd11d03c1bd26d2a643734dfabfe9a0e6f1251e6fec1bd44670b958f82128e886941570631739bd14e1fd3174737703fe800e721ec78c115cf6976389333b05f"
+
+CLIENT2="2222222222222222222222222222222222222222222222222222222222222222"
+CLIENT1KEY="ab11d03c1bd26d2a643734dfabfe9a0e6f1251e6fec1bd44670b958f82128e886941570631739bd14e1fd3174737703fe800e721ec78c115cf6976389333b05f"
+
+printf "\nadding new client\n"
+curl $C2HTTP/e4/client/$CLIENT1/key/$CLIENT1KEY -X POST
 
 printf "\nterminating.."
 terminate

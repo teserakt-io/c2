@@ -14,10 +14,6 @@ import (
 	e4 "teserakt/e4common"
 )
 
-const (
-	address = "localhost:5555"
-)
-
 func sendCommand(client pb.C2Client, req *pb.C2Request) {
 	resp, err := client.C2Command(context.Background(), req)
 	if err != nil {
@@ -40,6 +36,7 @@ func main() {
 	keyhex := flag.String("key", "", "a 512-bit key, an hex string")
 	pwd := flag.String("pwd", "", "a passphrase to derive a key from")
 	topic := flag.String("topic", "", "a topic, as UTF-8 string")
+	c2 := flag.String("c2", "localhost:5555", "C2 host address")
 
 	flag.Parse()
 
@@ -100,7 +97,7 @@ func main() {
 		log.Fatal("unknown command")
 	}
 
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	conn, err := grpc.Dial(*c2, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

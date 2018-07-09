@@ -13,7 +13,7 @@ const (
 	TimestampLen    = 8
 	MaxTopicLen     = 512
 	MaxSecondsDelay = 60 * 10
-	idTopicPrefix   = "E4/"
+	idTopicPrefix   = "e4/"
 )
 
 // Command is a command sent by C2 to a client.

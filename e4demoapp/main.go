@@ -153,15 +153,15 @@ func main() {
 				if err != nil {
 					log.Printf("E4 error in ProcessCommand: %s\n", err)
 				} else {
-					log.Printf("RECEIVED E4 COMMAND: %s\n", cmd)
+					log.Printf("received command %s\n", cmd)
 				}
 			} else {
 				// E4: attempt to decrypt
 				message, err := e4Client.Unprotect([]byte(incoming[1]), incoming[0])
 				if err == nil {
-					log.Printf("RECEIVED (E4-protected) TOPIC: %s MESSAGE: %s\n", incoming[0], message)
+					log.Printf("received (E4-protected) on topic: %s: %s\n", incoming[0], message)
 				} else if err == e4.ErrTopicKeyNotFound {
-					log.Printf("RECEIVED (NOT E4-protected) TOPIC: %s MESSAGE: %s\n", incoming[0], incoming[1])
+					log.Printf("received (NOT E4-protected) on topic: %s: %s\n", incoming[0], incoming[1])
 				} else {
 					log.Printf("E4 error: %s", err)
 				}
