@@ -118,6 +118,11 @@ func main() {
 		route.HandleFunc("/e4/topic/{topic}", c2.handleRemoveTopic).Methods("DELETE")
 		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", c2.handleNewClientKey).Methods("PATCH")
 
+		route.HandleFunc("/e4/topic", c2.handleGetTopics).Methods("GET")
+		route.HandleFunc("/e4/client", c2.handleGetClients).Methods("GET")
+		route.HandleFunc("/e4/client/{}/topic", c2.handleGetClientsTopics).Methods("GET")
+		route.HandleFunc("/e4/topic/{topic}/client", c2.handleGetTopicsClients).Methods("GET")
+
 		log.Print("starting http server")
 		errc <- http.ListenAndServe(httpAddr, route)
 	}()
@@ -168,4 +173,3 @@ func config() *viper.Viper {
 
 	return v
 }
-

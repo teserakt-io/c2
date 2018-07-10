@@ -1,17 +1,17 @@
 package main
 
 import (
-	"io"
+	"encoding/hex"
 	"fmt"
+	"github.com/gorilla/mux"
+	"io"
 	"log"
 	"net/http"
-	"encoding/hex"
-	"github.com/gorilla/mux"
 
 	e4 "teserakt/e4common"
 )
 
-func (s *C2)handleNewClient(w http.ResponseWriter, r *http.Request) {
+func (s *C2) handleNewClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -30,13 +30,13 @@ func (s *C2)handleNewClient(w http.ResponseWriter, r *http.Request) {
 	ret := s.newClient(id, key)
 	if ret != nil {
 		resp.Text(http.StatusNotFound, "newClient failed")
-		return 
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2)handleRemoveClient(w http.ResponseWriter, r *http.Request) {
+func (s *C2) handleRemoveClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -49,13 +49,13 @@ func (s *C2)handleRemoveClient(w http.ResponseWriter, r *http.Request) {
 	ret := s.removeClient(id)
 	if ret != nil {
 		resp.Text(http.StatusNotFound, "removeClient failed")
-		return 
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2)handleNewTopicClient(w http.ResponseWriter, r *http.Request) {
+func (s *C2) handleNewTopicClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -74,14 +74,13 @@ func (s *C2)handleNewTopicClient(w http.ResponseWriter, r *http.Request) {
 	ret := s.newTopicClient(id, topic)
 	if ret != nil {
 		resp.Text(http.StatusNotFound, "newTopicClient failed")
-		return 
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-
-func (s *C2)handleRemoveTopicClient(w http.ResponseWriter, r *http.Request) {
+func (s *C2) handleRemoveTopicClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -100,13 +99,13 @@ func (s *C2)handleRemoveTopicClient(w http.ResponseWriter, r *http.Request) {
 	ret := s.removeTopicClient(id, topic)
 	if ret != nil {
 		resp.Text(http.StatusNotFound, "remoteTopicClient failed")
-		return 
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2)handleResetClient(w http.ResponseWriter, r *http.Request) {
+func (s *C2) handleResetClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -119,13 +118,13 @@ func (s *C2)handleResetClient(w http.ResponseWriter, r *http.Request) {
 	ret := s.resetClient(id)
 	if ret != nil {
 		resp.Text(http.StatusNotFound, "resetClient failed")
-		return 
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2)handleNewTopic(w http.ResponseWriter, r *http.Request) {
+func (s *C2) handleNewTopic(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -138,13 +137,13 @@ func (s *C2)handleNewTopic(w http.ResponseWriter, r *http.Request) {
 	ret := s.newTopic(topic)
 	if ret != nil {
 		resp.Text(http.StatusNotFound, "newTopic failed")
-		return 
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2)handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
+func (s *C2) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -157,13 +156,13 @@ func (s *C2)handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
 	ret := s.removeTopic(topic)
 	if ret != nil {
 		resp.Text(http.StatusNotFound, "removeTopic failed")
-		return 
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2)handleNewClientKey(w http.ResponseWriter, r *http.Request) {
+func (s *C2) handleNewClientKey(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -176,11 +175,19 @@ func (s *C2)handleNewClientKey(w http.ResponseWriter, r *http.Request) {
 	ret := s.newClientKey(id)
 	if ret != nil {
 		resp.Text(http.StatusNotFound, "newClientKey failed")
-		return 
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
+
+
+func (s *C2) handleGetTopics(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// get list of ids in 
+}
+
 
 // Response is a helper struct to create an http response
 type Response struct {

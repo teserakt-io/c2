@@ -1,7 +1,6 @@
 # Demo setup
 
 
-
 ## 1. Have an MQTT broker running
 
 For local broker, e.g. on macOS:

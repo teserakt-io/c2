@@ -24,34 +24,30 @@
 * moar tests of e4 ops
 * refactor ops: make interface agnostic, with wrappers for gRPC and HTTP
 * demo client command processing
+* fix specs (key size)
+* REST endpoints for frontend
 
 # WIP
 
-* REST endpoints for frontend
-    - GET all topics
-    - GET all ids
+* GET endpoints
+* set local GOPATH
+* use dep
 
 # TODO
 
 * let C2/c2cli support sending of protect messages like another client
-* fix specs (key size)
 * test client encryption/decryption in demoapp
-* get VPS
 
 * make diagram using https://draw.io/
 * interactive CLI with https://github.com/manifoldco/promptui
 * fine-tune MQTT client options
 
-* QA: golint, go vet, https://github.com/golang/go/wiki/CodeReviewComments
-
 # FUTURE
 
 * 512b -> 256b key, cf mjos suggestion
-* monitoring/tracing (OpenCensus, Jaeger)
-* go-kit? https://github.com/go-kit/kit
+* middleware for monitoring/tracing (Jaeger, Sentry, etc.), see go-kit
 * monitoring of all topics' messages (c2monitor service)
-* secure grpc: encrypt + auth
-* https + auth
+* secure grpc + https
 * binary packaging
     - binary in /opt/e4/, db in /var/lib/e4/db/
     - https://stackoverflow.com/a/29600086
