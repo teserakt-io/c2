@@ -1,8 +1,8 @@
 package main
 
 import (
-	"errors"
 	"encoding/hex"
+	"errors"
 	"log"
 
 	e4 "teserakt/e4common"

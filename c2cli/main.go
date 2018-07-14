@@ -3,14 +3,14 @@ package main
 import (
 	"encoding/hex"
 	"errors"
-	"strings"
 	"log"
+	"strings"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/spf13/pflag"
 	"github.com/abiosoft/ishell"
+	"github.com/spf13/pflag"
 
 	pb "teserakt/c2proto"
 	e4 "teserakt/e4common"
@@ -49,7 +49,7 @@ func main() {
 		shell := ishell.New()
 		shell.Println("Welcome to E4 C2CLI")
 
-	    shell.AddCmd(&ishell.Cmd{
+		shell.AddCmd(&ishell.Cmd{
 			Name: "nc",
 			Help: "new client (nc client pwd)",
 			Func: func(c *ishell.Context) {
@@ -66,7 +66,7 @@ func main() {
 					c.Println("command sent")
 				}
 			},
-		})	
+		})
 
 		shell.AddCmd(&ishell.Cmd{
 			Name: "rc",
@@ -177,7 +177,7 @@ func main() {
 				}
 			},
 		})
-	
+
 		shell.AddCmd(&ishell.Cmd{
 			Name: "nck",
 			Help: "new client key (nck client)",
@@ -255,7 +255,6 @@ func main() {
 
 }
 
-
 func commandToPbCode(command string) (pb.C2Request_Command, error) {
 
 	switch command {
@@ -290,7 +289,7 @@ func sendCommand(client pb.C2Client, commandcode pb.C2Request_Command, id, key [
 		Id:      id,
 		Key:     key,
 		Topic:   topic,
-		Msg: 	msg,
+		Msg:     msg,
 	}
 
 	resp, err := client.C2Command(context.Background(), req)

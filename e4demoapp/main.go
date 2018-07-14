@@ -146,7 +146,7 @@ func main() {
 		}
 
 		// E4/ subscribe to receiving topic
-		if token := client.Subscribe(e4Client.ReceivingTopic, byte(*qos), nil); token.Wait() && token.Error() != nil {
+		if token := client.Subscribe(e4Client.ReceivingTopic, byte(2), nil); token.Wait() && token.Error() != nil {
 			fmt.Println(token.Error())
 			os.Exit(1)
 		}

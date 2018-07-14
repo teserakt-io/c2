@@ -203,7 +203,6 @@ func (s *C2) handleGetTopics(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&topics)
 }
 
-
 // Response is a helper struct to create an http response
 type Response struct {
 	http.ResponseWriter

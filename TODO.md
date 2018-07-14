@@ -27,29 +27,26 @@
 * fix specs (key size)
 * REST endpoints for frontend
 * GET endpoints
-
-# WIP
-
 * let C2/c2cli support sending of protect messages like another client
     - tweak c2cli to send encrypted messages to clients
     - create new pbRequest type
     - c2cli command "send client topic message"
     - c2backend: handler to send message, needs e4common
-    - create http handler for sendmessage
+* interactive CLI with ishell
 
-* demoapp load persistent storage; subscribe several topics?
+# WIP
+
+* http handler for sendMessage
 * set local GOPATH layout
 * use dep
+* fix lints
+* run broker on fargo
 
 # TODO
 
-
-* use same syntax as e4cli
-* test client encryption/decryption in demoapp
 * getIDs(topic), getTopics(id)
 
-* make diagram using https://draw.io/
-* interactive CLI with https://github.com/manifoldco/promptui
+* make arch diagram using https://draw.io/
 * fine-tune MQTT client options
 
 # FUTURE
