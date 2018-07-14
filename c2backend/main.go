@@ -120,8 +120,8 @@ func main() {
 
 		route.HandleFunc("/e4/topic", c2.handleGetTopics).Methods("GET")
 		route.HandleFunc("/e4/client", c2.handleGetClients).Methods("GET")
-		route.HandleFunc("/e4/client/{}/topic", c2.handleGetClientsTopics).Methods("GET")
-		route.HandleFunc("/e4/topic/{topic}/client", c2.handleGetTopicsClients).Methods("GET")
+		//route.HandleFunc("/e4/client/{}/topic", c2.handleGetClientsTopics).Methods("GET")
+		//route.HandleFunc("/e4/topic/{topic}/client", c2.handleGetTopicsClients).Methods("GET")
 
 		log.Print("starting http server")
 		errc <- http.ListenAndServe(httpAddr, route)

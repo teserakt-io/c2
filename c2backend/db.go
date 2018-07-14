@@ -77,9 +77,9 @@ func (s *C2) dbGetValue(dbkey []byte) ([]byte, error) {
 }
 
 // TODO: list ID keys
-func (s *C2) dbGetIDKeysHex() ([]string, error) {
-
-}
+//func (s *C2) dbGetIDKeysHex() ([]string, error) {
+//
+//}
 
 func (s *C2) countIDKeys() (int, error) {
 	return s.dbCountKeys(IDByte)

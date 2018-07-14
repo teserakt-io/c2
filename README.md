@@ -12,7 +12,7 @@ go get golang.org/x/crypto/sha3
 go get google.golang.org/grpc
 ```
 
-Test by running `test.sh`.
+Test by running `test_client.sh`.
 
 # Components
 

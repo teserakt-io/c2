@@ -30,11 +30,12 @@
 # WIP
 
 * GET endpoints
-* set local GOPATH
+* set local GOPATH layout
 * use dep
 
 # TODO
 
+* use same syntax as e4cli
 * let C2/c2cli support sending of protect messages like another client
 * test client encryption/decryption in demoapp
 

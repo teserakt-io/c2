@@ -4,9 +4,10 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
+	"time"
+
 	"github.com/miscreant/miscreant/go"
 	"golang.org/x/crypto/sha3"
-	"time"
 )
 
 // HashTopic creates a topic hash from a topic string.
