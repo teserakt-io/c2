@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 
 	e4 "teserakt/e4common"
 )
@@ -183,14 +185,22 @@ func (s *C2) handleNewClientKey(w http.ResponseWriter, r *http.Request) {
 
 func (s *C2) handleGetClients(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	ids, err := s.dbGetIDListHex()
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+	}
 
-	// get list of ids in 
+	json.NewEncoder(w).Encode(&ids)
 }
 
 func (s *C2) handleGetTopics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	topics, err := s.dbGetTopicsList()
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+	}
 
-	// get list of ids in 
+	json.NewEncoder(w).Encode(&topics)
 }
 
 

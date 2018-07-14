@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/hex"
+
 	"github.com/dgraph-io/badger"
 )
 
@@ -76,10 +78,49 @@ func (s *C2) dbGetValue(dbkey []byte) ([]byte, error) {
 	return value, nil
 }
 
-// TODO: list ID keys
-//func (s *C2) dbGetIDKeysHex() ([]string, error) {
-//
-//}
+func (s *C2) dbGetIDListHex() ([]string, error) {
+	itOpts := badger.DefaultIteratorOptions
+	itOpts.PrefetchSize = 10
+	var ids []string
+	err := s.db.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(itOpts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			item := it.Item()
+			dbkey := item.Key()
+			if dbkey[0] == IDByte {
+				ids = append(ids, hex.EncodeToString(dbkey[1:]))
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
+func (s *C2) dbGetTopicsList() ([]string, error) {
+	itOpts := badger.DefaultIteratorOptions
+	itOpts.PrefetchSize = 10
+	var topics []string
+	err := s.db.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(itOpts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			item := it.Item()
+			dbkey := item.Key()
+			if dbkey[0] == TopicByte {
+				topics = append(topics, string(dbkey[1:]))
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return topics, nil
+}
 
 func (s *C2) countIDKeys() (int, error) {
 	return s.dbCountKeys(IDByte)
