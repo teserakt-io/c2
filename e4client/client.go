@@ -2,11 +2,10 @@ package e4client
 
 import (
 	"encoding/gob"
+	"encoding/hex"
 	"errors"
 	"log"
 	"os"
-
-	"golang.org/x/crypto/argon2"
 
 	e4 "teserakt/e4common"
 )
@@ -54,7 +53,7 @@ func NewClient(id, key []byte, filePath string) *Client {
 
 // NewClientPretty is like NewClient but takes an ID alias and a password, rather than raw values.
 func NewClientPretty(idalias, pwd, filePath string) *Client {
-	key := argon2.Key([]byte(pwd), nil, 1, 64*1024, 4, 64)
+	key := e4.HashPwd(pwd)
 	id := e4.HashIDAlias(idalias)
 	return NewClient(id, key, filePath)
 }
@@ -117,8 +116,11 @@ func (c *Client) Protect(payload []byte, topic string) ([]byte, error) {
 // Unprotect decrypts a protected payload using the key associated to the topic.
 func (c *Client) Unprotect(protected []byte, topic string) ([]byte, error) {
 	topichash := string(e4.HashTopic(topic))
+	log.Println("searching topic key for hash ", hex.EncodeToString(e4.HashTopic(topic)))
+	log.Println("topic was ", topic)
 	if key, ok := c.Topickeys[topichash]; ok {
 
+		log.Println("USING KEY ", hex.EncodeToString(key))
 		message, err := e4.Unprotect(protected, key)
 		if err != nil {
 			return nil, err
@@ -135,6 +137,8 @@ func (c *Client) ProcessCommand(protected []byte) (string, error) {
 		return "", err
 	}
 
+	log.Printf("PAYLOAD received (%d) %s", len(command), hex.EncodeToString(command))
+
 	cmd := e4.Command(command[0])
 	s := cmd.ToString()
 
@@ -144,6 +148,7 @@ func (c *Client) ProcessCommand(protected []byte) (string, error) {
 		if len(command) != e4.HashLen+1 {
 			return "", errors.New("invalid RemoveTopic argument")
 		}
+		log.Println("remove topic ", hex.EncodeToString(command[1:]))
 		return s, c.RemoveTopic(command[1:])
 
 	case e4.ResetTopics:
@@ -162,7 +167,8 @@ func (c *Client) ProcessCommand(protected []byte) (string, error) {
 		if len(command) != e4.KeyLen+e4.HashLen+1 {
 			return "", errors.New("invalid SetTopicKey argument")
 		}
-		return s, c.SetTopicKey(command[1:1+e4.HashLen], command[1+e4.HashLen:])
+		log.Println("setting topic key for hash ", hex.EncodeToString(command[1+e4.KeyLen:]))
+		return s, c.SetTopicKey(command[1:1+e4.KeyLen], command[1+e4.KeyLen:])
 
 	default:
 		return "", errors.New("invalid command")
@@ -194,5 +200,6 @@ func (c *Client) SetIDKey(key []byte) error {
 // SetTopicKey adds a key to the given topic hash, erasing any previous entry
 func (c *Client) SetTopicKey(key, topichash []byte) error {
 	c.Topickeys[string(topichash)] = key
+	log.Printf("setting key to %s", hex.EncodeToString(key))
 	return c.save()
 }

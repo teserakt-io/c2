@@ -26,18 +26,27 @@
 * demo client command processing
 * fix specs (key size)
 * REST endpoints for frontend
+* GET endpoints
 
 # WIP
 
-* GET endpoints
+* let C2/c2cli support sending of protect messages like another client
+    - tweak c2cli to send encrypted messages to clients
+    - create new pbRequest type
+    - c2cli command "send client topic message"
+    - c2backend: handler to send message, needs e4common
+    - create http handler for sendmessage
+
+* demoapp load persistent storage; subscribe several topics?
 * set local GOPATH layout
 * use dep
 
 # TODO
 
+
 * use same syntax as e4cli
-* let C2/c2cli support sending of protect messages like another client
 * test client encryption/decryption in demoapp
+* getIDs(topic), getTopics(id)
 
 * make diagram using https://draw.io/
 * interactive CLI with https://github.com/manifoldco/promptui

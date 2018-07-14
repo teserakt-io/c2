@@ -29,7 +29,7 @@ import (
 const (
 	E4IdAlias  = "testid"
 	E4Pwd      = "testpwd"
-	E4FilePath = "./client.e4"
+	E4FilePath = "./client.e4p"
 )
 
 /*
@@ -53,7 +53,7 @@ func main() {
 	broker := flag.String("broker", "tcp://test.mosquitto.org:1883", "The broker URI. ex: tcp://10.10.1.1:1883")
 	password := flag.String("password", "", "The password (optional)")
 	user := flag.String("user", "", "The User (optional)")
-	id := flag.String("id", "testgoid", "The ClientID (optional)")
+	id := flag.String("id", "testid", "The ClientID (optional)")
 	cleansess := flag.Bool("clean", false, "Set Clean Session (default false)")
 	qos := flag.Int("qos", 0, "The Quality of Service 0,1,2 (default 0)")
 	num := flag.Int("num", 1, "The number of messages to publish or subscribe (default 1)")
@@ -141,6 +141,12 @@ func main() {
 		}
 
 		if token := client.Subscribe(*topic, byte(*qos), nil); token.Wait() && token.Error() != nil {
+			fmt.Println(token.Error())
+			os.Exit(1)
+		}
+
+		// E4/ subscribe to receiving topic
+		if token := client.Subscribe(e4Client.ReceivingTopic, byte(*qos), nil); token.Wait() && token.Error() != nil {
 			fmt.Println(token.Error())
 			os.Exit(1)
 		}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/miscreant/miscreant/go"
+	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -20,6 +21,12 @@ func HashTopic(topic string) []byte {
 func HashIDAlias(idalias string) []byte {
 
 	return hashStuff([]byte(idalias))
+}
+
+// HashPwd hashes a password with Argon2
+func HashPwd(pwd string) []byte {
+
+	return argon2.Key([]byte(pwd), nil, 1, 64*1024, 4, 64)
 }
 
 func hashStuff(data []byte) []byte {

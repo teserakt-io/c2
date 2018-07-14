@@ -14,7 +14,7 @@ Broker will then run on localhost:1883.
 
 Backend and demo app will by default use test.mosquitto.org:1883.
 
-For a list of public brokers see https://github.com/mqtt/mqtt.github.io/wiki/public_brokers.
+For a list of public brokers see <https://github.com/mqtt/mqtt.github.io/wiki/public_brokers>.
 
 ## 2. Start the backend
 
@@ -32,7 +32,6 @@ QoS must be the same as the one used by C2 to send commands:
 e4demoapp -action sub -qos 2 -topic "E4/2dd31f9cbe1ccf9f3f67520a8bc9594b7fe095ea69945408b83c861021372169" -num 10
 ```
 
-
 ## 4. Send commands to the client 
 
 Using `c2cli`:
@@ -41,6 +40,8 @@ Add new client to C2, then add a new topic to C2, then send the topic key to the
 
 ```
 c2cli -c nc -id testit -pwd testpwd
-c2cli -c nt -topic testtopc
+c2cli -c nt -topic testtopic
 c2cli -c ntc -id testid -topic testtopic
 ```
+
+

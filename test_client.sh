@@ -44,28 +44,28 @@ cd ../c2cli
 printf "\nTESTING gRPC INTERFACE\n"
 
 printf "\n# adding client to C2 db\n"
-./c2cli -c nc -id "testid" -pwd "testpwd"
+./c2cli -c nc -i "testid" -p "testpwd"
 
 printf "\n# adding a topic to C2\n"
-./c2cli -c nt -topic "atopic"
+./c2cli -c nt -t "atopic"
 
 printf "\n# adding this topic to client\n"
-./c2cli -c ntc -topic "atopic" -id "testid"
+./c2cli -c ntc -t "atopic" -i "testid"
 
 sleep 1
 
 printf "\n# resetting client\n"
-./c2cli -c rsc -id "testid"
+./c2cli -c rsc -i "testid"
 
 sleep 1
 
 printf "\n# changing client key\n"
-./c2cli -c nck -id "testid"
+./c2cli -c nck -i "testid"
 
 sleep 1
 
 printf "\n# adding topic to client\n"
-./c2cli -c ntc -topic "atopic" -id "testid"
+./c2cli -c ntc -t "atopic" -i "testid"
 
 sleep 1
 

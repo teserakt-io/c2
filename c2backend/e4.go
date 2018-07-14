@@ -45,13 +45,15 @@ func (s *C2) newTopicClient(id []byte, topic string) error {
 		log.Print("CreateAndProtectForID failed in newTopicClient: ", err)
 		return err
 	}
-	err = s.sendToClient(id, payload)
+	err = s.sendCommandToClient(id, payload)
 	if err != nil {
 		log.Print(err)
 		return err
 	}
 
 	log.Printf("added topic '%s' to client %s", topic, hex.EncodeToString(id))
+	log.Printf("topic hash was %s", hex.EncodeToString(topichash))
+	log.Printf("topic key was %s", hex.EncodeToString(key))
 	return nil
 }
 
@@ -64,9 +66,9 @@ func (s *C2) removeTopicClient(id []byte, topic string) error {
 		log.Print("CreateAndProtectForID failed in removeTopicClient: ", err)
 		return err
 	}
-	err = s.sendToClient(id, payload)
+	err = s.sendCommandToClient(id, payload)
 	if err != nil {
-		log.Print("sendToClient failed in removeTopicClient", err)
+		log.Print("sendCommandToClient failed in removeTopicClient", err)
 		return err
 	}
 
@@ -81,9 +83,9 @@ func (s *C2) resetClient(id []byte) error {
 		log.Print("CreateAndProtectForID failed in resetClient: ", err)
 		return err
 	}
-	err = s.sendToClient(id, payload)
+	err = s.sendCommandToClient(id, payload)
 	if err != nil {
-		log.Print("sendToClient failed in resetClient: ", err)
+		log.Print("sendCommandToClient failed in resetClient: ", err)
 		return err
 	}
 
@@ -115,6 +117,23 @@ func (s *C2) removeTopic(topic string) error {
 	return nil
 }
 
+func (s *C2) sendMessage(topic, msg string) error {
+	topickey, err := s.getTopicKey(topic)
+	if err != nil {
+		return err
+	}
+	payload, err := e4.Protect([]byte(msg), topickey)
+	if err != nil {
+		return err
+	}
+	err = s.publish(payload, topic, byte(0))
+	if err != nil {
+		log.Print("publish failed in sendMessage: ", err)
+		return err
+	}
+	return nil
+}
+
 func (s *C2) newClientKey(id []byte) error {
 
 	key := e4.RandomKey()
@@ -125,9 +144,9 @@ func (s *C2) newClientKey(id []byte) error {
 		log.Print("CreateAndProtectForID failed in newClientKey: ", err)
 		return err
 	}
-	err = s.sendToClient(id, payload)
+	err = s.sendCommandToClient(id, payload)
 	if err != nil {
-		log.Print("sendToClient failed in newClientKey: ", err)
+		log.Print("sendCommandToClient failed in newClientKey: ", err)
 		return err
 	}
 

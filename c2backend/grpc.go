@@ -121,6 +121,20 @@ func (s *C2) gRPCnewClientKey(in *pb.C2Request) (*pb.C2Response, error) {
 	return &pb.C2Response{Success: true, Err: ""}, nil
 }
 
+func (s *C2) gRPCsendMessage(in *pb.C2Request) (*pb.C2Response, error) {
+
+	if !checkRequest(in, false, false, true) {
+		return &pb.C2Response{Success: false, Err: "invalid request"}, nil
+	}
+
+	err := s.sendMessage(in.Topic, in.Msg)
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	return &pb.C2Response{Success: true, Err: ""}, nil
+}
+
 // helper to check inputs' sanity
 func checkRequest(in *pb.C2Request, needID, needKey, needTopic bool) bool {
 	if needID {

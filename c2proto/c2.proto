@@ -16,12 +16,14 @@ message C2Request {
         NEW_TOPIC = 5;
         REMOVE_TOPIC = 6;
         NEW_CLIENT_KEY = 7;
+        SEND_MESSAGE = 8;
     }
 
     Command command = 1;
     bytes id = 2;
     bytes key = 3;
     string topic = 4;
+    string msg = 5;
 }
 
 message C2Response {

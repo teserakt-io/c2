@@ -152,6 +152,8 @@ func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, e
 		return s.gRPCremoveTopic(in)
 	case pb.C2Request_NEW_CLIENT_KEY:
 		return s.gRPCnewClientKey(in)
+	case pb.C2Request_SEND_MESSAGE:
+		return s.gRPCsendMessage(in)
 	}
 	return &pb.C2Response{Success: false, Err: "unknown command"}, nil
 }

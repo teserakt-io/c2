@@ -2,47 +2,221 @@ package main
 
 import (
 	"encoding/hex"
-	"flag"
+	"errors"
+	"strings"
 	"log"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"golang.org/x/crypto/argon2"
+	"github.com/spf13/pflag"
+	"github.com/abiosoft/ishell"
 
 	pb "teserakt/c2proto"
 	e4 "teserakt/e4common"
 )
 
-func sendCommand(client pb.C2Client, req *pb.C2Request) {
-	resp, err := client.C2Command(context.Background(), req)
-	if err != nil {
-		log.Fatalf("command error: %v", err)
-	}
-	if resp.Success {
-		log.Printf("command succeeded")
-	} else {
-		log.Printf("command failed: %s", resp.Err)
-	}
-
-}
-
 func main() {
 
 	log.SetPrefix("c2cli\t\t")
 
-	command := flag.String("c", "", "command type (required)")
-	idalias := flag.String("id", "", "a client id alias, a UTF-8 string")
-	keyhex := flag.String("key", "", "a 512-bit key, an hex string")
-	pwd := flag.String("pwd", "", "a passphrase to derive a key from")
-	topic := flag.String("topic", "", "a topic, as UTF-8 string")
-	c2 := flag.String("c2", "localhost:5555", "C2 host address")
+	command := pflag.StringP("command", "c", "", "command type (required)")
+	idalias := pflag.StringP("id", "i", "", "a client id alias, a UTF-8 string")
+	keyhex := pflag.StringP("key", "k", "", "a 512-bit key, an hex string")
+	pwd := pflag.StringP("pwd", "p", "", "a passphrase to derive a key from")
+	top := pflag.StringP("topic", "t", "", "a topic, as UTF-8 string")
+	c2 := pflag.StringP("c2", "h", "localhost:5555", "C2 host address")
+	m := pflag.StringP("msg", "m", "", "message to send")
+	inter := pflag.BoolP("shell", "s", false, "interactive shell")
 
-	flag.Parse()
+	pflag.Parse()
 
 	var id []byte
 	var key []byte
 	var err error
+	var topic string
+	var msg string
+
+	conn, err := grpc.Dial(*c2, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+
+	defer conn.Close()
+	client := pb.NewC2Client(conn)
+
+	if *inter {
+		shell := ishell.New()
+		shell.Println("Welcome to E4 C2CLI")
+
+	    shell.AddCmd(&ishell.Cmd{
+			Name: "nc",
+			Help: "new client (nc client pwd)",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 2 {
+					c.Println("command failed: expecting 2 arguments")
+					return
+				}
+				id = e4.HashIDAlias(c.Args[0])
+				key = e4.HashPwd(c.Args[1])
+				err := sendCommand(client, pb.C2Request_NEW_CLIENT, id, key, "", "")
+				if err != nil {
+					c.Println("command failed: ", err)
+				} else {
+					c.Println("command sent")
+				}
+			},
+		})	
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "rc",
+			Help: "remove client (rc client)",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 1 {
+					c.Println("command failed: expecting 1 argument")
+					return
+				}
+				id = e4.HashIDAlias(c.Args[0])
+				err := sendCommand(client, pb.C2Request_NEW_CLIENT, id, nil, "", "")
+				if err != nil {
+					c.Println("command failed: ", err)
+				} else {
+					c.Println("command sent")
+				}
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "ntc",
+			Help: "new topic client (ntc client topic)",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 2 {
+					c.Println("command failed: expecting 2 arguments")
+					return
+				}
+				id = e4.HashIDAlias(c.Args[0])
+				topic = c.Args[1]
+				err := sendCommand(client, pb.C2Request_NEW_TOPIC_CLIENT, id, nil, topic, "")
+				if err != nil {
+					c.Println("command failed: ", err)
+				} else {
+					c.Println("command sent")
+				}
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "rtc",
+			Help: "remove topic client (rtc client)",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 2 {
+					c.Println("command failed: expecting 2 arguments")
+					return
+				}
+				id = e4.HashIDAlias(c.Args[0])
+				topic = c.Args[1]
+				err := sendCommand(client, pb.C2Request_REMOVE_TOPIC_CLIENT, id, nil, topic, "")
+				if err != nil {
+					c.Println("command failed: ", err)
+				} else {
+					c.Println("command sent")
+				}
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "rsc",
+			Help: "reset client (rsc client)",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 1 {
+					c.Println("command failed: expecting 1 argument")
+					return
+				}
+				id = e4.HashIDAlias(c.Args[0])
+				err := sendCommand(client, pb.C2Request_RESET_CLIENT, id, nil, "", "")
+				if err != nil {
+					c.Println("command failed: ", err)
+				} else {
+					c.Println("command sent")
+				}
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "nt",
+			Help: "new topic (nt topic)",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 1 {
+					c.Println("command failed: expecting 1 argument")
+					return
+				}
+				topic = c.Args[0]
+				err := sendCommand(client, pb.C2Request_NEW_TOPIC, nil, nil, topic, "")
+				if err != nil {
+					c.Println("command failed: ", err)
+				} else {
+					c.Println("command sent")
+				}
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "rt",
+			Help: "remove topic (rt topic)",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 1 {
+					c.Println("command failed: expecting 1 argument")
+					return
+				}
+				topic = c.Args[0]
+				err := sendCommand(client, pb.C2Request_REMOVE_TOPIC, nil, nil, topic, "")
+				if err != nil {
+					c.Println("command failed: ", err)
+				} else {
+					c.Println("command sent")
+				}
+			},
+		})
+	
+		shell.AddCmd(&ishell.Cmd{
+			Name: "nck",
+			Help: "new client key (nck client)",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 1 {
+					c.Println("command failed: expecting 1 argument")
+					return
+				}
+				id = e4.HashIDAlias(c.Args[0])
+				err := sendCommand(client, pb.C2Request_NEW_CLIENT_KEY, id, nil, "", "")
+				if err != nil {
+					c.Println("command failed: ", err)
+				} else {
+					c.Println("command sent")
+				}
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "sm",
+			Help: "send message (send client topic message)",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) < 2 {
+					c.Println("command failed: expecting 2+ arguments")
+					return
+				}
+				topic = c.Args[0]
+				msg = strings.Join(c.Args[1:], " ")
+				err := sendCommand(client, pb.C2Request_SEND_MESSAGE, nil, nil, topic, msg)
+				if err != nil {
+					c.Println("command failed: ", err)
+				} else {
+					c.Println("command sent")
+				}
+			},
+		})
+
+		shell.Run()
+	}
 
 	if *command == "" {
 		log.Fatal("missing command")
@@ -66,44 +240,67 @@ func main() {
 	}
 
 	if *pwd != "" {
-		key = argon2.Key([]byte(*pwd), nil, 1, 64*1024, 4, 64)
+		key = e4.HashPwd(*pwd)
 	}
+
+	topic = *top
+	msg = *m
+
+	commandcode, err := commandToPbCode(*command)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	sendCommand(client, commandcode, id, key, topic, msg)
+
+}
+
+
+func commandToPbCode(command string) (pb.C2Request_Command, error) {
+
+	switch command {
+	case "nc":
+		return pb.C2Request_NEW_CLIENT, nil
+	case "rc":
+		return pb.C2Request_REMOVE_CLIENT, nil
+	case "ntc":
+		return pb.C2Request_NEW_TOPIC_CLIENT, nil
+	case "rtc":
+		return pb.C2Request_REMOVE_TOPIC_CLIENT, nil
+	case "rsc":
+		return pb.C2Request_RESET_CLIENT, nil
+	case "nt":
+		return pb.C2Request_NEW_TOPIC, nil
+	case "rt":
+		return pb.C2Request_REMOVE_TOPIC, nil
+	case "nck":
+		return pb.C2Request_NEW_CLIENT_KEY, nil
+	case "sm":
+		return pb.C2Request_SEND_MESSAGE, nil
+	default:
+		return -1, errors.New("invalid command")
+	}
+}
+
+// send command with given type, id, key, and topic
+func sendCommand(client pb.C2Client, commandcode pb.C2Request_Command, id, key []byte, topic, msg string) error {
 
 	req := &pb.C2Request{
-		Command: pb.C2Request_NEW_CLIENT,
+		Command: commandcode,
 		Id:      id,
 		Key:     key,
-		Topic:   *topic,
+		Topic:   topic,
+		Msg: 	msg,
 	}
 
-	switch *command {
-	case "nc":
-		req.Command = pb.C2Request_NEW_CLIENT
-	case "rc":
-		req.Command = pb.C2Request_REMOVE_CLIENT
-	case "ntc":
-		req.Command = pb.C2Request_NEW_TOPIC_CLIENT
-	case "rtc":
-		req.Command = pb.C2Request_REMOVE_TOPIC_CLIENT
-	case "rsc":
-		req.Command = pb.C2Request_RESET_CLIENT
-	case "nt":
-		req.Command = pb.C2Request_NEW_TOPIC
-	case "rt":
-		req.Command = pb.C2Request_REMOVE_TOPIC
-	case "nck":
-		req.Command = pb.C2Request_NEW_CLIENT_KEY
-	default:
-		log.Fatal("unknown command")
-	}
-
-	conn, err := grpc.Dial(*c2, grpc.WithInsecure())
+	resp, err := client.C2Command(context.Background(), req)
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		return err
 	}
-	defer conn.Close()
-	client := pb.NewC2Client(conn)
-
-	sendCommand(client, req)
-
+	if resp.Success {
+		return nil
+	} else {
+		return errors.New(resp.Err)
+	}
+	return nil
 }

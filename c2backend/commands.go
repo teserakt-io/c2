@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"encoding/hex"
+	"log"
 
 	e4 "teserakt/e4common"
 )
@@ -22,6 +24,7 @@ func (s *C2) CreateAndProtectForID(cmd e4.Command, topichash, key, id []byte) ([
 	}
 
 	// protect
+	log.Printf("PAYLOAD sent (%d) %s", len(command), hex.EncodeToString(command))
 	payload, err := e4.Protect(command, idkey)
 	if err != nil {
 		return nil, err
