@@ -36,7 +36,7 @@
 
 # WIP
 
-* http handler for sendMessage
+* clean make c2 logs for demo
 * set local GOPATH layout
 * use dep
 * fix lints

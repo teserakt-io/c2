@@ -117,6 +117,7 @@ func main() {
 		route.HandleFunc("/e4/topic/{topic}", c2.handleNewTopic).Methods("POST")
 		route.HandleFunc("/e4/topic/{topic}", c2.handleRemoveTopic).Methods("DELETE")
 		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", c2.handleNewClientKey).Methods("PATCH")
+		route.HandleFunc("/e4/topic/{topic}/message/{message}", c2.handleSendMessage).Methods("POST")
 
 		route.HandleFunc("/e4/topic", c2.handleGetTopics).Methods("GET")
 		route.HandleFunc("/e4/client", c2.handleGetClients).Methods("GET")

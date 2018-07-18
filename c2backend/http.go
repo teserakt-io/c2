@@ -203,6 +203,27 @@ func (s *C2) handleGetTopics(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&topics)
 }
 
+func (s *C2) handleSendMessage(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	resp := Response{w}
+
+	topic := params["topic"]
+	message := params["message"]
+
+	if !e4.IsValidTopic(topic) {
+		resp.Text(http.StatusNotFound, "invalid topic")
+		return
+	}
+
+	err := s.sendMessage(topic, message)
+	if err != nil {
+		resp.Text(http.StatusNotFound, "message not sent")
+		return
+	}
+	
+	w.WriteHeader(http.StatusOK)
+}
+
 // Response is a helper struct to create an http response
 type Response struct {
 	http.ResponseWriter
