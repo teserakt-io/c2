@@ -33,9 +33,13 @@
     - c2cli command "send client topic message"
     - c2backend: handler to send message, needs e4common
 * interactive CLI with ishell
+* shorten ids à la git "8hexchars.."
+* c2cli: show help if command missing
+* add banner including version and date to backend, cli, client
 
 # WIP
 
+* better logs (go-kit logs); only log in main?
 * clean make c2 logs for demo
 * set local GOPATH layout
 * use dep

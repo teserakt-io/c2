@@ -220,7 +220,7 @@ func (s *C2) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 		resp.Text(http.StatusNotFound, "message not sent")
 		return
 	}
-	
+
 	w.WriteHeader(http.StatusOK)
 }
 

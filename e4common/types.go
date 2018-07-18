@@ -98,3 +98,7 @@ func IsValidTopicHash(topichash []byte) bool {
 func TopicForID(id []byte) string {
 	return idTopicPrefix + hex.EncodeToString(id)
 }
+
+func PrettyID(id []byte) string {
+	return hex.EncodeToString(id)[:8] + ".."
+}

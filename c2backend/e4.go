@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"log"
 
 	e4 "teserakt/e4common"
@@ -14,7 +13,7 @@ func (s *C2) newClient(id, key []byte) error {
 		log.Print("insertIDKey failed in newClient: ", err)
 		return err
 	}
-	log.Printf("added client %s", hex.EncodeToString(id))
+	log.Printf("added client %s", e4.PrettyID(id))
 	return nil
 }
 
@@ -26,7 +25,7 @@ func (s *C2) removeClient(id []byte) error {
 		return err
 	}
 
-	log.Printf("removed client %s", hex.EncodeToString(id))
+	log.Printf("removed client %s", e4.PrettyID(id))
 	return nil
 }
 
@@ -51,9 +50,7 @@ func (s *C2) newTopicClient(id []byte, topic string) error {
 		return err
 	}
 
-	log.Printf("added topic '%s' to client %s", topic, hex.EncodeToString(id))
-	log.Printf("topic hash was %s", hex.EncodeToString(topichash))
-	log.Printf("topic key was %s", hex.EncodeToString(key))
+	log.Printf("added topic '%s' to client %s", topic, e4.PrettyID(id))
 	return nil
 }
 
@@ -72,7 +69,7 @@ func (s *C2) removeTopicClient(id []byte, topic string) error {
 		return err
 	}
 
-	log.Printf("removed topic '%s' from client %s", topic, hex.EncodeToString(id))
+	log.Printf("removed topic '%s' from client %s", topic, e4.PrettyID(id))
 	return nil
 }
 
@@ -89,7 +86,7 @@ func (s *C2) resetClient(id []byte) error {
 		return err
 	}
 
-	log.Printf("reset client %s", hex.EncodeToString(id))
+	log.Printf("reset client %s", e4.PrettyID(id))
 	return nil
 }
 
@@ -155,6 +152,6 @@ func (s *C2) newClientKey(id []byte) error {
 		log.Print("insertIDKey failed in newClientKey: ", err)
 		return err
 	}
-	log.Printf("updated key for client %s", hex.EncodeToString(id))
+	log.Printf("updated key for client %s", e4.PrettyID(id))
 	return nil
 }

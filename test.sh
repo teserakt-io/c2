@@ -8,13 +8,13 @@ cp -p -r e4common $GOPATH/src/teserakt
 cp -p -r e4client $GOPATH/src/teserakt
 
 printf "\nbuilding c2backend.."
-cd c2backend && go build && cd ..
+cd c2backend && ./build.sh && cd ..
 
 printf "\nbuilding c2cli.."
-cd c2cli && go build && cd ..
+cd c2cli && ./build.sh && cd ..
 
-printf "\nbuilding e4demoapp.."
-cd e4demoapp && go build && cd ..
+printf "\nbuilding mqe4client.."
+cd mqe4client && ./build.sh && cd ..
 
 printf "\nstarting c2backend..\n"
 cd c2backend
@@ -22,12 +22,12 @@ cd c2backend
 BEPID=$!
 sleep 3
 
-cd ../e4demoapp
+cd ../mqe4client
 
 CLIENTID=2dd31f9cbe1ccf9f3f67520a8bc9594b7fe095ea69945408b83c861021372169 
 
 printf "\nstarting client..\n"
-./e4demoapp -action sub -broker test.mosquitto.org:1883 -num 50 -topic e4/$CLIENTID &
+./mqe4client -action sub -broker test.mosquitto.org:1883 -num 50 -topic e4/$CLIENTID &
 CLID=$!
 
 trap terminate INT

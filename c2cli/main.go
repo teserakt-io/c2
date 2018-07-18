@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"log"
+	"os"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -16,20 +17,31 @@ import (
 	e4 "teserakt/e4common"
 )
 
+var GitCommit string
+var BuildDate string
+
 func main() {
 
-	log.SetPrefix("c2cli\t\t")
+	log.SetFlags(0)
 
-	command := pflag.StringP("command", "c", "", "command type (required)")
-	idalias := pflag.StringP("id", "i", "", "a client id alias, a UTF-8 string")
-	keyhex := pflag.StringP("key", "k", "", "a 512-bit key, an hex string")
-	pwd := pflag.StringP("pwd", "p", "", "a passphrase to derive a key from")
-	top := pflag.StringP("topic", "t", "", "a topic, as UTF-8 string")
-	c2 := pflag.StringP("c2", "h", "localhost:5555", "C2 host address")
-	m := pflag.StringP("msg", "m", "", "message to send")
-	inter := pflag.BoolP("shell", "s", false, "interactive shell")
+	fs := pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 
-	pflag.Parse()
+	c2 := fs.String("c2", "localhost:5555", "C2 host address")
+	command := fs.StringP("command", "c", "", "a command type (if not in shell)")
+	idalias := fs.StringP("id", "i", "", "client id alias as a UTF-8 string")
+	keyhex := fs.StringP("key", "k", "", "512-bit key as an hex string")
+	pwd := fs.StringP("pwd", "p", "", "password to derive a key from")
+	top := fs.StringP("topic", "t", "", "topic as a UTF-8 string")
+	m := fs.StringP("msg", "m", "", "message to send")
+	help := fs.BoolP("help", "h", false, "same")
+
+	fs.Parse(os.Args[1:])
+	fs.SortFlags = false
+
+	if *help {
+		fs.PrintDefaults()
+		return
+	}
 
 	var id []byte
 	var key []byte
@@ -39,15 +51,32 @@ func main() {
 
 	conn, err := grpc.Dial(*c2, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		log.Fatalf("failed to connect to gRPC server: %v", err)
 	}
 
 	defer conn.Close()
 	client := pb.NewC2Client(conn)
 
-	if *inter {
+	if *command == "" {
 		shell := ishell.New()
-		shell.Println("Welcome to E4 C2CLI")
+		shell.SetPrompt("➩ ")
+		shell.Println("    /---------------------------------/")
+		shell.Println("   /  E4: C2 command-line interface  /")
+		shell.Printf("  /  version %s-%s          /\n", BuildDate, GitCommit[:4])
+		shell.Println(" /  Teserakt AG, 2018              /")
+		shell.Println("/---------------------------------/\n")
+		shell.Println("type 'help' for help (duh)\n")
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "c2",
+			Help: "set C2 host",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 1 {
+					c.Println("command failed: expecting 1 argument")
+					return
+				}
+			},
+		})
 
 		shell.AddCmd(&ishell.Cmd{
 			Name: "nc",
@@ -63,7 +92,7 @@ func main() {
 				if err != nil {
 					c.Println("command failed: ", err)
 				} else {
-					c.Println("command sent")
+					c.Println("command succeeded")
 				}
 			},
 		})
@@ -216,10 +245,9 @@ func main() {
 		})
 
 		shell.Run()
-	}
 
-	if *command == "" {
-		log.Fatal("missing command")
+		log.Println("bye!")
+		return
 	}
 
 	if *idalias != "" {
@@ -251,8 +279,10 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	sendCommand(client, commandcode, id, key, topic, msg)
-
+	err = sendCommand(client, commandcode, id, key, topic, msg)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
 }
 
 func commandToPbCode(command string) (pb.C2Request_Command, error) {

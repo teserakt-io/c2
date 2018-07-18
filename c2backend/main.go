@@ -20,6 +20,9 @@ import (
 	pb "teserakt/c2proto"
 )
 
+var GitCommit string
+var BuildDate string
+
 // C2 is the C2's state, consisting of ID keys, topic keys, and an MQTT connection.
 type C2 struct {
 	db       *badger.DB
@@ -29,6 +32,12 @@ type C2 struct {
 func main() {
 
 	log.SetPrefix("c2backend\t")
+
+	fmt.Println("    /---------------------------------/")
+	fmt.Println("   /  E4: C2 back-end                /")
+	fmt.Printf("  /  version %s-%s          /\n", BuildDate, GitCommit[:4])
+	fmt.Println(" /  Teserakt AG, 2018              /")
+	fmt.Println("/---------------------------------/\n")
 
 	// load config
 	c := config()
