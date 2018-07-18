@@ -17,6 +17,7 @@ import (
 	e4 "teserakt/e4common"
 )
 
+// variables set at build time
 var GitCommit string
 var BuildDate string
 

@@ -20,6 +20,7 @@ import (
 	pb "teserakt/c2proto"
 )
 
+// variables set at build time
 var GitCommit string
 var BuildDate string
 
