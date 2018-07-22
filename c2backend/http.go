@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -233,9 +232,5 @@ type Response struct {
 func (r *Response) Text(code int, body string) {
 	r.Header().Set("Content-Type", "text/plain")
 	r.WriteHeader(code)
-
-	_, err := io.WriteString(r, fmt.Sprintf("%s\n", body))
-	if err != nil {
-		log.Printf(err.Error())
-	}
+	io.WriteString(r, fmt.Sprintf("%s\n", body))
 }

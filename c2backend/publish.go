@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"github.com/go-kit/kit/log"
 
 	e4 "teserakt/e4common"
 )
@@ -10,11 +10,13 @@ func (s *C2) publish(payload []byte, topic string, qos byte) error {
 
 	payloadstring := string(payload)
 
-	log.Printf("published to topic %s", topic)
+	logger := log.With(s.logger, "protocol", "mqtt")
 
-	if token := s.mqClient.Publish(topic, qos, false, payloadstring); token.Wait() && token.Error() != nil {
+	if token := s.mqttClient.Publish(topic, qos, false, payloadstring); token.Wait() && token.Error() != nil {
+		logger.Log("msg", "publish failed", "topic", topic, "error", token.Error())
 		return token.Error()
 	}
+	logger.Log("msg", "publish succeeded", "topic", topic)
 
 	return nil
 }

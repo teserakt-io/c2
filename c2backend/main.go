@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/dgraph-io/badger"
+	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
@@ -21,27 +21,37 @@ import (
 )
 
 // variables set at build time
-var GitCommit string
-var BuildDate string
+var gitCommit string
+var buildDate string
 
 // C2 is the C2's state, consisting of ID keys, topic keys, and an MQTT connection.
 type C2 struct {
-	db       *badger.DB
-	mqClient mqtt.Client
+	db         *badger.DB
+	mqttClient mqtt.Client
+	logger     log.Logger
 }
 
 func main() {
 
-	log.SetPrefix("c2backend\t")
+	// our server
+	var c2 C2
 
+	// init logger
+	c2.logger = log.NewJSONLogger(os.Stdout)
+	{
+		c2.logger = log.With(c2.logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
+	}
+	defer c2.logger.Log("msg", "goodbye")
+
+	// show banner
 	fmt.Println("    /---------------------------------/")
 	fmt.Println("   /  E4: C2 back-end                /")
-	fmt.Printf("  /  version %s-%s          /\n", BuildDate, GitCommit[:4])
+	fmt.Printf("  /  version %s-%s          /\n", buildDate, gitCommit[:4])
 	fmt.Println(" /  Teserakt AG, 2018              /")
 	fmt.Println("/---------------------------------/\n")
 
 	// load config
-	c := config()
+	c := config(log.With(c2.logger, "unit", "config"))
 	var (
 		grpcAddr   = c.GetString("grpc-host-port")
 		httpAddr   = c.GetString("http-host-port")
@@ -49,20 +59,22 @@ func main() {
 		mqttBroker = c.GetString("mqtt-broker")
 		mqttID     = c.GetString("mqtt-ID")
 	)
-	log.Print("config loaded")
+	c2.logger.Log("msg", "config loaded")
 
-	// open id keys db
+	// open db
 	dbOpts := badger.DefaultOptions
 	dbOpts.Dir = dbDir
 	dbOpts.ValueDir = dbDir
 	db, err := badger.Open(dbOpts)
 	if err != nil {
-		log.Fatal(err)
+		c2.logger.Log("msg", "database opening failed", "error", err)
+		return
 	}
 	defer db.Close()
-	log.Print("database open")
+	c2.logger.Log("msg", "database open")
+	c2.db = db
 
-	// critical error channel
+	// create critical error channel
 	var errc = make(chan error)
 	go func() {
 		var c = make(chan os.Signal, 1)
@@ -71,47 +83,58 @@ func main() {
 	}()
 
 	// start mqtt client
-	mqOpts := mqtt.NewClientOptions()
-	mqOpts.AddBroker(mqttBroker)
-	mqOpts.SetClientID(mqttID)
-	log.Printf("connecting to %s", mqttBroker)
-	mqttClient := mqtt.NewClient(mqOpts)
-	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatal("mqtt connection failed")
+	{
+		logger := log.With(c2.logger, "protocol", "mqtt")
+		logger.Log("addr", mqttBroker)
+		mqOpts := mqtt.NewClientOptions()
+		mqOpts.AddBroker(mqttBroker)
+		mqOpts.SetClientID(mqttID)
+		mqttClient := mqtt.NewClient(mqOpts)
+		if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
+			logger.Log("msg", "connection failed", "error", token.Error())
+			return
+		}
+		logger.Log("msg", "connected to broker")
+		// instantiate C2
+		c2.mqttClient = mqttClient
 	}
-
-	log.Printf("connected to mqtt broker")
-
-	// instantiate C2
-	c2 := C2{db, mqttClient}
 
 	// create grpc server
 	go func() {
+		var logger = log.With(c2.logger, "protocol", "grpc")
+		logger.Log("addr", grpcAddr)
+
 		lis, err := net.Listen("tcp", grpcAddr)
 		if err != nil {
-			log.Fatalf("failed to listen: %v", err)
+			logger.Log("msg", "failed to listen", "error", err)
+			return
 		}
 		s := grpc.NewServer()
 		pb.RegisterC2Server(s, &c2)
 
 		count, err := c2.countIDKeys()
 		if err != nil {
-			log.Fatal("failed to iterated over the id db")
+			logger.Log("msg", "failed to count id keys", "error", err)
+			return
 		}
-		log.Printf("%d ids in the db", count)
+		logger.Log("nbidkeys", count)
 		count, err = c2.countTopicKeys()
 		if err != nil {
-			log.Fatal("failed to iterated over the topic db")
+			logger.Log("msg", "failed to count topic keys", "error", err)
+			return
 		}
-		log.Printf("%d topics in the db", count)
+		logger.Log("nbtopickeys", count)
 
-		log.Print("starting grpc server")
+		logger.Log("msg", "starting grpc server")
 
 		errc <- s.Serve(lis)
 	}()
 
 	// create http server
 	go func() {
+		var logger = log.With(c2.logger, "protocol", "http")
+		logger.Log("addr", httpAddr)
+
 		route := mux.NewRouter()
 
 		route.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -134,17 +157,17 @@ func main() {
 		//route.HandleFunc("/e4/client/{}/topic", c2.handleGetClientsTopics).Methods("GET")
 		//route.HandleFunc("/e4/topic/{topic}/client", c2.handleGetTopicsClients).Methods("GET")
 
-		log.Print("starting http server")
+		logger.Log("msg", "starting http server")
 		errc <- http.ListenAndServe(httpAddr, route)
 	}()
 
-	log.Print("error", <-errc)
+	c2.logger.Log("error", <-errc)
 }
 
 // C2Command processes a command received over gRPC by the CLI tool.
 func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, error) {
 
-	log.Printf("command received: %s", pb.C2Request_Command_name[int32(in.Command)])
+	//log.Printf("command received: %s", pb.C2Request_Command_name[int32(in.Command)])
 
 	switch in.Command {
 	case pb.C2Request_NEW_CLIENT:
@@ -169,7 +192,10 @@ func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, e
 	return &pb.C2Response{Success: false, Err: "unknown command"}, nil
 }
 
-func config() *viper.Viper {
+func config(logger log.Logger) *viper.Viper {
+
+	logger.Log("msg", "load configuration and command args")
+
 	var v = viper.New()
 	v.SetConfigName("config")
 	v.AddConfigPath("./configs")
@@ -181,7 +207,7 @@ func config() *viper.Viper {
 
 	err := v.ReadInConfig()
 	if err != nil {
-		log.Print("failed to read config:", err)
+		logger.Log("error", err)
 	}
 
 	return v

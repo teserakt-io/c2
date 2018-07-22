@@ -8,32 +8,37 @@ import (
 
 func (s *C2) newClient(id, key []byte) error {
 
+	logger := log.With(c2.logger, "protocol", "e4", "command", "newClient")
+
 	err := s.insertIDKey(id, key)
 	if err != nil {
-		log.Print("insertIDKey failed in newClient: ", err)
+		logger.Log("msg", "insertIDKey failed", "error", err)
 		return err
 	}
-	log.Printf("added client %s", e4.PrettyID(id))
+	logger.Log("msg", "succeeded", "client", e4.PrettyID)
 	return nil
 }
 
 func (s *C2) removeClient(id []byte) error {
 
+	logger := log.With(c2.logger, "protocol", "e4", "command", "removeClient")
+
 	err := s.deleteIDKey(id)
 	if err != nil {
-		log.Print("deleteIDKey failed in removeClient: ", err)
+		logger.Log("msg", "deleteIDKey failed", "error", err)
 		return err
 	}
-
-	log.Printf("removed client %s", e4.PrettyID(id))
+	logger.Log("msg", "succeeded", "client", e4.PrettyID)
 	return nil
 }
 
 func (s *C2) newTopicClient(id []byte, topic string) error {
 
+	logger := log.With(c2.logger, "protocol", "e4", "command", "newTopicClient")
+
 	key, err := s.getTopicKey(topic)
 	if err != nil {
-		log.Print("getTopicKey failed in newTopicClient: ", err)
+		logger.Log("msg", "getTopicKey failed", "error", err)
 		return err
 	}
 
@@ -41,20 +46,22 @@ func (s *C2) newTopicClient(id []byte, topic string) error {
 
 	payload, err := s.CreateAndProtectForID(e4.SetTopicKey, topichash, key, id)
 	if err != nil {
-		log.Print("CreateAndProtectForID failed in newTopicClient: ", err)
+		logger.Log("msg", "CreateAndProtectForID failed", "error", err)
 		return err
 	}
 	err = s.sendCommandToClient(id, payload)
 	if err != nil {
-		log.Print(err)
+		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
 	}
 
-	log.Printf("added topic '%s' to client %s", topic, e4.PrettyID(id))
+	logger.Log("msg", "succeeded", "client", e4.PrettyID, "topic", topic)
 	return nil
 }
 
 func (s *C2) removeTopicClient(id []byte, topic string) error {
+
+	logger := log.With(c2.logger, "protocol", "e4", "command", "removeTopicClient")
 
 	topichash := e4.HashTopic(topic)
 

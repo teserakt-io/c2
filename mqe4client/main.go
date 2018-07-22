@@ -10,6 +10,10 @@
  *    Seth Hoenig
  *    Allan Stockdill-Mander
  *    Mike Robertson
+ * 
+ * With modifications by JP Aumasson <jp@teserakt.io>
+ * Copyright (c) 2018 Teserakt AG
+ *
  */
 
 package main
@@ -26,8 +30,8 @@ import (
 )
 
 // variables set at build time
-var GitCommit string
-var BuildDate string
+var gitCommit string
+var buildDate string
 
 // E4: hardcoded values for testing
 const (
@@ -55,7 +59,7 @@ const (
 func main() {
 	fmt.Println("    /---------------------------------/")
 	fmt.Println("   /  E4: MQTT test client           /")
-	fmt.Printf("  /  version %s-%s          /\n", BuildDate, GitCommit[:4])
+	fmt.Printf("  /  version %s-%s          /\n", buildDate, gitCommit[:4])
 	fmt.Println(" /  Teserakt AG, 2018              /")
 	fmt.Println("/---------------------------------/\n")
 

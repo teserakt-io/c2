@@ -36,20 +36,18 @@
 * shorten ids à la git "8hexchars.."
 * c2cli: show help if command missing
 * add banner including version and date to backend, cli, client
+* fix lints
+* better logs (go-kit logs); only log in main, add handler to services
 
 # WIP
 
-* better logs (go-kit logs); only log in main?
-* clean make c2 logs for demo
 * set local GOPATH layout
 * use dep
-* fix lints
-* run broker on fargo
+* s/badger/cockroach 
 
 # TODO
 
 * getIDs(topic), getTopics(id)
-
 * make arch diagram using https://draw.io/
 * fine-tune MQTT client options
 
@@ -59,6 +57,7 @@
 * middleware for monitoring/tracing (Jaeger, Sentry, etc.), see go-kit
 * monitoring of all topics' messages (c2monitor service)
 * secure grpc + https
+    -https://github.com/olivere/grpc-example/blob/master/tasks/server.go#L68
 * binary packaging
     - binary in /opt/e4/, db in /var/lib/e4/db/
     - https://stackoverflow.com/a/29600086

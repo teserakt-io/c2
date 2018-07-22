@@ -99,6 +99,7 @@ func TopicForID(id []byte) string {
 	return idTopicPrefix + hex.EncodeToString(id)
 }
 
+// PrettyID returns an ID as its first 8 hex chars
 func PrettyID(id []byte) string {
 	return hex.EncodeToString(id)[:8] + ".."
 }

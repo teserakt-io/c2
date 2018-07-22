@@ -18,8 +18,8 @@ import (
 )
 
 // variables set at build time
-var GitCommit string
-var BuildDate string
+var gitCommit string
+var buildDate string
 
 func main() {
 
@@ -63,7 +63,7 @@ func main() {
 		shell.SetPrompt("➩ ")
 		shell.Println("    /---------------------------------/")
 		shell.Println("   /  E4: C2 command-line interface  /")
-		shell.Printf("  /  version %s-%s          /\n", BuildDate, GitCommit[:4])
+		shell.Printf("  /  version %s-%s          /\n", buildDate, gitCommit[:4])
 		shell.Println(" /  Teserakt AG, 2018              /")
 		shell.Println("/---------------------------------/\n")
 		shell.Println("type 'help' for help (duh)\n")
@@ -329,8 +329,6 @@ func sendCommand(client pb.C2Client, commandcode pb.C2Request_Command, id, key [
 	}
 	if resp.Success {
 		return nil
-	} else {
-		return errors.New(resp.Err)
-	}
-	return nil
+	} 
+	return errors.New(resp.Err)
 }
