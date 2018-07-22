@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 
-	pb "teserakt/c2proto"
-	e4 "teserakt/e4common"
+	pb "teserakt/e4go/pkg/c2proto"
+	e4 "teserakt/e4go/pkg/e4common"
 )
 
 func (s *C2) gRPCnewClient(in *pb.C2Request) (*pb.C2Response, error) {

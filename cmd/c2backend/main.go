@@ -17,7 +17,7 @@ import (
 	"github.com/spf13/viper"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	pb "teserakt/c2proto"
+	pb "teserakt/e4go/pkg/c2proto"
 )
 
 // variables set at build time
@@ -199,7 +199,8 @@ func config(logger log.Logger) *viper.Viper {
 	var v = viper.New()
 	v.SetConfigName("config")
 	v.AddConfigPath("./configs")
-	v.SetDefault("mqtt-broker", "test.mosquitto.org:1883")
+	v.AddConfigPath("../configs")
+	v.SetDefault("mqtt-broker", "tcp://localhost:1883")
 	v.SetDefault("mqtt-ID", "e4c2")
 	v.SetDefault("db-dir", "/tmp/E4/db")
 	v.SetDefault("grpc-host-port", "0.0.0.0:5555")

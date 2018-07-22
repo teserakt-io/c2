@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	e4 "teserakt/e4common"
+	e4 "teserakt/e4go/pkg/e4common"
 )
 
 // ErrTopicKeyNotFound will signal to applications that a key is missing.

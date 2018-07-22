@@ -10,7 +10,7 @@
  *    Seth Hoenig
  *    Allan Stockdill-Mander
  *    Mike Robertson
- * 
+ *
  * With modifications by JP Aumasson <jp@teserakt.io>
  * Copyright (c) 2018 Teserakt AG
  *
@@ -26,7 +26,7 @@ import (
 	"os"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	e4 "teserakt/e4client"
+	e4 "teserakt/e4go/pkg/e4client"
 )
 
 // variables set at build time

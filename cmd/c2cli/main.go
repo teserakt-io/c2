@@ -13,8 +13,8 @@ import (
 	"github.com/abiosoft/ishell"
 	"github.com/spf13/pflag"
 
-	pb "teserakt/c2proto"
-	e4 "teserakt/e4common"
+	pb "teserakt/e4go/pkg/c2proto"
+	e4 "teserakt/e4go/pkg/e4common"
 )
 
 // variables set at build time
@@ -329,6 +329,6 @@ func sendCommand(client pb.C2Client, commandcode pb.C2Request_Command, id, key [
 	}
 	if resp.Success {
 		return nil
-	} 
+	}
 	return errors.New(resp.Err)
 }
