@@ -25,8 +25,9 @@ import (
 	"log"
 	"os"
 
-	MQTT "github.com/eclipse/paho.mqtt.golang"
 	e4 "teserakt/e4go/pkg/e4client"
+
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
 // variables set at build time

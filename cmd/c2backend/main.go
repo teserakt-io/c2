@@ -16,8 +16,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	pb "teserakt/e4go/pkg/c2proto"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 // variables set at build time
