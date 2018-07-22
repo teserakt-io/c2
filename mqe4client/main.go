@@ -10,6 +10,10 @@
  *    Seth Hoenig
  *    Allan Stockdill-Mander
  *    Mike Robertson
+ * 
+ * With modifications by JP Aumasson <jp@teserakt.io>
+ * Copyright (c) 2018 Teserakt AG
+ *
  */
 
 package main
@@ -18,17 +22,22 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	e4 "teserakt/e4client"
 )
 
+// variables set at build time
+var gitCommit string
+var buildDate string
+
 // E4: hardcoded values for testing
 const (
 	E4IdAlias  = "testid"
 	E4Pwd      = "testpwd"
-	E4FilePath = "./"
+	E4FilePath = "./client.e4p"
 )
 
 /*
@@ -48,11 +57,17 @@ const (
 */
 
 func main() {
+	fmt.Println("    /---------------------------------/")
+	fmt.Println("   /  E4: MQTT test client           /")
+	fmt.Printf("  /  version %s-%s          /\n", buildDate, gitCommit[:4])
+	fmt.Println(" /  Teserakt AG, 2018              /")
+	fmt.Println("/---------------------------------/\n")
+
 	topic := flag.String("topic", "", "The topic name to/from which to publish/subscribe")
 	broker := flag.String("broker", "tcp://test.mosquitto.org:1883", "The broker URI. ex: tcp://10.10.1.1:1883")
 	password := flag.String("password", "", "The password (optional)")
 	user := flag.String("user", "", "The User (optional)")
-	id := flag.String("id", "testgoid", "The ClientID (optional)")
+	id := flag.String("id", "testid", "The ClientID (optional)")
 	cleansess := flag.Bool("clean", false, "Set Clean Session (default false)")
 	qos := flag.Int("qos", 0, "The Quality of Service 0,1,2 (default 0)")
 	num := flag.Int("num", 1, "The number of messages to publish or subscribe (default 1)")
@@ -94,9 +109,11 @@ func main() {
 		opts.SetStore(MQTT.NewFileStore(*store))
 	}
 
+	log.SetPrefix("e4demoapp\t")
+
 	// E4: creating a fresh client, rather than loading from disk
 	e4Client := e4.NewClientPretty(E4IdAlias, E4Pwd, E4FilePath)
-	fmt.Printf("E4 client created with id %s\n", hex.EncodeToString(e4Client.Id))
+	fmt.Printf("E4 client created with id %s\n", hex.EncodeToString(e4Client.ID))
 
 	if *action == "pub" {
 		client := MQTT.NewClient(opts)
@@ -108,17 +125,17 @@ func main() {
 			// E4: if topic key available, encrypt payload
 			protected, err := e4Client.Protect([]byte(*payload), *topic)
 			if err == nil {
-				fmt.Println("---- doing publish (E4-protected) ----")
+				log.Println("---- doing publish (E4-protected) ----")
 				token := client.Publish(*topic, byte(*qos), false, protected)
 				token.Wait()
 			} else if err == e4.ErrTopicKeyNotFound {
 				// E4: if topic key not found, publish unencrypted
-				fmt.Println("---- doing publish (NOT E4-protected) ----")
+				log.Println("---- doing publish (NOT E4-protected) ----")
 				token := client.Publish(*topic, byte(*qos), false, *payload)
 				token.Wait()
 			} else {
 				// another error occured, don't publish
-				fmt.Println("E4 error: %s", err)
+				log.Printf("E4 error: %s", err)
 			}
 		}
 
@@ -142,25 +159,31 @@ func main() {
 			os.Exit(1)
 		}
 
+		// E4/ subscribe to receiving topic
+		if token := client.Subscribe(e4Client.ReceivingTopic, byte(2), nil); token.Wait() && token.Error() != nil {
+			fmt.Println(token.Error())
+			os.Exit(1)
+		}
+
 		for receiveCount < *num {
 			incoming := <-choke
 			// E4: if topic is E4/<id>, the process as a command
 			if incoming[0] == e4Client.ReceivingTopic {
 				cmd, err := e4Client.ProcessCommand([]byte(incoming[1]))
 				if err != nil {
-					fmt.Printf("E4 error in ProcessCommand: %s", err)
+					log.Printf("E4 error in ProcessCommand: %s\n", err)
 				} else {
-					fmt.Printf("RECEIVED E4 COMMAND: %s\n", cmd)
+					log.Printf("received command %s\n", cmd)
 				}
 			} else {
 				// E4: attempt to decrypt
 				message, err := e4Client.Unprotect([]byte(incoming[1]), incoming[0])
 				if err == nil {
-					fmt.Printf("RECEIVED (E4-protected) TOPIC: %s MESSAGE: %s\n", incoming[0], message)
-				} else if err == e4.E4errTopicKeyNotFound {
-					fmt.Printf("RECEIVED (NOT E4-protected) TOPIC: %s MESSAGE: %s\n", incoming[0], incoming[1])
+					log.Printf("received (E4-protected) on topic: %s: %s\n", incoming[0], message)
+				} else if err == e4.ErrTopicKeyNotFound {
+					log.Printf("received (NOT E4-protected) on topic: %s: %s\n", incoming[0], incoming[1])
 				} else {
-					fmt.Printf("E4 error: %s", err)
+					log.Printf("E4 error: %s", err)
 				}
 			}
 			receiveCount++

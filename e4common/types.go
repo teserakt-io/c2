@@ -13,7 +13,7 @@ const (
 	TimestampLen    = 8
 	MaxTopicLen     = 512
 	MaxSecondsDelay = 60 * 10
-	idTopicPrefix   = "E4/"
+	idTopicPrefix   = "e4/"
 )
 
 // Command is a command sent by C2 to a client.
@@ -97,4 +97,9 @@ func IsValidTopicHash(topichash []byte) bool {
 // TopicForID generate the MQTT topic that a client should subscribe to in order to receive commands.
 func TopicForID(id []byte) string {
 	return idTopicPrefix + hex.EncodeToString(id)
+}
+
+// PrettyID returns an ID as its first 8 hex chars
+func PrettyID(id []byte) string {
+	return hex.EncodeToString(id)[:8] + ".."
 }
