@@ -1,9 +1,9 @@
 # c2backend
 
-C2 back-end server, see [configs/config.yaml](configs/config.yaml).
+C2 back-end server, see configs/config.yaml.
 
 Serves gRPC on TCP 5555, receiving `C2Request` objects as protobuf
-messages as per [c2.proto](https://gitlab.com/Teserakt/e4go/tree/master/c2proto).
+messages as per api/c2.proto.
 
 Serves HTTP on TCP 8888, receiving requests to the following endpoints:
 

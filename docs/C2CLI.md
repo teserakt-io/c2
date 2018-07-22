@@ -13,4 +13,4 @@ Commands, formatted as `command arg1 arg2`, where `key` is a 512-bit value passe
 * removeTopic: `rt topic`
 * newClientKey: `nck id key`
 
-
+See `help` for interactive shell commands.
