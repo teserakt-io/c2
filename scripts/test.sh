@@ -27,7 +27,7 @@ cd ../mqe4client
 CLIENTID=2dd31f9cbe1ccf9f3f67520a8bc9594b7fe095ea69945408b83c861021372169 
 
 printf "\nstarting client..\n"
-./mqe4client -action sub -broker test.mosquitto.org:1883 -num 50 -topic e4/$CLIENTID &
+./mqe4client -action sub -broker localhost:1883 -num 50 -topic e4/$CLIENTID &
 CLID=$!
 
 trap terminate INT

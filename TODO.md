@@ -43,7 +43,9 @@
 
 * set local GOPATH layout
 * use dep
+* use goimports
 * s/badger/cockroach 
+
 
 # TODO
 
