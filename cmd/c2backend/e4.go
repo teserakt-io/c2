@@ -15,7 +15,7 @@ func (s *C2) newClient(id, key []byte) error {
 		logger.Log("msg", "insertIDKey failed", "error", err)
 		return err
 	}
-	logger.Log("msg", "succeeded", "client", e4.PrettyID)
+	logger.Log("msg", "succeeded", "client", e4.PrettyID(id))
 	return nil
 }
 
@@ -28,7 +28,7 @@ func (s *C2) removeClient(id []byte) error {
 		logger.Log("msg", "deleteIDKey failed", "error", err)
 		return err
 	}
-	logger.Log("msg", "succeeded", "client", e4.PrettyID)
+	logger.Log("msg", "succeeded", "client", e4.PrettyID(id))
 	return nil
 }
 
@@ -55,7 +55,7 @@ func (s *C2) newTopicClient(id []byte, topic string) error {
 		return err
 	}
 
-	logger.Log("msg", "succeeded", "client", e4.PrettyID, "topic", topic)
+	logger.Log("msg", "succeeded", "client", e4.PrettyID(id), "topic", topic, "topichash", topichash)
 	return nil
 }
 
@@ -77,26 +77,35 @@ func (s *C2) removeTopicClient(id []byte, topic string) error {
 
 func (s *C2) resetClient(id []byte) error {
 
+	logger := log.With(s.logger, "protocol", "e4", "command", "resetClient")
+
 	payload, err := s.CreateAndProtectForID(e4.ResetTopics, nil, nil, id)
 	if err != nil {
 		return err
 	}
 	err = s.sendCommandToClient(id, payload)
 	if err != nil {
+		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
 	}
+	logger.Log("msg", "succeeded", "client", e4.PrettyID(id))
 
 	return nil
 }
 
 func (s *C2) newTopic(topic string) error {
 
+	logger := log.With(s.logger, "protocol", "e4", "command", "newTopic")
+
 	key := e4.RandomKey()
 
 	err := s.insertTopicKey(topic, key)
 	if err != nil {
+		logger.Log("msg", "insertTopicKey failed", "error", err)
 		return err
 	}
+	logger.Log("msg", "succeeded", "topic", topic)
+
 	return nil
 }
 

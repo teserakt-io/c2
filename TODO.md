@@ -1,32 +1,6 @@
-# WIP
-
-* set local GOPATH layout
-* use dep https://golang.github.io/dep/docs/daily-dep.html
-* use goimports
-* s/badger/cockroach 
-* move config to ./config/
-
-# TODO
-
-* getIDs(topic), getTopics(id)
-* make arch diagram using https://draw.io/
-* fine-tune MQTT client options
-
-# FUTURE
-
-* 512b -> 256b key, cf mjos suggestion
-* middleware for monitoring/tracing (Jaeger, Sentry, etc.), see go-kit
-* monitoring of all topics' messages (c2monitor service)
-* secure grpc + https
-    -https://github.com/olivere/grpc-example/blob/master/tasks/server.go#L68
-* binary packaging
-    - binary in /opt/e4/, db in /var/lib/e4/db/
-    - https://stackoverflow.com/a/29600086
-    - https://stackoverflow.com/a/45003378
-    - https://github.com/goreleaser/nfpm ?
-
 #DONE
 
+* move config to ./config/
 * test encode
 * db status when starting
 * storage abstraction
@@ -64,4 +38,30 @@
 * add banner including version and date to backend, cli, client
 * fix lints
 * better logs (go-kit logs); only log in main, add handler to services
+* set local GOPATH layout
+* debug current setting
+* use dep https://golang.github.io/dep/docs/daily-dep.html
 
+# WIP
+
+* use goimports
+* s/badger/cockroach 
+
+# TODO
+
+* getIDs(topic), getTopics(id)
+* make arch diagram using https://draw.io/
+* fine-tune MQTT client options
+
+# FUTURE
+
+* 512b -> 256b key, cf mjos suggestion
+* middleware for monitoring/tracing (Jaeger, Sentry, etc.), see go-kit
+* monitoring of all topics' messages (c2monitor service)
+* secure grpc + https
+    -https://github.com/olivere/grpc-example/blob/master/tasks/server.go#L68
+* binary packaging
+    - binary in /opt/e4/, db in /var/lib/e4/db/
+    - https://stackoverflow.com/a/29600086
+    - https://stackoverflow.com/a/45003378
+    - https://github.com/goreleaser/nfpm ?
