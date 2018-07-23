@@ -1,6 +1,7 @@
 #!/bin/bash
 
-goimports -w cmd/ pkg/ 
+goimports -w $GOPATH/src/teserakt/e4go/cmd/
+goimports -w $GOPATH/src/teserakt/e4go/pkg
 
 CMDPATH=teserakt/e4go/cmd
 

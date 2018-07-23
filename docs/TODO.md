@@ -41,16 +41,17 @@
 * set local GOPATH layout
 * debug current setting
 * use dep https://golang.github.io/dep/docs/daily-dep.html
+* use goimports
 
 # WIP
 
-* use goimports
-* s/badger/cockroach 
+* make arch diagram using https://draw.io/
+* 
 
 # TODO
 
+* s/badger/cockroach
 * getIDs(topic), getTopics(id)
-* make arch diagram using https://draw.io/
 * fine-tune MQTT client options
 
 # FUTURE

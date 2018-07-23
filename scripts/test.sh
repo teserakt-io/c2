@@ -1,71 +1,58 @@
 
+# cleanup db
 rm -rf /tmp/e4/db
 mkdir -p /tmp/e4/db
 
-# sync workspace for dev outside GOPATH
-cp -p -r c2proto  $GOPATH/src/teserakt
-cp -p -r e4common $GOPATH/src/teserakt
-cp -p -r e4client $GOPATH/src/teserakt
+E4PATH=$GOPATH/src/teserakt/e4go
 
-printf "\nbuilding c2backend.."
-cd c2backend && ./build.sh && cd ..
-
-printf "\nbuilding c2cli.."
-cd c2cli && ./build.sh && cd ..
-
-printf "\nbuilding mqe4client.."
-cd mqe4client && ./build.sh && cd ..
+$E4PATH/scripts/build.sh
 
 printf "\nstarting c2backend..\n"
-cd c2backend
-./c2backend &
+$E4PATH/bin/c2backend &
 BEPID=$!
 sleep 3
 
-cd ../mqe4client
-
-CLIENTID=2dd31f9cbe1ccf9f3f67520a8bc9594b7fe095ea69945408b83c861021372169 
-
 printf "\nstarting client..\n"
-./mqe4client -action sub -broker localhost:1883 -num 50 -topic e4/$CLIENTID &
+$E4PATH/bin/mqe4client -action sub -broker tcp://localhost:1883 -num 50 -topic testtopic &
 CLID=$!
 
 trap terminate INT
 
-    function terminate() {
+function terminate() {
     printf "\nshutting down c2backend.."
     kill -9 $BEPID
     printf "\nshutting down client.."
     kill -9 $CLID
+    exit
 }
-
-cd ../c2cli
 
 printf "\nTESTING gRPC INTERFACE\n"
 
+C2CLI=$E4PATH/bin/c2cli
+
 printf "\n# adding client to C2 db\n"
-./c2cli -c nc -i "testid" -p "testpwd"
+$C2CLI -c nc -i "testid" -p "testpwd"
 
 printf "\n# adding a topic to C2\n"
-./c2cli -c nt -t "atopic"
+$C2CLI -c nt -t "atopic"
 
 printf "\n# adding this topic to client\n"
-./c2cli -c ntc -t "atopic" -i "testid"
+$C2CLI -c ntc -t "atopic" -i "testid"
 
 sleep 1
 
 printf "\n# resetting client\n"
-./c2cli -c rsc -i "testid"
+$C2CLI -c rsc -i "testid"
 
 sleep 1
 
 printf "\n# changing client key\n"
-./c2cli -c nck -i "testid"
+$C2CLI -c nck -i "testid"
 
 sleep 1
 
 printf "\n# adding topic to client\n"
-./c2cli -c ntc -t "atopic" -i "testid"
+$C2CLI -c ntc -t "atopic" -i "testid"
 
 sleep 1
 
