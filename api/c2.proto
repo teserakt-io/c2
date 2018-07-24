@@ -17,6 +17,8 @@ message C2Request {
         REMOVE_TOPIC = 6;
         NEW_CLIENT_KEY = 7;
         SEND_MESSAGE = 8;
+        GET_CLIENTS = 9;
+        GET_TOPICS = 10;
     }
 
     Command command = 1;
@@ -30,4 +32,6 @@ message C2Response {
 
     bool success = 1;
     string err = 2;
+    repeated string ids = 3;
+    repeated string topics = 4;
 }

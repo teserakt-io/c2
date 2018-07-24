@@ -127,6 +127,24 @@ func (s *C2) gRPCnewClientKey(in *pb.C2Request) (*pb.C2Response, error) {
 	return &pb.C2Response{Success: true, Err: ""}, nil
 }
 
+func (s *C2) gRPCgetClients(in *pb.C2Request) (*pb.C2Response, error) {
+	ids, err := s.dbGetIDListHex()
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	return &pb.C2Response{Success: true, Err: "", Ids: ids}, nil
+}
+
+func (s *C2) gRPCgetTopics(in *pb.C2Request) (*pb.C2Response, error) {
+	topics, err := s.dbGetTopicsList()
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	return &pb.C2Response{Success: true, Err: "", Topics: topics}, nil
+}
+
 func (s *C2) gRPCsendMessage(in *pb.C2Request) (*pb.C2Response, error) {
 
 	err := checkRequest(in, false, false, true)

@@ -62,7 +62,8 @@ func main() {
 	fmt.Println("   /  E4: MQTT test client           /")
 	fmt.Printf("  /  version %s-%s          /\n", buildDate, gitCommit[:4])
 	fmt.Println(" /  Teserakt AG, 2018              /")
-	fmt.Println("/---------------------------------/\n")
+	fmt.Println("/---------------------------------/")
+	fmt.Println("")
 
 	topic := flag.String("topic", "", "The topic name to/from which to publish/subscribe")
 	broker := flag.String("broker", "tcp://test.mosquitto.org:1883", "The broker URI. ex: tcp://10.10.1.1:1883")
@@ -110,7 +111,7 @@ func main() {
 		opts.SetStore(MQTT.NewFileStore(*store))
 	}
 
-	log.SetPrefix("e4demoapp\t")
+	log.SetPrefix("mqe4client\t")
 
 	// E4: creating a fresh client, rather than loading from disk
 	e4Client := e4.NewClientPretty(E4IdAlias, E4Pwd, E4FilePath)

@@ -26,6 +26,8 @@ function terminate() {
     exit
 }
 
+sleep 1
+
 printf "\nTESTING gRPC INTERFACE\n"
 
 C2CLI=$E4PATH/bin/c2cli
@@ -34,10 +36,10 @@ printf "\n# adding client to C2 db\n"
 $C2CLI -c nc -i "testid" -p "testpwd"
 
 printf "\n# adding a topic to C2\n"
-$C2CLI -c nt -t "atopic"
+$C2CLI -c nt -t "testtopic"
 
 printf "\n# adding this topic to client\n"
-$C2CLI -c ntc -t "atopic" -i "testid"
+$C2CLI -c ntc -t "testtopic" -i "testid"
 
 sleep 1
 
@@ -52,13 +54,17 @@ $C2CLI -c nck -i "testid"
 sleep 1
 
 printf "\n# adding topic to client\n"
-$C2CLI -c ntc -t "atopic" -i "testid"
+$C2CLI -c ntc -t "testtopic" -i "testid"
+
+printf "\n# sending message to client\n"
+$C2CLI -c sm -t "testtopic" -m "hello client"
 
 sleep 1
 
 printf "\nTESTING HTTP INTERFACE\n"
 
 C2HTTP="localhost:8888"
+CLIENTID="2dd31f9cbe1ccf9f3f67520a8bc9594b7fe095ea69945408b83c861021372169"
 
 printf "\n# resetting client key\n"
 curl -X PATCH $C2HTTP/e4/client/$CLIENTID
@@ -75,7 +81,16 @@ curl -X DELETE $C2HTTP/e4/client/$CLIENTID/topic/newtopic
 printf "\n# remove topic from c2\n"
 curl -X DELETE $C2HTTP/e4/topic/newtopic
 
-printf "\n# removing it again should fail with 404\n"
-curl -X DELETE $C2HTTP/topic/newtopic
+printf "\n# removing it again should fail\n"
+curl -X DELETE $C2HTTP/e4/topic/newtopic
+
+printf "\n# sending message to client\n"
+curl -X POST $C2HTTP/e4/topic/testtopic/message/hello
+
+printf "\n# get topics list\n"
+curl -X GET $C2HTTP/e4/topic
+
+printf "\n# get ids list\n"
+curl -X GET $C2HTTP/e4/client
 
 terminate

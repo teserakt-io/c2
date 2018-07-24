@@ -45,12 +45,23 @@
 
 # WIP
 
+* c2cli: lsc and lst commands 
 * make arch diagram using https://draw.io/
-* 
+
+* slides with features (update master deck)
+    - c2: structured logs for siem/splunk
+    - c2: designed with people who done major e-commerce platform, HA
+    - c2: works on mac, linux, win
+    - go, c/avr, java/bee clients
+* demo:
+    - mqtt.fail broker
+    - screencast
+    - bee client, go client
 
 # TODO
 
 * s/badger/cockroach
+* more complete build.sh (arch, etc.)
 * getIDs(topic), getTopics(id)
 * fine-tune MQTT client options
 
