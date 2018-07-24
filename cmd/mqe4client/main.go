@@ -110,7 +110,7 @@ func main() {
 		opts.SetStore(MQTT.NewFileStore(*store))
 	}
 
-	log.SetPrefix("e4demoapp\t")
+	log.SetPrefix("mqe4client\t")
 
 	// E4: creating a fresh client, rather than loading from disk
 	e4Client := e4.NewClientPretty(E4IdAlias, E4Pwd, E4FilePath)
