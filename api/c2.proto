@@ -30,4 +30,6 @@ message C2Response {
 
     bool success = 1;
     string err = 2;
+    //repeated string ids = 3;
+    //repeated string topics = 4;
 }

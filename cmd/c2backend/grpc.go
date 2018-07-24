@@ -127,6 +127,11 @@ func (s *C2) gRPCnewClientKey(in *pb.C2Request) (*pb.C2Response, error) {
 	return &pb.C2Response{Success: true, Err: ""}, nil
 }
 
+func (s *C2) gRPCgetClients(in *pb.C2Request) (*pb.C2Response, error) {
+	//ids, err := s.dbGetIDListHex()
+	return &pb.C2Response{Success: true, Err: ""}, nil
+}
+
 func (s *C2) gRPCsendMessage(in *pb.C2Request) (*pb.C2Response, error) {
 
 	err := checkRequest(in, false, false, true)
