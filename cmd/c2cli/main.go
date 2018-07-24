@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -81,7 +82,7 @@ func main() {
 
 		shell.AddCmd(&ishell.Cmd{
 			Name: "nc",
-			Help: "new client (nc client pwd)",
+			Help: "new client in C2 (nc client pwd)",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) != 2 {
 					c.Println("command failed: expecting 2 arguments")
@@ -92,15 +93,13 @@ func main() {
 				err := sendCommand(client, pb.C2Request_NEW_CLIENT, id, key, "", "")
 				if err != nil {
 					c.Println("command failed: ", err)
-				} else {
-					c.Println("command succeeded")
 				}
 			},
 		})
 
 		shell.AddCmd(&ishell.Cmd{
 			Name: "rc",
-			Help: "remove client (rc client)",
+			Help: "remove client from C2 (rc client)",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) != 1 {
 					c.Println("command failed: expecting 1 argument")
@@ -110,8 +109,6 @@ func main() {
 				err := sendCommand(client, pb.C2Request_NEW_CLIENT, id, nil, "", "")
 				if err != nil {
 					c.Println("command failed: ", err)
-				} else {
-					c.Println("command sent")
 				}
 			},
 		})
@@ -129,8 +126,6 @@ func main() {
 				err := sendCommand(client, pb.C2Request_NEW_TOPIC_CLIENT, id, nil, topic, "")
 				if err != nil {
 					c.Println("command failed: ", err)
-				} else {
-					c.Println("command sent")
 				}
 			},
 		})
@@ -148,8 +143,6 @@ func main() {
 				err := sendCommand(client, pb.C2Request_REMOVE_TOPIC_CLIENT, id, nil, topic, "")
 				if err != nil {
 					c.Println("command failed: ", err)
-				} else {
-					c.Println("command sent")
 				}
 			},
 		})
@@ -166,15 +159,13 @@ func main() {
 				err := sendCommand(client, pb.C2Request_RESET_CLIENT, id, nil, "", "")
 				if err != nil {
 					c.Println("command failed: ", err)
-				} else {
-					c.Println("command sent")
 				}
 			},
 		})
 
 		shell.AddCmd(&ishell.Cmd{
 			Name: "nt",
-			Help: "new topic (nt topic)",
+			Help: "new topic in C2 (nt topic)",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) != 1 {
 					c.Println("command failed: expecting 1 argument")
@@ -184,15 +175,13 @@ func main() {
 				err := sendCommand(client, pb.C2Request_NEW_TOPIC, nil, nil, topic, "")
 				if err != nil {
 					c.Println("command failed: ", err)
-				} else {
-					c.Println("command sent")
 				}
 			},
 		})
 
 		shell.AddCmd(&ishell.Cmd{
 			Name: "rt",
-			Help: "remove topic (rt topic)",
+			Help: "remove topic from C2 (rt topic)",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) != 1 {
 					c.Println("command failed: expecting 1 argument")
@@ -202,8 +191,6 @@ func main() {
 				err := sendCommand(client, pb.C2Request_REMOVE_TOPIC, nil, nil, topic, "")
 				if err != nil {
 					c.Println("command failed: ", err)
-				} else {
-					c.Println("command sent")
 				}
 			},
 		})
@@ -220,15 +207,13 @@ func main() {
 				err := sendCommand(client, pb.C2Request_NEW_CLIENT_KEY, id, nil, "", "")
 				if err != nil {
 					c.Println("command failed: ", err)
-				} else {
-					c.Println("command sent")
 				}
 			},
 		})
 
 		shell.AddCmd(&ishell.Cmd{
 			Name: "sm",
-			Help: "send message (send client topic message)",
+			Help: "send message (sm client topic message)",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) < 2 {
 					c.Println("command failed: expecting 2+ arguments")
@@ -239,8 +224,36 @@ func main() {
 				err := sendCommand(client, pb.C2Request_SEND_MESSAGE, nil, nil, topic, msg)
 				if err != nil {
 					c.Println("command failed: ", err)
-				} else {
-					c.Println("command sent")
+				}
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "lsc",
+			Help: "list clients in C2",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 0 {
+					c.Println("command failed: no argument expected")
+					return
+				}
+				err := sendCommand(client, pb.C2Request_GET_CLIENTS, nil, nil, "", "")
+				if err != nil {
+					c.Println("command failed: ", err)
+				}
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "lst",
+			Help: "list topics in C2",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 0 {
+					c.Println("command failed: no argument expected")
+					return
+				}
+				err := sendCommand(client, pb.C2Request_GET_TOPICS, nil, nil, "", "")
+				if err != nil {
+					c.Println("command failed: ", err)
 				}
 			},
 		})
@@ -307,6 +320,10 @@ func commandToPbCode(command string) (pb.C2Request_Command, error) {
 		return pb.C2Request_NEW_CLIENT_KEY, nil
 	case "sm":
 		return pb.C2Request_SEND_MESSAGE, nil
+	case "lsc":
+		return pb.C2Request_GET_CLIENTS, nil
+	case "lst":
+		return pb.C2Request_GET_TOPICS, nil
 	default:
 		return -1, errors.New("invalid command")
 	}
@@ -328,6 +345,16 @@ func sendCommand(client pb.C2Client, commandcode pb.C2Request_Command, id, key [
 		return err
 	}
 	if resp.Success {
+		if commandcode == pb.C2Request_GET_CLIENTS {
+			for _, i := range resp.Ids {
+				fmt.Println(i)
+			}
+		}
+		if commandcode == pb.C2Request_GET_TOPICS {
+			for _, t := range resp.Topics {
+				fmt.Println(t)
+			}
+		}
 		return nil
 	}
 	return errors.New(resp.Err)

@@ -51,6 +51,7 @@
 * slides with features (update master deck)
     - c2: structured logs for siem/splunk
     - c2: designed with people who done major e-commerce platform, HA
+    - c2: works on mac, linux, win
     - go, c/avr, java/bee clients
 * demo:
     - mqtt.fail broker

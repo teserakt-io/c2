@@ -20,5 +20,7 @@ Build with `scripts/build.sh`.
 
 Test with `scripts/test.sh`.
 
+Release with `scripts/release.sh` (in branch master only).
+
 Demo following instructions in [DEMO.md](docs/DEMO.md).
 

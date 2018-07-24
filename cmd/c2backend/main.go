@@ -49,7 +49,8 @@ func main() {
 	fmt.Println("   /  E4: C2 back-end                /")
 	fmt.Printf("  /  version %s-%s          /\n", buildDate, gitCommit[:4])
 	fmt.Println(" /  Teserakt AG, 2018              /")
-	fmt.Println("/---------------------------------/\n")
+	fmt.Println("/---------------------------------/")
+	fmt.Println("")
 
 	// load config
 	c := config(log.With(c2.logger, "unit", "config"))
@@ -189,6 +190,10 @@ func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, e
 		return s.gRPCnewClientKey(in)
 	case pb.C2Request_SEND_MESSAGE:
 		return s.gRPCsendMessage(in)
+	case pb.C2Request_GET_CLIENTS:
+		return s.gRPCgetClients(in)
+	case pb.C2Request_GET_TOPICS:
+		return s.gRPCgetTopics(in)
 	}
 	return &pb.C2Response{Success: false, Err: "unknown command"}, nil
 }
@@ -199,6 +204,7 @@ func config(logger log.Logger) *viper.Viper {
 
 	var v = viper.New()
 	v.SetConfigName("config")
+	v.AddConfigPath(".")
 	v.AddConfigPath("./configs")
 	v.AddConfigPath("../configs")
 	v.SetDefault("mqtt-broker", "tcp://localhost:1883")
