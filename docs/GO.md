@@ -12,6 +12,7 @@ https://github.com/bahlo/go-styleguide/blob/master/README.md
 
 http://devs.cloudimmunity.com/gotchas-and-common-mistakes-in-go-golang/
 
+http://www.ru-rocker.com/2017/02/17/micro-services-using-go-kit-http-endpoint/
 
 Layout
 

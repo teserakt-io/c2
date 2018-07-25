@@ -42,10 +42,10 @@
 * debug current setting
 * use dep https://golang.github.io/dep/docs/daily-dep.html
 * use goimports
+* c2cli: lsc and lst commands 
 
 # WIP
 
-* c2cli: lsc and lst commands 
 * make arch diagram using https://draw.io/
 
 * slides with features (update master deck)
@@ -56,7 +56,7 @@
 * demo:
     - mqtt.fail broker
     - screencast
-    - bee client, go client
+    - bee client (will have banner), go client
 
 # TODO
 
