@@ -35,7 +35,7 @@ func main() {
 	pwd := fs.StringP("pwd", "p", "", "password to derive a key from")
 	top := fs.StringP("topic", "t", "", "topic as a UTF-8 string")
 	m := fs.StringP("msg", "m", "", "message to send")
-	help := fs.BoolP("help", "h", false, "same")
+	help := fs.BoolP("help", "h", false, "shows this")
 
 	fs.Parse(os.Args[1:])
 	fs.SortFlags = false

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/miscreant/miscreant/go"
@@ -93,11 +94,17 @@ func Protect(message []byte, key []byte) ([]byte, error) {
 // Unprotect verifies a protected message's timestamp and ciphertext and decrypts it.
 func Unprotect(protected []byte, key []byte) ([]byte, error) {
 
+	if len(protected) <= TimestampLen {
+		return nil, errors.New("ciphertext to short")
+	}
+
 	ct := protected[TimestampLen:]
 	timestamp := protected[:TimestampLen]
 
 	ts := binary.LittleEndian.Uint64(timestamp)
 	now := uint64(time.Now().Unix())
+	fmt.Println("TS RECEIVED ", ts)
+	fmt.Println("TS NOW ", now)
 	if now < ts {
 		return nil, errors.New("timestamp received is in the future")
 	}

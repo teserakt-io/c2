@@ -1,5 +1,5 @@
 
-mqtt-broker: tcp://mqtt.fail:1883
+mqtt-broker: tcp://localhost:1883
 mqtt-ID: e4c2
 
 db-dir: /tmp/e4/db
