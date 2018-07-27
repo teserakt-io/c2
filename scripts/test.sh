@@ -21,6 +21,8 @@ trap terminate INT
 function terminate() {
     printf "\nshutting down c2backend.."
     kill -9 $BEPID
+    printf "\nflushing c2backend db"
+    rm -rf /tmp/e4/db
     printf "\nshutting down client.."
     kill -9 $CLID
     exit

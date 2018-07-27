@@ -82,15 +82,23 @@ func main() {
 
 		shell.AddCmd(&ishell.Cmd{
 			Name: "nc",
-			Help: "new client in C2 (nc client pwd)",
+			Help: "new client in C2 (nc client pwd|key",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) != 2 {
 					c.Println("command failed: expecting 2 arguments")
 					return
 				}
+				var err error
 				id = e4.HashIDAlias(c.Args[0])
-				key = e4.HashPwd(c.Args[1])
-				err := sendCommand(client, pb.C2Request_NEW_CLIENT, id, key, "", "")
+				if len(c.Args[1]) != 128 {
+					key = e4.HashPwd(c.Args[1])
+				} else {
+					key, err = hex.DecodeString(c.Args[1])
+					if err != nil {
+						c.Println("command failed: invalid key")
+					}
+				}
+				err = sendCommand(client, pb.C2Request_NEW_CLIENT, id, key, "", "")
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -106,7 +114,7 @@ func main() {
 					return
 				}
 				id = e4.HashIDAlias(c.Args[0])
-				err := sendCommand(client, pb.C2Request_NEW_CLIENT, id, nil, "", "")
+				err := sendCommand(client, pb.C2Request_REMOVE_CLIENT, id, nil, "", "")
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -213,7 +221,7 @@ func main() {
 
 		shell.AddCmd(&ishell.Cmd{
 			Name: "sm",
-			Help: "send message (sm client topic message)",
+			Help: "send message (sm topic message)",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) < 2 {
 					c.Println("command failed: expecting 2+ arguments")
@@ -255,6 +263,32 @@ func main() {
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "hi",
+			Help: "hashes client id alias to id",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 1 {
+					c.Println("command failed: argument expected")
+					return
+				}
+				hash := e4.HashIDAlias(c.Args[0])
+				c.Println(hex.EncodeToString(hash))
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "hp",
+			Help: "hashes password to key",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 1 {
+					c.Println("command failed: argument expected")
+					return
+				}
+				hash := e4.HashPwd(c.Args[0])
+				c.Println(hex.EncodeToString(hash))
 			},
 		})
 
