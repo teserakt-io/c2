@@ -34,11 +34,11 @@ type C2 struct {
 
 // CORS middleware
 func corsMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        w.Header().Set("Access-Control-Allow-Origin", "*")
-        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
-        next.ServeHTTP(w, r)
-    })
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func main() {
@@ -149,9 +149,9 @@ func main() {
 		route := mux.NewRouter()
 		route.Use(corsMiddleware)
 		route.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            w.WriteHeader(http.StatusNoContent)
-            return
-        })
+			w.WriteHeader(http.StatusNoContent)
+			return
+		})
 
 		route.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			resp := Response{w}
