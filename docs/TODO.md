@@ -43,11 +43,7 @@
 * use dep https://golang.github.io/dep/docs/daily-dep.html
 * use goimports
 * c2cli: lsc and lst commands 
-
-# WIP
-
-* make arch diagram using https://draw.io/
-
+* make arch diagram
 * slides with features (update master deck)
     - c2: structured logs for siem/splunk
     - c2: designed with people who done major e-commerce platform, HA
@@ -56,6 +52,9 @@
     - mqtt.fail broker
     - screencast
     - bee client (will have banner), go client
+
+# WIP
+
 
 # TODO
 
