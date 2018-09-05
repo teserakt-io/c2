@@ -14,6 +14,14 @@ http://devs.cloudimmunity.com/gotchas-and-common-mistakes-in-go-golang/
 
 http://www.ru-rocker.com/2017/02/17/micro-services-using-go-kit-http-endpoint/
 
+dbs:
+
+* https://github.com/jinzhu/gorm  / http://doc.gorm.io/
+
+http:
+
+* https://github.com/gin-gonic/gin
+
 Layout
 
 * https://github.com/golang-standards/project-layout/blob/master/README.md
