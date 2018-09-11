@@ -58,18 +58,18 @@
 
 # TODO
 
-* s/badger/cockroach
+* s/badger/postgres (using gorm etc.)
 * more complete build.sh (arch, etc.)
 * getIDs(topic), getTopics(id)
 * fine-tune MQTT client options
+* 512b -> 256b key, update clients + specs
 
 # FUTURE
 
-* 512b -> 256b key, cf mjos suggestion
+* secure grpc + https, see <https://github.com/olivere/grpc-example/blob/master/tasks/server.go#L68>
+* http service: use <https://github.com/gin-gonic/gin>?
 * middleware for monitoring/tracing (Jaeger, Sentry, etc.), see go-kit
-* monitoring of all topics' messages (c2monitor service)
-* secure grpc + https
-    -https://github.com/olivere/grpc-example/blob/master/tasks/server.go#L68
+* monitoring of all topics' messages (separate service/ui?)
 * binary packaging
     - binary in /opt/e4/, db in /var/lib/e4/db/
     - https://stackoverflow.com/a/29600086
