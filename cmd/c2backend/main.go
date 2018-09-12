@@ -64,11 +64,13 @@ func main() {
 	// load config
 	c := config(log.With(c2.logger, "unit", "config"))
 	var (
-		grpcAddr   = c.GetString("grpc-host-port")
-		httpAddr   = c.GetString("http-host-port")
-		dbDir      = c.GetString("db-dir")
-		mqttBroker = c.GetString("mqtt-broker")
-		mqttID     = c.GetString("mqtt-ID")
+		grpcAddr     = c.GetString("grpc-host-port")
+		httpAddr     = c.GetString("http-host-port")
+		dbDir        = c.GetString("db-dir")
+		mqttBroker   = c.GetString("mqtt-broker")
+		mqttPassword = c.GetString("mqtt-password")
+		mqttUsername = c.GetString("mqtt-username")
+		mqttID       = c.GetString("mqtt-ID")
 	)
 	c2.logger.Log("msg", "config loaded")
 
@@ -100,7 +102,10 @@ func main() {
 		mqOpts := mqtt.NewClientOptions()
 		mqOpts.AddBroker(mqttBroker)
 		mqOpts.SetClientID(mqttID)
+		mqOpts.SetPassword(mqttPassword)
+		mqOpts.SetUsername(mqttUsername)
 		mqttClient := mqtt.NewClient(mqOpts)
+		logger.Log("msg", "mqtt parameters", "broker", mqttBroker, "id", mqttID, "username", mqttUsername)
 		if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
 			logger.Log("msg", "connection failed", "error", token.Error())
 			return
@@ -223,6 +228,8 @@ func config(logger log.Logger) *viper.Viper {
 	v.AddConfigPath("../configs")
 	v.SetDefault("mqtt-broker", "tcp://localhost:1883")
 	v.SetDefault("mqtt-ID", "e4c2")
+	v.SetDefault("mqtt-username", "")
+	v.SetDefault("mqtt-password", "")
 	v.SetDefault("db-dir", "/tmp/E4/db")
 	v.SetDefault("grpc-host-port", "0.0.0.0:5555")
 	v.SetDefault("http-host	-port", "0.0.0.0:8888")
