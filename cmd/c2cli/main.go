@@ -140,7 +140,7 @@ func main() {
 
 		shell.AddCmd(&ishell.Cmd{
 			Name: "rtc",
-			Help: "remove topic client (rtc client)",
+			Help: "remove topic client (rtc client topic)",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) != 2 {
 					c.Println("command failed: expecting 2 arguments")
