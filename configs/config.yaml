@@ -1,6 +1,7 @@
-
 mqtt-broker: tcp://localhost:1883
 mqtt-ID: e4c2
+mqtt-username: 
+mqtt-password: 
 
 db-dir: /tmp/e4/db
 
