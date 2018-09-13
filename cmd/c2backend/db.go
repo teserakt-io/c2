@@ -2,10 +2,36 @@ package main
 
 import (
 	"encoding/hex"
-
-	"github.com/dgraph-io/badger"
+	"github.com/jinzhu/gorm"
+	"github.com/lib/pq"
 )
 
+// IDKey represents an Identity Key in the database given a unique device ID.
+type IDKey struct {
+	gorm.Model
+	ID        [16]byte `gorm:"primary_key:true,unique;not null"`
+	Key       [32]byte `gorm:"not null"`
+	TopicKeys []*TopicKey gorm:`gorm:"many2many:idkeys_topickeys;"`
+}
+
+// TopicKey represents
+type TopicKey struct {
+	gorm.Model
+	TopicID [16]byte `gorm:"primary_key:true,unique;not null"`
+	Key     [32]byte `gorm:"not null"`
+	IDKeys  []*TopicKey gorm:`gorm:"many2many:idkeys_topickeys;"`
+}
+
+func (s *C2) createIDKey(id []byte) error {
+
+}
+
+func (s *C2) deleteIDKey(id []byte) error {
+
+}
+
+// TODO: Everything below here is deprecated and should be removed once the
+// logic is moved over to GORM.
 // signalling the type of key in the k-v store
 const (
 	IDByte    = 0

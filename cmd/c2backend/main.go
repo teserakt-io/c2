@@ -11,7 +11,10 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/dgraph-io/badger"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/lib/pq"
+
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
@@ -27,7 +30,8 @@ var buildDate string
 
 // C2 is the C2's state, consisting of ID keys, topic keys, and an MQTT connection.
 type C2 struct {
-	db         *badger.DB
+	db *gorm.DB
+	//dbold      *badger.DB
 	mqttClient mqtt.Client
 	logger     log.Logger
 }
@@ -75,15 +79,16 @@ func main() {
 	c2.logger.Log("msg", "config loaded")
 
 	// open db
-	dbOpts := badger.DefaultOptions
-	dbOpts.Dir = dbDir
-	dbOpts.ValueDir = dbDir
-	db, err := badger.Open(dbOpts)
+	// TODO: pass this info from settings,
+	db, err := gorm.Open("postgres", "host=localhost user=e4c2 dbname=e4c2_test password=password")
+
 	if err != nil {
 		c2.logger.Log("msg", "database opening failed", "error", err)
 		return
 	}
+
 	defer db.Close()
+
 	c2.logger.Log("msg", "database open")
 	c2.db = db
 
