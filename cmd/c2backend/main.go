@@ -13,7 +13,6 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/lib/pq"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
@@ -70,7 +69,6 @@ func main() {
 	var (
 		grpcAddr     = c.GetString("grpc-host-port")
 		httpAddr     = c.GetString("http-host-port")
-		dbDir        = c.GetString("db-dir")
 		mqttBroker   = c.GetString("mqtt-broker")
 		mqttPassword = c.GetString("mqtt-password")
 		mqttUsername = c.GetString("mqtt-username")
@@ -80,7 +78,7 @@ func main() {
 
 	// open db
 	// TODO: pass this info from settings,
-	db, err := gorm.Open("postgres", "host=localhost user=e4c2 dbname=e4c2_test password=password")
+	db, err := gorm.Open("postgres", "host=localhost user=e4_c2_test dbname=e4 password=teserakte4")
 
 	if err != nil {
 		c2.logger.Log("msg", "database opening failed", "error", err)
@@ -91,6 +89,12 @@ func main() {
 
 	c2.logger.Log("msg", "database open")
 	c2.db = db
+
+	// Ensure the database schema is ready to use:
+	err = c2.dbInitialize()
+	if err != nil {
+		c2.logger.Log("msg", "database setup failed", "error", err)
+	}
 
 	// create critical error channel
 	var errc = make(chan error)
