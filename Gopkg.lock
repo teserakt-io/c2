@@ -2,14 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:4c5803754aedbf42ec7da8cdfea47d36337397267851828610a4f9a76c1b7fd9"
-  name = "github.com/AndreasBriese/bbloom"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "28f7e881ca57bc00e028f9ede9f0d9104cfeef5e"
-
-[[projects]]
   digest = "1:d19cfbbf2e7dad7c6faba60dc7700d6b7d6ff3d3c9477a8e44c32a9eaf3cd907"
   name = "github.com/abiosoft/ishell"
   packages = ["."]
@@ -24,29 +16,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "155bce2042db95a783081fab225e74dd879055b0"
-
-[[projects]]
-  digest = "1:21ac9938fb1098b3a7b0dd909fb30878d33231177fac11a2821114eb9c1088ff"
-  name = "github.com/dgraph-io/badger"
-  packages = [
-    ".",
-    "options",
-    "protos",
-    "skl",
-    "table",
-    "y",
-  ]
-  pruneopts = "UT"
-  revision = "391b6d3b93e6014fe8c2971fcc0c1266e47dbbd9"
-  version = "v1.5.3"
-
-[[projects]]
-  branch = "master"
-  digest = "1:8583eab935e3d99d3a7ac489cd2ee7c8e95eecd7c64ab1fc8382746dacaf8563"
-  name = "github.com/dgryski/go-farm"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "2de33835d10275975374b37b2dcfd22c9020a1f5"
 
 [[projects]]
   digest = "1:184008c955d6a3226b700c13ed0e875a7a051a759618f9bccba9b5c99f17faa5"
@@ -249,14 +218,6 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
-  name = "github.com/pkg/errors"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
-  version = "v0.8.0"
-
-[[projects]]
   digest = "1:bd1ae00087d17c5a748660b8e89e1043e1e5479d0fea743352cda2f8dd8c4f84"
   name = "github.com/spf13/afero"
   packages = [
@@ -419,14 +380,12 @@
   analyzer-version = 1
   input-imports = [
     "github.com/abiosoft/ishell",
-    "github.com/dgraph-io/badger",
     "github.com/eclipse/paho.mqtt.golang",
     "github.com/go-kit/kit/log",
     "github.com/golang/protobuf/proto",
     "github.com/gorilla/mux",
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/postgres",
-    "github.com/lib/pq",
     "github.com/miscreant/miscreant/go",
     "github.com/spf13/pflag",
     "github.com/spf13/viper",
