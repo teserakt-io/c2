@@ -10,7 +10,7 @@ import (
 // IDKey represents an Identity Key in the database given a unique device ID.
 type IDKey struct {
 	gorm.Model
-	ID        [e4.IDLen]byte  `gorm:"primary_key:true,unique;not null"`
+	E4ID      [e4.IDLen]byte  `gorm:"unique;not null"`
 	Key       [e4.KeyLen]byte `gorm:"not null"`
 	TopicKeys []*TopicKey     `gorm:"many2many:idkeys_topickeys;"`
 }
@@ -25,10 +25,11 @@ type TopicKey struct {
 
 // This function is responsible for the
 func (s *C2) dbInitialize() error {
-
+	s.logger.Log("msg", "Database Migration Started.")
 	// TODO: better DB migration logic.
 	s.db.AutoMigrate(&IDKey{})
 	s.db.AutoMigrate(&TopicKey{})
+	s.logger.Log("msg", "Database Migration Finished.")
 	return nil
 }
 
@@ -43,7 +44,7 @@ func (s *C2) insertIDKey(id, key []byte) error {
 	}
 	copy(idbytes[:], id)
 	copy(keybytes[:], key)
-	idkey := IDKey{ID: idbytes, Key: keybytes}
+	idkey := IDKey{E4ID: idbytes, Key: keybytes}
 	if s.db.NewRecord(idkey) {
 		s.db.Create(&idkey)
 	} else {
@@ -71,7 +72,7 @@ func (s *C2) insertTopicKey(topic string, key []byte) error {
 
 func (s *C2) getIDKey(id []byte) ([]byte, error) {
 	var idkey IDKey
-	s.db.Where("ID=?", id).First(&idkey)
+	s.db.Where("E4ID=?", id).First(&idkey)
 
 	// TODO: return error when idkey.key == nil
 	return idkey.Key[:], nil
@@ -91,14 +92,18 @@ func (s *C2) deleteIDKey(id []byte) error {
 		return errors.New("ID size incorrect, not 32 bytes")
 	}
 	copy(idbytes[:], id)
-	idkey := IDKey{ID: idbytes}
+	var idkey IDKey
+	s.db.Where("E4ID=?", idbytes).First(&idkey)
+	s.db.Model(&idkey).Association("TopicKeys").Clear()
 	s.db.Delete(&idkey)
 	return nil
 }
 
 func (s *C2) deleteTopicKey(topic string) error {
-	topickey := TopicKey{Topic: topic}
-	s.db.Delete(&topickey)
+	var topicKey TopicKey
+	s.db.Where("Topic=?", topic).First(&topicKey)
+	s.db.Model(&topicKey).Association("IDKeys").Clear()
+	s.db.Delete(&topicKey)
 	return nil
 }
 
@@ -122,7 +127,7 @@ func (s *C2) dbGetIDListHex() ([]string, error) {
 	s.db.Find(&idkeys)
 
 	for _, idkey := range idkeys {
-		hexids = append(hexids, hex.EncodeToString(idkey.ID[0:]))
+		hexids = append(hexids, hex.EncodeToString(idkey.E4ID[0:]))
 	}
 
 	return hexids, nil
