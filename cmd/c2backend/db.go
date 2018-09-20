@@ -1,26 +1,26 @@
 package main
 
 import (
+	"bytes"
 	"encoding/hex"
 	"errors"
-	"github.com/jinzhu/gorm"
-	e4 "teserakt/e4go/pkg/e4common"
+	//	"github.com/jinzhu/gorm"
 )
 
 // IDKey represents an Identity Key in the database given a unique device ID.
 type IDKey struct {
-	gorm.Model
-	E4ID      [e4.IDLen]byte  `gorm:"unique;not null"`
-	Key       [e4.KeyLen]byte `gorm:"not null"`
-	TopicKeys []*TopicKey     `gorm:"many2many:idkeys_topickeys;"`
+	ID        int         `gorm:"primary_key:true"`
+	E4ID      []byte      `gorm:"unique;not null"`
+	Key       []byte      `gorm:"not null"`
+	TopicKeys []*TopicKey `gorm:"many2many:idkeys_topickeys;"`
 }
 
 // TopicKey represents
 type TopicKey struct {
-	gorm.Model
-	Topic  string          `gorm:"unique;not null"`
-	Key    [e4.KeyLen]byte `gorm:"not null"`
-	IDKeys []*IDKey        `gorm:"many2many:idkeys_topickeys;"`
+	ID     int      `gorm:"primary_key:true"`
+	Topic  string   `gorm:"unique;not null"`
+	Key    []byte   `gorm:"not null"`
+	IDKeys []*IDKey `gorm:"many2many:idkeys_topickeys;"`
 }
 
 // This function is responsible for the
@@ -34,17 +34,7 @@ func (s *C2) dbInitialize() error {
 }
 
 func (s *C2) insertIDKey(id, key []byte) error {
-	var idbytes [e4.IDLen]byte
-	var keybytes [e4.KeyLen]byte
-	if len(id) != e4.IDLen {
-		return errors.New("ID size incorrect, not 32 bytes")
-	}
-	if len(key) != e4.KeyLen {
-		return errors.New("Key size not 64 bytes")
-	}
-	copy(idbytes[:], id)
-	copy(keybytes[:], key)
-	idkey := IDKey{E4ID: idbytes, Key: keybytes}
+	idkey := IDKey{E4ID: id, Key: key}
 	if s.db.NewRecord(idkey) {
 		s.db.Create(&idkey)
 	} else {
@@ -55,12 +45,7 @@ func (s *C2) insertIDKey(id, key []byte) error {
 }
 
 func (s *C2) insertTopicKey(topic string, key []byte) error {
-	var keybytes [e4.KeyLen]byte
-	if len(key) != e4.KeyLen {
-		return errors.New("Key size not 64 bytes")
-	}
-	copy(keybytes[:], key)
-	topickey := TopicKey{Topic: topic, Key: keybytes}
+	topickey := TopicKey{Topic: topic, Key: key}
 	if s.db.NewRecord(topickey) {
 		s.db.Create(&topickey)
 	} else {
@@ -87,13 +72,11 @@ func (s *C2) getTopicKey(topic string) ([]byte, error) {
 }
 
 func (s *C2) deleteIDKey(id []byte) error {
-	var idbytes [e4.IDLen]byte
-	if len(id) != e4.IDLen {
-		return errors.New("ID size incorrect, not 32 bytes")
-	}
-	copy(idbytes[:], id)
 	var idkey IDKey
-	s.db.Where("E4ID=?", idbytes).First(&idkey)
+	s.db.Where(&IDKey{E4ID: id}).First(&idkey)
+	if !bytes.Equal(idkey.E4ID, id) {
+		return errors.New("Unable to find single record; preventing whole DB delete")
+	}
 	s.db.Model(&idkey).Association("TopicKeys").Clear()
 	s.db.Delete(&idkey)
 	return nil
@@ -101,7 +84,10 @@ func (s *C2) deleteIDKey(id []byte) error {
 
 func (s *C2) deleteTopicKey(topic string) error {
 	var topicKey TopicKey
-	s.db.Where("Topic=?", topic).First(&topicKey)
+	s.db.Where(&TopicKey{Topic: topic}).First(&topicKey)
+	if topicKey.Topic != topic {
+		return errors.New("Unable to find single record; preventing whole DB delete")
+	}
 	s.db.Model(&topicKey).Association("IDKeys").Clear()
 	s.db.Delete(&topicKey)
 	return nil
