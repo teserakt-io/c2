@@ -109,6 +109,7 @@ func main() {
 	err = c2.dbInitialize()
 	if err != nil {
 		c2.logger.Log("msg", "database setup failed", "error", err)
+		return
 	}
 
 	// create critical error channel
