@@ -201,6 +201,34 @@ func (s *C2) gRPCgetTopicClients(in *pb.C2Request) (*pb.C2Response, error) {
 	return &pb.C2Response{Success: true, Err: "", Ids: clients}, nil
 }
 
+func (s *C2) gRPClinkClientTopic(in *pb.C2Request) (*pb.C2Response, error) {
+	err := checkRequest(in, true, false, true, false)
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	err = s.linkIDTopic(in.Id, in.Topic)
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	return &pb.C2Response{Success: true, Err: ""}, nil
+}
+
+func (s *C2) gRPCunlinkClientTopic(in *pb.C2Request) (*pb.C2Response, error) {
+	err := checkRequest(in, true, false, true, false)
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	err = s.unlinkIDTopic(in.Id, in.Topic)
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	return &pb.C2Response{Success: true, Err: ""}, nil
+}
+
 func (s *C2) gRPCsendMessage(in *pb.C2Request) (*pb.C2Response, error) {
 
 	err := checkRequest(in, false, false, true, false)
