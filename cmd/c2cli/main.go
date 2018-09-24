@@ -82,7 +82,7 @@ func main() {
 
 		shell.AddCmd(&ishell.Cmd{
 			Name: "nc",
-			Help: "new client in C2 (nc client pwd|key",
+			Help: "new client in C2 (nc client pwd|key)",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) != 2 {
 					c.Println("command failed: expecting 2 arguments")

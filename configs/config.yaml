@@ -1,7 +1,8 @@
-mqtt-broker: tcp://localhost:1883
+#mqtt-broker: tcp://localhost:1883
+mqtt-broker: tcp://data.geo-satis.com:1884
 mqtt-ID: e4c2
-mqtt-username: 
-mqtt-password: 
+mqtt-username: usermqtt
+mqtt-password: passmqtt
 
 db-dir: /tmp/e4/db
 
