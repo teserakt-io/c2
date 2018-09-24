@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -83,6 +84,8 @@ func main() {
 		dbPassword   = c.GetString("db-password")
 		dbHost       = c.GetString("db-host")
 		dbDatabase   = c.GetString("db-database")
+		grpcCert     = c.GetString("grpc-cert")
+		grpcKey      = c.GetString("grpc-key")
 	)
 	c2.logger.Log("msg", "config loaded")
 
@@ -104,11 +107,12 @@ func main() {
 	db.LogMode(dbLogging)
 	db.SetLogger(stdloglogger)
 	c2.db = db
-
+	c2.db.Exec("SET search_path TO e4_c2_test;")
 	// Ensure the database schema is ready to use:
 	err = c2.dbInitialize()
 	if err != nil {
 		c2.logger.Log("msg", "database setup failed", "error", err)
+		return
 	}
 
 	// create critical error channel
@@ -149,7 +153,14 @@ func main() {
 			logger.Log("msg", "failed to listen", "error", err)
 			return
 		}
-		s := grpc.NewServer()
+		creds, err := credentials.NewServerTLSFromFile(grpcCert, grpcKey)
+		if err != nil {
+			logger.Log("msg", "failed to get credentials", "cert", grpcCert, "key", grpcKey, "error", err)
+			return
+		}
+		logger.Log("msg", "using TLS for gRPC", "cert", grpcCert, "key", grpcKey, "error", err)
+
+		s := grpc.NewServer(grpc.Creds(creds))
 		pb.RegisterC2Server(s, &c2)
 
 		count, err := c2.countIDKeys()
@@ -213,6 +224,7 @@ func main() {
 func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, error) {
 
 	//log.Printf("command received: %s", pb.C2Request_Command_name[int32(in.Command)])
+	s.logger.Log("msg", "received gRPC request", "request", pb.C2Request_Command_name[int32(in.Command)])
 
 	switch in.Command {
 	case pb.C2Request_NEW_CLIENT:

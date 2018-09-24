@@ -4,12 +4,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"go/build"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/abiosoft/ishell"
 	"github.com/spf13/pflag"
@@ -26,6 +29,18 @@ func main() {
 
 	log.SetFlags(0)
 
+	gopath := os.Getenv("GOPATH")
+	if gopath == "" {
+		gopath = build.Default.GOPATH
+	}
+	// use os.Path
+
+	certFile := "src/teserakt/e4go/cmd/c2backend/c2-cert.pem"
+	certFile = filepath.FromSlash(certFile)
+	//toJoin := []string{gopath, certFile}
+	certPath := filepath.Join(gopath, certFile)
+	fmt.Println(certPath)
+
 	fs := pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 
 	c2 := fs.String("c2", "localhost:5555", "C2 host address")
@@ -34,6 +49,7 @@ func main() {
 	keyhex := fs.StringP("key", "k", "", "512-bit key as an hex string")
 	pwd := fs.StringP("pwd", "p", "", "password to derive a key from")
 	top := fs.StringP("topic", "t", "", "topic as a UTF-8 string")
+	cert := fs.StringP("cert", "e", certPath, "C2 certificate file")
 	m := fs.StringP("msg", "m", "", "message to send")
 	help := fs.BoolP("help", "h", false, "shows this")
 
@@ -51,7 +67,12 @@ func main() {
 	var topic string
 	var msg string
 
-	conn, err := grpc.Dial(*c2, grpc.WithInsecure())
+	creds, err := credentials.NewClientTLSFromFile(*cert, "")
+	if err != nil {
+		log.Fatalf("failed to create TLS credentials from %v: %v", *cert, err)
+	}
+
+	conn, err := grpc.Dial(*c2, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		log.Fatalf("failed to connect to gRPC server: %v", err)
 	}

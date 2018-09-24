@@ -53,23 +53,24 @@
     - screencast
     - bee client (will have banner), go client
 * s/badger/postgres (using gorm etc.)
+* more complete build.sh (arch, etc.)
 
 # WIP
 
+* getIDs(topic), getTopics(id)
+* secure grpc + https, see <https://github.com/olivere/grpc-example/blob/master/tasks/server.go#L68>
 
 # TODO
 
-* more complete build.sh (arch, etc.)
-* getIDs(topic), getTopics(id)
 * fine-tune MQTT client options
 * 512b -> 256b key, update clients + specs
 * Unit tests for relevant functionality.
 * Continuous integration.
 * logs to stdout and to log file.
+* when gRPC goroutine fails, service should terminate
 
 # FUTURE
 
-* secure grpc + https, see <https://github.com/olivere/grpc-example/blob/master/tasks/server.go#L68>
 * http service: use <https://github.com/gin-gonic/gin>?
 * middleware for monitoring/tracing (Jaeger, Sentry, etc.), see go-kit
 * monitoring of all topics' messages (separate service/ui?)

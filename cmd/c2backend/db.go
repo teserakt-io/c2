@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
+
 	"github.com/jinzhu/gorm"
 )
 
@@ -18,7 +19,7 @@ type IDKey struct {
 // TopicKey represents
 type TopicKey struct {
 	ID     int      `gorm:"primary_key:true"`
-	Topic  string   `gorm:"unique;index:not null"`
+	Topic  string   `gorm:"unique;not null"`
 	Key    []byte   `gorm:"not null"`
 	IDKeys []*IDKey `gorm:"many2many:idkeys_topickeys;"`
 }
