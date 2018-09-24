@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 goimports -w $GOPATH/src/teserakt/e4go/cmd
 goimports -w $GOPATH/src/teserakt/e4go/pkg
 
@@ -10,7 +11,8 @@ NOW=$(date "+%Y%m%d")
 
 # see valid values at https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 #GOOS=linux 
-GOOS=darwin 
+
+GOOS=`uname -s | tr '[:upper:]' '[:lower:]'` 
 GOARCH=amd64
 
 printf "building E4:\n\tversion $NOW-$GIT_COMMIT\n\tOS $GOOS\n\tarch: $GOARCH\n"

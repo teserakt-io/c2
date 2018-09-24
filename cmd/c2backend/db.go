@@ -11,16 +11,16 @@ import (
 // IDKey represents an Identity Key in the database given a unique device ID.
 type IDKey struct {
 	ID        int         `gorm:"primary_key:true"`
-	E4ID      []byte      `gorm:"unique;not null"`
-	Key       []byte      `gorm:"not null"`
+	E4ID      []byte      `gorm:"unique;NOT NULL"`
+	Key       []byte      `gorm:"NOT NULL"`
 	TopicKeys []*TopicKey `gorm:"many2many:idkeys_topickeys;"`
 }
 
 // TopicKey represents
 type TopicKey struct {
 	ID     int      `gorm:"primary_key:true"`
-	Topic  string   `gorm:"unique;not null"`
-	Key    []byte   `gorm:"not null"`
+	Topic  string   `gorm:"unique;NOT NULL"`
+	Key    []byte   `gorm:"NOT NULL"`
 	IDKeys []*IDKey `gorm:"many2many:idkeys_topickeys;"`
 }
 
@@ -28,19 +28,20 @@ type TopicKey struct {
 func (s *C2) dbInitialize() error {
 	s.logger.Log("msg", "Database Migration Started.")
 	// TODO: better DB migration logic.
-	tx := s.db.Begin()
+	// TODO: transactions?
+	//tx := s.db.Begin()
 
-	if result := tx.AutoMigrate(&IDKey{}); result.Error != nil {
-		tx.Rollback()
+	if result := s.db.AutoMigrate(&IDKey{}); result.Error != nil {
+		//tx.Rollback()
 		return result.Error
 	}
-	if result := tx.AutoMigrate(&TopicKey{}); result.Error != nil {
-		tx.Rollback()
+	if result := s.db.AutoMigrate(&TopicKey{}); result.Error != nil {
+		//tx.Rollback()
 		return result.Error
 	}
-	if err := tx.Commit().Error; err != nil {
+	/*if err := tx.Commit().Error; err != nil {
 		return err
-	}
+	}*/
 	s.logger.Log("msg", "Database Migration Finished.")
 	return nil
 }
