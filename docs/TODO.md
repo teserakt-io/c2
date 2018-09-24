@@ -52,17 +52,20 @@
     - mqtt.fail broker
     - screencast
     - bee client (will have banner), go client
+* s/badger/postgres (using gorm etc.)
 
 # WIP
 
 
 # TODO
 
-* s/badger/postgres (using gorm etc.)
 * more complete build.sh (arch, etc.)
 * getIDs(topic), getTopics(id)
 * fine-tune MQTT client options
 * 512b -> 256b key, update clients + specs
+* Unit tests for relevant functionality.
+* Continuous integration.
+* logs to stdout and to log file.
 
 # FUTURE
 
