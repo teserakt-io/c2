@@ -54,19 +54,22 @@
     - bee client (will have banner), go client
 * s/badger/postgres (using gorm etc.)
 * more complete build.sh (arch, etc.)
+* secure grps
+* log to log file, fall back to stdout
 
 # WIP
 
 * getIDs(topic), getTopics(id)
-* secure grpc + https, see <https://github.com/olivere/grpc-example/blob/master/tasks/server.go#L68>
+* secure https
+* add http m2m endpoints
+* add grpc m2m functions
 
 # TODO
 
 * fine-tune MQTT client options
 * 512b -> 256b key, update clients + specs
-* Unit tests for relevant functionality.
-* Continuous integration.
-* logs to stdout and to log file.
+* unit tests for relevant functionality
+* continuous integration
 * when gRPC goroutine fails, service should terminate
 
 # FUTURE

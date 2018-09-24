@@ -53,7 +53,17 @@ func main() {
 	var c2 C2
 
 	// init logger
-	c2.logger = log.NewJSONLogger(os.Stdout)
+	logFileName := fmt.Sprintf("/var/log/teserakt-c2.log")
+	logFile, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
+	if err != nil {
+		fmt.Printf("[ERROR] logs: unable to open file '%v' to write logs: %v\n", logFileName, err)
+		fmt.Print("[WARN] logs: falling back to standard output only\n")
+		logFile = os.Stdout
+	}
+
+	defer logFile.Close()
+
+	c2.logger = log.NewJSONLogger(logFile)
 	{
 		c2.logger = log.With(c2.logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
 	}
