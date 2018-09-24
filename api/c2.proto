@@ -19,6 +19,12 @@ message C2Request {
         SEND_MESSAGE = 8;
         GET_CLIENTS = 9;
         GET_TOPICS = 10;
+        GET_CLIENT_TOPIC_COUNT = 11;
+        GET_CLIENT_TOPICS = 12;
+        GET_TOPIC_CLIENT_COUNT = 13;
+        GET_TOPIC_CLIENTS = 14;
+        NEW_CLIENT_TOPIC = 15;
+        REMOVE_CLIENT_TOPIC = 16;
     }
 
     Command command = 1;
@@ -26,6 +32,8 @@ message C2Request {
     bytes key = 3;
     string topic = 4;
     string msg = 5;
+    uint64 offset = 6;
+    uint64 count = 7;
 }
 
 message C2Response {
@@ -34,4 +42,5 @@ message C2Response {
     string err = 2;
     repeated string ids = 3;
     repeated string topics = 4;
+    uint64 count = 5;
 }
