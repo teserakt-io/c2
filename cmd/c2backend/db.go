@@ -27,19 +27,20 @@ type TopicKey struct {
 func (s *C2) dbInitialize() error {
 	s.logger.Log("msg", "Database Migration Started.")
 	// TODO: better DB migration logic.
-	tx := s.db.Begin()
+	// TODO: transactions?
+	//tx := s.db.Begin()
 
-	if result := tx.AutoMigrate(&IDKey{}); result.Error != nil {
-		tx.Rollback()
+	if result := s.db.AutoMigrate(&IDKey{}); result.Error != nil {
+		//tx.Rollback()
 		return result.Error
 	}
-	if result := tx.AutoMigrate(&TopicKey{}); result.Error != nil {
-		tx.Rollback()
+	if result := s.db.AutoMigrate(&TopicKey{}); result.Error != nil {
+		//tx.Rollback()
 		return result.Error
 	}
-	if err := tx.Commit().Error; err != nil {
+	/*if err := tx.Commit().Error; err != nil {
 		return err
-	}
+	}*/
 	s.logger.Log("msg", "Database Migration Finished.")
 	return nil
 }
