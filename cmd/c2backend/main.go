@@ -8,10 +8,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	stdlog "log"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/dgraph-io/badger"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
@@ -27,7 +31,8 @@ var buildDate string
 
 // C2 is the C2's state, consisting of ID keys, topic keys, and an MQTT connection.
 type C2 struct {
-	db         *badger.DB
+	db *gorm.DB
+	//dbold      *badger.DB
 	mqttClient mqtt.Client
 	logger     log.Logger
 }
@@ -53,6 +58,9 @@ func main() {
 	}
 	defer c2.logger.Log("msg", "goodbye")
 
+	// compatibility for packages that do not understand go-kit logger:
+	stdloglogger := stdlog.New(log.NewStdlibAdapter(c2.logger), "", 0)
+
 	// show banner
 	fmt.Println("    /---------------------------------/")
 	fmt.Println("   /  E4: C2 back-end                /")
@@ -66,26 +74,42 @@ func main() {
 	var (
 		grpcAddr     = c.GetString("grpc-host-port")
 		httpAddr     = c.GetString("http-host-port")
-		dbDir        = c.GetString("db-dir")
 		mqttBroker   = c.GetString("mqtt-broker")
 		mqttPassword = c.GetString("mqtt-password")
 		mqttUsername = c.GetString("mqtt-username")
 		mqttID       = c.GetString("mqtt-ID")
+		dbLogging    = c.GetBool("db-logging")
+		dbUsername   = c.GetString("db-username")
+		dbPassword   = c.GetString("db-password")
+		dbHost       = c.GetString("db-host")
+		dbDatabase   = c.GetString("db-database")
 	)
 	c2.logger.Log("msg", "config loaded")
 
-	// open db
-	dbOpts := badger.DefaultOptions
-	dbOpts.Dir = dbDir
-	dbOpts.ValueDir = dbDir
-	db, err := badger.Open(dbOpts)
+	// open db. NOTE: This I think depends on the database and is passed to the
+	// underlying driver. Thus TODO: refactor this out (if more DB support is
+	// needed).
+	dbConnectionString := fmt.Sprintf("host=%s dbname=%s user=%s password=%s sslmode=disable",
+		dbHost, dbDatabase, dbUsername, dbPassword)
+	db, err := gorm.Open("postgres", dbConnectionString)
+
 	if err != nil {
 		c2.logger.Log("msg", "database opening failed", "error", err)
 		return
 	}
+
 	defer db.Close()
+
 	c2.logger.Log("msg", "database open")
+	db.LogMode(dbLogging)
+	db.SetLogger(stdloglogger)
 	c2.db = db
+
+	// Ensure the database schema is ready to use:
+	err = c2.dbInitialize()
+	if err != nil {
+		c2.logger.Log("msg", "database setup failed", "error", err)
+	}
 
 	// create critical error channel
 	var errc = make(chan error)
@@ -230,7 +254,9 @@ func config(logger log.Logger) *viper.Viper {
 	v.SetDefault("mqtt-ID", "e4c2")
 	v.SetDefault("mqtt-username", "")
 	v.SetDefault("mqtt-password", "")
-	v.SetDefault("db-dir", "/tmp/E4/db")
+	v.SetDefault("db-logging", false)
+	v.SetDefault("db-host", "localhost")
+	v.SetDefault("db-database", "e4")
 	v.SetDefault("grpc-host-port", "0.0.0.0:5555")
 	v.SetDefault("http-host	-port", "0.0.0.0:8888")
 

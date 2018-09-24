@@ -4,7 +4,8 @@ mqtt-ID: e4c2
 mqtt-username: usermqtt
 mqtt-password: passmqtt
 
-db-dir: /tmp/e4/db
+db-username: e4_c2_test
+db-password: teserakte4
 
 grpc-host-port: 0.0.0.0:5555
 
