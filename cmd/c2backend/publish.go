@@ -12,7 +12,7 @@ func (s *C2) publish(payload []byte, topic string, qos byte) error {
 
 	logger := log.With(s.logger, "protocol", "mqtt")
 
-	if token := s.mqttClient.Publish(topic, qos, false, payloadstring); token.Wait() && token.Error() != nil {
+	if token := s.mqttClient.Publish(topic, qos, true, payloadstring); token.Wait() && token.Error() != nil {
 		logger.Log("msg", "publish failed", "topic", topic, "error", token.Error())
 		return token.Error()
 	}
