@@ -39,7 +39,6 @@ func main() {
 	certFile := "src/teserakt/e4go/cmd/c2backend/c2-cert.pem"
 	certFile = filepath.FromSlash(certFile)
 	certPath := filepath.Join(gopath, certFile)
-	fmt.Println(certPath)
 
 	fs := pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 
@@ -85,12 +84,9 @@ func main() {
 	if *command == "" {
 		shell := ishell.New()
 		shell.SetPrompt("➩ ")
-		shell.Println("    /---------------------------------/")
-		shell.Println("   /  E4: C2 command-line interface  /")
-		shell.Printf("  /  version %s-%s          /\n", buildDate, gitCommit[:4])
-		shell.Println(" /  Teserakt AG, 2018              /")
-		shell.Println("/---------------------------------/\n")
-		shell.Println("type 'help' for help (duh)\n")
+		shell.Printf("E4: C2 command-line interface - version %s-%s\n", buildDate, gitCommit[:4])
+		shell.Println("Copyright (c) Teserakt AG, 2018\n")
+		shell.Println("type 'help' for usage information\n")
 
 		shell.AddCmd(&ishell.Cmd{
 			Name: "c2",

@@ -58,12 +58,9 @@ const (
 */
 
 func main() {
-	fmt.Println("    /---------------------------------/")
-	fmt.Println("   /  E4: MQTT test client           /")
-	fmt.Printf("  /  version %s-%s          /\n", buildDate, gitCommit[:4])
-	fmt.Println(" /  Teserakt AG, 2018              /")
-	fmt.Println("/---------------------------------/")
-	fmt.Println("")
+
+	fmt.Printf("E4: MQTT test client - version %s-%s\n", buildDate, gitCommit[:4])
+	fmt.Println("Copyright (c) Teserakt AG, 2018\n")
 
 	topic := flag.String("topic", "", "The topic name to/from which to publish/subscribe")
 	broker := flag.String("broker", "tcp://test.mosquitto.org:1883", "The broker URI. ex: tcp://10.10.1.1:1883")

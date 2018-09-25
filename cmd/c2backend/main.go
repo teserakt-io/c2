@@ -52,6 +52,10 @@ func main() {
 	// our server
 	var c2 C2
 
+	// show banner
+	fmt.Printf("E4: C2 back-end - version %s-%s\n", buildDate, gitCommit[:4])
+	fmt.Println("Copyright (c) Teserakt AG, 2018\n")
+
 	// init logger
 	logFileName := fmt.Sprintf("/var/log/teserakt-c2.log")
 	logFile, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
@@ -71,14 +75,6 @@ func main() {
 
 	// compatibility for packages that do not understand go-kit logger:
 	stdloglogger := stdlog.New(log.NewStdlibAdapter(c2.logger), "", 0)
-
-	// show banner
-	fmt.Println("    /---------------------------------/")
-	fmt.Println("   /  E4: C2 back-end                /")
-	fmt.Printf("  /  version %s-%s          /\n", buildDate, gitCommit[:4])
-	fmt.Println(" /  Teserakt AG, 2018              /")
-	fmt.Println("/---------------------------------/")
-	fmt.Println("")
 
 	// load config
 	c := config(log.With(c2.logger, "unit", "config"))
