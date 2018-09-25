@@ -9,7 +9,7 @@ import (
 
 func (s *C2) gRPCnewClient(in *pb.C2Request) (*pb.C2Response, error) {
 
-	err := checkRequest(in, true, true, false)
+	err := checkRequest(in, true, true, false, false)
 	if err != nil {
 		return &pb.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -24,7 +24,7 @@ func (s *C2) gRPCnewClient(in *pb.C2Request) (*pb.C2Response, error) {
 
 func (s *C2) gRPCremoveClient(in *pb.C2Request) (*pb.C2Response, error) {
 
-	err := checkRequest(in, true, false, false)
+	err := checkRequest(in, true, false, false, false)
 	if err != nil {
 		return &pb.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -39,7 +39,7 @@ func (s *C2) gRPCremoveClient(in *pb.C2Request) (*pb.C2Response, error) {
 
 func (s *C2) gRPCnewTopicClient(in *pb.C2Request) (*pb.C2Response, error) {
 
-	err := checkRequest(in, true, false, true)
+	err := checkRequest(in, true, false, true, false)
 	if err != nil {
 		return &pb.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -54,7 +54,7 @@ func (s *C2) gRPCnewTopicClient(in *pb.C2Request) (*pb.C2Response, error) {
 
 func (s *C2) gRPCremoveTopicClient(in *pb.C2Request) (*pb.C2Response, error) {
 
-	err := checkRequest(in, true, false, true)
+	err := checkRequest(in, true, false, true, false)
 	if err != nil {
 		return &pb.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -69,7 +69,7 @@ func (s *C2) gRPCremoveTopicClient(in *pb.C2Request) (*pb.C2Response, error) {
 
 func (s *C2) gRPCresetClient(in *pb.C2Request) (*pb.C2Response, error) {
 
-	err := checkRequest(in, true, false, false)
+	err := checkRequest(in, true, false, false, false)
 	if err != nil {
 		return &pb.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -84,7 +84,7 @@ func (s *C2) gRPCresetClient(in *pb.C2Request) (*pb.C2Response, error) {
 
 func (s *C2) gRPCnewTopic(in *pb.C2Request) (*pb.C2Response, error) {
 
-	err := checkRequest(in, false, false, true)
+	err := checkRequest(in, false, false, true, false)
 	if err != nil {
 		return &pb.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -99,7 +99,7 @@ func (s *C2) gRPCnewTopic(in *pb.C2Request) (*pb.C2Response, error) {
 
 func (s *C2) gRPCremoveTopic(in *pb.C2Request) (*pb.C2Response, error) {
 
-	err := checkRequest(in, false, false, true)
+	err := checkRequest(in, false, false, true, false)
 	if err != nil {
 		return &pb.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -114,7 +114,7 @@ func (s *C2) gRPCremoveTopic(in *pb.C2Request) (*pb.C2Response, error) {
 
 func (s *C2) gRPCnewClientKey(in *pb.C2Request) (*pb.C2Response, error) {
 
-	err := checkRequest(in, true, false, false)
+	err := checkRequest(in, true, false, false, false)
 	if err != nil {
 		return &pb.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -145,9 +145,65 @@ func (s *C2) gRPCgetTopics(in *pb.C2Request) (*pb.C2Response, error) {
 	return &pb.C2Response{Success: true, Err: "", Topics: topics}, nil
 }
 
+func (s *C2) gRPCgetClientTopicCount(in *pb.C2Request) (*pb.C2Response, error) {
+	err := checkRequest(in, true, false, false, false)
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	count, err := s.countTopicsForID(in.Id)
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	return &pb.C2Response{Success: true, Err: "", Count: uint64(count)}, nil
+}
+
+func (s *C2) gRPCgetClientTopics(in *pb.C2Request) (*pb.C2Response, error) {
+	err := checkRequest(in, true, false, false, false)
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	topics, err := s.getTopicsForID(in.Id, int(in.Offset), int(in.Count))
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	return &pb.C2Response{Success: true, Err: "", Topics: topics}, nil
+}
+
+func (s *C2) gRPCgetTopicClientCount(in *pb.C2Request) (*pb.C2Response, error) {
+	err := checkRequest(in, false, false, true, false)
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	count, err := s.countIDsForTopic(in.Topic)
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	return &pb.C2Response{Success: true, Err: "", Count: uint64(count)}, nil
+}
+
+func (s *C2) gRPCgetTopicClients(in *pb.C2Request) (*pb.C2Response, error) {
+	err := checkRequest(in, false, false, true, false)
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	clients, err := s.getIdsforTopic(in.Topic, int(in.Offset), int(in.Count))
+	if err != nil {
+		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+	}
+
+	return &pb.C2Response{Success: true, Err: "", Ids: clients}, nil
+}
+
 func (s *C2) gRPCsendMessage(in *pb.C2Request) (*pb.C2Response, error) {
 
-	err := checkRequest(in, false, false, true)
+	err := checkRequest(in, false, false, true, false)
 	if err != nil {
 		return &pb.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -161,7 +217,7 @@ func (s *C2) gRPCsendMessage(in *pb.C2Request) (*pb.C2Response, error) {
 }
 
 // helper to check inputs' sanity
-func checkRequest(in *pb.C2Request, needID, needKey, needTopic bool) error {
+func checkRequest(in *pb.C2Request, needID, needKey, needTopic, needOffsetCount bool) error {
 	if needID {
 		if !e4.IsValidID(in.Id) {
 			return errors.New("invalid id")
@@ -187,6 +243,11 @@ func checkRequest(in *pb.C2Request, needID, needKey, needTopic bool) error {
 	} else {
 		if in.Topic != "" {
 			return errors.New("unexpected topic")
+		}
+	}
+	if needOffsetCount {
+		if in.Count == 0 {
+			return errors.New("No data to return with zero count")
 		}
 	}
 	return nil

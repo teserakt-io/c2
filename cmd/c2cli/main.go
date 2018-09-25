@@ -7,7 +7,11 @@ import (
 	"go/build"
 	"log"
 	"os"
+<<<<<<< HEAD
 	"path/filepath"
+=======
+	"strconv"
+>>>>>>> 4fdf81e... Add commands to the shell client.
 	"strings"
 
 	"golang.org/x/net/context"
@@ -66,6 +70,8 @@ func main() {
 	var err error
 	var topic string
 	var msg string
+	var offset uint64
+	var count uint64
 
 	creds, err := credentials.NewClientTLSFromFile(*cert, "")
 	if err != nil {
@@ -119,7 +125,7 @@ func main() {
 						c.Println("command failed: invalid key")
 					}
 				}
-				err = sendCommand(client, pb.C2Request_NEW_CLIENT, id, key, "", "")
+				err = sendCommand(client, pb.C2Request_NEW_CLIENT, id, key, "", "", 0, 0)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -135,7 +141,7 @@ func main() {
 					return
 				}
 				id = e4.HashIDAlias(c.Args[0])
-				err := sendCommand(client, pb.C2Request_REMOVE_CLIENT, id, nil, "", "")
+				err := sendCommand(client, pb.C2Request_REMOVE_CLIENT, id, nil, "", "", 0, 0)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -152,7 +158,7 @@ func main() {
 				}
 				id = e4.HashIDAlias(c.Args[0])
 				topic = c.Args[1]
-				err := sendCommand(client, pb.C2Request_NEW_TOPIC_CLIENT, id, nil, topic, "")
+				err := sendCommand(client, pb.C2Request_NEW_TOPIC_CLIENT, id, nil, topic, "", 0, 0)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -169,7 +175,7 @@ func main() {
 				}
 				id = e4.HashIDAlias(c.Args[0])
 				topic = c.Args[1]
-				err := sendCommand(client, pb.C2Request_REMOVE_TOPIC_CLIENT, id, nil, topic, "")
+				err := sendCommand(client, pb.C2Request_REMOVE_TOPIC_CLIENT, id, nil, topic, "", 0, 0)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -185,7 +191,7 @@ func main() {
 					return
 				}
 				id = e4.HashIDAlias(c.Args[0])
-				err := sendCommand(client, pb.C2Request_RESET_CLIENT, id, nil, "", "")
+				err := sendCommand(client, pb.C2Request_RESET_CLIENT, id, nil, "", "", 0, 0)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -201,7 +207,7 @@ func main() {
 					return
 				}
 				topic = c.Args[0]
-				err := sendCommand(client, pb.C2Request_NEW_TOPIC, nil, nil, topic, "")
+				err := sendCommand(client, pb.C2Request_NEW_TOPIC, nil, nil, topic, "", 0, 0)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -217,7 +223,7 @@ func main() {
 					return
 				}
 				topic = c.Args[0]
-				err := sendCommand(client, pb.C2Request_REMOVE_TOPIC, nil, nil, topic, "")
+				err := sendCommand(client, pb.C2Request_REMOVE_TOPIC, nil, nil, topic, "", 0, 0)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -233,7 +239,7 @@ func main() {
 					return
 				}
 				id = e4.HashIDAlias(c.Args[0])
-				err := sendCommand(client, pb.C2Request_NEW_CLIENT_KEY, id, nil, "", "")
+				err := sendCommand(client, pb.C2Request_NEW_CLIENT_KEY, id, nil, "", "", 0, 0)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -250,7 +256,7 @@ func main() {
 				}
 				topic = c.Args[0]
 				msg = strings.Join(c.Args[1:], " ")
-				err := sendCommand(client, pb.C2Request_SEND_MESSAGE, nil, nil, topic, msg)
+				err := sendCommand(client, pb.C2Request_SEND_MESSAGE, nil, nil, topic, msg, 0, 0)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -265,7 +271,7 @@ func main() {
 					c.Println("command failed: no argument expected")
 					return
 				}
-				err := sendCommand(client, pb.C2Request_GET_CLIENTS, nil, nil, "", "")
+				err := sendCommand(client, pb.C2Request_GET_CLIENTS, nil, nil, "", "", 0, 0)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -280,7 +286,7 @@ func main() {
 					c.Println("command failed: no argument expected")
 					return
 				}
-				err := sendCommand(client, pb.C2Request_GET_TOPICS, nil, nil, "", "")
+				err := sendCommand(client, pb.C2Request_GET_TOPICS, nil, nil, "", "", 0, 0)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -310,6 +316,90 @@ func main() {
 				}
 				hash := e4.HashPwd(c.Args[0])
 				c.Println(hex.EncodeToString(hash))
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "lctc",
+			Help: "list client topic count",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 1 {
+					c.Println("command failed: argument expected")
+					return
+				}
+				id = e4.HashIDAlias(c.Args[0])
+				err := sendCommand(client, pb.C2Request_GET_CLIENT_TOPIC_COUNT, id, nil, "", "", 0, 0)
+				if err != nil {
+					c.Println("command failed: ", err)
+				}
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "lcts",
+			Help: "list client topics",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 3 {
+					c.Println("command failed: 3 arguments expected")
+					return
+				}
+				id = e4.HashIDAlias(c.Args[0])
+				offset, err := strconv.ParseUint(c.Args[1], 10, 64)
+				if err != nil {
+					c.Println("Cannot convert argument to integer: ", err)
+					return
+				}
+				count, err := strconv.ParseUint(c.Args[2], 10, 64)
+				if err != nil {
+					c.Println("Cannot convert argument to integer: ", err)
+					return
+				}
+				err = sendCommand(client, pb.C2Request_GET_CLIENT_TOPICS, id, nil, "", "", offset, count)
+				if err != nil {
+					c.Println("command failed: ", err)
+				}
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "ltcc",
+			Help: "list topic client count (topic)",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 1 {
+					c.Println("command failed: argument expected")
+					return
+				}
+				topic = c.Args[0]
+				err := sendCommand(client, pb.C2Request_GET_TOPIC_CLIENT_COUNT, nil, nil, topic, "", 0, 0)
+				if err != nil {
+					c.Println("command failed: ", err)
+				}
+			},
+		})
+
+		shell.AddCmd(&ishell.Cmd{
+			Name: "ltcs",
+			Help: "list topic clients (client)",
+			Func: func(c *ishell.Context) {
+				if len(c.Args) != 3 {
+					c.Println("command failed: 3 arguments expected")
+					return
+				}
+				topic = c.Args[0]
+				offset, err := strconv.ParseUint(c.Args[1], 10, 64)
+				if err != nil {
+					c.Println("Cannot convert argument to integer: ", err)
+					return
+				}
+				count, err := strconv.ParseUint(c.Args[2], 10, 64)
+				if err != nil {
+					c.Println("Cannot convert argument to integer: ", err)
+					return
+				}
+				err = sendCommand(client, pb.C2Request_GET_TOPIC_CLIENTS, nil, nil, topic, "", offset, count)
+				if err != nil {
+					c.Println("command failed: ", err)
+				}
 			},
 		})
 
@@ -348,7 +438,7 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	err = sendCommand(client, commandcode, id, key, topic, msg)
+	err = sendCommand(client, commandcode, id, key, topic, msg, offset, count)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -379,13 +469,21 @@ func commandToPbCode(command string) (pb.C2Request_Command, error) {
 		return pb.C2Request_GET_CLIENTS, nil
 	case "lst":
 		return pb.C2Request_GET_TOPICS, nil
+	case "lctc":
+		return pb.C2Request_GET_CLIENT_TOPIC_COUNT, nil
+	case "lcts":
+		return pb.C2Request_GET_CLIENT_TOPICS, nil
+	case "ltcc":
+		return pb.C2Request_GET_TOPIC_CLIENT_COUNT, nil
+	case "ltcs":
+		return pb.C2Request_GET_TOPIC_CLIENTS, nil
 	default:
 		return -1, errors.New("invalid command")
 	}
 }
 
 // send command with given type, id, key, and topic
-func sendCommand(client pb.C2Client, commandcode pb.C2Request_Command, id, key []byte, topic, msg string) error {
+func sendCommand(client pb.C2Client, commandcode pb.C2Request_Command, id, key []byte, topic, msg string, offset uint64, count uint64) error {
 
 	req := &pb.C2Request{
 		Command: commandcode,
@@ -393,6 +491,8 @@ func sendCommand(client pb.C2Client, commandcode pb.C2Request_Command, id, key [
 		Key:     key,
 		Topic:   topic,
 		Msg:     msg,
+		Offset:  offset,
+		Count:   count,
 	}
 
 	resp, err := client.C2Command(context.Background(), req)
@@ -407,6 +507,22 @@ func sendCommand(client pb.C2Client, commandcode pb.C2Request_Command, id, key [
 		}
 		if commandcode == pb.C2Request_GET_TOPICS {
 			for _, t := range resp.Topics {
+				fmt.Println(t)
+			}
+		}
+		if commandcode == pb.C2Request_GET_CLIENT_TOPIC_COUNT {
+			fmt.Println("ID associated topics:", resp.Count)
+		}
+		if commandcode == pb.C2Request_GET_TOPIC_CLIENT_COUNT {
+			fmt.Println("Topic associated IDs:", resp.Count)
+		}
+		if commandcode == pb.C2Request_GET_CLIENT_TOPICS {
+			for _, t := range resp.Topics {
+				fmt.Println(t)
+			}
+		}
+		if commandcode == pb.C2Request_GET_TOPIC_CLIENTS {
+			for _, t := range resp.Ids {
 				fmt.Println(t)
 			}
 		}

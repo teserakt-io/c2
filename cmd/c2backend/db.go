@@ -108,9 +108,9 @@ func (s *C2) deleteIDKey(id []byte) error {
 	if result := s.db.Where(&IDKey{E4ID: id}).First(&idkey); result.Error != nil {
 		if gorm.IsRecordNotFoundError(result.Error) {
 			return errors.New("ID not found, nothing to delete")
-		} else {
-			return result.Error
 		}
+		return result.Error
+
 	}
 	// safety check:
 	if !bytes.Equal(idkey.E4ID, id) {
@@ -136,9 +136,8 @@ func (s *C2) deleteTopicKey(topic string) error {
 	if result := s.db.Where(&TopicKey{Topic: topic}).First(&topicKey); result.Error != nil {
 		if gorm.IsRecordNotFoundError(result.Error) {
 			return errors.New("ID not found, nothing to delete")
-		} else {
-			return result.Error
 		}
+		return result.Error
 	}
 	if topicKey.Topic != topic {
 		return errors.New("Single record not populated correctly; preventing whole DB delete")
@@ -216,16 +215,15 @@ func (s *C2) linkIDTopic(id []byte, topic string) error {
 	if err := s.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return errors.New("ID Key not found, cannot link to topic")
-		} else {
-			return err
 		}
+		return err
+
 	}
 	if err := s.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return errors.New("ID Key not found, cannot link to IDkey")
-		} else {
-			return err
 		}
+		return err
 	}
 
 	tx := s.db.Begin()
@@ -251,16 +249,14 @@ func (s *C2) unlinkIDTopic(id []byte, topic string) error {
 	if err := s.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return errors.New("ID Key not found, cannot unlink from topic")
-		} else {
-			return err
 		}
+		return err
 	}
 	if err := s.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return errors.New("ID Key not found, cannot unlink from IDkey")
-		} else {
-			return err
 		}
+		return err
 	}
 
 	tx := s.db.Begin()
@@ -283,9 +279,8 @@ func (s *C2) countTopicsForID(id []byte) (int, error) {
 	if err := s.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return 0, errors.New("ID Key not found, cannot link to topic")
-		} else {
-			return 0, err
 		}
+		return 0, err
 	}
 
 	count := s.db.Model(&idkey).Association("TopicKeys").Count()
@@ -301,12 +296,11 @@ func (s *C2) getTopicsForID(id []byte, offset int, count int) ([]string, error) 
 	if err := s.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return nil, errors.New("ID Key not found, cannot link to topic")
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 
-	if err := s.db.Model(&idkey).Offset(offset).Limit(count).Association("TopicKeys").Find(&topickeys).Error; err != nil {
+	if err := s.db.Model(&idkey).Offset(offset).Limit(count).Related(&topickeys, "TopicKeys").Error; err != nil {
 		return nil, err
 	}
 
@@ -323,9 +317,8 @@ func (s *C2) countIDsForTopic(topic string) (int, error) {
 	if err := s.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return 0, errors.New("Topic key not found, cannot link to ID")
-		} else {
-			return 0, err
 		}
+		return 0, err
 	}
 
 	count := s.db.Model(&topickey).Association("IDKeys").Count()
@@ -338,15 +331,14 @@ func (s *C2) getIdsforTopic(topic string, offset int, count int) ([]string, erro
 	var idkeys []IDKey
 	var hexids []string
 
-	if err := s.db.Where(&TopicKey{Topic: topic}).First(&topic).Error; err != nil {
+	if err := s.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return nil, errors.New("ID Key not found, cannot link to topic")
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 
-	if err := s.db.Model(&topickey).Offset(offset).Limit(count).Association("IDKeys").Find(&idkeys).Error; err != nil {
+	if err := s.db.Model(&topickey).Offset(offset).Limit(count).Related(&idkeys, "IDKeys").Error; err != nil {
 		return nil, err
 	}
 

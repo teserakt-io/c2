@@ -1,4 +1,8 @@
 mqtt-broker: tcp://localhost:1883
+<<<<<<< HEAD
+=======
+#mqtt-broker: tcp://data.geo-satis.com:1884
+>>>>>>> 5dda304... Fix HTTP url handlers so they work; revert geosatis from config.yaml.
 mqtt-ID: e4c2
 #mqtt-username: 
 #mqtt-password: 
