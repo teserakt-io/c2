@@ -23,8 +23,6 @@ message C2Request {
         GET_CLIENT_TOPICS = 12;
         GET_TOPIC_CLIENT_COUNT = 13;
         GET_TOPIC_CLIENTS = 14;
-        NEW_CLIENT_TOPIC = 15;
-        REMOVE_CLIENT_TOPIC = 16;
     }
 
     Command command = 1;

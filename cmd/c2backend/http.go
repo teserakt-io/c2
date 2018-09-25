@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -200,6 +201,94 @@ func (s *C2) handleGetTopics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(&topics)
+}
+
+func (s *C2) handleGetClientTopicCount(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r)
+	resp := Response{w}
+
+	id, err := hex.DecodeString(params["id"])
+	if err != nil || !e4.IsValidID(id) {
+		resp.Text(http.StatusNotFound, "invalid ID")
+		return
+	}
+
+	count, err := s.countTopicsForID(id)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	json.NewEncoder(w).Encode(&count)
+}
+
+func (s *C2) handleGetClientTopics(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	resp := Response{w}
+
+	id, err := hex.DecodeString(params["id"])
+	if err != nil || !e4.IsValidID(id) {
+		resp.Text(http.StatusNotFound, "invalid ID")
+		return
+	}
+
+	offset, err := strconv.ParseUint(params["offset"], 10, 64)
+	if err != nil {
+		resp.Text(http.StatusNotFound, "invalid offset")
+		return
+	}
+	count, err := strconv.ParseUint(params["count"], 10, 64)
+	if err != nil {
+		resp.Text(http.StatusNotFound, "invalid count")
+		return
+	}
+
+	topics, err := s.getTopicsForID(id, int(offset), int(count))
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	json.NewEncoder(w).Encode(&topics)
+}
+
+func (s *C2) handleGetTopicClientCount(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+
+	count, err := s.countIDsForTopic(params["topic"])
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	json.NewEncoder(w).Encode(&count)
+
+}
+
+func (s *C2) handleGetTopicClients(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	resp := Response{w}
+	topic := params["topic"]
+
+	offset, err := strconv.ParseUint(params["offset"], 10, 64)
+	if err != nil {
+		resp.Text(http.StatusNotFound, "invalid offset")
+		return
+	}
+	count, err := strconv.ParseUint(params["count"], 10, 64)
+	if err != nil {
+		resp.Text(http.StatusNotFound, "invalid count")
+		return
+	}
+
+	clients, err := s.getIdsforTopic(topic, int(offset), int(count))
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	json.NewEncoder(w).Encode(&clients)
 }
 
 func (s *C2) handleSendMessage(w http.ResponseWriter, r *http.Request) {

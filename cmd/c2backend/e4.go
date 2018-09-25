@@ -55,6 +55,12 @@ func (s *C2) newTopicClient(id []byte, topic string) error {
 		return err
 	}
 
+	err = s.linkIDTopic(id, topic)
+	if err != nil {
+		logger.Log("msg", "Database record of client-topic link failed", err)
+		return err
+	}
+
 	logger.Log("msg", "succeeded", "client", e4.PrettyID(id), "topic", topic, "topichash", topichash)
 	return nil
 }
@@ -75,6 +81,12 @@ func (s *C2) removeTopicClient(id []byte, topic string) error {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
 	}
+	err = s.unlinkIDTopic(id, topic)
+	if err != nil {
+		logger.Log("msg", "Cannot remove DB record of client-topic link", err)
+		return err
+	}
+
 	logger.Log("msg", "succeeded", "topic", topic)
 
 	return nil
