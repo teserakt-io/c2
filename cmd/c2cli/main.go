@@ -256,7 +256,7 @@ func main() {
 		})
 
 		shell.AddCmd(&ishell.Cmd{
-			Name: "lsc",
+			Name: "lc",
 			Help: "list clients in C2",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) != 0 {
@@ -271,7 +271,7 @@ func main() {
 		})
 
 		shell.AddCmd(&ishell.Cmd{
-			Name: "lst",
+			Name: "lt",
 			Help: "list topics in C2",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) != 0 {
@@ -328,7 +328,7 @@ func main() {
 		})
 
 		shell.AddCmd(&ishell.Cmd{
-			Name: "lcts",
+			Name: "lct",
 			Help: "list client topics",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) != 3 {
@@ -370,7 +370,7 @@ func main() {
 		})
 
 		shell.AddCmd(&ishell.Cmd{
-			Name: "ltcs",
+			Name: "ltc",
 			Help: "list topic clients (client)",
 			Func: func(c *ishell.Context) {
 				if len(c.Args) != 3 {
@@ -457,17 +457,17 @@ func commandToPbCode(command string) (pb.C2Request_Command, error) {
 		return pb.C2Request_NEW_CLIENT_KEY, nil
 	case "sm":
 		return pb.C2Request_SEND_MESSAGE, nil
-	case "lsc":
+	case "lc":
 		return pb.C2Request_GET_CLIENTS, nil
-	case "lst":
+	case "lt":
 		return pb.C2Request_GET_TOPICS, nil
 	case "lctc":
 		return pb.C2Request_GET_CLIENT_TOPIC_COUNT, nil
-	case "lcts":
+	case "lct":
 		return pb.C2Request_GET_CLIENT_TOPICS, nil
 	case "ltcc":
 		return pb.C2Request_GET_TOPIC_CLIENT_COUNT, nil
-	case "ltcs":
+	case "ltc":
 		return pb.C2Request_GET_TOPIC_CLIENTS, nil
 	default:
 		return -1, errors.New("invalid command")

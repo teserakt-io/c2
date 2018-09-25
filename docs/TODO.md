@@ -56,11 +56,12 @@
 * more complete build.sh (arch, etc.)
 * secure grps
 * log to log file, fall back to stdout
+* getIDs(topic), getTopics(id)
 
 # WIP
 
-* getIDs(topic), getTopics(id)
 * secure https
+* update C2BACKEND.md
 * add http m2m endpoints
 * add grpc m2m functions
 
