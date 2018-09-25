@@ -370,7 +370,7 @@ func main() {
 					return
 				}
 				topic = c.Args[0]
-				err := sendCommand(client, pb.C2Request_GET_CLIENT_TOPIC_COUNT, nil, nil, topic, "", 0, 0)
+				err := sendCommand(client, pb.C2Request_GET_TOPIC_CLIENT_COUNT, nil, nil, topic, "", 0, 0)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -396,33 +396,7 @@ func main() {
 					c.Println("Cannot convert argument to integer: ", err)
 					return
 				}
-				err = sendCommand(client, pb.C2Request_GET_CLIENT_TOPIC_COUNT, nil, nil, topic, "", offset, count)
-				if err != nil {
-					c.Println("command failed: ", err)
-				}
-			},
-		})
-
-		shell.AddCmd(&ishell.Cmd{
-			Name: "lcts",
-			Help: "list client topics (client)",
-			Func: func(c *ishell.Context) {
-				if len(c.Args) != 3 {
-					c.Println("command failed: 3 arguments expected")
-					return
-				}
-				topic = c.Args[0]
-				offset, err := strconv.ParseUint(c.Args[1], 10, 64)
-				if err != nil {
-					c.Println("Cannot convert argument to integer: ", err)
-					return
-				}
-				count, err := strconv.ParseUint(c.Args[2], 10, 64)
-				if err != nil {
-					c.Println("Cannot convert argument to integer: ", err)
-					return
-				}
-				err = sendCommand(client, pb.C2Request_GET_CLIENT_TOPIC_COUNT, nil, nil, topic, "", offset, count)
+				err = sendCommand(client, pb.C2Request_GET_TOPIC_CLIENTS, nil, nil, topic, "", offset, count)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
@@ -495,6 +469,14 @@ func commandToPbCode(command string) (pb.C2Request_Command, error) {
 		return pb.C2Request_GET_CLIENTS, nil
 	case "lst":
 		return pb.C2Request_GET_TOPICS, nil
+	case "lctc":
+		return pb.C2Request_GET_CLIENT_TOPIC_COUNT, nil
+	case "lcts":
+		return pb.C2Request_GET_CLIENT_TOPICS, nil
+	case "ltcc":
+		return pb.C2Request_GET_TOPIC_CLIENT_COUNT, nil
+	case "ltcs":
+		return pb.C2Request_GET_TOPIC_CLIENTS, nil
 	default:
 		return -1, errors.New("invalid command")
 	}
@@ -525,6 +507,22 @@ func sendCommand(client pb.C2Client, commandcode pb.C2Request_Command, id, key [
 		}
 		if commandcode == pb.C2Request_GET_TOPICS {
 			for _, t := range resp.Topics {
+				fmt.Println(t)
+			}
+		}
+		if commandcode == pb.C2Request_GET_CLIENT_TOPIC_COUNT {
+			fmt.Println("ID associated topics:", resp.Count)
+		}
+		if commandcode == pb.C2Request_GET_TOPIC_CLIENT_COUNT {
+			fmt.Println("Topic associated IDs:", resp.Count)
+		}
+		if commandcode == pb.C2Request_GET_CLIENT_TOPICS {
+			for _, t := range resp.Topics {
+				fmt.Println(t)
+			}
+		}
+		if commandcode == pb.C2Request_GET_TOPIC_CLIENTS {
+			for _, t := range resp.Ids {
 				fmt.Println(t)
 			}
 		}

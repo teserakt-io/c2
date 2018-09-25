@@ -174,7 +174,7 @@ func (s *C2) gRPCgetClientTopics(in *pb.C2Request) (*pb.C2Response, error) {
 }
 
 func (s *C2) gRPCgetTopicClientCount(in *pb.C2Request) (*pb.C2Response, error) {
-	err := checkRequest(in, true, false, true, false)
+	err := checkRequest(in, false, false, true, false)
 	if err != nil {
 		return &pb.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -188,7 +188,7 @@ func (s *C2) gRPCgetTopicClientCount(in *pb.C2Request) (*pb.C2Response, error) {
 }
 
 func (s *C2) gRPCgetTopicClients(in *pb.C2Request) (*pb.C2Response, error) {
-	err := checkRequest(in, true, false, true, false)
+	err := checkRequest(in, false, false, true, false)
 	if err != nil {
 		return &pb.C2Response{Success: false, Err: err.Error()}, nil
 	}

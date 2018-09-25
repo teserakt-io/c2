@@ -202,11 +202,15 @@ func main() {
 		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", c2.handleRemoveClient).Methods("DELETE")
 		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topic/{topic}", c2.handleNewTopicClient).Methods("PUT")
 		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topic/{topic}", c2.handleRemoveTopicClient).Methods("DELETE")
+		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topics/count", c2.handleGetClientTopicCount).Methods("GET")
+		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topics/{offset:[0-9]}/{count:[0-9]}", c2.handleGetClientTopics).Methods("GET")
 		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", c2.handleResetClient).Methods("PUT")
 		route.HandleFunc("/e4/topic/{topic}", c2.handleNewTopic).Methods("POST")
 		route.HandleFunc("/e4/topic/{topic}", c2.handleRemoveTopic).Methods("DELETE")
 		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", c2.handleNewClientKey).Methods("PATCH")
 		route.HandleFunc("/e4/topic/{topic}/message/{message}", c2.handleSendMessage).Methods("POST")
+		route.HandleFunc("/e4/topic/{topic}/clients/count", c2.handleGetTopicClientCount).Methods("GET")
+		route.HandleFunc("/e4/topic/{topic}/clients/{offset:[0-9]}/{count:[0-9]}", c2.handleGetTopicClients).Methods("GET")
 
 		route.HandleFunc("/e4/topic", c2.handleGetTopics).Methods("GET")
 		route.HandleFunc("/e4/client", c2.handleGetClients).Methods("GET")
@@ -249,6 +253,14 @@ func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, e
 		return s.gRPCgetClients(in)
 	case pb.C2Request_GET_TOPICS:
 		return s.gRPCgetTopics(in)
+	case pb.C2Request_GET_CLIENT_TOPIC_COUNT:
+		return s.gRPCgetClientTopicCount(in)
+	case pb.C2Request_GET_CLIENT_TOPICS:
+		return s.gRPCgetClientTopics(in)
+	case pb.C2Request_GET_TOPIC_CLIENT_COUNT:
+		return s.gRPCgetTopicClientCount(in)
+	case pb.C2Request_GET_TOPIC_CLIENTS:
+		return s.gRPCgetTopicClients(in)
 	}
 	return &pb.C2Response{Success: false, Err: "unknown command"}, nil
 }
