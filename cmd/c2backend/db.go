@@ -300,7 +300,7 @@ func (s *C2) getTopicsForID(id []byte, offset int, count int) ([]string, error) 
 		return nil, err
 	}
 
-	if err := s.db.Model(&idkey).Offset(offset).Limit(count).Association("TopicKeys").Find(&topickeys).Error; err != nil {
+	if err := s.db.Model(&idkey).Offset(offset).Limit(count).Related(&topickeys, "TopicKeys").Error; err != nil {
 		return nil, err
 	}
 
@@ -331,14 +331,14 @@ func (s *C2) getIdsforTopic(topic string, offset int, count int) ([]string, erro
 	var idkeys []IDKey
 	var hexids []string
 
-	if err := s.db.Where(&TopicKey{Topic: topic}).First(&topic).Error; err != nil {
+	if err := s.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return nil, errors.New("ID Key not found, cannot link to topic")
 		}
 		return nil, err
 	}
 
-	if err := s.db.Model(&topickey).Offset(offset).Limit(count).Association("IDKeys").Find(&idkeys).Error; err != nil {
+	if err := s.db.Model(&topickey).Offset(offset).Limit(count).Related(&idkeys, "IDKeys").Error; err != nil {
 		return nil, err
 	}
 

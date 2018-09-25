@@ -354,7 +354,7 @@ func main() {
 					c.Println("Cannot convert argument to integer: ", err)
 					return
 				}
-				err = sendCommand(client, pb.C2Request_GET_CLIENT_TOPIC_COUNT, id, nil, "", "", offset, count)
+				err = sendCommand(client, pb.C2Request_GET_CLIENT_TOPICS, id, nil, "", "", offset, count)
 				if err != nil {
 					c.Println("command failed: ", err)
 				}
