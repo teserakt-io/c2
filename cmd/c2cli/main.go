@@ -7,11 +7,8 @@ import (
 	"go/build"
 	"log"
 	"os"
-<<<<<<< HEAD
 	"path/filepath"
-=======
 	"strconv"
->>>>>>> 4fdf81e... Add commands to the shell client.
 	"strings"
 
 	"golang.org/x/net/context"
@@ -41,7 +38,6 @@ func main() {
 
 	certFile := "src/teserakt/e4go/cmd/c2backend/c2-cert.pem"
 	certFile = filepath.FromSlash(certFile)
-	//toJoin := []string{gopath, certFile}
 	certPath := filepath.Join(gopath, certFile)
 	fmt.Println(certPath)
 
