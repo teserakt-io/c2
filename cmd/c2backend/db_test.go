@@ -5,6 +5,9 @@ import (
 )
 
 // TestPlaceHolder No unit tests yet, but we should have them.
-func TestPlaceHolder(t *testing.T) {
+func TestM2MSQLite(testing.T) {
 	t.Fail()
+
+	var c2 C2
+
 }

@@ -67,9 +67,12 @@
 
 # TODO
 
+* Support sqlite3 as well as psql.
+* Secure connections for postgresql (configurable).
+* unit tests for relevant functionality
 * fine-tune MQTT client options
 * 512b -> 256b key, update clients + specs
-* unit tests for relevant functionality
+
 * continuous integration
 * when gRPC goroutine fails, service should terminate
 

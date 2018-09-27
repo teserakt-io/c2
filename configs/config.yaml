@@ -1,6 +1,7 @@
 mqtt-broker: tcp://localhost:1883
 mqtt-ID: e4c2
 
+db-type: postgres
 db-username: e4_c2_test
 db-password: teserakte4
 db-logging: 1

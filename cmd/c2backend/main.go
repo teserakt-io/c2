@@ -16,6 +16,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
@@ -86,21 +87,40 @@ func main() {
 		mqttUsername = c.GetString("mqtt-username")
 		mqttID       = c.GetString("mqtt-ID")
 		dbLogging    = c.GetBool("db-logging")
-		dbUsername   = c.GetString("db-username")
-		dbPassword   = c.GetString("db-password")
-		dbHost       = c.GetString("db-host")
-		dbDatabase   = c.GetString("db-database")
+		dbType       = c.GetString("db-type")
 		grpcCert     = c.GetString("grpc-cert")
 		grpcKey      = c.GetString("grpc-key")
 	)
+
+	var dbConnectionString string
+
+	if dbType == "postgres" {
+		var (
+			dbUsername = c.GetString("db-username")
+			dbPassword = c.GetString("db-password")
+			dbHost     = c.GetString("db-host")
+			dbDatabase = c.GetString("db-database")
+		)
+		dbConnectionString = fmt.Sprintf("host=%s dbname=%s user=%s password=%s sslmode=disable",
+			dbHost, dbDatabase, dbUsername, dbPassword)
+	} else if dbType == "sqlite3" {
+		var (
+			dbPath = c.GetString("db-file")
+		)
+		dbConnectionString = fmt.Sprintf("%s", dbPath)
+
+		c2.logger.Log("msg", "SQLite3 selected as database. SQLite3 is not supported for production environments")
+		fmt.Fprintf(os.Stderr, "WARNING: SQLite3 database selected. NOT supported in production environments\n")
+	} else {
+		// defensive coding:
+		c2.logger.Log("msg", "unknown or unsupported database type", "db-type", dbType)
+		return
+	}
+
 	c2.logger.Log("msg", "config loaded")
 
-	// open db. NOTE: This I think depends on the database and is passed to the
-	// underlying driver. Thus TODO: refactor this out (if more DB support is
-	// needed).
-	dbConnectionString := fmt.Sprintf("host=%s dbname=%s user=%s password=%s sslmode=disable",
-		dbHost, dbDatabase, dbUsername, dbPassword)
-	db, err := gorm.Open("postgres", dbConnectionString)
+	// open db.
+	db, err := gorm.Open(dbType, dbConnectionString)
 
 	if err != nil {
 		c2.logger.Log("msg", "database opening failed", "error", err)
