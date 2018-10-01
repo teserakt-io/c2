@@ -57,6 +57,8 @@
 * secure grps
 * log to log file, fall back to stdout
 * getIDs(topic), getTopics(id)
+* Support sqlite3 as well as psql.
+* Secure connections for postgresql (configurable).
 
 # WIP
 
@@ -67,8 +69,6 @@
 
 # TODO
 
-* Support sqlite3 as well as psql.
-* Secure connections for postgresql (configurable).
 * unit tests for relevant functionality
 * fine-tune MQTT client options
 * 512b -> 256b key, update clients + specs

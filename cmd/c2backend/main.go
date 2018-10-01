@@ -96,13 +96,31 @@ func main() {
 
 	if dbType == "postgres" {
 		var (
-			dbUsername = c.GetString("db-username")
-			dbPassword = c.GetString("db-password")
-			dbHost     = c.GetString("db-host")
-			dbDatabase = c.GetString("db-database")
+			dbUsername         = c.GetString("db-username")
+			dbPassword         = c.GetString("db-password")
+			dbHost             = c.GetString("db-host")
+			dbDatabase         = c.GetString("db-database")
+			dbSecureConnection = c.GetString("db-secure-connection")
 		)
-		dbConnectionString = fmt.Sprintf("host=%s dbname=%s user=%s password=%s sslmode=disable",
-			dbHost, dbDatabase, dbUsername, dbPassword)
+		var sslstring string
+		fmt.Println("db-secure-connection", dbSecureConnection)
+		if dbSecureConnection == "enable" {
+			sslstring = "sslmode=verify-full"
+		} else if dbSecureConnection == "selfsigned" {
+			sslstring = "sslmode=require"
+			c2.logger.Log("msg", "Self signed certificate used. We do not recommend this setup.")
+			fmt.Fprintf(os.Stderr, "WARNING: Self-signed connection to database. We do not recommend this setup.\n")
+		} else if dbSecureConnection == "insecure" {
+			sslstring = "sslmode=disable"
+			c2.logger.Log("msg", "Unencrypted database connection.")
+			fmt.Fprintf(os.Stderr, "WARNING: Unencrypted database connection. We do not recommend this setup.\n")
+		} else {
+			c2.logger.Log("msg", "Invalid option for db-secure-connection")
+			return
+		}
+
+		dbConnectionString = fmt.Sprintf("host=%s dbname=%s user=%s password=%s %s",
+			dbHost, dbDatabase, dbUsername, dbPassword, sslstring)
 	} else if dbType == "sqlite3" {
 		var (
 			dbPath = c.GetString("db-file")
@@ -307,6 +325,7 @@ func config(logger log.Logger) *viper.Viper {
 	v.SetDefault("db-logging", false)
 	v.SetDefault("db-host", "localhost")
 	v.SetDefault("db-database", "e4")
+	v.SetDefault("db-secure-connection", "enable")
 	v.SetDefault("grpc-host-port", "0.0.0.0:5555")
 	v.SetDefault("http-host	-port", "0.0.0.0:8888")
 

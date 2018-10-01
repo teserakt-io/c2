@@ -1,8 +1,22 @@
 #!/bin/bash
 
+echo "E4GO Build Script (c) Teserakt AG 2018. All Right Reserved"
+echo ""
 
-goimports -w $GOPATH/src/teserakt/e4go/cmd
-goimports -w $GOPATH/src/teserakt/e4go/pkg
+if ! [ -x "$(command -v goimports)" ]; then 
+    echo "Error: goimports not found (or not on the path)"
+    echo "To get run go get golang.org/x/tools/cmd/goimports and add \$GOPATH/bin to your path."
+    exit 1
+fi
+
+for GOSRC in ${GOPATH//:/ }; do
+    if [ -d $GOSRC/src/teserakt/e4go/cmd ]; then
+        goimports -w $GOSRC/src/teserakt/e4go/cmd
+    fi
+    if [ -d $GOSRC/src/teserakt/e4go/pkg ]; then
+        goimports -w $GOSRC/src/teserakt/e4go/pkg
+    fi
+done
 
 CMDPATH=teserakt/e4go/cmd
 

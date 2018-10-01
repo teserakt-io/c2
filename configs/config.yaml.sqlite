@@ -1,0 +1,16 @@
+mqtt-broker: tcp://localhost:1883
+mqtt-ID: e4c2
+
+db-type: sqlite3
+db-file: /tmp/e4c2test.sqlite
+#db-username: e4_c2_test
+#db-password: teserakte4
+#db-logging: 1
+
+grpc-host-port: 0.0.0.0:5555
+grpc-cert: cmd/c2backend/c2-cert.pem
+grpc-key: cmd/c2backend/c2-key.pem
+
+http-host-port: 0.0.0.0:8888
+
+
