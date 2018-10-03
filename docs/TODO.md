@@ -65,7 +65,8 @@
 # WIP
 
 * secure https
-* update C2BACKEND.md
+* update C2BACKEND.md (see TODO lines)
+* update DB.md
 * unit tests for relevant functionality (db done, e4common crypto improve)
 
 # TODO

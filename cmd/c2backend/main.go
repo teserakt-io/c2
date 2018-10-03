@@ -91,18 +91,18 @@ func main() {
 		mqttID       = c.GetString("mqtt-ID")
 		dbLogging    = c.GetBool("db-logging")
 		dbType       = c.GetString("db-type")
+		dbPassphrase = c.GetString("db-encryption-passphrase")
 		grpcCert     = c.GetString("grpc-cert")
 		grpcKey      = c.GetString("grpc-key")
-		passphrase   = c.GetString("passphrase")
 	)
 
-	if passphrase == "" {
-		c2.logger.Log("msg", "No passphrase supplied. ")
+	if dbPassphrase == "" {
+		c2.logger.Log("msg", "no passphrase supplied")
 		fmt.Fprintf(os.Stderr, "ERROR: No passphrase supplied. Refusing to start with an empty passphrase.\n")
 		os.Exit(1)
 	}
 
-	keyenckey := e4.HashPwd(passphrase)
+	keyenckey := e4.HashPwd(dbPassphrase)
 	copy(c2.keyenckey[:], keyenckey)
 
 	var dbConnectionString string
