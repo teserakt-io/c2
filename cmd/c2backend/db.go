@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
+	e4 "teserakt/e4go/pkg/e4common"
 
 	"github.com/jinzhu/gorm"
 )
@@ -47,7 +48,11 @@ func (s *C2) dbInitialize() error {
 }
 
 func (s *C2) insertIDKey(id, key []byte) error {
-	idkey := IDKey{E4ID: id, Key: key}
+	protectedkey, err := e4.Encrypt(s.keyenckey[:], nil, key)
+	if err != nil {
+		return err
+	}
+	idkey := IDKey{E4ID: id, Key: protectedkey}
 	if s.db.NewRecord(idkey) {
 		if result := s.db.Create(&idkey); result.Error != nil {
 			return result.Error
@@ -61,7 +66,11 @@ func (s *C2) insertIDKey(id, key []byte) error {
 }
 
 func (s *C2) insertTopicKey(topic string, key []byte) error {
-	topickey := TopicKey{Topic: topic, Key: key}
+	protectedkey, err := e4.Encrypt(s.keyenckey[:], nil, key)
+	if err != nil {
+		return err
+	}
+	topickey := TopicKey{Topic: topic, Key: protectedkey}
 	if s.db.NewRecord(topickey) {
 		s.db.Create(&topickey)
 	} else {
@@ -84,7 +93,11 @@ func (s *C2) getIDKey(id []byte) ([]byte, error) {
 	if !bytes.Equal(id, idkey.E4ID) {
 		return nil, errors.New("Internal error: struct not populated but GORM indicated success")
 	}
-	return idkey.Key[:], nil
+	clearkey, err := e4.Encrypt(s.keyenckey[:], nil, idkey.Key[:])
+	if err != nil {
+		return nil, err
+	}
+	return clearkey, nil
 }
 
 func (s *C2) getTopicKey(topic string) ([]byte, error) {
@@ -99,7 +112,11 @@ func (s *C2) getTopicKey(topic string) ([]byte, error) {
 	if topickey.Topic != topic {
 		return nil, errors.New("Internal error: struct not populated but GORM indicated success")
 	}
-	return topickey.Key[:], nil
+	clearkey, err := e4.Encrypt(s.keyenckey[:], nil, topickey.Key[:])
+	if err != nil {
+		return nil, err
+	}
+	return clearkey, nil
 }
 
 func (s *C2) deleteIDKey(id []byte) error {

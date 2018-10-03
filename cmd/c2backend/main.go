@@ -10,6 +10,8 @@ import (
 
 	stdlog "log"
 
+	e4 "teserakt/e4go/pkg/e4common"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -33,8 +35,9 @@ var buildDate string
 
 // C2 is the C2's state, consisting of ID keys, topic keys, and an MQTT connection.
 type C2 struct {
-	db *gorm.DB
-	//dbold      *badger.DB
+	keyenckey [e4.KeyLen]byte
+	db        *gorm.DB
+
 	mqttClient mqtt.Client
 	logger     log.Logger
 }
@@ -90,7 +93,17 @@ func main() {
 		dbType       = c.GetString("db-type")
 		grpcCert     = c.GetString("grpc-cert")
 		grpcKey      = c.GetString("grpc-key")
+		passphrase   = c.GetString("passphrase")
 	)
+
+	if passphrase == "" {
+		c2.logger.Log("msg", "No passphrase supplied. ")
+		fmt.Fprintf(os.Stderr, "ERROR: No passphrase supplied. Refusing to start with an empty passphrase.\n")
+		os.Exit(1)
+	}
+
+	keyenckey := e4.HashPwd(passphrase)
+	copy(c2.keyenckey[:], keyenckey)
 
 	var dbConnectionString string
 
@@ -116,7 +129,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "WARNING: Unencrypted database connection. We do not recommend this setup.\n")
 		} else {
 			c2.logger.Log("msg", "Invalid option for db-secure-connection")
-			return
+			os.Exit(1)
 		}
 
 		dbConnectionString = fmt.Sprintf("host=%s dbname=%s user=%s password=%s %s",
@@ -132,7 +145,7 @@ func main() {
 	} else {
 		// defensive coding:
 		c2.logger.Log("msg", "unknown or unsupported database type", "db-type", dbType)
-		return
+		os.Exit(1)
 	}
 
 	c2.logger.Log("msg", "config loaded")
@@ -142,7 +155,7 @@ func main() {
 
 	if err != nil {
 		c2.logger.Log("msg", "database opening failed", "error", err)
-		return
+		os.Exit(1)
 	}
 
 	defer db.Close()
@@ -156,7 +169,7 @@ func main() {
 	err = c2.dbInitialize()
 	if err != nil {
 		c2.logger.Log("msg", "database setup failed", "error", err)
-		return
+		os.Exit(1)
 	}
 
 	// create critical error channel
