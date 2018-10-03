@@ -59,20 +59,20 @@
 * getIDs(topic), getTopics(id)
 * Support sqlite3 as well as psql.
 * Secure connections for postgresql (configurable).
+* add http m2m endpoints
+* add grpc m2m functions
 
 # WIP
 
 * secure https
 * update C2BACKEND.md
-* add http m2m endpoints
-* add grpc m2m functions
+* unit tests for relevant functionality (db done, e4common crypto improve)
 
 # TODO
 
-* unit tests for relevant functionality
 * fine-tune MQTT client options
 * 512b -> 256b key, update clients + specs
-
+* 16b IDs (see trello)
 * continuous integration
 * when gRPC goroutine fails, service should terminate
 
@@ -86,3 +86,5 @@
     - https://stackoverflow.com/a/29600086
     - https://stackoverflow.com/a/45003378
     - https://github.com/goreleaser/nfpm ?
+    - note that db can now be postgres.
+* C2 redesign to follow go-kit service layout?
