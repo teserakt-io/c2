@@ -38,7 +38,23 @@ func main() {
 
 	certFile := "src/teserakt/e4go/cmd/c2backend/c2-cert.pem"
 	certFile = filepath.FromSlash(certFile)
-	certPath := filepath.Join(gopath, certFile)
+
+	var certPath string
+	// TODO: Can't load certificates from GOPATH in production.
+
+	godirs := strings.Split(gopath, ":")
+	for _, godir := range godirs {
+		certPathTentative := filepath.Join(godir, certFile)
+		_, err := os.Stat(certPathTentative)
+		if err == nil {
+			certPath = string(certPathTentative)
+			break
+		}
+	}
+
+	if certPath == "" {
+		log.Fatalf("Unable to locate certificate files.")
+	}
 
 	fs := pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 
