@@ -99,7 +99,7 @@ func main() {
 	if dbPassphrase == "" {
 		c2.logger.Log("msg", "no passphrase supplied")
 		fmt.Fprintf(os.Stderr, "ERROR: No passphrase supplied. Refusing to start with an empty passphrase.\n")
-		os.Exit(1)
+		return
 	}
 
 	keyenckey := e4.HashPwd(dbPassphrase)
@@ -129,7 +129,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "WARNING: Unencrypted database connection. We do not recommend this setup.\n")
 		} else {
 			c2.logger.Log("msg", "Invalid option for db-secure-connection")
-			os.Exit(1)
+			return
 		}
 
 		dbConnectionString = fmt.Sprintf("host=%s dbname=%s user=%s password=%s %s",
@@ -145,7 +145,7 @@ func main() {
 	} else {
 		// defensive coding:
 		c2.logger.Log("msg", "unknown or unsupported database type", "db-type", dbType)
-		os.Exit(1)
+		return
 	}
 
 	c2.logger.Log("msg", "config loaded")
@@ -155,7 +155,7 @@ func main() {
 
 	if err != nil {
 		c2.logger.Log("msg", "database opening failed", "error", err)
-		os.Exit(1)
+		return
 	}
 
 	defer db.Close()
@@ -164,12 +164,15 @@ func main() {
 	db.LogMode(dbLogging)
 	db.SetLogger(stdloglogger)
 	c2.db = db
-	c2.db.Exec("SET search_path TO e4_c2_test;")
+
+	if dbType == "postgres" {
+		c2.db.Exec("SET search_path TO e4_c2_test;")
+	}
 	// Ensure the database schema is ready to use:
 	err = c2.dbInitialize()
 	if err != nil {
 		c2.logger.Log("msg", "database setup failed", "error", err)
-		os.Exit(1)
+		return
 	}
 
 	// create critical error channel

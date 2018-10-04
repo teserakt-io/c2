@@ -88,4 +88,9 @@
     - https://stackoverflow.com/a/45003378
     - https://github.com/goreleaser/nfpm ?
     - note that db can now be postgres.
+
+  - don't ship postgres but have example 
+  - docker
+  - ansible for cloud
+  - rpm/deb?
 * C2 redesign to follow go-kit service layout?
