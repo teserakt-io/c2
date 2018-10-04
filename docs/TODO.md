@@ -61,21 +61,21 @@
 * Secure connections for postgresql (configurable).
 * add http m2m endpoints
 * add grpc m2m functions
+* when gRPC goroutine fails, service should terminate (J)
 
 # WIP
 
-* secure https
-* update C2BACKEND.md (see TODO lines)
-* update DB.md
-* unit tests for relevant functionality (db done, e4common crypto improve)
+* secure https (A)
+* clean documentation from doc/ (A+J)
+* unit tests for relevant functionality (db done, e4common crypto improve) (A)
 
 # TODO
 
-* fine-tune MQTT client options
-* 512b -> 256b key, update clients + specs
-* 16b IDs (see trello)
+* `lc` should list client aliases => add field alias in the db?
+* 512b -> 256b keys, (same key for SIV MAC and encrypt) -> update clients + specs
+* 256b -> 128b ids
 * continuous integration
-* when gRPC goroutine fails, service should terminate
+* fine-tune MQTT client options
 
 # FUTURE
 
@@ -83,14 +83,14 @@
 * middleware for monitoring/tracing (Jaeger, Sentry, etc.), see go-kit
 * monitoring of all topics' messages (separate service/ui?)
 * binary packaging
-    - binary in /opt/e4/, db in /var/lib/e4/db/
-    - https://stackoverflow.com/a/29600086
-    - https://stackoverflow.com/a/45003378
-    - https://github.com/goreleaser/nfpm ?
-    - note that db can now be postgres.
-
+  - binary in /opt/e4/, db in /var/lib/e4/db/
+  - https://stackoverflow.com/a/29600086
+  - https://stackoverflow.com/a/45003378
+  - https://github.com/goreleaser/nfpm ?
+  - note that db can now be postgres.
   - don't ship postgres but have example 
   - docker
   - ansible for cloud
   - rpm/deb?
 * C2 redesign to follow go-kit service layout?
+  <https://github.com/go-kit/kit/tree/master/examples/profilesvc>

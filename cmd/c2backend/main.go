@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	stdlog "log"
@@ -52,6 +53,8 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
+
+	defer os.Exit(1)
 
 	// our server
 	var c2 C2
@@ -211,12 +214,14 @@ func main() {
 		lis, err := net.Listen("tcp", grpcAddr)
 		if err != nil {
 			logger.Log("msg", "failed to listen", "error", err)
-			return
+			close(errc)
+			runtime.Goexit()
 		}
 		creds, err := credentials.NewServerTLSFromFile(grpcCert, grpcKey)
 		if err != nil {
 			logger.Log("msg", "failed to get credentials", "cert", grpcCert, "key", grpcKey, "error", err)
-			return
+			close(errc)
+			runtime.Goexit()
 		}
 		logger.Log("msg", "using TLS for gRPC", "cert", grpcCert, "key", grpcKey, "error", err)
 
@@ -226,13 +231,15 @@ func main() {
 		count, err := c2.countIDKeys()
 		if err != nil {
 			logger.Log("msg", "failed to count id keys", "error", err)
-			return
+			close(errc)
+			runtime.Goexit()
 		}
 		logger.Log("nbidkeys", count)
 		count, err = c2.countTopicKeys()
 		if err != nil {
 			logger.Log("msg", "failed to count topic keys", "error", err)
-			return
+			close(errc)
+			runtime.Goexit()
 		}
 		logger.Log("nbtopickeys", count)
 
@@ -274,8 +281,6 @@ func main() {
 
 		route.HandleFunc("/e4/topic", c2.handleGetTopics).Methods("GET")
 		route.HandleFunc("/e4/client", c2.handleGetClients).Methods("GET")
-		//route.HandleFunc("/e4/client/{}/topic", c2.handleGetClientsTopics).Methods("GET")
-		//route.HandleFunc("/e4/topic/{topic}/client", c2.handleGetTopicsClients).Methods("GET")
 
 		logger.Log("msg", "starting http server")
 		errc <- http.ListenAndServe(httpAddr, route)

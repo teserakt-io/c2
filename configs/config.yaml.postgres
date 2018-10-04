@@ -5,6 +5,8 @@ db-type: postgres
 db-username: e4_c2_test
 db-password: teserakte4
 db-logging: 1
+#db-secure-connection: insecure
+db-encryption-passphrase: thisisasupersecretpassphrase
 
 grpc-host-port: 0.0.0.0:5555
 grpc-cert: cmd/c2backend/c2-cert.pem
