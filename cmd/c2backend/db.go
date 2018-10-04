@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
+	"strings"
 	e4 "teserakt/e4go/pkg/e4common"
 
 	"github.com/jinzhu/gorm"
@@ -82,7 +83,7 @@ func (s *C2) insertTopicKey(topic string, key []byte) error {
 
 func (s *C2) getIDKey(id []byte) ([]byte, error) {
 	var idkey IDKey
-	result := s.db.Where(&IDKey{}).First(&idkey)
+	result := s.db.Where(&IDKey{E4ID: id}).First(&idkey)
 	if gorm.IsRecordNotFoundError(result.Error) {
 		// TODO: do we return an error for this?
 		return nil, errors.New("ID not found")
@@ -109,7 +110,7 @@ func (s *C2) getTopicKey(topic string) ([]byte, error) {
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	if topickey.Topic != topic {
+	if strings.Compare(topickey.Topic, topic) != 0 {
 		return nil, errors.New("Internal error: struct not populated but GORM indicated success")
 	}
 	clearkey, err := e4.Decrypt(s.keyenckey[:], nil, topickey.Key[:])
