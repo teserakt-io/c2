@@ -8,7 +8,139 @@ TODO: restructure, add content, etc.
 
 ## Database setup
 
-TODO: Postgres init, TLS
+The C2 backend uses relational databases as its datastore. You 
+can use sqlite3 (which is supported for testing/demos) or you 
+can deploy fully using postgresql (supported for production).
+
+In all cases you must set
+
+    db-encryption-passphrase: somevalue
+
+This value cannot be empty.
+
+### SQLite3
+
+It is sufficient to set only two configuration values:
+
+    db-type: sqlite3
+    db-file: /path/to/e4c2.sqlite
+
+to specify the SQLite3 file.
+
+### PostgreSQL
+
+PostgreSQL setup is a little trickier. You must install 
+postgresql for your platform. On RedHat systems this might look 
+like
+
+    yum install postgresql-server
+    postgresql-setup --initdb
+
+The rationale and details for the postgresql database design are explained in DB.md and will not be repeated here. A working 
+setup schema is provided in `schemas/postgres/init.sql`. On 
+linux, run:
+
+    sudo su - postgres
+
+to switch to the postgresql user and then
+
+    psql < /path/to/e4go/schemas/postgres/init.sql
+
+to execute the script (you can optionally run the secure_public.sql too). This will create a database `e4`, a 
+user `e4_c2_test` and a matching schema, set everything 
+up correctly etc.
+
+These settings can then appear in your `config.yaml`:
+
+    db-type: postgres
+    db-username: e4_c2_test
+    db-password: teserakte4
+    db-logging: 0
+
+The last line toggles database logging. Set it to 1 for 
+development diagnostics.
+
+You also need to configure your database server correctly 
+for access. First, go to `/var/lib/pgsql/data` (this path may 
+different for your distribution).
+
+**Note on the homebrew install** The homebrew install uses `trust` 
+authentication in `pg_hba.conf`. You do not need to make any changes to 
+`pg_hba.conf` as a result - postgresql will accept any username provided it 
+exists and any password without checking it. This is obviously _not suitable 
+for production_ but is fine for development environments.
+
+**If you do not want to configure SSL** then things are relatively straightforward. You need to edit `pg_hba.conf` to 
+configure user authentication:
+
+    # IPv4 local connections:
+    host    all             all             127.0.0.1/32            md5
+    # IPv6 local connections:
+    host    all             all             ::1/128                 md5
+
+This allows network logins using passwords over the network. You can then add
+
+    db-secure-connection: insecure
+
+to your configuration file. Connections will be plaintext over 
+port 5432.
+
+**If you wish to deploy SSL** things are only slightly more involved. You 
+need to obtain three files, `server.crt`, `server.key` and optionally `ca.crt`, 
+which are: the certificate for the server, the private key for the server and 
+an optional certificate authority bundle.
+
+Place all of these in `/var/lib/pgsql/data`. Set their ownership to your 
+postgres user and permissions to read only, for example
+
+    chown postgres:postgres server.key
+    chmod 0400 server.key
+
+Now edit `postgresql.conf`, either located in this directory or possibly in 
+`/etc` and configure these lines:
+
+    ssl = on
+    # ssl_ciphers = ... mozilla recommended cipher list ...
+    ssl_prefer_server_ciphers = on
+    ssl_cert_file = 'server.crt'
+    ssl_key_file = 'server.key'
+    ssl_ca_file = 'ca.crt'
+
+You can add additional ssl configuration as required (curve choices, dh 
+parameters etc) for production environments. In your `pg_hba.conf` file you 
+must now set:
+
+    # IPv4 local connections:
+    hostssl    all             all             127.0.0.1/32            md5
+    # IPv6 local connections:
+    hostssl    all             all             ::1/128                 md5
+
+You will also be required to set `hostssl` for replication entries if deploying 
+a server with replication (not required for development).
+
+You can restart the server (`systemctl restart postgresql`) and then try
+
+    sudo su - postgres
+    psql -U e4_c2_test -h 127.0.0.1 -W e4
+    Password: (type it)
+
+and connect to the database.
+
+If your certificate is self signed, you can set
+
+    db-secure-connection: selfsigned
+
+If your certificate is signed by a known certificate authority from the system 
+store, you can instead use:
+
+    db-secure-connection: yes
+
+You will also need to set
+
+    db-encryption-passphrase: somevalue
+
+If you change, forget or lose this value you will lose access to any key 
+material created in the database (all client keys and topic keys are encrypted).
 
 ## Running and using C2
 
@@ -17,7 +149,21 @@ script/build.sh and that the binaries are in bin/.
 
 ### 0. Run the database service
 
-TODO
+See setting up the database above. You should verify it is running with the 
+equivalent of `systemctl status postgresql` and you should attempt to connect 
+with 
+
+    psql -U e4_c2_test -h 127.0.0.1 -W e4
+
+If you can connect and the postgresql prompt is
+
+    e4=>
+
+You are connected through the postgres-supplied client.
+
+If you wish to run the database on boot, on Linux run
+
+    systemctl enable postgresql
 
 ### 1. Run an MQTT broker
 
@@ -30,6 +176,15 @@ mosquitto -c /usr/local/etc/mosquitto/mosquitto.conf
 ```
 
 The broker will then run on localhost:1883 by default.
+
+On linux (redhat systems)
+
+    yum install mosquitto
+    systemctl start mosquitto
+
+You can make this run on boot with:
+
+    systemctl enable mosquitto
 
 Backend and demo client will by default use localhost:1883.
 
