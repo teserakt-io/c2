@@ -197,7 +197,6 @@ Run bin/c2backend, it will list for gRPC connections on port 5555 by default.
 
 See configs/config.yaml for parameters.
 
-
 ### 3. Run an MQTT client
 
 Run bin/mqe4client, which by default has the alias id `testid`, for
