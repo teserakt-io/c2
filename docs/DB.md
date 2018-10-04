@@ -110,10 +110,63 @@ while also enabling network logins, for example:
  * `\z` - like `\dt+`, also describes sequences (indexes).
  * You can also do normal SQL of course. 
 
+### PostgreSQL and SSL
+
+Given `server.crt`, `server.key` and optionally `ca.crt`, 
+which are: the certificate for the server, the private key for the server and 
+an optional certificate authority bundle, as well as an optional 
+`dhparams.pem` for finite field DH, we can configure a postgresql server 
+to run its connections over SSL.
+
+Place all of these in `/var/lib/pgsql/data`. Set their ownership to your 
+postgres user and permissions to read only, for example
+
+    chown postgres:postgres server.key
+    chmod 0400 server.key
+
+Now edit `postgresql.conf`, either located in this directory or possibly in 
+`/etc` and configure these lines:
+
+    ssl = on
+    # ssl_ciphers = ... mozilla recommended cipher list ...
+    ssl_ecdh_curve = 'prime256v1' #(P-256)
+    ssl_dh_params_file = '/path/to/dhparams.pem'
+    ssl_prefer_server_ciphers = on
+    ssl_cert_file = 'server.crt'
+    ssl_key_file = 'server.key'
+    ssl_ca_file = 'ca.crt'
+
+You can add additional ssl configuration as required (curve choices, dh 
+parameters etc) for production environments. In your `pg_hba.conf` file you 
+must now set:
+
+    # IPv4 local connections:
+    hostssl    all             all             127.0.0.1/32            md5
+    # IPv6 local connections:
+    hostssl    all             all             ::1/128                 md5
+
+You will also be required to set `hostssl` for replication entries if deploying 
+a server with replication (not required for development).
+
+### Multiplexing connections
+
+TODO: idea from Alan.
+
+### High Performance considerations
+
+TODO: As we learn
 
 ## GORM KB
 
-TODO: Gorm is...
+GORM is an ORM (Object-Relational-Mapping) library for Golang (hence, Go-ORM). 
+The concept has existed for many years in object-oriented languages: a struct 
+or class in the language is mapped (mostly through language reflection) to 
+a table of data; manipulating data in the database generally corresponds to 
+manipulating objects in the programming language.
+
+GORM achieves this for golang using a DB struct to represent the connection and 
+programmer-defined structs, which are annotated with gorm: annotations to 
+describe sql constraints such as uniqueness.
 
 ### GORM model declaration
 
@@ -154,7 +207,18 @@ This seems to fail; however the struct form works:
 
 I have not explored why.
 
+### Many to many considerations.
 
+With backreferences (both structs reference each other, creating a true 
+many-to-many relationship) actually querying and returning the relevant data 
+across the relationship must be done with the `.Related()` construct. The 
+`.Association()` only works for single values (adding or removing an 
+association) and cannot return data or issue SQL queries with `OFFET` and 
+`LIMIT` modifiers. An example of working code from `db.go` is:
+
+    if err := s.db.Model(&topickey).Offset(offset).Limit(count).Related(&idkeys, "IDKeys").Error; err != nil {
+		return nil, err
+	}
 
    [pg-schema-expl]: https://severalnines.com/blog/postgresql-schema-management-basics
    [pg-pubschema-lock]: https://severalnines.com/blog/postgresql-privileges-and-security-locking-down-public-schema
