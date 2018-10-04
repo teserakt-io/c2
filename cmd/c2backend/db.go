@@ -93,7 +93,7 @@ func (s *C2) getIDKey(id []byte) ([]byte, error) {
 	if !bytes.Equal(id, idkey.E4ID) {
 		return nil, errors.New("Internal error: struct not populated but GORM indicated success")
 	}
-	clearkey, err := e4.Encrypt(s.keyenckey[:], nil, idkey.Key[:])
+	clearkey, err := e4.Decrypt(s.keyenckey[:], nil, idkey.Key[:])
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (s *C2) getTopicKey(topic string) ([]byte, error) {
 	if topickey.Topic != topic {
 		return nil, errors.New("Internal error: struct not populated but GORM indicated success")
 	}
-	clearkey, err := e4.Encrypt(s.keyenckey[:], nil, topickey.Key[:])
+	clearkey, err := e4.Decrypt(s.keyenckey[:], nil, topickey.Key[:])
 	if err != nil {
 		return nil, err
 	}
