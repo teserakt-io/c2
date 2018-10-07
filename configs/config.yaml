@@ -1,17 +1,44 @@
-mqtt-broker: tcp://localhost:1883
-mqtt-ID: e4c2
+###############################################################
+# C2 configuration file, to be edited manually
+###############################################################
 
+# MQTT settings
+###############################################################
+## broker host:port, must include protocol prefix, e.g. "tcp://"
+mqtt-broker: tcp://localhost:1883
+## MQTT ID of the C2
+mqtt-ID: e4c2
+## QoS level of command messages sent to clients (2 recommended)
+mqtt-QoS: 2
+
+
+# database settings
+###############################################################
+## supported types are sqlite3 and postgres
 db-type: sqlite3
+## 
 db-file: /tmp/e4c2test.sqlite
+## username to connect to postgres
 #db-username: e4_c2_test
+## password to connect to postgres
 #db-password: teserakte4
+## set to true to show detailed logging of database operations 
 #db-logging: 1
+## passphrase used to derive the key to encrypt keys in the db
 db-encryption-passphrase: meh
 
+# gRPC settings
+###############################################################
+# host:port, e.g. 0.0.0.0:5555
 grpc-host-port: 0.0.0.0:5555
+# path to the PEM-encoded certificate file
 grpc-cert: cmd/c2backend/c2-cert.pem
+# path to the PEM-encoded private key file
 grpc-key: cmd/c2backend/c2-key.pem
 
+# HTTP settings
+###############################################################
+# host:port, e.g. 0.0.0.0:8888
 http-host-port: 0.0.0.0:8888
 
 

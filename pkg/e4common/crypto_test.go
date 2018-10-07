@@ -3,8 +3,37 @@ package e4common
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/hex"
 	"testing"
 )
+
+func TestHash(t *testing.T) {
+
+	h := hex.EncodeToString(HashIDAlias("abc"))
+	if h != "3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532" {
+		t.Fatalf("hash of ID alias incorrect")
+	}
+	h = hex.EncodeToString(HashPwd("abc"))
+	if h != "5b0ae13b530f55d44acbb89351b95d5bc64d9920ba3e8eef54044db9a8fd7a64e9fb11d7f04b4fce3c835698299c0fedf867b05ae886255c800a879e0a0ff775" {
+		t.Fatalf("hash of password incorrect")
+	}
+
+}
+
+func TestRandom(t *testing.T) {
+	zeroes := make([]byte, KeyLen)
+	k1 := RandomKey()
+	k2 := RandomKey()
+	if string(k1) == string(k2) {
+		t.Fatalf("RandomKey isn't random")
+	}
+	if len(k1) != KeyLen || len(k2) != KeyLen {
+		t.Fatalf("random key of incorrect length")
+	}
+	if string(k1) == string(zeroes) || string(k2) == string(zeroes) {
+		t.Fatalf("randomness not random")
+	}
+}
 
 func TestEncDec(t *testing.T) {
 
@@ -64,7 +93,7 @@ func TestProtectUnprotect(t *testing.T) {
 	}
 }
 
-func TestVectors(t *testing.T) {
+func TestEncrypt(t *testing.T) {
 
 	ptLen := 64
 	adLen := 8
