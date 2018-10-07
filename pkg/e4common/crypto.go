@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/miscreant/miscreant/go"
@@ -103,8 +102,6 @@ func Unprotect(protected []byte, key []byte) ([]byte, error) {
 
 	ts := binary.LittleEndian.Uint64(timestamp)
 	now := uint64(time.Now().Unix())
-	fmt.Println("TS RECEIVED ", ts)
-	fmt.Println("TS NOW ", now)
 	if now < ts {
 		return nil, errors.New("timestamp received is in the future")
 	}
