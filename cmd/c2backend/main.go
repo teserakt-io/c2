@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
@@ -86,17 +87,19 @@ func main() {
 	// load config
 	c := config(log.With(c2.logger, "unit", "config"))
 	var (
-		grpcAddr     = c.GetString("grpc-host-port")
-		httpAddr     = c.GetString("http-host-port")
-		mqttBroker   = c.GetString("mqtt-broker")
-		mqttPassword = c.GetString("mqtt-password")
-		mqttUsername = c.GetString("mqtt-username")
-		mqttID       = c.GetString("mqtt-ID")
-		dbLogging    = c.GetBool("db-logging")
-		dbType       = c.GetString("db-type")
-		dbPassphrase = c.GetString("db-encryption-passphrase")
-		grpcCert     = c.GetString("grpc-cert")
-		grpcKey      = c.GetString("grpc-key")
+		grpcAddr        = c.GetString("grpc-host-port")
+		httpAddr        = c.GetString("http-host-port")
+		mqttBroker      = c.GetString("mqtt-broker")
+		mqttPassword    = c.GetString("mqtt-password")
+		mqttUsername    = c.GetString("mqtt-username")
+		mqttID          = c.GetString("mqtt-ID")
+		dbLogging       = c.GetBool("db-logging")
+		dbType          = c.GetString("db-type")
+		dbPassphrase    = c.GetString("db-encryption-passphrase")
+		grpcCert        = c.GetString("grpc-cert")
+		grpcKey         = c.GetString("grpc-key")
+		httpTLSCertPath = c.GetString("http-cert")
+		httpTLSKeyPath  = c.GetString("http-key")
 	)
 
 	if dbPassphrase == "" {
@@ -253,6 +256,25 @@ func main() {
 		var logger = log.With(c2.logger, "protocol", "http")
 		logger.Log("addr", httpAddr)
 
+		tlsCert, err := tls.LoadX509KeyPair(httpTLSCertPath, httpTLSKeyPath)
+		if err != nil {
+			errc <- err
+			return
+		}
+
+		// TODO: maybe we could make some of these options configurable.
+		tlsConfig := &tls.Config{Certificates: []tls.Certificate{tlsCert},
+			MinVersion:               tls.VersionTLS12,
+			CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+			PreferServerCipherSuites: true,
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+			},
+		}
+
 		route := mux.NewRouter()
 		route.Use(corsMiddleware)
 		route.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -282,8 +304,16 @@ func main() {
 		route.HandleFunc("/e4/topic", c2.handleGetTopics).Methods("GET")
 		route.HandleFunc("/e4/client", c2.handleGetClients).Methods("GET")
 
-		logger.Log("msg", "starting http server")
-		errc <- http.ListenAndServe(httpAddr, route)
+		logger.Log("msg", "starting https server")
+
+		apiServer := &http.Server{
+			Addr:         httpAddr,
+			Handler:      route,
+			TLSConfig:    tlsConfig,
+			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+		}
+
+		errc <- apiServer.ListenAndServeTLS(httpTLSCertPath, httpTLSKeyPath)
 	}()
 
 	c2.logger.Log("error", <-errc)

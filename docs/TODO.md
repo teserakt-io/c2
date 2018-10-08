@@ -62,10 +62,10 @@
 * add http m2m endpoints
 * add grpc m2m functions
 * when gRPC goroutine fails, service should terminate (J)
+* secure https (A)
 
 # WIP
 
-* secure https (A)
 * clean documentation from doc/ (A+J)
 * unit tests for relevant functionality (db done, e4common crypto improve) (A)
 

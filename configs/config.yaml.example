@@ -40,5 +40,9 @@ grpc-key: cmd/c2backend/c2-key.pem
 ###############################################################
 # host:port, e.g. 0.0.0.0:8888
 http-host-port: 0.0.0.0:8888
+# path to the PEM-encoded certificate file
+http-cert: cmd/c2backend/c2-cert.pem
+# path to the PEM-encoded private key file
+http-key: cmd/c2backend/c2-key.pem
 
 
