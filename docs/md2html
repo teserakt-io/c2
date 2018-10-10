@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]; then
+    echo "file base name required"
+    exit
+fi
+
+ARG=$1
+
+pandoc -s -f markdown+smart -N $ARG --toc --self-contained --css pandoc.css -o ${ARG%.*}.html
