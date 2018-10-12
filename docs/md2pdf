@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]; then
+    echo "file base name required"
+    exit
+fi
+
+ARG=$1
+
+
+pandoc -r markdown+smart -N $ARG -s --pdf-engine=xelatex --toc --template=pandoc.tex -o ${ARG%.*}.pdf 
+

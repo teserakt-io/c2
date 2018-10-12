@@ -1,0 +1,226 @@
+%!TEX TS-program = xelatex
+\documentclass[12pt,oneside,onecolumn,a4paper]{memoir}  
+
+\let\footruleskip\undefined
+
+\usepackage{fontspec,xltxtra,xunicode}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage[english]{babel}
+
+%% E4 Colours:
+%  - Orange: ef4a22
+%  - Gray:   3a3a3c
+%  - Blue:   D8DE2C
+
+\definecolor{teseraktorange}{HTML}{EF4A22}
+\definecolor{teseraktgray}{HTML}{3A3A3C}
+
+\usepackage{geometry}
+\geometry{verbose,a4paper,tmargin=3cm,bmargin=3cm,lmargin=3cm,rmargin=3cm}
+
+\setmainfont{Helvetica}
+%\setsansfont[Mapping=tex-text]{Anadale Mono} 
+\setmonofont[Mapping=tex-text,Scale=0.8]{Andale Mono}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+
+\pagestyle{plain}  
+
+$if(verbatim-in-note)$
+\usepackage{fancyvrb}
+$endif$
+
+$if(titlepage)$
+\usepackage{pagecolor}
+\usepackage{afterpage}
+\usepackage{setspace}
+$endif$
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+$if(fancy-enums)$
+\makeatletter\AtBeginDocument{%
+  \renewcommand{\@listi}
+    {\setlength{\labelwidth}{4em}}
+}\makeatother
+\usepackage{enumerate}
+$endif$
+
+$if(tables)$
+\usepackage{array}
+\newcommand{\PreserveBackslash}[1]{\let\temp=\\#1\let\\=\temp}
+\let\PBS=\PreserveBackslash
+$endif$
+
+$if(subscript)$
+\newcommand{\textsubscr}[1]{\ensuremath{_{\scriptsize\textrm{#1}}}}
+$endif$
+
+\hypersetup{colorlinks,%
+citecolor=teseraktorange,%
+filecolor=teseraktorange,%
+linkcolor=teseraktorange,%
+urlcolor=teseraktorange}
+$if(url)$
+\usepackage{url}
+$endif$
+
+$if(graphics)$
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth
+\else\Gin@nat@width\fi}
+\makeatother
+\let\Oldincludegraphics\includegraphics
+\renewcommand{\includegraphics}[1]{\Oldincludegraphics[width=\maxwidth]{#1}}
+$endif$
+
+$if(numbersections)$
+$else$
+\setcounter{secnumdepth}{0}
+$endif$
+
+$if(verbatim-in-note)$
+\VerbatimFootnotes % -- allows verbatim text in footnotes
+$endif$
+
+$for(header-includes)$
+$header-includes$
+$endfor$
+
+$if(title)$
+\title{$title$}
+$endif$
+\author{$for(author)$$author$$sep$\\$endfor$}
+$if(date)$
+\date{$date$}
+$endif$
+
+%
+% header and footer
+%
+$if(disable-header-and-footer)$
+$else$
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead{}
+\fancyfoot{}
+\lhead[$if(header-right)$$header-right$$else$$date$$endif$]{$if(header-left)$$header-left$$else$$title$$endif$}
+\chead[$if(header-center)$$header-center$$else$$endif$]{$if(header-center)$$header-center$$else$$endif$}
+\rhead[$if(header-left)$$header-left$$else$$title$$endif$]{$if(header-right)$$header-right$$else$$date$$endif$}
+\lfoot[$if(footer-right)$$footer-right$$else$\thepage$endif$]{$if(footer-left)$$footer-left$$else$$for(author)$$author$$sep$, $endfor$$endif$}
+\cfoot[$if(footer-center)$$footer-center$$else$$endif$]{$if(footer-center)$$footer-center$$else$$endif$}
+\rfoot[$if(footer-left)$$footer-left$$else$$for(author)$$author$$sep$, $endfor$$endif$]{$if(footer-right)$$footer-right$$else$\thepage$endif$}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+$endif$
+
+\usepackage{eso-pic}
+\newcommand\BackgroundPic{%
+\put(0,0){%
+\parbox[b][\paperheight]{\paperwidth}{%
+\vfill
+\centering
+\includegraphics[width=\paperwidth,height=\paperheight]{branding/background.jpg}%
+\vfill
+}}}
+
+
+
+\usepackage{tikz}
+\makechapterstyle{box}{
+  \renewcommand*{\printchaptername}{}
+  \renewcommand*{\chapnumfont}{\normalfont\sffamily\huge\bfseries}
+  \renewcommand*{\printchapternum}{
+    \flushright
+    \begin{tikzpicture}
+      \draw[fill,color=teseraktorange] (0,0) rectangle (2cm,2cm);
+      \draw[color=white] (1cm,1cm) node { \chapnumfont\thechapter };
+    \end{tikzpicture}
+  }
+  \renewcommand*{\chaptitlefont}{
+        \normalfont
+        %\sffamily
+        \Huge
+        \bfseries}
+  \renewcommand*{\printchaptertitle}[1]{\flushleft\chaptitlefont##1}
+}
+\chapterstyle{box}
+
+\begin{document}
+
+
+$if(titlepage)$
+\begin{titlingpage}
+$if(titlepage-waves)$
+\AddToShipoutPicture*{\BackgroundPic}
+$endif$
+
+\newgeometry{left=3cm}
+$if(titlepage-color)$
+\definecolor{titlepage-color}{HTML}{$titlepage-color$}
+\newpagecolor{titlepage-color}\afterpage{\restorepagecolor}
+$endif$
+
+\begin{flushright}
+$if(logo)$
+\noindent
+\includegraphics[width=$if(logo-width)$$logo-width$$else$280$endif$pt]{$logo$}
+\vfill
+\vfill
+$endif$
+\end{flushright}
+
+\newcommand{\colorRule}[3][black]{\textcolor[HTML]{#1}{\rule{#2}{#3}}}
+\begin{flushleft}
+\noindent
+\\[-1em]
+\color[HTML]{$if(titlepage-text-color)$$titlepage-text-color$$else$5F5F5F$endif$}
+\makebox[0pt][l]{\colorRule[$if(titlepage-rule-color)$$titlepage-rule-color$$else$ffffff$endif$]{1.3\textwidth}{$if(titlepage-rule-height)$$titlepage-rule-height$$else$4$endif$pt}}
+\par
+\noindent
+
+{ %setstretch{1.4}
+\setSpacing{1.4}
+% \vfill
+\noindent {\huge \textbf{\textsf{$title$}}}
+$if(subtitle)$
+\vskip 1em
+{\Large \textsf{$subtitle$}}
+$endif$
+\vskip 2em
+\noindent
+{\Large \textsf{$for(author)$$author$$sep$, $endfor$}
+\vfill
+}
+
+
+\textsf{$date$}}
+\end{flushleft}
+\end{titlingpage}
+\restoregeometry
+$else$
+\maketitle
+$endif$
+
+$if(toc)$
+\tableofcontents
+
+$endif$
+
+
+$if(alignment)$
+\begin{$alignment$}
+$endif$
+
+$body$
+
+%$if(alignment)$
+\end{$alignment$}
+$endif$
+
+
+\end{document}
