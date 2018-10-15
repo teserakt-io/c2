@@ -3,7 +3,14 @@
 rm -rf /tmp/e4/db
 mkdir -p /tmp/e4/db
 
-E4PATH=$GOPATH/src/teserakt/e4go
+E4PATH=""
+
+for GOSRC in ${GOPATH//:/ }; do
+    if [ -d $GOSRC/src/teserakt/e4go ]; then
+        E4PATH=$GOSRC/src/teserakt/e4go
+        break
+    fi
+done
 
 $E4PATH/scripts/build.sh
 
@@ -63,34 +70,40 @@ sleep 1
 
 printf "\nTESTING HTTP INTERFACE\n"
 
-C2HTTP="localhost:8888"
+C2HTTP="https://localhost:8888"
 CLIENTID="2dd31f9cbe1ccf9f3f67520a8bc9594b7fe095ea69945408b83c861021372169"
 
 printf "\n# resetting client key\n"
-curl -X PATCH $C2HTTP/e4/client/$CLIENTID
+curl -k -X PATCH $C2HTTP/e4/client/$CLIENTID
 
 printf "\n# adding a topic to C2\n"
-curl -X POST $C2HTTP/e4/topic/newtopic
+curl -k -X POST $C2HTTP/e4/topic/newtopic
 
 printf "\n# adding this topic to client\n"
-curl -X PUT $C2HTTP/e4/client/$CLIENTID/topic/newtopic
+curl -k -X PUT $C2HTTP/e4/client/$CLIENTID/topic/newtopic
+
+printf "\n# Check M2M link finds this client\n"
+curl -k -X GET $C2HTTP/e4/client/$CLIENTID/topics/0/10
 
 printf "\n# then removing it from client\n"
-curl -X DELETE $C2HTTP/e4/client/$CLIENTID/topic/newtopic
+curl -k -X DELETE $C2HTTP/e4/client/$CLIENTID/topic/newtopic
+
+printf "\n# Check M2M link now shows this client removed\n"
+curl -k -X GET $C2HTTP/e4/client/$CLIENTID/topics/0/10
 
 printf "\n# remove topic from c2\n"
-curl -X DELETE $C2HTTP/e4/topic/newtopic
+curl -k -X DELETE $C2HTTP/e4/topic/newtopic
 
 printf "\n# removing it again should fail\n"
-curl -X DELETE $C2HTTP/e4/topic/newtopic
+curl -k -X DELETE $C2HTTP/e4/topic/newtopic
 
 printf "\n# sending message to client\n"
-curl -X POST $C2HTTP/e4/topic/testtopic/message/hello
+curl -k -X POST $C2HTTP/e4/topic/testtopic/message/hello
 
 printf "\n# get topics list\n"
-curl -X GET $C2HTTP/e4/topic
+curl -k -X GET $C2HTTP/e4/topic
 
 printf "\n# get ids list\n"
-curl -X GET $C2HTTP/e4/client
+curl -k -X GET $C2HTTP/e4/client
 
 terminate
