@@ -3,10 +3,8 @@ package main
 import (
 	"bytes"
 	"crypto/rand"
-	b64 "encoding/base64"
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/go-kit/kit/log"
@@ -15,40 +13,8 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
 	e4 "teserakt/e4go/pkg/e4common"
+	e4test "teserakt/e4go/pkg/e4test"
 )
-
-func testGetRandomDBName() string {
-	bytes := [16]byte{}
-	_, err := rand.Read(bytes[:])
-	if err != nil {
-		panic(err)
-	}
-	dbCandidate := b64.StdEncoding.EncodeToString(bytes[:])
-	dbCleaned1 := strings.Replace(dbCandidate, "+", "", -1)
-	dbCleaned2 := strings.Replace(dbCleaned1, "/", "", -1)
-	dbCleaned3 := strings.Replace(dbCleaned2, "=", "", -1)
-
-	dbPath := fmt.Sprintf("/tmp/e4c2_unittest_%s.sqlite", dbCleaned3)
-	return dbPath
-}
-
-func testGenerateID() ([]byte, error) {
-	idbytes := [e4.IDLen]byte{}
-	_, err := rand.Read(idbytes[:])
-	if err != nil {
-		return nil, err
-	}
-	return idbytes[:], nil
-}
-
-func testGenerateKey() ([]byte, error) {
-	keybytes := [e4.KeyLen]byte{}
-	_, err := rand.Read(keybytes[:])
-	if err != nil {
-		return nil, err
-	}
-	return keybytes[:], nil
-}
 
 func testInitializeFakeC2(db *gorm.DB) C2 {
 	var c2 C2
@@ -62,7 +28,7 @@ func testInitializeFakeC2(db *gorm.DB) C2 {
 
 // TestPlaceHolder No unit tests yet, but we should have them.
 func TestM2MSQLite(t *testing.T) {
-	dbPath := testGetRandomDBName()
+	dbPath := e4test.GetRandomDBName()
 
 	fmt.Fprintf(os.Stderr, "Database Path: %s\n", dbPath)
 
@@ -93,11 +59,11 @@ func TestM2MSQLite(t *testing.T) {
 	var idkeys [IDS][]byte
 
 	for i := 0; i < IDS; i++ {
-		ids[i], err = testGenerateID()
+		ids[i], err = e4test.GenerateID()
 		if err != nil {
 			t.Errorf("Error: %s", err)
 		}
-		idkeys[i], err = testGenerateKey()
+		idkeys[i], err = e4test.GenerateKey()
 		if err != nil {
 			t.Errorf("Error: %s", err)
 		}
@@ -107,7 +73,7 @@ func TestM2MSQLite(t *testing.T) {
 	var topickeys [TOPICS][]byte
 	for i := 0; i < TOPICS; i++ {
 		topics[i] = fmt.Sprintf("testtopic%d", i)
-		topickeys[i], err = testGenerateKey()
+		topickeys[i], err = e4test.GenerateKey()
 		if err != nil {
 			t.Errorf("Error: %s", err)
 		}
@@ -121,6 +87,29 @@ func TestM2MSQLite(t *testing.T) {
 	// insert all but 1 of the topics:
 	for i := 0; i < TOPICS-INSERTLATERTOPICS; i++ {
 		c2.insertTopicKey(topics[i], topickeys[i])
+	}
+
+	// check the database fetching APIs correctly return valid
+	// values
+	for i := 0; i < IDS-INSERTLATERIDS; i++ {
+		idkey, err := c2.getIDKey(ids[i])
+		if err != nil {
+			t.Errorf("Error: %s", err)
+		}
+		if !bytes.Equal(idkey, idkeys[i]) {
+			t.Error("Topic key sorted doesn't match inserted value.")
+		}
+
+	}
+	for i := 0; i < TOPICS-INSERTLATERTOPICS; i++ {
+		topickey, err := c2.getTopicKey(topics[i])
+		if err != nil {
+			t.Errorf("Error: %s", err)
+		}
+		if !bytes.Equal(topickey, topickeys[i]) {
+			t.Error("Topic key sorted doesn't match inserted value.")
+		}
+
 	}
 
 	// check we have valid-looking data.
@@ -206,6 +195,15 @@ func TestM2MSQLite(t *testing.T) {
 		t.Error("Didn't find the same number of links as we inserted.")
 	}
 
+	// also check via link apis
+	linkedCountAPICheck, err := c2.countIDsForTopic(randomtopic)
+	if err != nil {
+		t.Errorf("Failure calling countIDsForTopic: %s", err)
+	}
+	if linkedCountAPICheck != linkedCount {
+		t.Error("Didn't find the same number of links as we inserted.")
+	}
+
 	if _, err = rand.Reader.Read(randombyte[:]); err != nil {
 		t.Errorf("Error: %s", err)
 	}
@@ -273,6 +271,15 @@ func TestM2MSQLite(t *testing.T) {
 	rows.Close()
 
 	if linkedCountCheck != linkedCount {
+		t.Error("Didn't find the same number of links as we inserted.")
+	}
+
+	// also check via link apis
+	linkedCountAPICheck, err = c2.countTopicsForID(randomid)
+	if err != nil {
+		t.Errorf("Failure calling countIDsForTopic: %s", err)
+	}
+	if linkedCountAPICheck != linkedCount {
 		t.Error("Didn't find the same number of links as we inserted.")
 	}
 

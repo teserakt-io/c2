@@ -4,3 +4,5 @@ builds/
 .idea/
 api/c2.pb.go
 configs/config.yaml
+docs/*.pdf
+docs/*.html

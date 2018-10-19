@@ -1,7 +1,5 @@
-
-# cleanup db
-rm -rf /tmp/e4/db
-mkdir -p /tmp/e4/db
+# This script is deprecated. However we're slowly replacing 
+# it with integration testing code elsewhere
 
 E4PATH=""
 
@@ -13,6 +11,7 @@ for GOSRC in ${GOPATH//:/ }; do
 done
 
 $E4PATH/scripts/build.sh
+$E4PATH/scripts/unittests.sh
 
 printf "\nstarting c2backend..\n"
 $E4PATH/bin/c2backend &
