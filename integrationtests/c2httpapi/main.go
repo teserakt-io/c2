@@ -43,11 +43,12 @@ func testHTTPApi(errc chan error, httpClient http.Client, host string) {
 		errc <- err
 		return
 	}
+
 	if resp.StatusCode != 200 {
 		errc <- fmt.Errorf("Request %s failed", url)
 		return
 	}
-
+	errc <- nil
 }
 
 func main() {
