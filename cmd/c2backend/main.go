@@ -365,6 +365,8 @@ func config(logger log.Logger) *viper.Viper {
 	logger.Log("msg", "load configuration and command args")
 
 	var v = viper.New()
+
+	// Con
 	v.SetConfigName("config")
 	v.AddConfigPath(".")
 	v.AddConfigPath("./configs")
@@ -379,6 +381,32 @@ func config(logger log.Logger) *viper.Viper {
 	v.SetDefault("db-secure-connection", "enable")
 	v.SetDefault("grpc-host-port", "0.0.0.0:5555")
 	v.SetDefault("http-host	-port", "0.0.0.0:8888")
+
+	// Allow the whole environment to be configured by
+	// env variables for testing.
+	v.BindEnv("mqtt-broker", "E4C2_MQTT_BROKER")
+	v.BindEnv("mqtt-ID", "E4C2_MQTT_ID")
+	v.BindEnv("mqtt-QoS", "E4C2_MQTT_QOS")
+	v.BindEnv("db-type", "E4C2_DB_TYPE")
+	v.BindEnv("db-file", "E4C2_DB_FILE")
+	v.BindEnv("db-username", "E4C2_DB_USERNAME")
+	v.BindEnv("db-password", "E4C2_DB_PASSWORD")
+
+	// This one in particular should survive even if others are subsequently
+	// removed:
+	v.BindEnv("db-encryption-passphrase", "E4C2_DB_ENCRYPTION_PASSPHRASE")
+
+	v.BindEnv("db-secure-connection", "E4C2_DB_SECURE_CONNECTION")
+	v.BindEnv("grpc-host-port", "E4C2_GRPC_HOST_PORT")
+	v.BindEnv("grpc-cert", "E4C2_GRPC_HOST_PORT")
+	v.BindEnv("grpc-key", "E4C2_GRPC_HOST_PORT")
+	v.BindEnv("http-host-port", "E4C2_HTTP_HOST_PORT")
+	v.BindEnv("http-cert", "E4C2_HTTP_HOST_PORT")
+	v.BindEnv("http-key", "E4C2_HTTP_HOST_PORT")
+
+	// Now
+	//pflag.Parse()
+	//viper.BindPFlags(pflag.CommandLine)
 
 	err := v.ReadInConfig()
 	if err != nil {

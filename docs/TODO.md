@@ -68,6 +68,7 @@
 
 * clean documentation from doc/ (A+J)
 * unit tests for relevant functionality (db done, e4common crypto improve) (A)
+* integration tests and general QA.
 
 # TODO
 
@@ -76,6 +77,7 @@
 * 256b -> 128b ids
 * continuous integration
 * fine-tune MQTT client options
+* config to be loaded in its own file.
 
 # FUTURE
 

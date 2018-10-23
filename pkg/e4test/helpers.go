@@ -4,8 +4,10 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	b64 "encoding/base64"
+	"errors"
 	"fmt"
 	"go/build"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -15,7 +17,7 @@ import (
 	"time"
 )
 
-// findAndCheckPathFile does some light sanity checks on
+// FindAndCheckPathFile does some light sanity checks on
 // file access. If supplied an absolute file path, it checks
 // we can stat this file and that it isn't stupid, like
 // a directory
@@ -23,7 +25,7 @@ import (
 // to be relative to one of the directories specified
 // as a gopath. We search each one to try to find the
 // file and return its absolute path.
-func findAndCheckPathFile(subpath string) (string, error) {
+func FindAndCheckPathFile(subpath string) (string, error) {
 
 	// if we
 	if filepath.IsAbs(subpath) {
@@ -63,32 +65,101 @@ func findAndCheckPathFile(subpath string) (string, error) {
 // signal the process to exit. Should be used for testing
 // daemons like the C2 backend, where the process needs to
 // stay alive and we interact with it via an API.
+// **Note**: procenv is currently appended to os.Environ(),
+// no merging takes place at all.
 func RunDaemon(errc chan error,
+	stopc chan struct{},
+	clientwaitc chan struct{},
 	path string,
-	args []string) {
+	args []string,
+	procenv []string) {
+
+	osenv := os.Environ()
+
+	// Not quite correct
+	procenv = append(procenv, osenv...)
 
 	subproc := exec.Cmd{
 		Path: path,
 		Args: args,
+		Env:  procenv,
 	}
 
-	/*spstdin, _ := subproc.StdinPipe()
+	/*spstdin, _ := subproc.StdinPipe()*/
 	spstdout, _ := subproc.StdoutPipe()
-	spstderr, _ := subproc.StderrPipe()*/
+	spstderr, _ := subproc.StderrPipe()
 
 	if err := subproc.Start(); err != nil {
-		errc <- fmt.Errorf("runDaemon failed. %s", err)
+		wrappederr := fmt.Sprintf("runDaemon failed. %s", err)
+		fmt.Fprintf(os.Stdout, wrappederr)
+		close(clientwaitc)
+		errc <- errors.New(wrappederr)
+		return
 	}
+
+	fmt.Fprintf(os.Stdout, "Running %s as %d\n", path, subproc.Process.Pid)
 
 	// clean up on exit:
 	defer func() {
 		// send an interrupt signal to terminate the process.
-		subproc.Process.Signal(os.Interrupt)
 		subproc.Wait()
+		close(clientwaitc)
 	}()
 
-	// wait for error indicating an exit.
-	<-errc
+	// tell the caller we've set up correctly:
+	time.Sleep(1000 * time.Millisecond)
+	clientwaitc <- struct{}{}
+	// wait for signal on stop channel:
+	fmt.Println("Waiting for stop signal")
+	<-stopc
+	subproc.Process.Signal(os.Interrupt)
+	fmt.Println("Exiting process goroutine")
+
+	bytes, _ := ioutil.ReadAll(spstdout)
+	os.Stdout.Write(bytes)
+	bytes, _ = ioutil.ReadAll(spstderr)
+	os.Stdout.Write(bytes)
+	fmt.Println("Done done done")
+}
+
+// RunCommand launches the specified process with arguments
+// and waits for it to exit, returning the contents of stdout and stderr
+func RunCommand(errc chan error,
+	path string,
+	args []string,
+	procenv []string) ([]byte, []byte, error) {
+
+	env := os.Environ()
+
+	// Not quite correct
+	procenv = append(procenv, env...)
+
+	subproc := exec.Cmd{
+		Path: path,
+		Args: args,
+		Env:  env,
+	}
+
+	/*spstdin, _ := subproc.StdinPipe()*/
+	spstdout, _ := subproc.StdoutPipe()
+	spstderr, _ := subproc.StderrPipe()
+
+	if err := subproc.Start(); err != nil {
+		return nil, nil, fmt.Errorf("runDaemon failed. %s", err)
+	}
+
+	subproc.Wait()
+
+	stdoutbytes, err := ioutil.ReadAll(spstdout)
+	if err != nil {
+		return nil, nil, err
+	}
+	stderrbytes, err := ioutil.ReadAll(spstderr)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return stdoutbytes, stderrbytes, nil
 }
 
 // GetRandomDBName produces a random database
@@ -145,6 +216,7 @@ func ConstructHTTPSClient() http.Client {
 			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
 		},
+		InsecureSkipVerify: true,
 	}
 
 	httpTransport := &http.Transport{
