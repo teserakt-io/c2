@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	b64 "encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"go/build"
@@ -16,6 +17,63 @@ import (
 	e4 "teserakt/e4go/pkg/e4common"
 	"time"
 )
+
+// TestIDKey provides a representation of an id-key pair.
+type TestIDKey struct {
+	ID  []byte
+	Key []byte
+}
+
+// TestTopicKey provides a representation of the topic-key pair.
+type TestTopicKey struct {
+	TopicName string
+	Key       []byte
+}
+
+// New generates a new TestIDKey
+func (t *TestIDKey) New() error {
+	id, err := GenerateID()
+	if err != nil {
+		return err
+	}
+	key, err := GenerateKey()
+	if err != nil {
+		return err
+	}
+	t.ID = id
+	t.Key = key
+	return nil
+}
+
+// GetHexID returns a hex-encoded Identifier
+func (t *TestIDKey) GetHexID() string {
+	return hex.EncodeToString(t.ID)
+}
+
+// GetHexKey returns a hex-encoded Key
+func (t *TestIDKey) GetHexKey() string {
+	return hex.EncodeToString(t.Key)
+}
+
+// New generates a new TestIDKey
+func (t *TestTopicKey) New() error {
+	topic, err := GenerateTopic()
+	if err != nil {
+		return err
+	}
+	key, err := GenerateKey()
+	if err != nil {
+		return err
+	}
+	t.TopicName = topic
+	t.Key = key
+	return nil
+}
+
+// GetHexKey returns a hex-encoded Key
+func (t *TestTopicKey) GetHexKey() string {
+	return hex.EncodeToString(t.Key)
+}
 
 // FindAndCheckPathFile does some light sanity checks on
 // file access. If supplied an absolute file path, it checks
@@ -107,7 +165,7 @@ func RunDaemon(errc chan error,
 	}()
 
 	// tell the caller we've set up correctly:
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 	clientwaitc <- struct{}{}
 	// wait for signal on stop channel:
 	fmt.Println("Waiting for stop signal")
@@ -190,8 +248,7 @@ func GenerateID() ([]byte, error) {
 	return idbytes[:], nil
 }
 
-// GenerateKey generates a random key
-// that is e4.KeyLen bytes
+// GenerateKey generates a random key that is e4.KeyLen bytes
 // in length, using a CSPRNG
 func GenerateKey() ([]byte, error) {
 	keybytes := [e4.KeyLen]byte{}
@@ -200,6 +257,20 @@ func GenerateKey() ([]byte, error) {
 		return nil, err
 	}
 	return keybytes[:], nil
+}
+
+// GenerateTopic generates a random topic
+func GenerateTopic() (string, error) {
+	bytes := [28]byte{}
+	_, err := rand.Read(bytes[:])
+	if err != nil {
+		return "", err
+	}
+	tCandidate := b64.StdEncoding.EncodeToString(bytes[:])
+	tCleaned1 := strings.Replace(tCandidate, "+", "", -1)
+	tCleaned2 := strings.Replace(tCleaned1, "/", "", -1)
+	tCleaned3 := strings.Replace(tCleaned2, "=", "", -1)
+	return tCleaned3[0:32], nil
 }
 
 // ConstructHTTPSClient builds an HTTPS client for use

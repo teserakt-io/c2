@@ -78,6 +78,7 @@
 * continuous integration
 * fine-tune MQTT client options
 * config to be loaded in its own file.
+* Continuous integration
 
 # FUTURE
 
