@@ -30,6 +30,14 @@ type TestTopicKey struct {
 	Key       []byte
 }
 
+// TestResult reports a test outcome for nice display
+type TestResult struct {
+	Name     string
+	Result   bool
+	Critical bool
+	Error    error
+}
+
 // New generates a new TestIDKey
 func (t *TestIDKey) New() error {
 	id, err := GenerateID()
@@ -125,7 +133,7 @@ func FindAndCheckPathFile(subpath string) (string, error) {
 // stay alive and we interact with it via an API.
 // **Note**: procenv is currently appended to os.Environ(),
 // no merging takes place at all.
-func RunDaemon(errc chan error,
+func RunDaemon(errc chan *TestResult,
 	stopc chan struct{},
 	clientwaitc chan struct{},
 	path string,
@@ -151,7 +159,12 @@ func RunDaemon(errc chan error,
 		wrappederr := fmt.Sprintf("runDaemon failed. %s", err)
 		fmt.Fprintf(os.Stdout, wrappederr)
 		close(clientwaitc)
-		errc <- errors.New(wrappederr)
+		errc <- &TestResult{
+			Name:     "",
+			Result:   false,
+			Critical: true,
+			Error:    errors.New(wrappederr),
+		}
 		return
 	}
 
@@ -168,22 +181,19 @@ func RunDaemon(errc chan error,
 	time.Sleep(200 * time.Millisecond)
 	clientwaitc <- struct{}{}
 	// wait for signal on stop channel:
-	fmt.Println("Waiting for stop signal")
+
 	<-stopc
 	subproc.Process.Signal(os.Interrupt)
-	fmt.Println("Exiting process goroutine")
 
 	bytes, _ := ioutil.ReadAll(spstdout)
 	os.Stdout.Write(bytes)
 	bytes, _ = ioutil.ReadAll(spstderr)
 	os.Stdout.Write(bytes)
-	fmt.Println("Done done done")
 }
 
 // RunCommand launches the specified process with arguments
 // and waits for it to exit, returning the contents of stdout and stderr
-func RunCommand(errc chan error,
-	path string,
+func RunCommand(path string,
 	args []string,
 	procenv []string) ([]byte, []byte, error) {
 
@@ -202,12 +212,11 @@ func RunCommand(errc chan error,
 	spstdout, _ := subproc.StdoutPipe()
 	spstderr, _ := subproc.StderrPipe()
 
-	if err := subproc.Start(); err != nil {
+	if err := subproc.Run(); err != nil {
 		return nil, nil, fmt.Errorf("runDaemon failed. %s", err)
 	}
 
 	subproc.Wait()
-
 	stdoutbytes, err := ioutil.ReadAll(spstdout)
 	if err != nil {
 		return nil, nil, err
@@ -216,7 +225,6 @@ func RunCommand(errc chan error,
 	if err != nil {
 		return nil, nil, err
 	}
-
 	return stdoutbytes, stderrbytes, nil
 }
 
