@@ -39,3 +39,6 @@ GOOS=$GOOS GOARCH=$GOARCH go build -o bin/c2cli -ldflags "-X main.gitCommit=$GIT
 
 printf "=> mqe4client...\n"
 GOOS=$GOOS GOARCH=$GOARCH go build -o bin/mqe4client -ldflags "-X main.gitCommit=$GIT_COMMIT -X main.buildDate=$NOW" $CMDPATH/mqe4client
+
+printf "=> e4tclient...\n"
+GOOS=$GOOS GOARCH=$GOARCH go build -o bin/e4tclient -ldflags "-X main.gitCommit=$GIT_COMMIT -X main.buildDate=$NOW" $CMDPATH/e4tclient
