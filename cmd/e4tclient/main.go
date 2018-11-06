@@ -288,6 +288,9 @@ func main() {
 	e4cli.recv = make(chan [2]string)
 	e4cli.Proto = MqttTransport{}
 
+	// TODO: at some point we should be able to specify MQTT client
+	// specific options as part of a client command. See cobra and
+	// or viper.
 	configmap := make(map[string]interface{})
 	configmap["broker"] = *broker
 	configmap["clientid"] = ""
