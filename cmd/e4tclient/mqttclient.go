@@ -8,9 +8,9 @@ import (
 
 In main.go we define protoclient like this:
 type ProtoClient interface {
-	SubscribeTopic(topic string)
-	UnsubscribeTopic(topic string)
-	SendMessageToTopic(topic string, payload []byte)
+	SubscribeTopic(topic string) error
+	UnsubscribeTopic(topic string) error
+	SendMessageToTopic(topic string, payload []byte) error
 	Initialize() error
 }
 */
@@ -21,23 +21,25 @@ type MqttTransport struct {
 }
 
 // SubscribeTopic subscribes to an MQTT topic with qos 0
-func (t MqttTransport) SubscribeTopic(topic string) error {
+func (t *MqttTransport) SubscribeTopic(topic string) error {
 	qos := 0
+
 	token := t.client.Subscribe(topic, byte(qos), nil)
 	token.Wait()
 	return token.Error()
 }
 
 // UnsubscribeTopic unsubscribes from an MQTT topic
-func (t MqttTransport) UnsubscribeTopic(topic string) error {
+func (t *MqttTransport) UnsubscribeTopic(topic string) error {
 	token := t.client.Unsubscribe(topic)
 	token.Wait()
 	return token.Error()
 }
 
 // SendMessageToTopic sends a message to a given topic
-func (t MqttTransport) SendMessageToTopic(topic string, encryptedpayload []byte) error {
-	token := t.client.Publish(topic, 0, false, encryptedpayload)
+func (t *MqttTransport) SendMessageToTopic(topic string, payload []byte) error {
+	var qos int = 0
+	token := t.client.Publish(topic, byte(qos), false, payload)
 	token.Wait()
 	return token.Error()
 }
@@ -47,7 +49,7 @@ func (t MqttTransport) SendMessageToTopic(topic string, encryptedpayload []byte)
 // channel should receive all events from the ProtoClient and the
 // controlchannel string indicates what topic or client should be treated
 // as sending E4 control messages.
-func (t MqttTransport) Initialize(recv chan [2]string, controlchannel string,
+func (t *MqttTransport) Initialize(recv chan [2]string, controlchannel string,
 	config map[string]interface{}) error {
 
 	opts := MQTT.NewClientOptions()

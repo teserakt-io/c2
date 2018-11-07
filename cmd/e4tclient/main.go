@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/rand"
 	b64 "encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -22,7 +23,7 @@ var gitCommit string
 var buildDate string
 
 func eventloop(errc chan error,
-	controlc chan command,
+	controlc chan Command,
 	cli E4ProtectedClient) {
 
 	for cmd := range controlc {
@@ -31,7 +32,16 @@ func eventloop(errc chan error,
 			id := e4.HashIDAlias(cmd.Payload)
 			copy(cli.E4.ID, id)
 		case CMDSETKEY:
-			key := []byte(cmd.Payload)
+			key, err := hex.DecodeString(cmd.Payload)
+			if err != nil {
+				evt := Event{Code: EVTERROR,
+					Properties: map[string]interface{}{
+						"context": "eventloop",
+						"message": "Bad Format in SendMsg",
+					}}
+				evt.Report()
+				continue
+			}
 			cli.E4.SetIDKey(key)
 		case CMDGENKEY:
 			key := e4.RandomKey()
@@ -47,6 +57,12 @@ func eventloop(errc chan error,
 			// topic=?;payload=base64
 			payloadparts := strings.Split(cmd.Payload, ";")
 			if len(payloadparts) != 2 {
+				evt := Event{Code: EVTERROR,
+					Properties: map[string]interface{}{
+						"context": "eventloop",
+						"message": "Bad Format in SendMsg",
+					}}
+				evt.Report()
 				continue
 			}
 
@@ -55,9 +71,15 @@ func eventloop(errc chan error,
 			var err error
 
 			for _, part := range payloadparts {
-				subparts := strings.Split(part, "=")
+				subparts := strings.Split(part, ":")
 				if len(subparts) != 2 {
-					continue
+					evt := Event{Code: EVTERROR,
+						Properties: map[string]interface{}{
+							"context": "eventloop",
+							"message": "Bad format in SendMsg",
+						}}
+					evt.Report()
+					break
 				}
 				key := subparts[0]
 				value := subparts[1]
@@ -67,24 +89,47 @@ func eventloop(errc chan error,
 				case "payload":
 					payload, err = b64.StdEncoding.DecodeString(value)
 					if err != nil {
-						continue
+						evt := Event{Code: EVTERROR,
+							Properties: map[string]interface{}{
+								"context": "eventloop",
+								"message": err.Error(),
+							}}
+						evt.Report()
+						break
 					}
 				default:
 					continue
 				}
 			}
+			if err != nil {
+				continue
+			}
 
 			e4protectedpayload, err := cli.E4.Protect(payload, topic)
 			if err != nil {
-				//
+				evt := Event{Code: EVTERROR,
+					Properties: map[string]interface{}{
+						"context": "eventloop",
+						"message": err.Error(),
+					}}
+				evt.Report()
+				continue
 			}
 
 			cli.Proto.SendMessageToTopic(topic, e4protectedpayload)
 
 		case CMDSENDUNPROTECTEDMSG:
 
+			fmt.Fprintf(os.Stderr, "%s\n", cmd.Payload)
+
 			payloadparts := strings.Split(cmd.Payload, ";")
 			if len(payloadparts) != 2 {
+				evt := Event{Code: EVTERROR,
+					Properties: map[string]interface{}{
+						"context": "eventloop",
+						"message": "Bad Format in SendMsg",
+					}}
+				evt.Report()
 				continue
 			}
 
@@ -93,9 +138,15 @@ func eventloop(errc chan error,
 			var err error
 
 			for _, part := range payloadparts {
-				subparts := strings.Split(part, "=")
+				subparts := strings.Split(part, ":")
 				if len(subparts) != 2 {
-					continue
+					evt := Event{Code: EVTERROR,
+						Properties: map[string]interface{}{
+							"context": "eventloop",
+							"message": "Bad Format in SendMsg",
+						}}
+					evt.Report()
+					break
 				}
 				key := subparts[0]
 				value := subparts[1]
@@ -105,14 +156,34 @@ func eventloop(errc chan error,
 				case "payload":
 					payload, err = b64.StdEncoding.DecodeString(value)
 					if err != nil {
-						continue
+						evt := Event{Code: EVTERROR,
+							Properties: map[string]interface{}{
+								"context": "eventloop",
+								"message": err.Error(),
+							}}
+						evt.Report()
+						break
 					}
 				default:
 					continue
 				}
 			}
+			if err != nil {
+				continue
+			}
 
-			cli.Proto.SendMessageToTopic(topic, payload)
+			fmt.Fprintf(os.Stderr, "topic=%s payload=%s\n", topic, payload)
+
+			err = cli.Proto.SendMessageToTopic(topic, payload)
+			if err != nil {
+				evt := Event{Code: EVTERROR,
+					Properties: map[string]interface{}{
+						"context": "eventloop",
+						"message": err.Error(),
+					}}
+				evt.Report()
+				continue
+			}
 
 		default:
 
@@ -134,14 +205,14 @@ func ReceiveLoop(errc chan error, cli E4ProtectedClient) {
 			cmd, err := cli.E4.ProcessCommand([]byte(payload))
 			if err != nil {
 
-				evt := event{Code: EVTERROR,
+				evt := Event{Code: EVTERROR,
 					Properties: map[string]interface{}{
 						"context": "ProcessCommand",
 						"message": err.Error(),
 					}}
 				evt.Report()
 			} else {
-				evt := event{Code: EVTE4COMMANDRECEIVED,
+				evt := Event{Code: EVTE4COMMANDRECEIVED,
 					Properties: map[string]interface{}{
 						"command": cmd,
 					}}
@@ -152,7 +223,7 @@ func ReceiveLoop(errc chan error, cli E4ProtectedClient) {
 			message, err := cli.E4.Unprotect([]byte(payload), topic)
 			if err == nil {
 
-				evt := event{Code: EVTE4MSGRECEIVED,
+				evt := Event{Code: EVTE4MSGRECEIVED,
 					Properties: map[string]interface{}{
 						"topic":   topic,
 						"message": message,
@@ -160,14 +231,14 @@ func ReceiveLoop(errc chan error, cli E4ProtectedClient) {
 				evt.Report()
 			} else if err == e4c.ErrTopicKeyNotFound {
 
-				evt := event{Code: EVTINSECUREMSGRECEIVED,
+				evt := Event{Code: EVTINSECUREMSGRECEIVED,
 					Properties: map[string]interface{}{
 						"topic":   topic,
 						"message": message,
 					}}
 				evt.Report()
 			} else {
-				evt := event{Code: EVTERROR,
+				evt := Event{Code: EVTERROR,
 					Properties: map[string]interface{}{
 						"context": "Unproect",
 						"message": err.Error(),
@@ -178,16 +249,25 @@ func ReceiveLoop(errc chan error, cli E4ProtectedClient) {
 	}
 }
 
-func readStdin(errc chan error, controlc chan command) {
+func readStdin(errc chan error, controlc chan Command) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		stdintext := scanner.Text()
-		var cmd command
-		if err := json.Unmarshal([]byte(stdintext), &cmd); err != nil {
-			continue
+		var cmd *Command
+		var err error
+
+		if strings.HasPrefix(stdintext, "! ") {
+			cmd, err = parseHumanCmdLine(stdintext)
+			if err != nil {
+				continue
+			}
+		} else {
+			if err := json.Unmarshal([]byte(stdintext), cmd); err != nil {
+				continue
+			}
 		}
 
-		controlc <- cmd
+		controlc <- *cmd
 	}
 }
 
@@ -226,7 +306,7 @@ func main() {
 		os.Exit(exitCode)
 	}()
 
-	evt := event{Code: EVTVERSION,
+	evt := Event{Code: EVTVERSION,
 		Properties: map[string]interface{}{
 			"GitCommit": gitCommit,
 			"BuildDate": buildDate,
@@ -271,11 +351,20 @@ func main() {
 			return
 		}
 	} else {
-		e4storagepath = *clientfilepath
+		if *clientfilepath == "" {
+			e4storagepath, err = generateClientFileName()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Client id and/or key not specified\n")
+				exitCode = 1
+				return
+			}
+		} else {
+			e4storagepath = *clientfilepath
+		}
 	}
 
 	errc := make(chan error)
-	controlc := make(chan command)
+	controlc := make(chan Command)
 	var e4cli E4ProtectedClient
 
 	go func() {
@@ -284,9 +373,11 @@ func main() {
 		errc <- fmt.Errorf("%s", <-signalc)
 	}()
 
+	fmt.Fprintf(os.Stderr, "Storing data in %s\n", e4storagepath)
+
 	e4cli.E4 = e4c.NewClientPretty(e4clientid, e4clientkey, e4storagepath)
 	e4cli.recv = make(chan [2]string)
-	e4cli.Proto = MqttTransport{}
+	e4cli.Proto = &MqttTransport{}
 
 	// TODO: at some point we should be able to specify MQTT client
 	// specific options as part of a client command. See cobra and
@@ -300,7 +391,8 @@ func main() {
 	configmap["store"] = ":memory:"
 
 	if err := e4cli.Proto.Initialize(e4cli.recv, e4cli.E4.ReceivingTopic, configmap); err != nil {
-		return
+		exitCode = 1
+		panic(err)
 	}
 
 	go eventloop(errc, controlc, e4cli)

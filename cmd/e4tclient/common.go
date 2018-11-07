@@ -23,6 +23,18 @@ const (
 	CMDSENDUNPROTECTEDMSG ClientCommand = 6
 )
 
+// HumanNameToCommandMap provides a conversion between human-
+// typeable command names and their ClientCommand components.
+var HumanNameToCommandMap = map[string]ClientCommand{
+	"setid":       CMDSETID,
+	"setkey":      CMDSETKEY,
+	"genkey":      CMDGENKEY,
+	"subscribe":   CMDSUBTOPIC,
+	"unsubscribe": CMDUNSUBTOPIC,
+	"e4msg":       CMDSENDE4PROTECTEDMSG,
+	"clearmsg":    CMDSENDUNPROTECTEDMSG,
+}
+
 // These EVT constants represent possible error codes from a
 // controlled client.
 const (
@@ -35,14 +47,14 @@ const (
 
 // Command represents a {"Type": int, "Payload": "..."} command
 // that can be inputted via stdin and control the client.
-type command struct {
+type Command struct {
 	Type    ClientCommand
 	Payload string
 }
 
 // Event objects are reported as {"Code": int, "Properties": {}} where {} is an
 // embedded json map (it can, but shouldn't, encode multiple levels of objects).
-type event struct {
+type Event struct {
 	Code       EventCode
 	Properties map[string]interface{}
 }
@@ -64,15 +76,15 @@ type E4ProtectedClient struct {
 	recv  chan [2]string
 }
 
-func (c command) Encode() ([]byte, error) {
+func (c Command) Encode() ([]byte, error) {
 	return json.Marshal(c)
 }
 
-func (e event) Encode() ([]byte, error) {
+func (e Event) Encode() ([]byte, error) {
 	return json.Marshal(e)
 }
 
-func (e event) Report() {
+func (e Event) Report() {
 	encoded, err := e.Encode()
 	if err != nil {
 		panic(err)

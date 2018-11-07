@@ -1,0 +1,17 @@
+
+# This dockerfile uses multi-stage builds to both compile
+# and build the c2 backend server.
+# https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
+FROM golang:1.11 as buildenv
+WORKDIR /go/src/teserakt/e4go
+
+RUN go get -d -v golang.org/x/tools/cmd/goimports
+RUN ./scripts/build.sh
+
+
+FROM centos:7 as c2
+LABEL maintainer="antony@teserakt.io"
+LABEL version="..."
+LABEL vendor="Teserakt AG"
+
+
