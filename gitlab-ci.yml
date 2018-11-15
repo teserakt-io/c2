@@ -1,0 +1,27 @@
+# E4 C2 Backend gitlab ci file
+# Currently we build using docker in a mirror of docker/Dockerfile.c2 
+# It may be worth building that image, instead. 
+
+# TODO: docker-in-docker
+
+image: golang:1.11
+stages:
+  - build
+  - test
+
+before_script:
+  - go install golang.org/x/tools/cmd/goimports
+  - go install github.com/golang/dep/cmd/dep
+  - cp -r /builds/user /go/src/teserakt/e4go/
+  - cd /go/src/teserakt/e4go/
+
+build:
+  stage: build
+  script:
+    - dep ensure -v
+    - ./scripts/build.sh
+
+test:
+  stage: test
+  script:
+    - ./scripts/unittests.sh
