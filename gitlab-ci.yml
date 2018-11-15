@@ -17,11 +17,17 @@ before_script:
 
 build:
   stage: build
+  only:
+    - develop
+    - master
   script:
     - dep ensure -v
     - ./scripts/build.sh
 
 test:
   stage: test
+  only:
+    - develop
+    - master
   script:
     - ./scripts/unittests.sh
