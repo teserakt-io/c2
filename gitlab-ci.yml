@@ -24,7 +24,6 @@ build:
     - develop
     - master
   script:
-    - dep ensure -v
     - ./scripts/build.sh
 
 test:
