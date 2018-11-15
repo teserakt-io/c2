@@ -1,9 +1,8 @@
 # e4go
 
-[![pipeline status](https://gitlab.com/Teserakt/e4go/badges/master/pipeline.svg)](https://gitlab.com/Teserakt/e4go/commits/master)
-
 Go libraries and commands implementing E4 client and C2 functionalities.
 
+[![pipeline status](https://gitlab.com/Teserakt/e4go/badges/master/pipeline.svg)](https://gitlab.com/Teserakt/e4go/commits/master)
 
 * [c2backend](cmd/c2backend/): C2 back-end application, with gRPC server (for CLI) and HTTP server (for web UI). Key database uses [badger](https://github.com/dgraph-io/badger), but other storages can be plugged.
 
