@@ -25,14 +25,14 @@ RUN ./scripts/unittests.sh
 
 # This container is where we should make changes to the underlying 
 # operating system, such as installing packages, configuring users etc
-FROM centos:7 as centos_base
+FROM centos:7 as runtime_base
 RUN yum upgrade -y
 
 # This is the resulting container.
 # This container should be run like this:
 # docker run -v $E4CONF:/opt/e4/configs -v $E4LOGFILE:/var/log/e4_c2backend.log \
 # -p 5555:5555 -p 8888:8888
-FROM centos_base as c2
+FROM runtime_base as c2
 LABEL maintainer="antony@teserakt.io"
 LABEL version="0.1"
 LABEL vendor="Teserakt AG"
