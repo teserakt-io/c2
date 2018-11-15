@@ -65,7 +65,7 @@ func main() {
 	fmt.Println("Copyright (c) Teserakt AG, 2018")
 
 	// init logger
-	logFileName := fmt.Sprintf("/var/log/teserakt-c2.log")
+	logFileName := fmt.Sprintf("/var/log/e4_c2backend.log")
 	logFile, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
 	if err != nil {
 		fmt.Printf("[ERROR] logs: unable to open file '%v' to write logs: %v\n", logFileName, err)

@@ -4,14 +4,45 @@
 # https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
 FROM golang:1.11 as buildenv
 WORKDIR /go/src/teserakt/e4go
+RUN mkdir -p /go/src/teserakt/e4go
 
-RUN go get -d -v golang.org/x/tools/cmd/goimports
+# TODO fix this
+COPY cmd /go/src/teserakt/e4go/cmd/
+COPY pkg /go/src/teserakt/e4go/pkg/
+COPY vendor /go/src/teserakt/e4go/vendor/
+COPY scripts /go/src/teserakt/e4go/scripts/
+COPY Gopkg.toml /go/src/teserakt/e4go/
+COPY Gopkg.lock /go/src/teserakt/e4go/
+COPY VERSION /go/src/teserakt/e4go/
+
+RUN go get -d -v -u golang.org/x/tools/cmd/goimports && \
+ go install golang.org/x/tools/cmd/goimports && \
+ go get -d -v -u github.com/golang/dep/cmd/dep && \
+ go install github.com/golang/dep/cmd/dep
+RUN dep ensure -v 
 RUN ./scripts/build.sh
+RUN ./scripts/unittests.sh
 
+# This container is where we should make changes to the underlying 
+# operating system, such as installing packages, configuring users etc
+FROM centos:7 as centos_base
+RUN yum upgrade -y
 
-FROM centos:7 as c2
+# This is the resulting container.
+# This container should be run like this:
+# docker run -v $E4CONF:/opt/e4/configs -v $E4LOGFILE:/var/log/e4_c2backend.log \
+# -p 5555:5555 -p 8888:8888
+FROM centos_base as c2
 LABEL maintainer="antony@teserakt.io"
-LABEL version="..."
+LABEL version="0.1"
 LABEL vendor="Teserakt AG"
+
+RUN mkdir -p /opt/e4/bin/ && \
+    mkdir -p /opt/e4/configs/
+
+COPY --from=buildenv /go/src/teserakt/e4go/bin/c2backend /opt/e4/bin/c2backend
+RUN chmod +x /opt/e4/bin/c2backend
+
+CMD ["/opt/e4/bin/c2backend"]
 
 

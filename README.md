@@ -1,5 +1,7 @@
 # e4go
 
+[![pipeline status](https://gitlab.com/Teserakt/e4go/badges/master/pipeline.svg)](https://gitlab.com/Teserakt/e4go/commits/master)
+
 Go libraries and commands implementing E4 client and C2 functionalities.
 
 
