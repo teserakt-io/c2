@@ -15,7 +15,7 @@ before_script:
   - go get github.com/golang/dep/cmd/dep
   - go install github.com/golang/dep/cmd/dep
   - mkdir -p /go/src/teserakt/e4go/
-  - cp -rv /builds/Teserakt/e4go/*  /go/src/teserakt/e4go/
+  - ln -s /builds/Teserakt/e4go/  /go/src/teserakt/e4go/
   - cd /go/src/teserakt/e4go/
 
 build:
