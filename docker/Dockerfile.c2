@@ -3,8 +3,15 @@
 # and build the c2 backend server.
 # https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
 FROM golang:1.11 as buildenv
+
+# workdir
 WORKDIR /go/src/teserakt/e4go
 RUN mkdir -p /go/src/teserakt/e4go
+
+# ENV
+ARG E4_GIT_COMMIT
+ENV E4_GIT_COMMIT=$E4_GIT_COMMIT
+RUN echo "Commit is $E4_GIT_COMMIT"
 
 # TODO fix this
 COPY cmd /go/src/teserakt/e4go/cmd/
@@ -19,7 +26,7 @@ RUN go get -d -v -u golang.org/x/tools/cmd/goimports && \
  go install golang.org/x/tools/cmd/goimports && \
  go get -d -v -u github.com/golang/dep/cmd/dep && \
  go install github.com/golang/dep/cmd/dep
-RUN dep ensure -v 
+# RUN dep ensure -v 
 RUN ./scripts/build.sh
 RUN ./scripts/unittests.sh
 

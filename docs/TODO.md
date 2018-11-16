@@ -72,6 +72,8 @@
 
 # TODO
 
+* Config parameters involving relative files should be resolved by searching 
+  for the files relative to the location of the config file.
 * `lc` should list client aliases => add field alias in the db?
 * 512b -> 256b keys, (same key for SIV MAC and encrypt) -> update clients + specs
 * 256b -> 128b ids

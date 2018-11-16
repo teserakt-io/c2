@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"syscall"
 
@@ -360,6 +361,11 @@ func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, e
 	return &pb.C2Response{Success: false, Err: "unknown command"}, nil
 }
 
+func binarydir() string {
+	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	return dir
+}
+
 func config(logger log.Logger) *viper.Viper {
 
 	logger.Log("msg", "load configuration and command args")
@@ -368,6 +374,8 @@ func config(logger log.Logger) *viper.Viper {
 
 	// Con
 	v.SetConfigName("config")
+	confdir, _ := filepath.Abs(filepath.Join(filepath.Join(binarydir(), ".."), "configs"))
+	v.AddConfigPath(confdir)
 	v.AddConfigPath(".")
 	v.AddConfigPath("./configs")
 	v.AddConfigPath("../configs")

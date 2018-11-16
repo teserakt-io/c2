@@ -20,7 +20,19 @@ done
 
 CMDPATH=teserakt/e4go/cmd
 
-GIT_COMMIT=$(git rev-list -1 HEAD)
+if [[ -z "$E4_GIT_COMMIT" ]]; then 
+    if [[ ! -x "$(command -v git)" ]]; then 
+        echo "Git command not found; can't determine git commit info."
+        exit 1
+    fi
+    if [[ ! -d `pwd`/.git ]];then 
+        echo "We are not in a git repository. Cannot deduce build info."
+        exit 1
+    fi
+    GIT_COMMIT=$(git rev-list -1 HEAD)
+else
+    GIT_COMMIT=$E4_GIT_COMMIT
+fi
 NOW=$(date "+%Y%m%d")
 
 # see valid values at https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
