@@ -1,0 +1,3 @@
+[submodule "vendor"]
+	path = vendor
+	url = git@gitlab.com:Teserakt/e4/deps-go.git
