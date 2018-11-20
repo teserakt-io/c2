@@ -27,7 +27,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
-	pb "teserakt/e4/api/pkg/c2proto"
+	pb "teserakt/e4/backend-api/pkg/c2proto"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )

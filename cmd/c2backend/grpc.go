@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 
-	pb "teserakt/e4/api/pkg/c2proto"
+	pb "teserakt/e4/backend-api/pkg/c2proto"
 	e4 "teserakt/e4/common/pkg"
 )
 
