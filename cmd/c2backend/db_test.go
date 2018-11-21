@@ -12,8 +12,8 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
-	e4 "teserakt/e4/common/pkg"
-	e4test "teserakt/e4/test-common/pkg"
+	e4 "teserakt/e4/common"
+	e4test "teserakt/e4/test-common"
 )
 
 func testInitializeFakeC2(db *gorm.DB) C2 {
