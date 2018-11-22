@@ -9,11 +9,33 @@ if ! [ -x "$(command -v goimports)" ]; then
     exit 1
 fi
 
+APIREPO=
 for GOSRC in ${GOPATH//:/ }; do
     if [ -d $GOSRC/src/teserakt/e4/backend/cmd ]; then
         goimports -w $GOSRC/src/teserakt/e4/backend/cmd
     fi
+
+    # locate the backend api directory
+    if [ -d $GOSRC/src/teserakt/e4/backend-api ]; then
+        APIREPO=$GOSRC/src/teserakt/e4/backend-api
+    fi
 done
+
+# README: If you are wondering why we are doing this, there is a simple reason
+# - golang does not like a package using grpc and a vendored build also using 
+# it. Import paths get confused and builds fail. Consequently we have to 
+# compile the grpc generated code internally in this project, but we keep it 
+# separate as it is shared across multiple projects.
+# This code locates the generated protobuf file and copies it locally.
+PROTOBUFSRC=$APIREPO/pkg/c2proto/c2.pb.go
+PROTOBUFDST=pkg/c2proto
+if [ ! -f $PROTOBUFSRC ]; then
+    echo "c2 protobuf go code not generated. Please check the repository";
+    exit 1
+fi
+
+mkdir -p $(dirname $PROTOBUFDST)
+cp $PROTOBUFSRC $PROTOBUFDST
 
 CMDPATH=teserakt/e4/backend/cmd
 
@@ -31,6 +53,8 @@ else
     GIT_COMMIT=$E4_GIT_COMMIT
 fi
 NOW=$(date "+%Y%m%d")
+
+
 
 # see valid values at https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 #GOOS=linux 
