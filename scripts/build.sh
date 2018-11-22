@@ -34,7 +34,7 @@ if [ ! -f $PROTOBUFSRC ]; then
     exit 1
 fi
 
-mkdir -p $(dirname $PROTOBUFDST)
+mkdir -p $PROTOBUFDST
 cp $PROTOBUFSRC $PROTOBUFDST
 
 CMDPATH=teserakt/e4/backend/cmd
