@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "E4GO Build Script (c) Teserakt AG 2018. All Right Reserved"
+echo "C2 backend build script (c) Teserakt AG 2018. All Right Reserved"
 echo ""
 
 if ! [ -x "$(command -v goimports)" ]; then 
@@ -10,15 +10,12 @@ if ! [ -x "$(command -v goimports)" ]; then
 fi
 
 for GOSRC in ${GOPATH//:/ }; do
-    if [ -d $GOSRC/src/teserakt/e4go/cmd ]; then
-        goimports -w $GOSRC/src/teserakt/e4go/cmd
-    fi
-    if [ -d $GOSRC/src/teserakt/e4go/pkg ]; then
-        goimports -w $GOSRC/src/teserakt/e4go/pkg
+    if [ -d $GOSRC/src/teserakt/e4/backend/cmd ]; then
+        goimports -w $GOSRC/src/teserakt/e4/backend/cmd
     fi
 done
 
-CMDPATH=teserakt/e4go/cmd
+CMDPATH=teserakt/e4/backend/cmd
 
 if [[ -z "$E4_GIT_COMMIT" ]]; then 
     if [[ ! -x "$(command -v git)" ]]; then 
@@ -41,7 +38,7 @@ NOW=$(date "+%Y%m%d")
 GOOS=`uname -s | tr '[:upper:]' '[:lower:]'` 
 GOARCH=amd64
 
-printf "building E4:\n\tversion $NOW-$GIT_COMMIT\n\tOS $GOOS\n\tarch: $GOARCH\n"
+printf "building C2:\n\tversion $NOW-$GIT_COMMIT\n\tOS $GOOS\n\tarch: $GOARCH\n"
 
 printf "=> c2backend...\n"
 GOOS=$GOOS GOARCH=$GOARCH go build -o bin/c2backend -ldflags "-X main.gitCommit=$GIT_COMMIT -X main.buildDate=$NOW" $CMDPATH/c2backend 

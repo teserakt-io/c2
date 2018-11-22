@@ -13,7 +13,7 @@ import (
 
 	stdlog "log"
 
-	e4 "teserakt/e4/common/pkg/"
+	e4 "teserakt/e4/common/pkg"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
