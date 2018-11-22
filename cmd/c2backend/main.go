@@ -13,7 +13,7 @@ import (
 
 	stdlog "log"
 
-	e4 "teserakt/e4/common"
+	e4 "teserakt/e4/common/pkg"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -27,7 +27,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
-	pb "teserakt/e4/backend-api"
+	pb "teserakt/e4/backend/pkg/c2proto"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )

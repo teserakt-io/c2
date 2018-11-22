@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "E4GO Build Script (c) Teserakt AG 2018. All Right Reserved"
+echo "C2 backend build script (c) Teserakt AG 2018. All Right Reserved"
 echo ""
 
 if ! [ -x "$(command -v goimports)" ]; then 
@@ -9,16 +9,35 @@ if ! [ -x "$(command -v goimports)" ]; then
     exit 1
 fi
 
+APIREPO=
 for GOSRC in ${GOPATH//:/ }; do
-    if [ -d $GOSRC/src/teserakt/e4go/cmd ]; then
-        goimports -w $GOSRC/src/teserakt/e4go/cmd
+    if [ -d $GOSRC/src/teserakt/e4/backend/cmd ]; then
+        goimports -w $GOSRC/src/teserakt/e4/backend/cmd
     fi
-    if [ -d $GOSRC/src/teserakt/e4go/pkg ]; then
-        goimports -w $GOSRC/src/teserakt/e4go/pkg
+
+    # locate the backend api directory
+    if [ -d $GOSRC/src/teserakt/e4/backend-api ]; then
+        APIREPO=$GOSRC/src/teserakt/e4/backend-api
     fi
 done
 
-CMDPATH=teserakt/e4go/cmd
+# README: If you are wondering why we are doing this, there is a simple reason
+# - golang does not like a package using grpc and a vendored build also using 
+# it. Import paths get confused and builds fail. Consequently we have to 
+# compile the grpc generated code internally in this project, but we keep it 
+# separate as it is shared across multiple projects.
+# This code locates the generated protobuf file and copies it locally.
+PROTOBUFSRC=$APIREPO/pkg/c2proto/c2.pb.go
+PROTOBUFDST=pkg/c2proto
+if [ ! -f $PROTOBUFSRC ]; then
+    echo "c2 protobuf go code not generated. Please check the repository";
+    exit 1
+fi
+
+mkdir -p $(dirname $PROTOBUFDST)
+cp $PROTOBUFSRC $PROTOBUFDST
+
+CMDPATH=teserakt/e4/backend/cmd
 
 if [[ -z "$E4_GIT_COMMIT" ]]; then 
     if [[ ! -x "$(command -v git)" ]]; then 
@@ -35,13 +54,15 @@ else
 fi
 NOW=$(date "+%Y%m%d")
 
+
+
 # see valid values at https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 #GOOS=linux 
 
 GOOS=`uname -s | tr '[:upper:]' '[:lower:]'` 
 GOARCH=amd64
 
-printf "building E4:\n\tversion $NOW-$GIT_COMMIT\n\tOS $GOOS\n\tarch: $GOARCH\n"
+printf "building C2:\n\tversion $NOW-$GIT_COMMIT\n\tOS $GOOS\n\tarch: $GOARCH\n"
 
 printf "=> c2backend...\n"
 GOOS=$GOOS GOARCH=$GOARCH go build -o bin/c2backend -ldflags "-X main.gitCommit=$GIT_COMMIT -X main.buildDate=$NOW" $CMDPATH/c2backend 

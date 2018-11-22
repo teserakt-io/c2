@@ -2,7 +2,7 @@ bin/
 builds/
 *e4p
 .idea/
-api/c2.pb.go
+pkg/c2proto/c2.pb.go
 configs/config.yaml
 docs/*.pdf
 docs/*.html

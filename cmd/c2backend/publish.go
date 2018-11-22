@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/go-kit/kit/log"
 
-	e4 "teserakt/e4/common"
+	e4 "teserakt/e4/common/pkg"
 )
 
 func (s *C2) publish(payload []byte, topic string, qos byte) error {
