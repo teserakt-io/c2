@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/go-kit/kit/log"
 
-	e4 "teserakt/e4/common/pkg"
+	e4 "teserakt/e4/common"
 )
 
 func (s *C2) newClient(id, key []byte) error {

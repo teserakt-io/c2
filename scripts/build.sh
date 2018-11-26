@@ -21,6 +21,12 @@ for GOSRC in ${GOPATH//:/ }; do
     fi
 done
 
+if [[ -z "$APIREPO" ]]; then 
+    echo "API repository not found on the GOPATH. Have you cloned the"
+    echo "repositories into a gopath location (or symlinked them there?)"
+    exit 1
+fi
+
 # README: If you are wondering why we are doing this, there is a simple reason
 # - golang does not like a package using grpc and a vendored build also using 
 # it. Import paths get confused and builds fail. Consequently we have to 
@@ -28,6 +34,7 @@ done
 # separate as it is shared across multiple projects.
 # This code locates the generated protobuf file and copies it locally.
 PROTOBUFSRC=$APIREPO/pkg/c2proto/c2.pb.go
+echo $PROTOBUFSRC
 PROTOBUFDST=pkg/c2proto
 if [ ! -f $PROTOBUFSRC ]; then
     echo "c2 protobuf go code not generated. Please check the repository";
