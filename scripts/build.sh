@@ -1,6 +1,8 @@
 #!/bin/bash
 
-echo "C2 backend build script (c) Teserakt AG 2018. All Right Reserved"
+PROJECT=backend
+
+echo "$PROJECT build script (c) Teserakt AG 2018. All Right Reserved"
 echo ""
 
 if ! [ -x "$(command -v goimports)" ]; then 
@@ -37,7 +39,7 @@ PROTOBUFSRC=$APIREPO/pkg/c2proto/c2.pb.go
 echo $PROTOBUFSRC
 PROTOBUFDST=pkg/c2proto
 if [ ! -f $PROTOBUFSRC ]; then
-    echo "c2 protobuf go code not generated. Please check the repository";
+    echo "protobuf go code not generated. Please check the repository";
     exit 1
 fi
 
@@ -69,7 +71,7 @@ NOW=$(date "+%Y%m%d")
 GOOS=`uname -s | tr '[:upper:]' '[:lower:]'` 
 GOARCH=amd64
 
-printf "building C2:\n\tversion $NOW-$GIT_COMMIT\n\tOS $GOOS\n\tarch: $GOARCH\n"
+printf "building $PROJECT:\n\tversion $NOW-$GIT_COMMIT\n\tOS $GOOS\n\tarch: $GOARCH\n"
 
-printf "=> c2backend...\n"
+printf "=> $PROJECT...\n"
 GOOS=$GOOS GOARCH=$GOARCH go build -o bin/c2backend -ldflags "-X main.gitCommit=$GIT_COMMIT -X main.buildDate=$NOW" $CMDPATH/c2backend 
