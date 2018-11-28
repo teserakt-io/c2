@@ -18,8 +18,8 @@ for GOSRC in ${GOPATH//:/ }; do
     fi
 
     # locate the backend api directory
-    if [ -d $GOSRC/src/teserakt/e4/backend-api ]; then
-        APIREPO=$GOSRC/src/teserakt/e4/backend-api
+    if [ -d $GOSRC/src/gitlab.com/teserakt/e4/backend-api ]; then
+        APIREPO=$GOSRC/src/gitlab.com/teserakt/e4/backend-api
     fi
 done
 
@@ -39,7 +39,7 @@ fi
 mkdir -p $PROTOBUFDST
 cp $PROTOBUFSRC $PROTOBUFDST
 
-CMDPATH=teserakt/e4/backend/cmd
+CMDPATH=gitlab.com/teserakt/e4/backend/cmd
 
 if [[ -z "$E4_GIT_COMMIT" ]]; then 
     if [[ ! -x "$(command -v git)" ]]; then 
