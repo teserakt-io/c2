@@ -5,7 +5,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"strings"
-	e4 "teserakt/e4/common/pkg"
+
+	e4 "gitlab.com/teserakt/common"
 
 	"github.com/jinzhu/gorm"
 )
