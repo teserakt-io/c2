@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 
-	e4 "gitlab.com/teserakt/common/pkg"
+	e4 "gitlab.com/teserakt/common"
 )
 
 // CreateAndProtectForID creates a protected command for a given ID.

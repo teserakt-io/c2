@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	pb "gitlab.com/teserakt/backend/pkg/c2proto"
-	e4 "gitlab.com/teserakt/common/pkg"
+	e4 "gitlab.com/teserakt/common"
 )
 
 func (s *C2) gRPCnewClient(in *pb.C2Request) (*pb.C2Response, error) {
