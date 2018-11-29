@@ -3,11 +3,7 @@ package main
 import (
 	"github.com/go-kit/kit/log"
 
-<<<<<<< HEAD
-	e4 "gitlab.com/teserakt/e4/common/pkg"
-=======
-	e4 "teserakt/e4/common"
->>>>>>> 6d465dc4ec5063d76ddb69418b8ca8f0d5eed832
+	e4 "gitlab.com/teserakt/common/pkg"
 )
 
 func (s *C2) newClient(id, key []byte) error {
