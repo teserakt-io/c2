@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	e4 "teserakt/e4/common"
+	e4 "gitlab.com/teserakt/common"
 )
 
 func (s *C2) handleNewClient(w http.ResponseWriter, r *http.Request) {
