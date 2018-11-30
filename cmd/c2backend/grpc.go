@@ -3,221 +3,220 @@ package main
 import (
 	"errors"
 
-	pb "gitlab.com/teserakt/backend/pkg/c2proto"
 	e4 "gitlab.com/teserakt/common"
 )
 
-func (s *C2) gRPCnewClient(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCnewClient(in *e4.C2Request) (*e4.C2Response, error) {
 
 	err := checkRequest(in, true, true, false, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	err = s.newClient(in.Id, in.Key)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: ""}, nil
+	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCremoveClient(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCremoveClient(in *e4.C2Request) (*e4.C2Response, error) {
 
 	err := checkRequest(in, true, false, false, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	err = s.removeClient(in.Id)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: ""}, nil
+	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCnewTopicClient(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCnewTopicClient(in *e4.C2Request) (*e4.C2Response, error) {
 
 	err := checkRequest(in, true, false, true, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	err = s.newTopicClient(in.Id, in.Topic)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: ""}, nil
+	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCremoveTopicClient(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCremoveTopicClient(in *e4.C2Request) (*e4.C2Response, error) {
 
 	err := checkRequest(in, true, false, true, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	err = s.removeTopicClient(in.Id, in.Topic)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: ""}, nil
+	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCresetClient(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCresetClient(in *e4.C2Request) (*e4.C2Response, error) {
 
 	err := checkRequest(in, true, false, false, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	err = s.resetClient(in.Id)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: ""}, nil
+	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCnewTopic(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCnewTopic(in *e4.C2Request) (*e4.C2Response, error) {
 
 	err := checkRequest(in, false, false, true, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	err = s.newTopic(in.Topic)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: ""}, nil
+	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCremoveTopic(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCremoveTopic(in *e4.C2Request) (*e4.C2Response, error) {
 
 	err := checkRequest(in, false, false, true, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	err = s.removeTopic(in.Topic)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: ""}, nil
+	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCnewClientKey(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCnewClientKey(in *e4.C2Request) (*e4.C2Response, error) {
 
 	err := checkRequest(in, true, false, false, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	err = s.newClientKey(in.Id)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: ""}, nil
+	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCgetClients(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCgetClients(in *e4.C2Request) (*e4.C2Response, error) {
 	ids, err := s.dbGetIDListHex()
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: "", Ids: ids}, nil
+	return &e4.C2Response{Success: true, Err: "", Ids: ids}, nil
 }
 
-func (s *C2) gRPCgetTopics(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCgetTopics(in *e4.C2Request) (*e4.C2Response, error) {
 	topics, err := s.dbGetTopicsList()
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: "", Topics: topics}, nil
+	return &e4.C2Response{Success: true, Err: "", Topics: topics}, nil
 }
 
-func (s *C2) gRPCgetClientTopicCount(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCgetClientTopicCount(in *e4.C2Request) (*e4.C2Response, error) {
 	err := checkRequest(in, true, false, false, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	count, err := s.countTopicsForID(in.Id)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: "", Count: uint64(count)}, nil
+	return &e4.C2Response{Success: true, Err: "", Count: uint64(count)}, nil
 }
 
-func (s *C2) gRPCgetClientTopics(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCgetClientTopics(in *e4.C2Request) (*e4.C2Response, error) {
 	err := checkRequest(in, true, false, false, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	topics, err := s.getTopicsForID(in.Id, int(in.Offset), int(in.Count))
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: "", Topics: topics}, nil
+	return &e4.C2Response{Success: true, Err: "", Topics: topics}, nil
 }
 
-func (s *C2) gRPCgetTopicClientCount(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCgetTopicClientCount(in *e4.C2Request) (*e4.C2Response, error) {
 	err := checkRequest(in, false, false, true, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	count, err := s.countIDsForTopic(in.Topic)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: "", Count: uint64(count)}, nil
+	return &e4.C2Response{Success: true, Err: "", Count: uint64(count)}, nil
 }
 
-func (s *C2) gRPCgetTopicClients(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCgetTopicClients(in *e4.C2Request) (*e4.C2Response, error) {
 	err := checkRequest(in, false, false, true, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	clients, err := s.getIdsforTopic(in.Topic, int(in.Offset), int(in.Count))
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: "", Ids: clients}, nil
+	return &e4.C2Response{Success: true, Err: "", Ids: clients}, nil
 }
 
-func (s *C2) gRPCsendMessage(in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) gRPCsendMessage(in *e4.C2Request) (*e4.C2Response, error) {
 
 	err := checkRequest(in, false, false, true, false)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
 	err = s.sendMessage(in.Topic, in.Msg)
 	if err != nil {
-		return &pb.C2Response{Success: false, Err: err.Error()}, nil
+		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	return &pb.C2Response{Success: true, Err: ""}, nil
+	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
 // helper to check inputs' sanity
-func checkRequest(in *pb.C2Request, needID, needKey, needTopic, needOffsetCount bool) error {
+func checkRequest(in *e4.C2Request, needID, needKey, needTopic, needOffsetCount bool) error {
 	if needID {
 		if !e4.IsValidID(in.Id) {
 			return errors.New("invalid id")

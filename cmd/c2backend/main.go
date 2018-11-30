@@ -27,8 +27,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
-	pb "gitlab.com/teserakt/backend/pkg/c2proto"
-
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -230,7 +228,7 @@ func main() {
 		logger.Log("msg", "using TLS for gRPC", "cert", grpcCert, "key", grpcKey, "error", err)
 
 		s := grpc.NewServer(grpc.Creds(creds))
-		pb.RegisterC2Server(s, &c2)
+		e4.RegisterC2Server(s, &c2)
 
 		count, err := c2.countIDKeys()
 		if err != nil {
@@ -321,44 +319,44 @@ func main() {
 }
 
 // C2Command processes a command received over gRPC by the CLI tool.
-func (s *C2) C2Command(ctx context.Context, in *pb.C2Request) (*pb.C2Response, error) {
+func (s *C2) C2Command(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
-	//log.Printf("command received: %s", pb.C2Request_Command_name[int32(in.Command)])
-	s.logger.Log("msg", "received gRPC request", "request", pb.C2Request_Command_name[int32(in.Command)])
+	//log.Printf("command received: %s", e4.C2Request_Command_name[int32(in.Command)])
+	s.logger.Log("msg", "received gRPC request", "request", e4.C2Request_Command_name[int32(in.Command)])
 
 	switch in.Command {
-	case pb.C2Request_NEW_CLIENT:
+	case e4.C2Request_NEW_CLIENT:
 		return s.gRPCnewClient(in)
-	case pb.C2Request_REMOVE_CLIENT:
+	case e4.C2Request_REMOVE_CLIENT:
 		return s.gRPCremoveClient(in)
-	case pb.C2Request_NEW_TOPIC_CLIENT:
+	case e4.C2Request_NEW_TOPIC_CLIENT:
 		return s.gRPCnewTopicClient(in)
-	case pb.C2Request_REMOVE_TOPIC_CLIENT:
+	case e4.C2Request_REMOVE_TOPIC_CLIENT:
 		return s.gRPCremoveTopicClient(in)
-	case pb.C2Request_RESET_CLIENT:
+	case e4.C2Request_RESET_CLIENT:
 		return s.gRPCresetClient(in)
-	case pb.C2Request_NEW_TOPIC:
+	case e4.C2Request_NEW_TOPIC:
 		return s.gRPCnewTopic(in)
-	case pb.C2Request_REMOVE_TOPIC:
+	case e4.C2Request_REMOVE_TOPIC:
 		return s.gRPCremoveTopic(in)
-	case pb.C2Request_NEW_CLIENT_KEY:
+	case e4.C2Request_NEW_CLIENT_KEY:
 		return s.gRPCnewClientKey(in)
-	case pb.C2Request_SEND_MESSAGE:
+	case e4.C2Request_SEND_MESSAGE:
 		return s.gRPCsendMessage(in)
-	case pb.C2Request_GET_CLIENTS:
+	case e4.C2Request_GET_CLIENTS:
 		return s.gRPCgetClients(in)
-	case pb.C2Request_GET_TOPICS:
+	case e4.C2Request_GET_TOPICS:
 		return s.gRPCgetTopics(in)
-	case pb.C2Request_GET_CLIENT_TOPIC_COUNT:
+	case e4.C2Request_GET_CLIENT_TOPIC_COUNT:
 		return s.gRPCgetClientTopicCount(in)
-	case pb.C2Request_GET_CLIENT_TOPICS:
+	case e4.C2Request_GET_CLIENT_TOPICS:
 		return s.gRPCgetClientTopics(in)
-	case pb.C2Request_GET_TOPIC_CLIENT_COUNT:
+	case e4.C2Request_GET_TOPIC_CLIENT_COUNT:
 		return s.gRPCgetTopicClientCount(in)
-	case pb.C2Request_GET_TOPIC_CLIENTS:
+	case e4.C2Request_GET_TOPIC_CLIENTS:
 		return s.gRPCgetTopicClients(in)
 	}
-	return &pb.C2Response{Success: false, Err: "unknown command"}, nil
+	return &e4.C2Response{Success: false, Err: "unknown command"}, nil
 }
 
 func binarydir() string {
