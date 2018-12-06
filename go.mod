@@ -1,4 +1,4 @@
-module gitlab.com/teserakt/backend
+module gitlab.com/teserakt/c2backend
 
 require (
 	cloud.google.com/go v0.33.1 // indirect
@@ -17,12 +17,11 @@ require (
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/spf13/viper v1.2.1
 	gitlab.com/teserakt/common v0.0.0-20181130220513-066c4fc76318
-	golang.org/x/crypto v0.0.0-20181127143415-eb0de9b17e85 // indirect
+	gitlab.com/teserakt/test-common v0.0.0-20181129064038-b9333f3ec8e0
 	golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3 // indirect
 	golang.org/x/net v0.0.0-20181129055619-fae4c4e3ad76
 	golang.org/x/oauth2 v0.0.0-20181128211412-28207608b838 // indirect
 	golang.org/x/sync v0.0.0-20181108010431-42b317875d0f // indirect
-	golang.org/x/sys v0.0.0-20181128092732-4ed8d59d0b35 // indirect
 	golang.org/x/tools v0.0.0-20181130215454-34bb05f9d8cb // indirect
 	google.golang.org/appengine v1.3.0 // indirect
 	google.golang.org/genproto v0.0.0-20181127195345-31ac5d88444a // indirect

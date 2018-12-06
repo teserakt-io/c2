@@ -10,7 +10,7 @@ func (s *C2) newClient(id, key []byte) error {
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClient")
 
-	err := s.insertIDKey(id, key)
+	err := s.dbInsertIDKey(id, key)
 	if err != nil {
 		logger.Log("msg", "insertIDKey failed", "error", err)
 		return err
@@ -23,7 +23,7 @@ func (s *C2) removeClient(id []byte) error {
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeClient")
 
-	err := s.deleteIDKey(id)
+	err := s.dbDeleteIDKey(id)
 	if err != nil {
 		logger.Log("msg", "deleteIDKey failed", "error", err)
 		return err
@@ -36,7 +36,7 @@ func (s *C2) newTopicClient(id []byte, topic string) error {
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "newTopicClient")
 
-	key, err := s.getTopicKey(topic)
+	key, err := s.dbGetTopicKey(topic)
 	if err != nil {
 		logger.Log("msg", "getTopicKey failed", "error", err)
 		return err
@@ -55,7 +55,7 @@ func (s *C2) newTopicClient(id []byte, topic string) error {
 		return err
 	}
 
-	err = s.linkIDTopic(id, topic)
+	err = s.dbLinkIDTopic(id, topic)
 	if err != nil {
 		logger.Log("msg", "Database record of client-topic link failed", err)
 		return err
@@ -81,7 +81,7 @@ func (s *C2) removeTopicClient(id []byte, topic string) error {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
 	}
-	err = s.unlinkIDTopic(id, topic)
+	err = s.dbUnlinkIDTopic(id, topic)
 	if err != nil {
 		logger.Log("msg", "Cannot remove DB record of client-topic link", err)
 		return err
@@ -117,7 +117,7 @@ func (s *C2) newTopic(topic string) error {
 
 	key := e4.RandomKey()
 
-	err := s.insertTopicKey(topic, key)
+	err := s.dbInsertTopicKey(topic, key)
 	if err != nil {
 		logger.Log("msg", "insertTopicKey failed", "error", err)
 		return err
@@ -131,7 +131,7 @@ func (s *C2) removeTopic(topic string) error {
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopic")
 
-	err := s.deleteTopicKey(topic)
+	err := s.dbDeleteTopicKey(topic)
 	if err != nil {
 		logger.Log("msg", "deleteTopicKey failed", "error", err)
 		return err
@@ -145,7 +145,7 @@ func (s *C2) sendMessage(topic, msg string) error {
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "sendMessage")
 
-	topickey, err := s.getTopicKey(topic)
+	topickey, err := s.dbGetTopicKey(topic)
 	if err != nil {
 		logger.Log("msg", "getTopicKey failed", "error", err)
 		return err
@@ -183,7 +183,7 @@ func (s *C2) newClientKey(id []byte) error {
 		return err
 	}
 
-	err = s.insertIDKey(id, key)
+	err = s.dbInsertIDKey(id, key)
 	if err != nil {
 		logger.Log("msg", "insertIDKey failed", "error", err)
 		return err

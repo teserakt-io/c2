@@ -1,4 +1,4 @@
 #!/bin/sh
 
 go clean -testcache
-go test teserakt/e4go/cmd/c2backend
+go test gitlab.com/teserakt/c2backend/cmd/c2backend
