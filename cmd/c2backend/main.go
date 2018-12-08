@@ -230,14 +230,14 @@ func main() {
 		s := grpc.NewServer(grpc.Creds(creds))
 		e4.RegisterC2Server(s, &c2)
 
-		count, err := c2.countIDKeys()
+		count, err := c2.dbCountIDKeys()
 		if err != nil {
 			logger.Log("msg", "failed to count id keys", "error", err)
 			close(errc)
 			runtime.Goexit()
 		}
 		logger.Log("nbidkeys", count)
-		count, err = c2.countTopicKeys()
+		count, err = c2.dbCountTopicKeys()
 		if err != nil {
 			logger.Log("msg", "failed to count topic keys", "error", err)
 			close(errc)

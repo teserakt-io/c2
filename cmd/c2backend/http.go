@@ -215,7 +215,7 @@ func (s *C2) handleGetClientTopicCount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := s.countTopicsForID(id)
+	count, err := s.dbCountTopicsForID(id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -245,7 +245,7 @@ func (s *C2) handleGetClientTopics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	topics, err := s.getTopicsForID(id, int(offset), int(count))
+	topics, err := s.dbGetTopicsForID(id, int(offset), int(count))
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -257,7 +257,7 @@ func (s *C2) handleGetTopicClientCount(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 
-	count, err := s.countIDsForTopic(params["topic"])
+	count, err := s.dbCountIDsForTopic(params["topic"])
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -283,7 +283,7 @@ func (s *C2) handleGetTopicClients(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clients, err := s.getIdsforTopic(topic, int(offset), int(count))
+	clients, err := s.dbGetIdsforTopic(topic, int(offset), int(count))
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}

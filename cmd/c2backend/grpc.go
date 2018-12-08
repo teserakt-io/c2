@@ -150,7 +150,7 @@ func (s *C2) gRPCgetClientTopicCount(in *e4.C2Request) (*e4.C2Response, error) {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	count, err := s.countTopicsForID(in.Id)
+	count, err := s.dbCountTopicsForID(in.Id)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -164,7 +164,7 @@ func (s *C2) gRPCgetClientTopics(in *e4.C2Request) (*e4.C2Response, error) {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	topics, err := s.getTopicsForID(in.Id, int(in.Offset), int(in.Count))
+	topics, err := s.dbGetTopicsForID(in.Id, int(in.Offset), int(in.Count))
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -178,7 +178,7 @@ func (s *C2) gRPCgetTopicClientCount(in *e4.C2Request) (*e4.C2Response, error) {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	count, err := s.countIDsForTopic(in.Topic)
+	count, err := s.dbCountIDsForTopic(in.Topic)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -192,7 +192,7 @@ func (s *C2) gRPCgetTopicClients(in *e4.C2Request) (*e4.C2Response, error) {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	clients, err := s.getIdsforTopic(in.Topic, int(in.Offset), int(in.Count))
+	clients, err := s.dbGetIdsforTopic(in.Topic, int(in.Offset), int(in.Count))
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}

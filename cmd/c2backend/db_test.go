@@ -81,18 +81,18 @@ func TestM2MSQLite(t *testing.T) {
 
 	// insert all but INSERTLATERIDS of the id keys
 	for i := 0; i < IDS-INSERTLATERIDS; i++ {
-		c2.insertIDKey(ids[i], idkeys[i])
+		c2.dbInsertIDKey(ids[i], idkeys[i])
 	}
 
 	// insert all but 1 of the topics:
 	for i := 0; i < TOPICS-INSERTLATERTOPICS; i++ {
-		c2.insertTopicKey(topics[i], topickeys[i])
+		c2.dbInsertTopicKey(topics[i], topickeys[i])
 	}
 
 	// check the database fetching APIs correctly return valid
 	// values
 	for i := 0; i < IDS-INSERTLATERIDS; i++ {
-		idkey, err := c2.getIDKey(ids[i])
+		idkey, err := c2.dbGetIDKey(ids[i])
 		if err != nil {
 			t.Errorf("Error: %s", err)
 		}
@@ -102,7 +102,7 @@ func TestM2MSQLite(t *testing.T) {
 
 	}
 	for i := 0; i < TOPICS-INSERTLATERTOPICS; i++ {
-		topickey, err := c2.getTopicKey(topics[i])
+		topickey, err := c2.dbGetTopicKey(topics[i])
 		if err != nil {
 			t.Errorf("Error: %s", err)
 		}
@@ -158,7 +158,7 @@ func TestM2MSQLite(t *testing.T) {
 	// link the even ids to this topic.
 	for i := 0; i < IDS-INSERTLATERIDS; i++ {
 		if i%2 == 0 {
-			c2.linkIDTopic(ids[i], randomtopic)
+			c2.dbLinkIDTopic(ids[i], randomtopic)
 			linkedCount++
 		}
 	}
@@ -196,7 +196,7 @@ func TestM2MSQLite(t *testing.T) {
 	}
 
 	// also check via link apis
-	linkedCountAPICheck, err := c2.countIDsForTopic(randomtopic)
+	linkedCountAPICheck, err := c2.dbCountIDsForTopic(randomtopic)
 	if err != nil {
 		t.Errorf("Failure calling countIDsForTopic: %s", err)
 	}
@@ -216,23 +216,23 @@ func TestM2MSQLite(t *testing.T) {
 	// link the odd topics to this ID:
 	for i := 0; i < TOPICS-INSERTLATERTOPICS; i++ {
 		if i%2 == 1 && rtIdx != i {
-			c2.linkIDTopic(randomid, topics[i])
+			c2.dbLinkIDTopic(randomid, topics[i])
 			linkedCount++
 		}
 	}
 
 	// break the topic-id-links we previously added
 	// but do it by removing the random topic (check the m2m is cleared up)
-	c2.deleteTopicKey(randomtopic)
+	c2.dbDeleteTopicKey(randomtopic)
 
 	// insert the non-inserted topics and ids.
 	for i := IDS - INSERTLATERIDS; i < IDS; i++ {
-		c2.insertIDKey(ids[i], idkeys[i])
+		c2.dbInsertIDKey(ids[i], idkeys[i])
 	}
 
 	// insert all but 1 of the topics:
 	for i := TOPICS - INSERTLATERTOPICS; i < TOPICS; i++ {
-		c2.insertTopicKey(topics[i], topickeys[i])
+		c2.dbInsertTopicKey(topics[i], topickeys[i])
 	}
 
 	// check we find nothing across the m2m with our random topic:
@@ -275,7 +275,7 @@ func TestM2MSQLite(t *testing.T) {
 	}
 
 	// also check via link apis
-	linkedCountAPICheck, err = c2.countTopicsForID(randomid)
+	linkedCountAPICheck, err = c2.dbCountTopicsForID(randomid)
 	if err != nil {
 		t.Errorf("Failure calling countIDsForTopic: %s", err)
 	}
@@ -285,9 +285,9 @@ func TestM2MSQLite(t *testing.T) {
 
 	// remove everything
 	for i := 0; i < TOPICS; i++ {
-		c2.deleteTopicKey(topics[i])
+		c2.dbDeleteTopicKey(topics[i])
 	}
 	for i := 0; i < IDS; i++ {
-		c2.deleteIDKey(ids[i])
+		c2.dbDeleteIDKey(ids[i])
 	}
 }
