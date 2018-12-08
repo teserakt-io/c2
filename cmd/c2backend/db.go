@@ -6,7 +6,7 @@ import (
 	"errors"
 	"strings"
 
-	e4 "gitlab.com/teserakt/common"
+	e4 "gitlab.com/teserakt/e4common"
 
 	"github.com/jinzhu/gorm"
 )

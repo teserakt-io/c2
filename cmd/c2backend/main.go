@@ -13,7 +13,7 @@ import (
 
 	stdlog "log"
 
-	e4 "gitlab.com/teserakt/common"
+	e4 "gitlab.com/teserakt/e4common"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"

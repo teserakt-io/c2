@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 
-	e4 "gitlab.com/teserakt/common"
+	e4 "gitlab.com/teserakt/e4common"
 )
 
 func (s *C2) gRPCnewClient(in *e4.C2Request) (*e4.C2Response, error) {

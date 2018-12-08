@@ -60,6 +60,8 @@ gitlab.com/teserakt/common v0.0.0-20181129015258-00c83370029f h1:5WUaYK448NjKBah
 gitlab.com/teserakt/common v0.0.0-20181129015258-00c83370029f/go.mod h1:fBJ3+d1D+FQleTsCtLSCMUF2jTZSakn1OBbzgtCZiOs=
 gitlab.com/teserakt/common v0.0.0-20181130220513-066c4fc76318 h1:UHObr5WzwRsfflU/0QTkLGcOX2yJaD7GMZTeqt7wJiY=
 gitlab.com/teserakt/common v0.0.0-20181130220513-066c4fc76318/go.mod h1:bmtnJywOy88d+l4iAlStnpiIM0LShxLWL4t0C7vp/fQ=
+gitlab.com/teserakt/e4common v0.0.0-20181202224734-d72216ceca0b h1:xUgM6fAncxuVc31Bg8vlpz55GbpBrOpUyiD+kAjnTG0=
+gitlab.com/teserakt/e4common v0.0.0-20181202224734-d72216ceca0b/go.mod h1:H7mm6QvXcftUrmR6xvvAMbkWi2feTXREf3razXysAiU=
 golang.org/x/crypto v0.0.0-20181126144156-c05539cddb59 h1:iJ5+EG+9Yiry+wm21L75chWSJw3/rvJc+v0MkmUiRQk=
 golang.org/x/crypto v0.0.0-20181126144156-c05539cddb59/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20181127143415-eb0de9b17e85 h1:et7+NAX3lLIk5qUCTA9QelBjGE/NkhzYw/mhnr0s7nI=

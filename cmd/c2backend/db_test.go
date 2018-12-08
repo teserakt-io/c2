@@ -12,7 +12,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
-	e4 "gitlab.com/teserakt/common"
+	e4 "gitlab.com/teserakt/e4common"
 	e4test "gitlab.com/teserakt/test-common"
 )
 
