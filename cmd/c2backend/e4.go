@@ -49,7 +49,7 @@ func (s *C2) newTopicClient(id []byte, topic string) error {
 		logger.Log("msg", "CreateAndProtectForID failed", "error", err)
 		return err
 	}
-	err = s.sendCommandToClient(id, payload)
+	err = s.protoClient.sendCommandToClient(id, payload)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
@@ -76,7 +76,7 @@ func (s *C2) removeTopicClient(id []byte, topic string) error {
 		logger.Log("msg", "CreateAndProtectForID failed", "error", err)
 		return err
 	}
-	err = s.sendCommandToClient(id, payload)
+	err = s.protoClient.sendCommandToClient(id, payload)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
@@ -101,7 +101,7 @@ func (s *C2) resetClient(id []byte) error {
 		logger.Log("msg", "CreateAndProtectForID failed", "error", err)
 		return err
 	}
-	err = s.sendCommandToClient(id, payload)
+	err = s.protoClient.sendCommandToClient(id, payload)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
@@ -155,7 +155,7 @@ func (s *C2) sendMessage(topic, msg string) error {
 		logger.Log("msg", "Protect failed", "error", err)
 		return err
 	}
-	err = s.publish(payload, topic, byte(0))
+	err = s.protoClient.publish(payload, topic, byte(0))
 	if err != nil {
 		logger.Log("msg", "publish failed", "error", err)
 		return err
@@ -177,7 +177,7 @@ func (s *C2) newClientKey(id []byte) error {
 		logger.Log("msg", "CreateAndProtectForID failed", "error", err)
 		return err
 	}
-	err = s.sendCommandToClient(id, payload)
+	err = s.protoClient.sendCommandToClient(id, payload)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err

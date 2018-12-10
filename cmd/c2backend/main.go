@@ -26,8 +26,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	//mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 // variables set at build time
@@ -36,11 +35,16 @@ var buildDate string
 
 // C2 is the C2's state, consisting of ID keys, topic keys, and an MQTT connection.
 type C2 struct {
-	keyenckey [e4.KeyLen]byte
-	db        *gorm.DB
+	keyenckey   [e4.KeyLen]byte
+	db          *gorm.DB
+	protoClient ProtocolClient
+	logger      log.Logger
+}
 
-	mqttClient mqtt.Client
-	logger     log.Logger
+// this interface describes
+type ProtocolClient interface {
+	sendCommandToClient(id, payload []byte) error
+	publish(payload []byte, topic string, qos byte) error
 }
 
 // CORS middleware
@@ -188,24 +192,24 @@ func main() {
 		errc <- fmt.Errorf("%s", <-c)
 	}()
 
+	// TODO: decide if we should load the mqtt client or
+	//       the joynr one. We should switch on whatever
+	//       decides and set up an appropriate config map.
+	//       We will also need to implement receive logic.
+	//       Possibly we goroutine here, possibly initialize
+	//       Sets all of this up for us.
 	// start mqtt client
 	{
+		configmap := make(map[string]interface{})
+		configmap["mqttBroker"] = mqttBroker
+		configmap["mqttID"] = mqttID
+		configmap["mqttUsername"] = mqttUsername
+		configmap["mqttPassword"] = mqttPassword
+
 		logger := log.With(c2.logger, "protocol", "mqtt")
-		logger.Log("addr", mqttBroker)
-		mqOpts := mqtt.NewClientOptions()
-		mqOpts.AddBroker(mqttBroker)
-		mqOpts.SetClientID(mqttID)
-		mqOpts.SetPassword(mqttPassword)
-		mqOpts.SetUsername(mqttUsername)
-		mqttClient := mqtt.NewClient(mqOpts)
-		logger.Log("msg", "mqtt parameters", "broker", mqttBroker, "id", mqttID, "username", mqttUsername)
-		if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
-			logger.Log("msg", "connection failed", "error", token.Error())
-			return
-		}
-		logger.Log("msg", "connected to broker")
-		// instantiate C2
-		c2.mqttClient = mqttClient
+		mqttClient := &MqttClient{}
+		mqttClient.initialize(logger, configmap)
+		c2.protoClient = mqttClient
 	}
 
 	// create grpc server
