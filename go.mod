@@ -16,6 +16,7 @@ require (
 	github.com/spf13/viper v1.2.1
 	gitlab.com/teserakt/common v0.0.0-20181130220513-066c4fc76318
 	gitlab.com/teserakt/e4common v0.0.0-20181202224734-d72216ceca0b
+	gitlab.com/teserakt/smrf v0.0.0-20181206123651-6667c63b3edb
 	gitlab.com/teserakt/test-common v0.0.0-20181129064038-b9333f3ec8e0
 	golang.org/x/net v0.0.0-20181129055619-fae4c4e3ad76
 	google.golang.org/grpc v1.16.0

@@ -33,9 +33,9 @@ func (m *MqttClient) initialize(log log.Logger,
 	mqOpts.SetPassword(mqttPassword)
 	mqOpts.SetUsername(mqttUsername)
 
-	mqttClient := mqtt.NewClient(mqOpts)
+	m.mqttClient = mqtt.NewClient(mqOpts)
 	log.Log("msg", "mqtt parameters", "broker", mqttBroker, "id", mqttID, "username", mqttUsername)
-	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
+	if token := m.mqttClient.Connect(); token.Wait() && token.Error() != nil {
 		log.Log("msg", "connection failed", "error", token.Error())
 		return
 	}
