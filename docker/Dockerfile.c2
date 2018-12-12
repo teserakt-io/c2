@@ -5,8 +5,8 @@
 FROM golang:1.11 as buildenv
 
 # workdir
-WORKDIR /go/src/teserakt/e4go
-RUN mkdir -p /go/src/teserakt/e4go
+WORKDIR /go/src/teserakt/e4/c2backend/
+RUN mkdir -p /go/src/teserakt/e4/c2backend/
 
 # ENV
 ARG E4_GIT_COMMIT
@@ -14,19 +14,15 @@ ENV E4_GIT_COMMIT=$E4_GIT_COMMIT
 RUN echo "Commit is $E4_GIT_COMMIT"
 
 # TODO fix this
-COPY cmd /go/src/teserakt/e4go/cmd/
-COPY pkg /go/src/teserakt/e4go/pkg/
-COPY vendor /go/src/teserakt/e4go/vendor/
-COPY scripts /go/src/teserakt/e4go/scripts/
-COPY Gopkg.toml /go/src/teserakt/e4go/
-COPY Gopkg.lock /go/src/teserakt/e4go/
-COPY VERSION /go/src/teserakt/e4go/
+COPY cmd /go/src/teserakt/e4/c2backend/
+
+COPY scripts /go/src/teserakt/e4/c2backend/
+COPY go.mod /go/src/teserakt/e4/c2backend/
+COPY go.sum /go/src/teserakt/e4/c2backend/
+COPY VERSION /go/src/teserakt/e4/c2backend/
 
 RUN go get -d -v -u golang.org/x/tools/cmd/goimports && \
  go install golang.org/x/tools/cmd/goimports && \
- go get -d -v -u github.com/golang/dep/cmd/dep && \
- go install github.com/golang/dep/cmd/dep
-# RUN dep ensure -v 
 RUN ./scripts/build.sh
 RUN ./scripts/unittests.sh
 
