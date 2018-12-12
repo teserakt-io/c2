@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "E4GO Docker Build Script (c) Teserakt AG 2018. All Right Reserved"
+echo "c2backend Docker build script (c) Teserakt AG 2018. All Right Reserved"
 echo ""
 
 E4_VERSION=""
@@ -14,4 +14,4 @@ echo "Building version $E4_VERSION, commit $E4_GIT_COMMIT\n"
 
 
 printf "=> backend"
-sudo -E docker build --build-arg E4_GIT_COMMIT="$E4_GIT_COMMIT" --target c2 -t "e4/backend:$E4_VERSION" -t "e4/backend:$E4_GIT_COMMIT" -f docker/Dockerfile.c2 .
+sudo -E docker build --build-arg E4_GIT_COMMIT="$E4_GIT_COMMIT" --target c2 -t "e4/c2backend:$E4_VERSION" -t "e4/c2backend:$E4_GIT_COMMIT" -f docker/Dockerfile.c2 .
