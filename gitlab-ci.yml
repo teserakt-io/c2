@@ -4,6 +4,7 @@
 
 # TODO: docker-in-docker
 
+
 image: golang:1.11
 stages:
   - build
