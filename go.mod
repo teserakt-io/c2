@@ -15,6 +15,7 @@ require (
 	github.com/spf13/viper v1.3.1
 	github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2 // indirect
 	gitlab.com/teserakt/e4common v0.0.0-20181202224734-d72216ceca0b
+	gitlab.com/teserakt/test-common v0.0.0-20181129064038-b9333f3ec8e0
 	golang.org/x/lint v0.0.0-20181212231659-93c0bb5c8393 // indirect
 	golang.org/x/net v0.0.0-20181213202711-891ebc4b82d6
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890 // indirect
