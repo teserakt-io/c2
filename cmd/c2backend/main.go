@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"runtime"
 	"syscall"
 
@@ -33,15 +32,19 @@ import (
 var gitCommit string
 var buildDate string
 
+// globally defined constants
+const configfilename = "c2"
+
 // C2 is the C2's state, consisting of ID keys, topic keys, and an MQTT connection.
 type C2 struct {
-	keyenckey   [e4.KeyLen]byte
-	db          *gorm.DB
-	protoClient ProtocolClient
-	logger      log.Logger
+	keyenckey      [e4.KeyLen]byte
+	db             *gorm.DB
+	protoClient    ProtocolClient
+	logger         log.Logger
+	configResolver *e4.AppPathResolver
 }
 
-// this interface describes
+// ProtocolClient describes the interface the C2 may use to talk to
 type ProtocolClient interface {
 	sendCommandToClient(id, payload []byte) error
 	publish(payload []byte, topic string, qos byte) error
@@ -87,23 +90,50 @@ func main() {
 	// compatibility for packages that do not understand go-kit logger:
 	stdloglogger := stdlog.New(log.NewStdlibAdapter(c2.logger), "", 0)
 
+	// set up config resolver
+	c2.configResolver = e4.NewAppPathResolver()
+
 	// load config
-	c := config(log.With(c2.logger, "unit", "config"))
+	c := config(log.With(c2.logger, "unit", "config"), c2.configResolver)
 	var (
-		grpcAddr        = c.GetString("grpc-host-port")
-		httpAddr        = c.GetString("http-host-port")
-		mqttBroker      = c.GetString("mqtt-broker")
-		mqttPassword    = c.GetString("mqtt-password")
-		mqttUsername    = c.GetString("mqtt-username")
-		mqttID          = c.GetString("mqtt-ID")
-		dbLogging       = c.GetBool("db-logging")
-		dbType          = c.GetString("db-type")
-		dbPassphrase    = c.GetString("db-encryption-passphrase")
-		grpcCert        = c.GetString("grpc-cert")
-		grpcKey         = c.GetString("grpc-key")
-		httpTLSCertPath = c.GetString("http-cert")
-		httpTLSKeyPath  = c.GetString("http-key")
+		grpcAddr           = c.GetString("grpc-host-port")
+		httpAddr           = c.GetString("http-host-port")
+		mqttBroker         = c.GetString("mqtt-broker")
+		mqttPassword       = c.GetString("mqtt-password")
+		mqttUsername       = c.GetString("mqtt-username")
+		mqttID             = c.GetString("mqtt-ID")
+		dbLogging          = c.GetBool("db-logging")
+		dbType             = c.GetString("db-type")
+		dbPassphrase       = c.GetString("db-encryption-passphrase")
+		grpcCertCfg        = c.GetString("grpc-cert")
+		grpcKeyCfg         = c.GetString("grpc-key")
+		httpTLSCertPathCfg = c.GetString("http-cert")
+		httpTLSKeyPathCfg  = c.GetString("http-key")
 	)
+
+	// parse all filepaths from the config file.
+	var grpcCert, grpcKey, httpTLSCertPath, httpTLSKeyPath string
+
+	if len(grpcCertCfg) == 0 {
+		c2.logger.Log("msg", "No GRPC Certificate path supplied")
+		return
+	}
+	if len(grpcKeyCfg) == 0 {
+		c2.logger.Log("msg", "No GRPC Key path supplied")
+		return
+	}
+	if len(httpTLSCertPathCfg) == 0 {
+		c2.logger.Log("msg", "No TLS Certificate path supplied")
+		return
+	}
+	if len(httpTLSKeyPathCfg) == 0 {
+		c2.logger.Log("msg", "No TLS Key path supplied")
+		return
+	}
+	grpcCert = c2.configResolver.ConfigRelativePath(grpcCertCfg)
+	grpcKey = c2.configResolver.ConfigRelativePath(grpcKeyCfg)
+	httpTLSCertPath = c2.configResolver.ConfigRelativePath(httpTLSCertPathCfg)
+	httpTLSKeyPath = c2.configResolver.ConfigRelativePath(httpTLSKeyPathCfg)
 
 	if dbPassphrase == "" {
 		c2.logger.Log("msg", "no passphrase supplied")
@@ -363,12 +393,7 @@ func (s *C2) C2Command(ctx context.Context, in *e4.C2Request) (*e4.C2Response, e
 	return &e4.C2Response{Success: false, Err: "unknown command"}, nil
 }
 
-func binarydir() string {
-	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	return dir
-}
-
-func config(logger log.Logger) *viper.Viper {
+func config(logger log.Logger, pathResolver *e4.AppPathResolver) *viper.Viper {
 
 	logger.Log("msg", "load configuration and command args")
 
@@ -376,11 +401,8 @@ func config(logger log.Logger) *viper.Viper {
 
 	// Con
 	v.SetConfigName("config")
-	confdir, _ := filepath.Abs(filepath.Join(filepath.Join(binarydir(), ".."), "configs"))
-	v.AddConfigPath(confdir)
-	v.AddConfigPath(".")
-	v.AddConfigPath("./configs")
-	v.AddConfigPath("../configs")
+
+	v.AddConfigPath(pathResolver.ConfigDir())
 	v.SetDefault("mqtt-broker", "tcp://localhost:1883")
 	v.SetDefault("mqtt-ID", "e4c2")
 	v.SetDefault("mqtt-username", "")

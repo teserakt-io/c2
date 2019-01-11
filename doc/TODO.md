@@ -63,12 +63,15 @@
 * add grpc m2m functions
 * when gRPC goroutine fails, service should terminate (J)
 * secure https (A)
+* clean documentation from doc/ (A+J)
+* unit tests for relevant functionality (db done, e4common crypto improve) (A)
 
 # WIP
 
-* clean documentation from doc/ (A+J)
-* unit tests for relevant functionality (db done, e4common crypto improve) (A)
 * integration tests and general QA.
+* fix docker build.
+* Continuous integration
+* Config file fixes for go modules.
 
 # TODO
 
@@ -80,7 +83,6 @@
 * continuous integration
 * fine-tune MQTT client options
 * config to be loaded in its own file.
-* Continuous integration
 
 # FUTURE
 

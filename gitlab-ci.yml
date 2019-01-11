@@ -4,29 +4,34 @@
 
 # TODO: docker-in-docker
 
-image: golang:1.11
+
 stages:
   - build
   - test
 
-before_script:
-  - go get golang.org/x/tools/cmd/goimports
-  - go install golang.org/x/tools/cmd/goimports
-  - go get github.com/golang/dep/cmd/dep
-  - go install github.com/golang/dep/cmd/dep
-  - mkdir -p /go/src/teserakt/
-  - ln -s /builds/Teserakt/e4go/  /go/src/teserakt/e4go
-  - cd /go/src/teserakt/e4go/
-
-build:
+build:base:
+  image: golang:1.11
   stage: build
   only:
     - develop
     - master
+  before_script:
+    - go get golang.org/x/tools/cmd/goimports
+    - go install golang.org/x/tools/cmd/goimports
+    - mkdir -p /go/src/teserakt/e4/c2backend
+    - ln -s /builds/Teserakt/c2backend/  /go/src/teserakt/e4/c2backend
+    - cd /go/src/teserakt/e4/c2backend/
   script:
     - ./scripts/build.sh
 
-test:
+# docker-in-docker build
+build:docker:
+  image: docker:stable
+  script:
+    - ./scripts/docker.sh
+
+test:base:
+  image: golang:1.11
   stage: test
   only:
     - develop
