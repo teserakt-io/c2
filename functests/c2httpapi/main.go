@@ -52,7 +52,7 @@ func testHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 		}
 	}
 	for i := 0; i < TESTTOPICS; i++ {
-		err = testtopics[i].New()
+		err = testtopics[i].New(true)
 		if err != nil {
 			errc <- &e4test.TestResult{
 				Name:     "",
