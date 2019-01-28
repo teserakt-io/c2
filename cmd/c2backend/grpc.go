@@ -4,9 +4,14 @@ import (
 	"errors"
 
 	e4 "gitlab.com/teserakt/e4common"
+	"go.opencensus.io/trace"
+	"golang.org/x/net/context"
 )
 
-func (s *C2) gRPCnewClient(in *e4.C2Request) (*e4.C2Response, error) {
+func (s *C2) gRPCnewClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+
+	ctx, span := trace.StartSpan(ctx, "gRPCnewClient")
+	defer span.End()
 
 	err := checkRequest(in, true, true, false, false)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 
 	stdlog "log"
@@ -25,6 +24,11 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
+
+	"contrib.go.opencensus.io/exporter/ocagent"
+	"go.opencensus.io/plugin/ocgrpc"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/trace"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -44,15 +48,6 @@ type C2 struct {
 	mqttClient     mqtt.Client
 	logger         log.Logger
 	configResolver *e4.AppPathResolver
-}
-
-// CORS middleware
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
-		next.ServeHTTP(w, r)
-	})
 }
 
 func main() {
@@ -185,7 +180,7 @@ func main() {
 
 	c2.logger.Log("msg", "config loaded")
 
-	// open db.
+	// open db
 	db, err := gorm.Open(dbType, dbConnectionString)
 
 	if err != nil {
@@ -238,46 +233,20 @@ func main() {
 		c2.mqttClient = mqttClient
 	}
 
+	// initialize OpenCensus
+	if err := setupOpencensusInstrumentation(); err != nil {
+		c2.logger.Log("msg", "OpenCensus instrumentation setup failed", "error", err)
+		return
+	}
 	// create grpc server
+	grpcStarter := &startServerConfig{
+		addr:     grpcAddr,
+		certFile: grpcCert,
+		keyFile:  grpcKey,
+	}
+
 	go func() {
-		var logger = log.With(c2.logger, "protocol", "grpc")
-		logger.Log("addr", grpcAddr)
-
-		lis, err := net.Listen("tcp", grpcAddr)
-		if err != nil {
-			logger.Log("msg", "failed to listen", "error", err)
-			close(errc)
-			runtime.Goexit()
-		}
-		creds, err := credentials.NewServerTLSFromFile(grpcCert, grpcKey)
-		if err != nil {
-			logger.Log("msg", "failed to get credentials", "cert", grpcCert, "key", grpcKey, "error", err)
-			close(errc)
-			runtime.Goexit()
-		}
-		logger.Log("msg", "using TLS for gRPC", "cert", grpcCert, "key", grpcKey, "error", err)
-
-		s := grpc.NewServer(grpc.Creds(creds))
-		e4.RegisterC2Server(s, &c2)
-
-		count, err := c2.dbCountIDKeys()
-		if err != nil {
-			logger.Log("msg", "failed to count id keys", "error", err)
-			close(errc)
-			runtime.Goexit()
-		}
-		logger.Log("nbidkeys", count)
-		count, err = c2.dbCountTopicKeys()
-		if err != nil {
-			logger.Log("msg", "failed to count topic keys", "error", err)
-			close(errc)
-			runtime.Goexit()
-		}
-		logger.Log("nbtopickeys", count)
-
-		logger.Log("msg", "starting grpc server")
-
-		errc <- s.Serve(lis)
+		errc <- c2.createGRPCServer(context.Background(), grpcStarter)
 	}()
 
 	// create http server
@@ -348,15 +317,67 @@ func main() {
 	c2.logger.Log("error", <-errc)
 }
 
+type startServerConfig struct {
+	addr     string
+	certFile string
+	keyFile  string
+}
+
+func (s *C2) createGRPCServer(ctx context.Context, scfg *startServerConfig) error {
+	grpcAddr := scfg.addr
+	grpcCert := scfg.certFile
+	grpcKey := scfg.keyFile
+
+	var logger = log.With(s.logger, "protocol", "grpc")
+	logger.Log("addr", grpcAddr)
+
+	lis, err := net.Listen("tcp", grpcAddr)
+	if err != nil {
+		logger.Log("msg", "failed to listen", "error", err)
+		return err
+	}
+
+	creds, err := credentials.NewServerTLSFromFile(grpcCert, grpcKey)
+	if err != nil {
+		logger.Log("msg", "failed to get credentials", "cert", grpcCert, "key", grpcKey, "error", err)
+		return err
+	}
+	logger.Log("msg", "using TLS for gRPC", "cert", grpcCert, "key", grpcKey, "error", err)
+
+	if err = view.Register(ocgrpc.DefaultServerViews...); err != nil {
+		logger.Log("msg", "failed to register ocgrpc server views", "error", err)
+		return err
+	}
+
+	srv := grpc.NewServer(grpc.Creds(creds), grpc.StatsHandler(&ocgrpc.ServerHandler{}))
+
+	e4.RegisterC2Server(srv, s)
+
+	count, err := s.dbCountIDKeys()
+	if err != nil {
+		logger.Log("msg", "failed to count id keys", "error", err)
+		return err
+	}
+	logger.Log("nbidkeys", count)
+	count, err = s.dbCountTopicKeys()
+	if err != nil {
+		logger.Log("msg", "failed to count topic keys", "error", err)
+		return err
+	}
+
+	logger.Log("nbtopickeys", count)
+	logger.Log("msg", "starting grpc server")
+	return srv.Serve(lis)
+}
+
 // C2Command processes a command received over gRPC by the CLI tool.
 func (s *C2) C2Command(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-
 	//log.Printf("command received: %s", e4.C2Request_Command_name[int32(in.Command)])
 	s.logger.Log("msg", "received gRPC request", "request", e4.C2Request_Command_name[int32(in.Command)])
 
 	switch in.Command {
 	case e4.C2Request_NEW_CLIENT:
-		return s.gRPCnewClient(in)
+		return s.gRPCnewClient(ctx, in)
 	case e4.C2Request_REMOVE_CLIENT:
 		return s.gRPCremoveClient(in)
 	case e4.C2Request_NEW_TOPIC_CLIENT:
@@ -395,7 +416,6 @@ func config(logger log.Logger, pathResolver *e4.AppPathResolver) *viper.Viper {
 
 	var v = viper.New()
 
-	// Con
 	v.SetConfigName("config")
 
 	v.AddConfigPath(pathResolver.ConfigDir())
@@ -442,4 +462,36 @@ func config(logger log.Logger, pathResolver *e4.AppPathResolver) *viper.Viper {
 	}
 
 	return v
+}
+
+// CORS middleware
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func setupOpencensusInstrumentation() error {
+	oce, err := ocagent.NewExporter(
+		// TODO: (@odeke-em), enable ocagent-exporter.WithCredentials option.
+		ocagent.WithInsecure(),
+		ocagent.WithServiceName("c2backend"))
+
+	if err != nil {
+		return fmt.Errorf("failed to create the OpenCensus Agent exporter: %v", err)
+	}
+
+	// and now finally register it as a Trace Exporter
+	trace.RegisterExporter(oce)
+	view.RegisterExporter(oce)
+
+	// setting trace sample rate to 100%
+	// in production, remove this
+	trace.ApplyConfig(trace.Config{
+		DefaultSampler: trace.AlwaysSample(),
+	})
+
+	return nil
 }
