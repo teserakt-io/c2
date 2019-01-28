@@ -113,11 +113,11 @@ func main() {
 		c2.logger.Log("msg", "No GRPC Key path supplied")
 		return
 	}
-	if len(httpCert) == 0 {
+	if len(httpCertCfg) == 0 {
 		c2.logger.Log("msg", "No HTTP Certificate path supplied")
 		return
 	}
-	if len(httpKey) == 0 {
+	if len(httpKeyCfg) == 0 {
 		c2.logger.Log("msg", "No HTTP Key path supplied")
 		return
 	}
