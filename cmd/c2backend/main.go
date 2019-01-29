@@ -27,6 +27,7 @@ import (
 
 	"contrib.go.opencensus.io/exporter/ocagent"
 	"go.opencensus.io/plugin/ocgrpc"
+	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 
@@ -374,9 +375,13 @@ func (s *C2) createHTTPServer(ctx context.Context, scfg *startServerConfig) erro
 
 	logger.Log("msg", "starting https server")
 
+	och := &ochttp.Handler{
+		Handler: route,
+	}
+
 	apiServer := &http.Server{
 		Addr:         httpAddr,
-		Handler:      route,
+		Handler:      och,
 		TLSConfig:    tlsConfig,
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
 	}
@@ -393,33 +398,33 @@ func (s *C2) C2Command(ctx context.Context, in *e4.C2Request) (*e4.C2Response, e
 	case e4.C2Request_NEW_CLIENT:
 		return s.gRPCnewClient(ctx, in)
 	case e4.C2Request_REMOVE_CLIENT:
-		return s.gRPCremoveClient(in)
+		return s.gRPCremoveClient(ctx, in)
 	case e4.C2Request_NEW_TOPIC_CLIENT:
-		return s.gRPCnewTopicClient(in)
+		return s.gRPCnewTopicClient(ctx, in)
 	case e4.C2Request_REMOVE_TOPIC_CLIENT:
-		return s.gRPCremoveTopicClient(in)
+		return s.gRPCremoveTopicClient(ctx, in)
 	case e4.C2Request_RESET_CLIENT:
-		return s.gRPCresetClient(in)
+		return s.gRPCresetClient(ctx, in)
 	case e4.C2Request_NEW_TOPIC:
-		return s.gRPCnewTopic(in)
+		return s.gRPCnewTopic(ctx, in)
 	case e4.C2Request_REMOVE_TOPIC:
-		return s.gRPCremoveTopic(in)
+		return s.gRPCremoveTopic(ctx, in)
 	case e4.C2Request_NEW_CLIENT_KEY:
-		return s.gRPCnewClientKey(in)
+		return s.gRPCnewClientKey(ctx, in)
 	case e4.C2Request_SEND_MESSAGE:
-		return s.gRPCsendMessage(in)
+		return s.gRPCsendMessage(ctx, in)
 	case e4.C2Request_GET_CLIENTS:
-		return s.gRPCgetClients(in)
+		return s.gRPCgetClients(ctx, in)
 	case e4.C2Request_GET_TOPICS:
-		return s.gRPCgetTopics(in)
+		return s.gRPCgetTopics(ctx, in)
 	case e4.C2Request_GET_CLIENT_TOPIC_COUNT:
-		return s.gRPCgetClientTopicCount(in)
+		return s.gRPCgetClientTopicCount(ctx, in)
 	case e4.C2Request_GET_CLIENT_TOPICS:
-		return s.gRPCgetClientTopics(in)
+		return s.gRPCgetClientTopics(ctx, in)
 	case e4.C2Request_GET_TOPIC_CLIENT_COUNT:
-		return s.gRPCgetTopicClientCount(in)
+		return s.gRPCgetTopicClientCount(ctx, in)
 	case e4.C2Request_GET_TOPIC_CLIENTS:
-		return s.gRPCgetTopicClients(in)
+		return s.gRPCgetTopicClients(ctx, in)
 	}
 	return &e4.C2Response{Success: false, Err: "unknown command"}, nil
 }

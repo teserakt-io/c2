@@ -34,10 +34,10 @@ following the instructions on
 <https://opencensus.io/codelabs/prometheus/> and
 <https://prometheus.io/docs/introduction/first_steps/>.
 
-Run e.g. as follows from ocagent directory:
+Run e.g. as follows (using the config file in c2backend/configs)
 
 ``` 
-$ prometheus --config.file=prom.yaml
+$ prometheus --config.file=configs/prometheus.yaml
 ``` 
 
 ## Collector: OpenCensus agent (ocagent)
@@ -47,40 +47,4 @@ OpenCensus agent used as a proxy to exporters/receivers:
 For testing, run locally from
 $GOPATH/src/github.com/census-instrumentation/opencensus-service.
 
-Config files used:
-
-config.yaml
-```
-receivers:
-  opencensus:
-    address: "127.0.0.1:55678"
-
-exporters:
-  jaeger:
-    collector_endpoint: "localhost:14267"
-
-  prometheus:
-    namespace: "tesserakt"
-    address: "localhost:9998"
-
-zpages:
-    port: 9999
-
-``` 
-
-prom.yaml:
-``` 
-global:
-  scrape_interval: 10s
-
-  external_labels:
-    monitor: 'teseraktagent'
-
-scrape_configs:
-  - job_name: 'teseraktagent'
-
-    scrape_interval: 10s
-
-    static_configs:
-      - targets: ['localhost:9998']
-``` 
+See configs/ocagent.yaml for the configuration file.

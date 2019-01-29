@@ -13,7 +13,7 @@ func (s *C2) gRPCnewClient(ctx context.Context, in *e4.C2Request) (*e4.C2Respons
 	ctx, span := trace.StartSpan(ctx, "gRPCnewClient")
 	defer span.End()
 
-	err := checkRequest(in, true, true, false, false)
+	err := checkRequest(ctx, in, true, true, false, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -26,9 +26,12 @@ func (s *C2) gRPCnewClient(ctx context.Context, in *e4.C2Request) (*e4.C2Respons
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCremoveClient(in *e4.C2Request) (*e4.C2Response, error) {
+func (s *C2) gRPCremoveClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
-	err := checkRequest(in, true, false, false, false)
+	ctx, span := trace.StartSpan(ctx, "gRPCremoveClient")
+	defer span.End()
+
+	err := checkRequest(ctx, in, true, false, false, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -41,9 +44,12 @@ func (s *C2) gRPCremoveClient(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCnewTopicClient(in *e4.C2Request) (*e4.C2Response, error) {
+func (s *C2) gRPCnewTopicClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
-	err := checkRequest(in, true, false, true, false)
+	ctx, span := trace.StartSpan(ctx, "gRPCnewTopicClient")
+	defer span.End()
+
+	err := checkRequest(ctx, in, true, false, true, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -56,9 +62,12 @@ func (s *C2) gRPCnewTopicClient(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCremoveTopicClient(in *e4.C2Request) (*e4.C2Response, error) {
+func (s *C2) gRPCremoveTopicClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
-	err := checkRequest(in, true, false, true, false)
+	ctx, span := trace.StartSpan(ctx, "gRPCremoveTopicClient")
+	defer span.End()
+
+	err := checkRequest(ctx, in, true, false, true, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -71,9 +80,12 @@ func (s *C2) gRPCremoveTopicClient(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCresetClient(in *e4.C2Request) (*e4.C2Response, error) {
+func (s *C2) gRPCresetClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
-	err := checkRequest(in, true, false, false, false)
+	ctx, span := trace.StartSpan(ctx, "gRPCresetClient")
+	defer span.End()
+
+	err := checkRequest(ctx, in, true, false, false, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -86,9 +98,12 @@ func (s *C2) gRPCresetClient(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCnewTopic(in *e4.C2Request) (*e4.C2Response, error) {
+func (s *C2) gRPCnewTopic(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
-	err := checkRequest(in, false, false, true, false)
+	ctx, span := trace.StartSpan(ctx, "gRPCnewTopic")
+	defer span.End()
+
+	err := checkRequest(ctx, in, false, false, true, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -101,9 +116,12 @@ func (s *C2) gRPCnewTopic(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCremoveTopic(in *e4.C2Request) (*e4.C2Response, error) {
+func (s *C2) gRPCremoveTopic(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
-	err := checkRequest(in, false, false, true, false)
+	ctx, span := trace.StartSpan(ctx, "gRPCremoveTopic")
+	defer span.End()
+
+	err := checkRequest(ctx, in, false, false, true, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -116,9 +134,12 @@ func (s *C2) gRPCremoveTopic(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCnewClientKey(in *e4.C2Request) (*e4.C2Response, error) {
+func (s *C2) gRPCnewClientKey(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
-	err := checkRequest(in, true, false, false, false)
+	ctx, span := trace.StartSpan(ctx, "gRPCnewClientKey")
+	defer span.End()
+
+	err := checkRequest(ctx, in, true, false, false, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -131,7 +152,11 @@ func (s *C2) gRPCnewClientKey(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCgetClients(in *e4.C2Request) (*e4.C2Response, error) {
+func (s *C2) gRPCgetClients(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+
+	ctx, span := trace.StartSpan(ctx, "gRPCgetClients")
+	defer span.End()
+
 	ids, err := s.dbGetIDListHex()
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
@@ -140,7 +165,11 @@ func (s *C2) gRPCgetClients(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: "", Ids: ids}, nil
 }
 
-func (s *C2) gRPCgetTopics(in *e4.C2Request) (*e4.C2Response, error) {
+func (s *C2) gRPCgetTopics(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+
+	ctx, span := trace.StartSpan(ctx, "gRPCgetTopics")
+	defer span.End()
+
 	topics, err := s.dbGetTopicsList()
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
@@ -149,8 +178,12 @@ func (s *C2) gRPCgetTopics(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: "", Topics: topics}, nil
 }
 
-func (s *C2) gRPCgetClientTopicCount(in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(in, true, false, false, false)
+func (s *C2) gRPCgetClientTopicCount(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+
+	ctx, span := trace.StartSpan(ctx, "gRPCgetClientTopicCount")
+	defer span.End()
+
+	err := checkRequest(ctx, in, true, false, false, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -163,8 +196,12 @@ func (s *C2) gRPCgetClientTopicCount(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: "", Count: uint64(count)}, nil
 }
 
-func (s *C2) gRPCgetClientTopics(in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(in, true, false, false, false)
+func (s *C2) gRPCgetClientTopics(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+
+	ctx, span := trace.StartSpan(ctx, "gRPCgetClientTopics")
+	defer span.End()
+
+	err := checkRequest(ctx, in, true, false, false, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -177,8 +214,12 @@ func (s *C2) gRPCgetClientTopics(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: "", Topics: topics}, nil
 }
 
-func (s *C2) gRPCgetTopicClientCount(in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(in, false, false, true, false)
+func (s *C2) gRPCgetTopicClientCount(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+
+	ctx, span := trace.StartSpan(ctx, "gRPCgetTopicClientCount")
+	defer span.End()
+
+	err := checkRequest(ctx, in, false, false, true, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -191,8 +232,12 @@ func (s *C2) gRPCgetTopicClientCount(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: "", Count: uint64(count)}, nil
 }
 
-func (s *C2) gRPCgetTopicClients(in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(in, false, false, true, false)
+func (s *C2) gRPCgetTopicClients(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+
+	ctx, span := trace.StartSpan(ctx, "gRPCgetTopicClients")
+	defer span.End()
+
+	err := checkRequest(ctx, in, false, false, true, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -205,9 +250,12 @@ func (s *C2) gRPCgetTopicClients(in *e4.C2Request) (*e4.C2Response, error) {
 	return &e4.C2Response{Success: true, Err: "", Ids: clients}, nil
 }
 
-func (s *C2) gRPCsendMessage(in *e4.C2Request) (*e4.C2Response, error) {
+func (s *C2) gRPCsendMessage(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
-	err := checkRequest(in, false, false, true, false)
+	ctx, span := trace.StartSpan(ctx, "gRPCsendMessage")
+	defer span.End()
+
+	err := checkRequest(ctx, in, false, false, true, false)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -221,7 +269,11 @@ func (s *C2) gRPCsendMessage(in *e4.C2Request) (*e4.C2Response, error) {
 }
 
 // helper to check inputs' sanity
-func checkRequest(in *e4.C2Request, needID, needKey, needTopic, needOffsetCount bool) error {
+func checkRequest(ctx context.Context, in *e4.C2Request, needID, needKey, needTopic, needOffsetCount bool) error {
+
+	ctx, span := trace.StartSpan(ctx, "checkRequest")
+	defer span.End()
+
 	if needID {
 		if !e4.IsValidID(in.Id) {
 			return errors.New("invalid id")
