@@ -60,7 +60,7 @@ func main() {
 
 	// show banner
 	fmt.Printf("E4: C2 back-end - version %s-%s\n", buildDate, gitCommit[:4])
-	fmt.Println("Copyright (c) Teserakt AG, 2018")
+	fmt.Println("Copyright (c) Teserakt AG, 2018-2019")
 
 	// init logger
 	logFileName := fmt.Sprintf("/var/log/e4_c2backend.log")
@@ -88,6 +88,7 @@ func main() {
 	// load config
 	c := config(log.With(c2.logger, "unit", "config"), c2.configResolver)
 	var (
+		isProd       = c.GetBool("production")
 		grpcAddr     = c.GetString("grpc-host-port")
 		httpAddr     = c.GetString("http-host-port")
 		mqttBroker   = c.GetString("mqtt-broker")
@@ -127,7 +128,6 @@ func main() {
 	httpCert = c2.configResolver.ConfigRelativePath(httpCertCfg)
 	httpKey = c2.configResolver.ConfigRelativePath(httpKeyCfg)
 
-	// p
 	if dbPassphrase == "" {
 		c2.logger.Log("msg", "no passphrase supplied")
 		fmt.Fprintf(os.Stderr, "ERROR: No passphrase supplied. Refusing to start with an empty passphrase.\n")
@@ -166,13 +166,19 @@ func main() {
 		dbConnectionString = fmt.Sprintf("host=%s dbname=%s user=%s password=%s %s",
 			dbHost, dbDatabase, dbUsername, dbPassword, sslstring)
 	} else if dbType == "sqlite3" {
+
+		c2.logger.Log("msg", "SQLite3 selected as database")
+
+		if isProd {
+			fmt.Fprintf(os.Stderr, "ERROR: SQLite3 not supported in production environments\n")
+			return
+		}
+
 		var (
 			dbPath = c.GetString("db-file")
 		)
 		dbConnectionString = fmt.Sprintf("%s", dbPath)
 
-		c2.logger.Log("msg", "SQLite3 selected as database. SQLite3 is not supported for production environments")
-		fmt.Fprintf(os.Stderr, "WARNING: SQLite3 database selected. NOT supported in production environments\n")
 	} else {
 		// defensive coding:
 		c2.logger.Log("msg", "unknown or unsupported database type", "db-type", dbType)
@@ -236,7 +242,7 @@ func main() {
 	}
 
 	// initialize OpenCensus
-	if err := setupOpencensusInstrumentation(); err != nil {
+	if err := setupOpencensusInstrumentation(isProd); err != nil {
 		c2.logger.Log("msg", "OpenCensus instrumentation setup failed", "error", err)
 		return
 	}
@@ -438,10 +444,14 @@ func config(logger log.Logger, pathResolver *e4.AppPathResolver) *viper.Viper {
 	v.SetConfigName("config")
 
 	v.AddConfigPath(pathResolver.ConfigDir())
+
+	v.SetDefault("production", false)
+
 	v.SetDefault("mqtt-broker", "tcp://localhost:1883")
 	v.SetDefault("mqtt-ID", "e4c2")
 	v.SetDefault("mqtt-username", "")
 	v.SetDefault("mqtt-password", "")
+
 	v.SetDefault("db-logging", false)
 	v.SetDefault("db-host", "localhost")
 	v.SetDefault("db-database", "e4")
@@ -492,7 +502,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func setupOpencensusInstrumentation() error {
+func setupOpencensusInstrumentation(isProd bool) error {
 	oce, err := ocagent.NewExporter(
 		// TODO: (@odeke-em), enable ocagent-exporter.WithCredentials option.
 		ocagent.WithInsecure(),
@@ -506,11 +516,12 @@ func setupOpencensusInstrumentation() error {
 	trace.RegisterExporter(oce)
 	view.RegisterExporter(oce)
 
-	// setting trace sample rate to 100%
-	// in production, remove this
-	trace.ApplyConfig(trace.Config{
-		DefaultSampler: trace.AlwaysSample(),
-	})
+	if isProd == false {
+		// setting trace sample rate to 100%
+		trace.ApplyConfig(trace.Config{
+			DefaultSampler: trace.AlwaysSample(),
+		})
+	}
 
 	return nil
 }
