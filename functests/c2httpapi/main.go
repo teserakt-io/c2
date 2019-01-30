@@ -315,9 +315,9 @@ func testHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 	}
 	for i := 0; i < TESTIDS; i++ {
 		found := false
-		testtopic := testids[i]
+		testid := testids[i]
 		for j := 0; j < len(decodedIDs1); j++ {
-			if decodedIDs1[j] == testtopic.GetHexID() {
+			if decodedIDs1[j] == testid.GetHexID() {
 				found = true
 				break
 			}
@@ -327,7 +327,7 @@ func testHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 				Name:     "Test Fetch Client",
 				Result:   false,
 				Critical: true,
-				Error:    fmt.Errorf("Test Fetch Client: Created client %s not found, clients are %s", testtopic, decodedtopics3),
+				Error:    fmt.Errorf("Test Fetch Client: Created client %s not found, clients are %s", testid, decodedtopics3),
 			}
 			return
 		}
