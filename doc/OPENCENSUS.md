@@ -1,4 +1,4 @@
-# OpenCensus setup
+# Observability setup using OpenCensus agent
 
 General basic instructions for metrics and tracing:
 
@@ -25,7 +25,8 @@ HTTP instrumentation as in:
 As an exporter, currently using Jaeger in a Docker container. Install
 and run following the instructions on
 <https://opencensus.io/codelabs/jaeger/>.
-UI then accessible on localhost:16686.
+
+UI accessible at <http://localhost:16686>.
 
 ## Monitoring: Prometheus
 
@@ -40,11 +41,15 @@ Run e.g. as follows (using the config file in c2backend/configs)
 $ prometheus --config.file=configs/prometheus.yaml
 ``` 
 
+UI accessible at <http://localhost:9090>.
+
 ## Collector: OpenCensus agent (ocagent)
 
 OpenCensus agent used as a proxy to exporters/receivers:
 <https://github.com/census-instrumentation/opencensus-service>.
-For testing, run locally from
+For testing, run locally from e.g.:
+
 $GOPATH/src/github.com/census-instrumentation/opencensus-service.
 
 See configs/ocagent.yaml for the configuration file.
+
