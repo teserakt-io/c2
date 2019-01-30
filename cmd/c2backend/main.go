@@ -41,7 +41,7 @@ var buildDate string
 // globally defined constants
 const configfilename = "c2"
 
-// C2 is the C2's state, consisting of ID keys, topic keys, and an MQTT connection.
+// C2 is the C2's state
 type C2 struct {
 	keyenckey [e4.KeyLen]byte
 	db        *gorm.DB
@@ -255,7 +255,7 @@ func main() {
 	}
 
 	go func() {
-		errc <- c2.createGRPCServer(context.Background(), grpcStarter)
+		errc <- c2.createGRPCServer(grpcStarter)
 	}()
 
 	// create http server
@@ -266,7 +266,7 @@ func main() {
 	}
 
 	go func() {
-		errc <- c2.createHTTPServer(context.Background(), httpStarter)
+		errc <- c2.createHTTPServer(httpStarter)
 	}()
 
 	c2.logger.Log("error", <-errc)
@@ -278,7 +278,7 @@ type startServerConfig struct {
 	keyFile  string
 }
 
-func (s *C2) createGRPCServer(ctx context.Context, scfg *startServerConfig) error {
+func (s *C2) createGRPCServer(scfg *startServerConfig) error {
 	grpcAddr := scfg.addr
 	grpcCert := scfg.certFile
 	grpcKey := scfg.keyFile
@@ -325,7 +325,7 @@ func (s *C2) createGRPCServer(ctx context.Context, scfg *startServerConfig) erro
 	return srv.Serve(lis)
 }
 
-func (s *C2) createHTTPServer(ctx context.Context, scfg *startServerConfig) error {
+func (s *C2) createHTTPServer(scfg *startServerConfig) error {
 	httpAddr := scfg.addr
 	httpCert := scfg.certFile
 	httpKey := scfg.keyFile
