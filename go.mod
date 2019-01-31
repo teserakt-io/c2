@@ -1,7 +1,7 @@
 module gitlab.com/teserakt/c2backend
 
 require (
-	cloud.google.com/go v0.34.0 // indirect
+	contrib.go.opencensus.io/exporter/ocagent v0.4.3
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20181014144952-4e0d7dc8888f // indirect
 	github.com/eclipse/paho.mqtt.golang v1.1.1
@@ -11,7 +11,6 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
-	github.com/google/go-cmp v0.2.0 // indirect
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
 	github.com/jinzhu/gorm v1.9.2
@@ -23,9 +22,7 @@ require (
 	github.com/spf13/viper v1.3.1
 	gitlab.com/teserakt/e4common v0.0.0-20190110144444-ec3c2ff40a1e
 	gitlab.com/teserakt/test-common v0.0.0-20181129064038-b9333f3ec8e0
-	golang.org/x/net v0.0.0-20181213202711-891ebc4b82d6
-	golang.org/x/sys v0.0.0-20181213200352-4d1cda033e06 // indirect
-	google.golang.org/genproto v0.0.0-20181202183823-bd91e49a0898 // indirect
+	go.opencensus.io v0.19.0
+	golang.org/x/net v0.0.0-20181217023233-e147a9138326
 	google.golang.org/grpc v1.17.0
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )

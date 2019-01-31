@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 
 	stdlog "log"
@@ -26,6 +25,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
+	"contrib.go.opencensus.io/exporter/ocagent"
+	"go.opencensus.io/plugin/ocgrpc"
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/trace"
+
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -36,7 +41,7 @@ var buildDate string
 // globally defined constants
 const configfilename = "c2"
 
-// C2 is the C2's state, consisting of ID keys, topic keys, and an MQTT connection.
+// C2 is the C2's state
 type C2 struct {
 	keyenckey [e4.KeyLen]byte
 	db        *gorm.DB
@@ -44,15 +49,6 @@ type C2 struct {
 	mqttClient     mqtt.Client
 	logger         log.Logger
 	configResolver *e4.AppPathResolver
-}
-
-// CORS middleware
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
-		next.ServeHTTP(w, r)
-	})
 }
 
 func main() {
@@ -64,7 +60,7 @@ func main() {
 
 	// show banner
 	fmt.Printf("E4: C2 back-end - version %s-%s\n", buildDate, gitCommit[:4])
-	fmt.Println("Copyright (c) Teserakt AG, 2018")
+	fmt.Println("Copyright (c) Teserakt AG, 2018-2019")
 
 	// init logger
 	logFileName := fmt.Sprintf("/var/log/e4_c2backend.log")
@@ -92,23 +88,24 @@ func main() {
 	// load config
 	c := config(log.With(c2.logger, "unit", "config"), c2.configResolver)
 	var (
-		grpcAddr           = c.GetString("grpc-host-port")
-		httpAddr           = c.GetString("http-host-port")
-		mqttBroker         = c.GetString("mqtt-broker")
-		mqttPassword       = c.GetString("mqtt-password")
-		mqttUsername       = c.GetString("mqtt-username")
-		mqttID             = c.GetString("mqtt-ID")
-		dbLogging          = c.GetBool("db-logging")
-		dbType             = c.GetString("db-type")
-		dbPassphrase       = c.GetString("db-encryption-passphrase")
-		grpcCertCfg        = c.GetString("grpc-cert")
-		grpcKeyCfg         = c.GetString("grpc-key")
-		httpTLSCertPathCfg = c.GetString("http-cert")
-		httpTLSKeyPathCfg  = c.GetString("http-key")
+		isProd       = c.GetBool("production")
+		grpcAddr     = c.GetString("grpc-host-port")
+		httpAddr     = c.GetString("http-host-port")
+		mqttBroker   = c.GetString("mqtt-broker")
+		mqttPassword = c.GetString("mqtt-password")
+		mqttUsername = c.GetString("mqtt-username")
+		mqttID       = c.GetString("mqtt-ID")
+		dbLogging    = c.GetBool("db-logging")
+		dbType       = c.GetString("db-type")
+		dbPassphrase = c.GetString("db-encryption-passphrase")
+		grpcCertCfg  = c.GetString("grpc-cert")
+		grpcKeyCfg   = c.GetString("grpc-key")
+		httpCertCfg  = c.GetString("http-cert")
+		httpKeyCfg   = c.GetString("http-key")
 	)
 
 	// parse all filepaths from the config file.
-	var grpcCert, grpcKey, httpTLSCertPath, httpTLSKeyPath string
+	var grpcCert, grpcKey, httpCert, httpKey string
 
 	if len(grpcCertCfg) == 0 {
 		c2.logger.Log("msg", "No GRPC Certificate path supplied")
@@ -118,25 +115,24 @@ func main() {
 		c2.logger.Log("msg", "No GRPC Key path supplied")
 		return
 	}
-	if len(httpTLSCertPathCfg) == 0 {
-		c2.logger.Log("msg", "No TLS Certificate path supplied")
+	if len(httpCertCfg) == 0 {
+		c2.logger.Log("msg", "No HTTP Certificate path supplied")
 		return
 	}
-	if len(httpTLSKeyPathCfg) == 0 {
-		c2.logger.Log("msg", "No TLS Key path supplied")
+	if len(httpKeyCfg) == 0 {
+		c2.logger.Log("msg", "No HTTP Key path supplied")
 		return
 	}
 	grpcCert = c2.configResolver.ConfigRelativePath(grpcCertCfg)
 	grpcKey = c2.configResolver.ConfigRelativePath(grpcKeyCfg)
-	httpTLSCertPath = c2.configResolver.ConfigRelativePath(httpTLSCertPathCfg)
-	httpTLSKeyPath = c2.configResolver.ConfigRelativePath(httpTLSKeyPathCfg)
+	httpCert = c2.configResolver.ConfigRelativePath(httpCertCfg)
+	httpKey = c2.configResolver.ConfigRelativePath(httpKeyCfg)
 
 	if dbPassphrase == "" {
 		c2.logger.Log("msg", "no passphrase supplied")
 		fmt.Fprintf(os.Stderr, "ERROR: No passphrase supplied. Refusing to start with an empty passphrase.\n")
 		return
 	}
-
 	keyenckey := e4.HashPwd(dbPassphrase)
 	copy(c2.keyenckey[:], keyenckey)
 
@@ -170,13 +166,19 @@ func main() {
 		dbConnectionString = fmt.Sprintf("host=%s dbname=%s user=%s password=%s %s",
 			dbHost, dbDatabase, dbUsername, dbPassword, sslstring)
 	} else if dbType == "sqlite3" {
+
+		c2.logger.Log("msg", "SQLite3 selected as database")
+
+		if isProd {
+			fmt.Fprintf(os.Stderr, "ERROR: SQLite3 not supported in production environments\n")
+			return
+		}
+
 		var (
 			dbPath = c.GetString("db-file")
 		)
 		dbConnectionString = fmt.Sprintf("%s", dbPath)
 
-		c2.logger.Log("msg", "SQLite3 selected as database. SQLite3 is not supported for production environments")
-		fmt.Fprintf(os.Stderr, "WARNING: SQLite3 database selected. NOT supported in production environments\n")
 	} else {
 		// defensive coding:
 		c2.logger.Log("msg", "unknown or unsupported database type", "db-type", dbType)
@@ -185,7 +187,7 @@ func main() {
 
 	c2.logger.Log("msg", "config loaded")
 
-	// open db.
+	// open db
 	db, err := gorm.Open(dbType, dbConnectionString)
 
 	if err != nil {
@@ -203,7 +205,8 @@ func main() {
 	if dbType == "postgres" {
 		c2.db.Exec("SET search_path TO e4_c2_test;")
 	}
-	// Ensure the database schema is ready to use:
+
+	// ensure the database schema is ready to use:
 	err = c2.dbInitialize()
 	if err != nil {
 		c2.logger.Log("msg", "database setup failed", "error", err)
@@ -238,153 +241,196 @@ func main() {
 		c2.mqttClient = mqttClient
 	}
 
+	// initialize OpenCensus
+	if err := setupOpencensusInstrumentation(isProd); err != nil {
+		c2.logger.Log("msg", "OpenCensus instrumentation setup failed", "error", err)
+		return
+	}
+
 	// create grpc server
+	grpcStarter := &startServerConfig{
+		addr:     grpcAddr,
+		certFile: grpcCert,
+		keyFile:  grpcKey,
+	}
+
 	go func() {
-		var logger = log.With(c2.logger, "protocol", "grpc")
-		logger.Log("addr", grpcAddr)
-
-		lis, err := net.Listen("tcp", grpcAddr)
-		if err != nil {
-			logger.Log("msg", "failed to listen", "error", err)
-			close(errc)
-			runtime.Goexit()
-		}
-		creds, err := credentials.NewServerTLSFromFile(grpcCert, grpcKey)
-		if err != nil {
-			logger.Log("msg", "failed to get credentials", "cert", grpcCert, "key", grpcKey, "error", err)
-			close(errc)
-			runtime.Goexit()
-		}
-		logger.Log("msg", "using TLS for gRPC", "cert", grpcCert, "key", grpcKey, "error", err)
-
-		s := grpc.NewServer(grpc.Creds(creds))
-		e4.RegisterC2Server(s, &c2)
-
-		count, err := c2.dbCountIDKeys()
-		if err != nil {
-			logger.Log("msg", "failed to count id keys", "error", err)
-			close(errc)
-			runtime.Goexit()
-		}
-		logger.Log("nbidkeys", count)
-		count, err = c2.dbCountTopicKeys()
-		if err != nil {
-			logger.Log("msg", "failed to count topic keys", "error", err)
-			close(errc)
-			runtime.Goexit()
-		}
-		logger.Log("nbtopickeys", count)
-
-		logger.Log("msg", "starting grpc server")
-
-		errc <- s.Serve(lis)
+		errc <- c2.createGRPCServer(grpcStarter)
 	}()
 
 	// create http server
+	httpStarter := &startServerConfig{
+		addr:     httpAddr,
+		certFile: httpCert,
+		keyFile:  httpKey,
+	}
+
 	go func() {
-		var logger = log.With(c2.logger, "protocol", "http")
-		logger.Log("addr", httpAddr)
-
-		tlsCert, err := tls.LoadX509KeyPair(httpTLSCertPath, httpTLSKeyPath)
-		if err != nil {
-			errc <- err
-			return
-		}
-
-		// TODO: maybe we could make some of these options configurable.
-		tlsConfig := &tls.Config{Certificates: []tls.Certificate{tlsCert},
-			MinVersion:               tls.VersionTLS12,
-			CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
-			PreferServerCipherSuites: true,
-			CipherSuites: []uint16{
-				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-				tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
-			},
-		}
-
-		route := mux.NewRouter()
-		route.Use(corsMiddleware)
-		route.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		})
-
-		route.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			resp := Response{w}
-			resp.Text(http.StatusNotFound, "Nothing here")
-		})
-
-		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/key/{key:[0-9a-f]{128}}", c2.handleNewClient).Methods("POST")
-		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", c2.handleRemoveClient).Methods("DELETE")
-		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topic/{topic}", c2.handleNewTopicClient).Methods("PUT")
-		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topic/{topic}", c2.handleRemoveTopicClient).Methods("DELETE")
-		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topics/count", c2.handleGetClientTopicCount).Methods("GET")
-		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topics/{offset:[0-9]+}/{count:[0-9]+}", c2.handleGetClientTopics).Methods("GET")
-		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", c2.handleResetClient).Methods("PUT")
-		route.HandleFunc("/e4/topic/{topic}", c2.handleNewTopic).Methods("POST")
-		route.HandleFunc("/e4/topic/{topic}", c2.handleRemoveTopic).Methods("DELETE")
-		route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", c2.handleNewClientKey).Methods("PATCH")
-		route.HandleFunc("/e4/topic/{topic}/message/{message}", c2.handleSendMessage).Methods("POST")
-		route.HandleFunc("/e4/topic/{topic}/clients/count", c2.handleGetTopicClientCount).Methods("GET")
-		route.HandleFunc("/e4/topic/{topic}/clients/{offset:[0-9]+}/{count:[0-9]+}", c2.handleGetTopicClients).Methods("GET")
-
-		route.HandleFunc("/e4/topic", c2.handleGetTopics).Methods("GET")
-		route.HandleFunc("/e4/client", c2.handleGetClients).Methods("GET")
-
-		logger.Log("msg", "starting https server")
-
-		apiServer := &http.Server{
-			Addr:         httpAddr,
-			Handler:      route,
-			TLSConfig:    tlsConfig,
-			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
-		}
-
-		errc <- apiServer.ListenAndServeTLS(httpTLSCertPath, httpTLSKeyPath)
+		errc <- c2.createHTTPServer(httpStarter)
 	}()
 
 	c2.logger.Log("error", <-errc)
 }
 
+type startServerConfig struct {
+	addr     string
+	certFile string
+	keyFile  string
+}
+
+func (s *C2) createGRPCServer(scfg *startServerConfig) error {
+	grpcAddr := scfg.addr
+	grpcCert := scfg.certFile
+	grpcKey := scfg.keyFile
+
+	var logger = log.With(s.logger, "protocol", "grpc")
+	logger.Log("addr", grpcAddr)
+
+	lis, err := net.Listen("tcp", grpcAddr)
+	if err != nil {
+		logger.Log("msg", "failed to listen", "error", err)
+		return err
+	}
+
+	creds, err := credentials.NewServerTLSFromFile(grpcCert, grpcKey)
+	if err != nil {
+		logger.Log("msg", "failed to get credentials", "cert", grpcCert, "key", grpcKey, "error", err)
+		return err
+	}
+	logger.Log("msg", "using TLS for gRPC", "cert", grpcCert, "key", grpcKey, "error", err)
+
+	if err = view.Register(ocgrpc.DefaultServerViews...); err != nil {
+		logger.Log("msg", "failed to register ocgrpc server views", "error", err)
+		return err
+	}
+
+	srv := grpc.NewServer(grpc.Creds(creds), grpc.StatsHandler(&ocgrpc.ServerHandler{}))
+
+	e4.RegisterC2Server(srv, s)
+
+	count, err := s.dbCountIDKeys()
+	if err != nil {
+		logger.Log("msg", "failed to count id keys", "error", err)
+		return err
+	}
+	logger.Log("nbidkeys", count)
+	count, err = s.dbCountTopicKeys()
+	if err != nil {
+		logger.Log("msg", "failed to count topic keys", "error", err)
+		return err
+	}
+
+	logger.Log("nbtopickeys", count)
+	logger.Log("msg", "starting grpc server")
+	return srv.Serve(lis)
+}
+
+func (s *C2) createHTTPServer(scfg *startServerConfig) error {
+	httpAddr := scfg.addr
+	httpCert := scfg.certFile
+	httpKey := scfg.keyFile
+
+	var logger = log.With(s.logger, "protocol", "http")
+	logger.Log("addr", httpAddr)
+
+	tlsCert, err := tls.LoadX509KeyPair(httpCert, httpKey)
+	if err != nil {
+		return err
+	}
+
+	tlsConfig := &tls.Config{Certificates: []tls.Certificate{tlsCert},
+		MinVersion:               tls.VersionTLS12,
+		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+		PreferServerCipherSuites: true,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+		},
+	}
+
+	route := mux.NewRouter()
+	route.Use(corsMiddleware)
+	route.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	})
+
+	route.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		resp := Response{w}
+		resp.Text(http.StatusNotFound, "Nothing here")
+	})
+
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/key/{key:[0-9a-f]{128}}", s.handleNewClient).Methods("POST")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", s.handleRemoveClient).Methods("DELETE")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topic/{topic}", s.handleNewTopicClient).Methods("PUT")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topic/{topic}", s.handleRemoveTopicClient).Methods("DELETE")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topics/count", s.handleGetClientTopicCount).Methods("GET")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topics/{offset:[0-9]+}/{count:[0-9]+}", s.handleGetClientTopics).Methods("GET")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", s.handleResetClient).Methods("PUT")
+	route.HandleFunc("/e4/topic/{topic}", s.handleNewTopic).Methods("POST")
+	route.HandleFunc("/e4/topic/{topic}", s.handleRemoveTopic).Methods("DELETE")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", s.handleNewClientKey).Methods("PATCH")
+	route.HandleFunc("/e4/topic/{topic}/message/{message}", s.handleSendMessage).Methods("POST")
+	route.HandleFunc("/e4/topic/{topic}/clients/count", s.handleGetTopicClientCount).Methods("GET")
+	route.HandleFunc("/e4/topic/{topic}/clients/{offset:[0-9]+}/{count:[0-9]+}", s.handleGetTopicClients).Methods("GET")
+
+	route.HandleFunc("/e4/topic", s.handleGetTopics).Methods("GET")
+	route.HandleFunc("/e4/client", s.handleGetClients).Methods("GET")
+
+	logger.Log("msg", "starting https server")
+
+	och := &ochttp.Handler{
+		Handler: route,
+	}
+
+	apiServer := &http.Server{
+		Addr:         httpAddr,
+		Handler:      och,
+		TLSConfig:    tlsConfig,
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+	}
+
+	return apiServer.ListenAndServeTLS(httpCert, httpKey)
+}
+
 // C2Command processes a command received over gRPC by the CLI tool.
 func (s *C2) C2Command(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-
 	//log.Printf("command received: %s", e4.C2Request_Command_name[int32(in.Command)])
 	s.logger.Log("msg", "received gRPC request", "request", e4.C2Request_Command_name[int32(in.Command)])
 
 	switch in.Command {
 	case e4.C2Request_NEW_CLIENT:
-		return s.gRPCnewClient(in)
+		return s.gRPCnewClient(ctx, in)
 	case e4.C2Request_REMOVE_CLIENT:
-		return s.gRPCremoveClient(in)
+		return s.gRPCremoveClient(ctx, in)
 	case e4.C2Request_NEW_TOPIC_CLIENT:
-		return s.gRPCnewTopicClient(in)
+		return s.gRPCnewTopicClient(ctx, in)
 	case e4.C2Request_REMOVE_TOPIC_CLIENT:
-		return s.gRPCremoveTopicClient(in)
+		return s.gRPCremoveTopicClient(ctx, in)
 	case e4.C2Request_RESET_CLIENT:
-		return s.gRPCresetClient(in)
+		return s.gRPCresetClient(ctx, in)
 	case e4.C2Request_NEW_TOPIC:
-		return s.gRPCnewTopic(in)
+		return s.gRPCnewTopic(ctx, in)
 	case e4.C2Request_REMOVE_TOPIC:
-		return s.gRPCremoveTopic(in)
+		return s.gRPCremoveTopic(ctx, in)
 	case e4.C2Request_NEW_CLIENT_KEY:
-		return s.gRPCnewClientKey(in)
+		return s.gRPCnewClientKey(ctx, in)
 	case e4.C2Request_SEND_MESSAGE:
-		return s.gRPCsendMessage(in)
+		return s.gRPCsendMessage(ctx, in)
 	case e4.C2Request_GET_CLIENTS:
-		return s.gRPCgetClients(in)
+		return s.gRPCgetClients(ctx, in)
 	case e4.C2Request_GET_TOPICS:
-		return s.gRPCgetTopics(in)
+		return s.gRPCgetTopics(ctx, in)
 	case e4.C2Request_GET_CLIENT_TOPIC_COUNT:
-		return s.gRPCgetClientTopicCount(in)
+		return s.gRPCgetClientTopicCount(ctx, in)
 	case e4.C2Request_GET_CLIENT_TOPICS:
-		return s.gRPCgetClientTopics(in)
+		return s.gRPCgetClientTopics(ctx, in)
 	case e4.C2Request_GET_TOPIC_CLIENT_COUNT:
-		return s.gRPCgetTopicClientCount(in)
+		return s.gRPCgetTopicClientCount(ctx, in)
 	case e4.C2Request_GET_TOPIC_CLIENTS:
-		return s.gRPCgetTopicClients(in)
+		return s.gRPCgetTopicClients(ctx, in)
 	}
 	return &e4.C2Response{Success: false, Err: "unknown command"}, nil
 }
@@ -395,14 +441,17 @@ func config(logger log.Logger, pathResolver *e4.AppPathResolver) *viper.Viper {
 
 	var v = viper.New()
 
-	// Con
 	v.SetConfigName("config")
 
 	v.AddConfigPath(pathResolver.ConfigDir())
+
+	v.SetDefault("production", false)
+
 	v.SetDefault("mqtt-broker", "tcp://localhost:1883")
 	v.SetDefault("mqtt-ID", "e4c2")
 	v.SetDefault("mqtt-username", "")
 	v.SetDefault("mqtt-password", "")
+
 	v.SetDefault("db-logging", false)
 	v.SetDefault("db-host", "localhost")
 	v.SetDefault("db-database", "e4")
@@ -442,4 +491,37 @@ func config(logger log.Logger, pathResolver *e4.AppPathResolver) *viper.Viper {
 	}
 
 	return v
+}
+
+// CORS middleware
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func setupOpencensusInstrumentation(isProd bool) error {
+	oce, err := ocagent.NewExporter(
+		// TODO: (@odeke-em), enable ocagent-exporter.WithCredentials option.
+		ocagent.WithInsecure(),
+		ocagent.WithServiceName("c2backend"))
+
+	if err != nil {
+		return fmt.Errorf("failed to create the OpenCensus Agent exporter: %v", err)
+	}
+
+	// and now finally register it as a Trace Exporter
+	trace.RegisterExporter(oce)
+	view.RegisterExporter(oce)
+
+	if isProd == false {
+		// setting trace sample rate to 100%
+		trace.ApplyConfig(trace.Config{
+			DefaultSampler: trace.AlwaysSample(),
+		})
+	}
+
+	return nil
 }
