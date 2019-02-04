@@ -59,6 +59,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 			return
 		}
 	}
+	errc <- &e4test.TestResult{Name: "Add Clients", Result: true, Critical: false, Error: nil}
 
 	for i := 0; i < TESTTOPICS; i++ {
 		result, err := e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_NEW_TOPIC,
@@ -79,6 +80,8 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 			return
 		}
 	}
+	errc <- &e4test.TestResult{Name: "Add Topics", Result: true, Critical: false, Error: nil}
+
 	// *** Add the topic to the client.
 	result, err := e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_NEW_TOPIC_CLIENT,
 		testids[0].ID, nil, testtopics[0].TopicName, "", 0, 0)
@@ -191,10 +194,10 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 	errc <- &e4test.TestResult{Name: "Remove topic from C2", Result: true, Critical: false, Error: nil}
 
 	// *** Check double remove of topic fails
-	result, err = e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_REMOVE_TOPIC,
+	_, err = e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_REMOVE_TOPIC,
 		nil, nil, testtopics[0].TopicName, "", 0, 10)
-	bresult, ok = result.(bool)
-	if err != nil || !ok || !bresult {
+	//bresult, ok = result.(bool)
+	if err == nil {
 		if err == nil {
 			err = errors.New("Type mismatch")
 		}
@@ -202,7 +205,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 			Name:     "Check double remove fails",
 			Result:   false,
 			Critical: true,
-			Error:    err,
+			Error:    fmt.Errorf("Double remove should report an error via the API and did not"),
 		}
 		return
 	}
@@ -271,12 +274,12 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 		}
 		return
 	}
-	if len(clientClients) != 0 || len(clientClients) != TESTIDS {
+	if len(clientClients) == 0 || len(clientClients) != TESTIDS {
 		errc <- &e4test.TestResult{
 			Name:     "Test Fetch Clients",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test Fetch Topics: Incorrect number of returned topics, returned body is %s", clientTopics),
+			Error:    fmt.Errorf("Test Fetch Clients: Incorrect number of returned clients, returned body is %s", clientClients),
 		}
 		return
 	}
@@ -294,7 +297,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 				Name:     "Test Fetch Client",
 				Result:   false,
 				Critical: true,
-				Error:    fmt.Errorf("Test Fetch Client: Created client %s not found, clients are %s", testclient, clientClients),
+				Error:    fmt.Errorf("Test Fetch Client: Client s%s not found, clients are %s", testclient, clientClients),
 			}
 			return
 		}

@@ -21,7 +21,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect
 	github.com/spf13/viper v1.3.1
 	gitlab.com/teserakt/e4common v0.0.0-20190110144444-ec3c2ff40a1e
-	gitlab.com/teserakt/test-common v0.0.0-20181129064038-b9333f3ec8e0
+	gitlab.com/teserakt/test-common v0.0.0-20190204160809-8e9083c8f838
 	go.opencensus.io v0.19.0
 	golang.org/x/net v0.0.0-20181217023233-e147a9138326
 	google.golang.org/grpc v1.17.0

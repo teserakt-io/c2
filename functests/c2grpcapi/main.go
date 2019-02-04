@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"path"
 	"syscall"
+	"time"
 
 	e4 "gitlab.com/teserakt/e4common"
 	e4test "gitlab.com/teserakt/test-common"
@@ -26,7 +27,12 @@ func main() {
 
 	var errc = make(chan *e4test.TestResult)
 	var stopc = make(chan struct{})
-	var waitdrunc = make(chan struct{})
+	var waitdrunc = make(chan bool)
+
+	const SERVER string = "localhost:5555"
+	const timeoutSeconds = 30
+	var err error
+	pass := true
 
 	go func() {
 		var signalc = make(chan os.Signal, 1)
@@ -46,7 +52,6 @@ func main() {
 		return
 	}
 
-	const SERVER string = "localhost:5555"
 	wd, err := os.Getwd()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
@@ -61,26 +66,37 @@ func main() {
 	env := []string{"E4C2_DB_TYPE=sqlite3"}
 	env = append(env, DBNAME)
 
-	go e4test.RunDaemon(errc, stopc, waitdrunc, c2binary, []string{}, env)
+	go e4test.RunDaemon(errc, stopc, waitdrunc, c2binary, []string{}, env, func() bool {
+		return e4test.CheckC2Online(timeoutSeconds*time.Second, 5555, 8888, "127.0.0.1")
+	})
 
-	<-waitdrunc
+	var daemonOK bool
 
-	creds, err := credentials.NewClientTLSFromFile(cert, "")
-	if err != nil {
-		log.Fatalf("failed to create TLS credentials from %v: %v", cert, err)
+	daemonOK = <-waitdrunc
+
+	if daemonOK {
+		creds, err := credentials.NewClientTLSFromFile(cert, "")
+		if err != nil {
+			log.Fatalf("failed to create TLS credentials from %v: %v", cert, err)
+		}
+
+		conn, err := grpc.Dial(SERVER, grpc.WithTransportCredentials(creds))
+		if err != nil {
+			log.Fatalf("failed to connect to gRPC server: %v", err)
+		}
+
+		defer conn.Close()
+		grpcClient := e4.NewC2Client(conn)
+
+		go c2t.TestGRPCApi(errc, grpcClient)
+	} else {
+		errc <- &e4test.TestResult{
+			Name:     "",
+			Critical: true,
+			Result:   false,
+			Error:    fmt.Errorf("Daemon did not launch after timeout %d", timeoutSeconds),
+		}
 	}
-
-	conn, err := grpc.Dial(SERVER, grpc.WithTransportCredentials(creds))
-	if err != nil {
-		log.Fatalf("failed to connect to gRPC server: %v", err)
-	}
-
-	defer conn.Close()
-	grpcClient := e4.NewC2Client(conn)
-
-	go c2t.TestGRPCApi(errc, grpcClient)
-
-	pass := true
 
 	for result := range errc {
 
@@ -97,11 +113,11 @@ func main() {
 		}
 		// if any tests fail, report a failure.
 		if !result.Result {
-			pass = false
-			// propagate error in critical cases,
-			// otherwise just print it.
+			// Critical errors imply we stop and ignore any further action.
+			// Not critical errors imply a warn state
 			if result.Critical {
-				err = result.Error
+				pass = false
+				fmt.Fprintf(os.Stderr, "%s", result.Error)
 				break
 			} else {
 				fmt.Fprintf(os.Stderr, "%s", result.Error)
@@ -110,10 +126,10 @@ func main() {
 	}
 	close(stopc)
 	if !pass {
-		fmt.Fprintf(os.Stderr, "Tests failed.\n%s\n", err)
+		fmt.Fprintf(os.Stdout, "Tests failed.\n%s\n", err)
 		exitCode = 1
 	} else {
-		fmt.Fprintf(os.Stderr, "TESTS PASSED!\n")
+		fmt.Fprintf(os.Stdout, "TESTS PASSED!\n")
 	}
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "C2Backend Output\n")

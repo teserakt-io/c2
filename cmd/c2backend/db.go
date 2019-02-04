@@ -285,6 +285,20 @@ func (s *C2) dbUnlinkIDTopic(id []byte, topic string) error {
 		return err
 	}
 
+	if err := tx.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			tx.Rollback()
+			return errors.New("ID/Client appears to have been deleted, this is just an unlink")
+		}
+	}
+	if err := tx.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			tx.Rollback()
+			return errors.New("Topic appears to have been deleted, this is just an unlink")
+		}
+		return err
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		return err
 	}

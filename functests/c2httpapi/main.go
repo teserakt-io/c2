@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	c2t "gitlab.com/teserakt/c2backend/pkg/c2test"
 	e4test "gitlab.com/teserakt/test-common"
@@ -17,9 +18,14 @@ func main() {
 		os.Exit(exitCode)
 	}()
 
+	const SERVER = "https://localhost:8888"
+	const timeoutSeconds = 30
+
 	var errc = make(chan *e4test.TestResult)
 	var stopc = make(chan struct{})
-	var waitdrunc = make(chan struct{})
+	var waitdrunc = make(chan bool)
+
+	pass := true
 
 	go func() {
 		var signalc = make(chan os.Signal, 1)
@@ -39,7 +45,6 @@ func main() {
 		return
 	}
 
-	const SERVER = "https://localhost:8888"
 	DBNAME := fmt.Sprintf("E4C2_DB_FILE=%s", e4test.GetRandomDBName())
 
 	fmt.Fprintf(os.Stderr, "Database set to %s\n", DBNAME)
@@ -47,16 +52,29 @@ func main() {
 	env := []string{"E4C2_DB_TYPE=sqlite3"}
 	env = append(env, DBNAME)
 
-	go e4test.RunDaemon(errc, stopc, waitdrunc, c2binary, []string{}, env)
+	go e4test.RunDaemon(errc, stopc, waitdrunc, c2binary, []string{}, env, func() bool {
+		return e4test.CheckC2Online(timeoutSeconds*time.Second, 5555, 8888, "127.0.0.1")
+	})
 
-	<-waitdrunc
-
-	httpClient := e4test.ConstructHTTPSClient()
-
-	go c2t.TestHTTPApi(errc, httpClient, SERVER)
-
+	var daemonOK bool
 	var err error
-	pass := true
+
+	daemonOK = <-waitdrunc
+
+	if daemonOK {
+		httpClient := e4test.ConstructHTTPSClient()
+
+		go c2t.TestHTTPApi(errc, httpClient, SERVER)
+
+		pass = true
+	} else {
+		errc <- &e4test.TestResult{
+			Name:     "",
+			Critical: true,
+			Result:   false,
+			Error:    fmt.Errorf("Daemon did not launch after timeout %s", timeoutSeconds),
+		}
+	}
 
 	for result := range errc {
 
@@ -73,11 +91,11 @@ func main() {
 		}
 		// if any tests fail, report a failure.
 		if !result.Result {
-			pass = false
-			// propagate error in critical cases,
-			// otherwise just print it.
+			// Critical errors imply we stop and ignore any further action.
+			// Not critical errors imply a warn state
 			if result.Critical {
-				err = result.Error
+				pass = false
+				fmt.Fprintf(os.Stderr, "%s", result.Error)
 				break
 			} else {
 				fmt.Fprintf(os.Stderr, "%s", result.Error)
@@ -86,10 +104,10 @@ func main() {
 	}
 	close(stopc)
 	if !pass {
-		fmt.Fprintf(os.Stderr, "Tests failed.\n%s\n", err)
+		fmt.Fprintf(os.Stdout, "Tests failed.\n%s\n", err)
 		exitCode = 1
 	} else {
-		fmt.Fprintf(os.Stderr, "TESTS PASSED!\n")
+		fmt.Fprintf(os.Stdout, "TESTS PASSED!\n")
 	}
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "C2Backend Output\n")

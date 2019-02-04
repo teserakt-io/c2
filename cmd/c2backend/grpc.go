@@ -2,11 +2,104 @@ package main
 
 import (
 	"errors"
+	"net"
 
+	"github.com/go-kit/kit/log"
 	e4 "gitlab.com/teserakt/e4common"
+	"go.opencensus.io/plugin/ocgrpc"
+	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
+
+func (s *C2) createGRPCServer(scfg *startServerConfig) error {
+	grpcAddr := scfg.addr
+	grpcCert := scfg.certFile
+	grpcKey := scfg.keyFile
+
+	var logger = log.With(s.logger, "protocol", "grpc")
+	logger.Log("addr", grpcAddr)
+
+	lis, err := net.Listen("tcp", grpcAddr)
+	if err != nil {
+		logger.Log("msg", "failed to listen", "error", err)
+		return err
+	}
+
+	creds, err := credentials.NewServerTLSFromFile(grpcCert, grpcKey)
+	if err != nil {
+		logger.Log("msg", "failed to get credentials", "cert", grpcCert, "key", grpcKey, "error", err)
+		return err
+	}
+	logger.Log("msg", "using TLS for gRPC", "cert", grpcCert, "key", grpcKey, "error", err)
+
+	if err = view.Register(ocgrpc.DefaultServerViews...); err != nil {
+		logger.Log("msg", "failed to register ocgrpc server views", "error", err)
+		return err
+	}
+
+	srv := grpc.NewServer(grpc.Creds(creds), grpc.StatsHandler(&ocgrpc.ServerHandler{}))
+
+	e4.RegisterC2Server(srv, s)
+
+	count, err := s.dbCountIDKeys()
+	if err != nil {
+		logger.Log("msg", "failed to count id keys", "error", err)
+		return err
+	}
+	logger.Log("nbidkeys", count)
+	count, err = s.dbCountTopicKeys()
+	if err != nil {
+		logger.Log("msg", "failed to count topic keys", "error", err)
+		return err
+	}
+
+	logger.Log("nbtopickeys", count)
+	logger.Log("msg", "starting grpc server")
+	return srv.Serve(lis)
+}
+
+// C2Command processes a command received over gRPC by the CLI tool.
+func (s *C2) C2Command(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+	//log.Printf("command received: %s", e4.C2Request_Command_name[int32(in.Command)])
+	s.logger.Log("msg", "received gRPC request", "request", e4.C2Request_Command_name[int32(in.Command)])
+
+	switch in.Command {
+	case e4.C2Request_NEW_CLIENT:
+		return s.gRPCnewClient(ctx, in)
+	case e4.C2Request_REMOVE_CLIENT:
+		return s.gRPCremoveClient(ctx, in)
+	case e4.C2Request_NEW_TOPIC_CLIENT:
+		return s.gRPCnewTopicClient(ctx, in)
+	case e4.C2Request_REMOVE_TOPIC_CLIENT:
+		return s.gRPCremoveTopicClient(ctx, in)
+	case e4.C2Request_RESET_CLIENT:
+		return s.gRPCresetClient(ctx, in)
+	case e4.C2Request_NEW_TOPIC:
+		return s.gRPCnewTopic(ctx, in)
+	case e4.C2Request_REMOVE_TOPIC:
+		return s.gRPCremoveTopic(ctx, in)
+	case e4.C2Request_NEW_CLIENT_KEY:
+		return s.gRPCnewClientKey(ctx, in)
+	case e4.C2Request_SEND_MESSAGE:
+		return s.gRPCsendMessage(ctx, in)
+	case e4.C2Request_GET_CLIENTS:
+		return s.gRPCgetClients(ctx, in)
+	case e4.C2Request_GET_TOPICS:
+		return s.gRPCgetTopics(ctx, in)
+	case e4.C2Request_GET_CLIENT_TOPIC_COUNT:
+		return s.gRPCgetClientTopicCount(ctx, in)
+	case e4.C2Request_GET_CLIENT_TOPICS:
+		return s.gRPCgetClientTopics(ctx, in)
+	case e4.C2Request_GET_TOPIC_CLIENT_COUNT:
+		return s.gRPCgetTopicClientCount(ctx, in)
+	case e4.C2Request_GET_TOPIC_CLIENTS:
+		return s.gRPCgetTopicClients(ctx, in)
+	}
+	return &e4.C2Response{Success: false, Err: "unknown command"}, nil
+}
 
 func (s *C2) gRPCnewClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
