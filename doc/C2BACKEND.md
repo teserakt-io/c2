@@ -271,3 +271,11 @@ Other endpoints:
 ## Security
 
 TODO: TLS/CA etc.
+
+## Monitoring
+
+C2 will subscribe to all the MQTT topics for which it generated a key, and will generate logs for each messages received, where a log will include payload, metadata, and enriched data.
+
+These logs are to be processed by an ELK, configured as follows:
+
+TODO

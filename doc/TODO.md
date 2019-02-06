@@ -72,9 +72,11 @@
 * fix docker build.
 * Continuous integration
 * Config file fixes for go modules.
+* Monitoring: subscribe to topics and log messages
 
 # TODO
 
+* Monitoring: setup ELK and document config
 * Config parameters involving relative files should be resolved by searching 
   for the files relative to the location of the config file.
 * `lc` should list client aliases => add field alias in the db?
