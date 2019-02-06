@@ -79,6 +79,7 @@
 * Mon: subscribe to topics and log messages
 * Mon: put config files in /opt/e4/configs?
 * Mon: add logstash to docker compose
+* Mon: isEncrypted()
 * brokers: add hivemq start script
 * oc: dockerize prometheus
 
