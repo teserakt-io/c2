@@ -1,0 +1,69 @@
+# run as docker-compose up -d
+
+version: '3.6'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${TAG}
+    container_name: elasticsearch
+    environment:
+      - node.name=es01
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      nproc: 65535
+      memlock:
+        soft: -1
+        hard: -1
+    cap_add:
+      - ALL
+    privileged: true
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    volumes:
+      - esdata1:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+  kibana:
+    image: docker.elastic.co/kibana/kibana-oss:${TAG}
+    container_name: kibana
+    environment:
+      SERVER_NAME: localhost
+      ELASTICSEARCH_URL: http://elasticsearch:9200/
+    ports:
+      - 5601:5601
+    ulimits:
+      nproc: 65535
+      memlock:
+        soft: -1
+        hard: -1
+    cap_add:
+      - ALL
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    volumes:
+      - ./kibana.yml:/opt/e4/configs/kibana.yml
+  nginx:
+    image: nginx:latest
+    ports:
+        - 8080:80
+    volumes:
+        - ${PWD}/nginx-config/:/etc/nginx/conf.d/
+    command: /bin/bash -c "nginx -g 'daemon off;'"
+    ulimits:
+      nproc: 65535
+volumes:
+  esdata1:
+  esdata2:
+  esdata3:

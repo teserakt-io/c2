@@ -276,6 +276,26 @@ TODO: TLS/CA etc.
 
 C2 will subscribe to all the MQTT topics for which it generated a key, and will generate logs for each messages received, where a log will include payload, metadata, and enriched data.
 
+We use Docker containers for E, L, and K applications, with startup scripts in scripts/, and configuration files in configs/.
+
 These logs are to be processed by an ELK, configured as follows:
 
-TODO
+
+### Logstash
+
+See https://www.elastic.co/guide/en/logstash/current/docker.html
+
+### Elasticsearch
+
+See https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
+
+Config: https://www.elastic.co/guide/en/kibana/6.6/settings.html
+
+TODO: config, authentication
+
+
+### Kibana
+
+See https://www.elastic.co/guide/en/kibana/current/docker.html
+
+

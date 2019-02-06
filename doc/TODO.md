@@ -72,11 +72,16 @@
 * fix docker build.
 * Continuous integration
 * Config file fixes for go modules.
-* Monitoring: subscribe to topics and log messages
+* Mon: ELK startup scripts and configs
 
 # TODO
 
-* Monitoring: setup ELK and document config
+* Mon: subscribe to topics and log messages
+* Mon: put config files in /opt/e4/configs?
+* Mon: add logstash to docker compose
+* brokers: add hivemq start script
+* oc: dockerize prometheus
+
 * Config parameters involving relative files should be resolved by searching 
   for the files relative to the location of the config file.
 * `lc` should list client aliases => add field alias in the db?
