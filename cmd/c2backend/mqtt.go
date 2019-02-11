@@ -23,12 +23,13 @@ func (s *C2) createMQTTClient(scfg *startMQTTClientConfig) error {
 	mqOpts.SetPassword(scfg.password)
 	mqOpts.SetUsername(scfg.username)
 	mqttClient := mqtt.NewClient(mqOpts)
-	logger.Log("msg", "mqtt parameters", "broker", mqttBroker, "id", mqttID, "username", mqttUsername)
+	logger.Log("msg", "mqtt parameters", "broker", scfg.addr, "id", scfg.id, "username", scfg.username)
 	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
 		logger.Log("msg", "connection failed", "error", token.Error())
-		return
+		return token.Error()
 	}
 	logger.Log("msg", "connected to broker")
 	// instantiate C2
 	s.mqttClient = mqttClient
+	return nil
 }

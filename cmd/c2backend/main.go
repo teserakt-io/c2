@@ -219,7 +219,7 @@ func main() {
 		errc <- fmt.Errorf("%s", <-c)
 	}()
 
-	// create grpc server
+	// start mqtt client
 	mqttStarter := &startMQTTClientConfig{
 		addr:     mqttBroker,
 		id:       mqttID,
@@ -227,8 +227,12 @@ func main() {
 		username: mqttUsername,
 	}
 
-	// start mqtt client
-	c2.createMQTTClient(mqttStarter)
+	if err := c2.createMQTTClient(mqttStarter); err != nil {
+		c2.logger.Log("msg", "MQTT client creation failed", "error", err)
+		return
+	}
+
+	// subscribe to topics in the DB if not already done
 
 	// initialize OpenCensus
 	if err := setupOpencensusInstrumentation(isProd); err != nil {
