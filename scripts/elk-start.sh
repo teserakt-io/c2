@@ -1,5 +1,6 @@
 #!/bin/bash
 
-export TAG=6.6.0
+export ELKTAG=6.6.0
+export E4CONFDIR=../configs
 
-docker-compose -f configs/elk-docker-compose.yml up -d
+docker-compose -f docker/elk-docker-compose.yml up -d
