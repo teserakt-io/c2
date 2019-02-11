@@ -1,5 +1,6 @@
 # run as docker-compose up -d
 # inspired from
+# https://github.com/elastic/stack-docker
 # https://github.com/elastic/stack-docker/blob/master/docker-compose.yml
 # https://github.com/maxyermayank/docker-compose-elasticsearch-kibana
 
@@ -8,43 +9,29 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:${TAG}
     container_name: elasticsearch
-    environment:
+    ports: ['9200:9200']
+    networks: ['elk']
+    #environment:
 #      - node.name=es01
 #      - cluster.name=docker-cluster
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - 9200:9200
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    cap_add:
-      - ALL
+     # - bootstrap.memory_lock=true
+     #- "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
-      - esdata1:/usr/share/elasticsearch/data
+      - 'esdata1:/usr/share/elasticsearch/data'
 
   kibana:
     image: docker.elastic.co/kibana/kibana:${TAG}
     container_name: kibana
-    environment:
-      SERVER_NAME: localhost
-      ELASTICSEARCH_URL: http://elasticsearch:9200
-    ports:
-      - 5601:5601
+    ports: ['5601:5601']
+    networks: ['elk']
+    depends_on: ['elasticsearch']
+    links: ['elasticsearch']
+    #environment:
+    #  SERVER_NAME: localhost
+    #  ELASTICSEARCH_URL: http://elasticsearch:9200
     secrets:
       - source: kibana.yml
         target: /usr/share/kibana/config/kibana.yml
-    ulimits:
-      nproc: 65535
-      memlock:
-        soft: -1
-        hard: -1
-    cap_add:
-      - ALL
-    links:
-      - elasticsearch
-
 
 volumes:
   esdata1:
@@ -52,3 +39,6 @@ volumes:
 secrets:
   kibana.yml:
     file: ./kibana.yml
+
+networks:
+  elk:
