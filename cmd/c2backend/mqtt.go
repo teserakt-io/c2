@@ -5,16 +5,23 @@ import (
 	"github.com/go-kit/kit/log"
 )
 
-func (s *C2) createMQTTClient() error {
+type startMQTTClientConfig struct {
+	addr     string
+	id       string
+	password string
+	username string
+}
+
+func (s *C2) createMQTTClient(scfg *startMQTTClientConfig) error {
 
 	// TODO: secure connection to broker
-	logger := log.With(c2.logger, "protocol", "mqtt")
-	logger.Log("addr", mqttBroker)
+	logger := log.With(s.logger, "protocol", "mqtt")
+	logger.Log("addr", scfg.addr)
 	mqOpts := mqtt.NewClientOptions()
-	mqOpts.AddBroker(mqttBroker)
-	mqOpts.SetClientID(mqttID)
-	mqOpts.SetPassword(mqttPassword)
-	mqOpts.SetUsername(mqttUsername)
+	mqOpts.AddBroker(scfg.addr)
+	mqOpts.SetClientID(scfg.id)
+	mqOpts.SetPassword(scfg.password)
+	mqOpts.SetUsername(scfg.username)
 	mqttClient := mqtt.NewClient(mqOpts)
 	logger.Log("msg", "mqtt parameters", "broker", mqttBroker, "id", mqttID, "username", mqttUsername)
 	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
@@ -23,5 +30,5 @@ func (s *C2) createMQTTClient() error {
 	}
 	logger.Log("msg", "connected to broker")
 	// instantiate C2
-	c2.mqttClient = mqttClient
+	s.mqttClient = mqttClient
 }
