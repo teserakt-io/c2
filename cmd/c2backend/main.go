@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -21,8 +20,6 @@ import (
 	"contrib.go.opencensus.io/exporter/ocagent"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
-
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 // variables set at build time
@@ -34,10 +31,9 @@ const configfilename = "c2"
 
 // C2 is the C2's state
 type C2 struct {
-	keyenckey [e4.KeyLen]byte
-	db        *gorm.DB
-
-	mqttClient     mqtt.Client
+	keyenckey      [e4.KeyLen]byte
+	db             *gorm.DB
+	mqttContext    MQTTContext
 	logger         log.Logger
 	configResolver *e4.AppPathResolver
 }
@@ -93,6 +89,8 @@ func main() {
 		mqttPassword = c.GetString("mqtt-password")
 		mqttUsername = c.GetString("mqtt-username")
 		mqttID       = c.GetString("mqtt-ID")
+		mqttQoSPub   = c.GetInt("mqtt-QoS-pub")
+		mqttQoSSub   = c.GetInt("mqtt-QoS-sub")
 		dbLogging    = c.GetBool("db-logging")
 		dbType       = c.GetString("db-type")
 		dbPassphrase = c.GetString("db-encryption-passphrase")
@@ -232,7 +230,11 @@ func main() {
 		return
 	}
 
+	c2.mqttContext.qosPub = mqttQoSPub
+	c2.mqttContext.qosSub = mqttQoSSub
+
 	// subscribe to topics in the DB if not already done
+	c2.subscribeToDBTopics()
 
 	// initialize OpenCensus
 	if err := setupOpencensusInstrumentation(isProd); err != nil {
@@ -293,7 +295,8 @@ func config(logger log.Logger, pathResolver *e4.AppPathResolver) *viper.Viper {
 	// env variables for testing.
 	v.BindEnv("mqtt-broker", "E4C2_MQTT_BROKER")
 	v.BindEnv("mqtt-ID", "E4C2_MQTT_ID")
-	v.BindEnv("mqtt-QoS", "E4C2_MQTT_QOS")
+	v.BindEnv("mqtt-QoS-pub", "E4C2_MQTT_QOS_PUB")
+	v.BindEnv("mqtt-QoS-sub", "E4C2_MQTT_QOS_SUB")
 	v.BindEnv("db-type", "E4C2_DB_TYPE")
 	v.BindEnv("db-file", "E4C2_DB_FILE")
 	v.BindEnv("db-username", "E4C2_DB_USERNAME")
@@ -321,15 +324,6 @@ func config(logger log.Logger, pathResolver *e4.AppPathResolver) *viper.Viper {
 	}
 
 	return v
-}
-
-// CORS middleware
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
-		next.ServeHTTP(w, r)
-	})
 }
 
 func setupOpencensusInstrumentation(isProd bool) error {

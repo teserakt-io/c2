@@ -14,7 +14,9 @@ mqtt-broker: tcp://localhost:1883
 ## MQTT ID of the C2
 mqtt-ID: e4c2
 ## QoS level of command messages sent to clients (2 recommended)
-mqtt-QoS: 2
+mqtt-QoS-pub: 2
+## QoS level of messages received
+mqtt-QoS-sub: 1
 
 
 # database settings

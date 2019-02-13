@@ -2,7 +2,7 @@
 
 PROJECT=c2backend
 
-echo "$PROJECT build script (c) Teserakt AG 2018. All rights reserved."
+echo "$PROJECT build script (c) Teserakt AG 2018-2019. All rights reserved."
 echo ""
 
 goimports -w cmd/$PROJECT

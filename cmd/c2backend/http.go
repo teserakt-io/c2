@@ -86,6 +86,15 @@ func (s *C2) createHTTPServer(scfg *startServerConfig) error {
 	return apiServer.ListenAndServeTLS(httpCert, httpKey)
 }
 
+// CORS middleware
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (s *C2) handleNewClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
