@@ -74,11 +74,14 @@ func (s *C2) dbInsertTopicKey(topic string, key []byte) error {
 	}
 	topickey := TopicKey{Topic: topic, Key: protectedkey}
 	if s.db.NewRecord(topickey) {
-		s.db.Create(&topickey)
+		if result := s.db.Create(&topickey); result.Error != nil {
+			return result.Error
+		}
 	} else {
-		s.db.Model(&topickey).Updates(topickey)
+		if result := s.db.Model(&topickey).Updates(topickey); result.Error != nil {
+			return result.Error
+		}
 	}
-	// TODO: failures from GORM?
 	return nil
 }
 
