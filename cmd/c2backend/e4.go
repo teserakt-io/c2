@@ -122,7 +122,15 @@ func (s *C2) newTopic(topic string) error {
 		logger.Log("msg", "insertTopicKey failed", "error", err)
 		return err
 	}
-	logger.Log("msg", "succeeded", "topic", topic)
+	logger.Log("msg", "insertTopicKey succeeded", "topic", topic)
+
+	// subscribe
+	err = s.subscribeToTopic(topic)
+	if err != nil {
+		logger.Log("msg", "subscribeToTopic failed", "topic", topic, "error", err)
+		return err
+	}
+	logger.Log("msg", "subscribeToTopic succeeded", "topic", topic)
 
 	return nil
 }
@@ -131,7 +139,15 @@ func (s *C2) removeTopic(topic string) error {
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopic")
 
-	err := s.dbDeleteTopicKey(topic)
+	// first unsubscribe
+	err := s.unsubscribeFromTopic(topic)
+	if err != nil {
+		logger.Log("msg", "unsubscribeFromTopic failed", "error", err)
+	} else {
+		logger.Log("msg", "unsubscribeFromTopic succeeded")
+	}
+
+	err = s.dbDeleteTopicKey(topic)
 	if err != nil {
 		logger.Log("msg", "deleteTopicKey failed", "error", err)
 		return err

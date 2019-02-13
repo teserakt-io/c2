@@ -86,6 +86,19 @@ func (s *C2) subscribeToTopic(topic string) error {
 	return nil
 }
 
+func (s *C2) unsubscribeFromTopic(topic string) error {
+
+	logger := log.With(s.logger, "protocol", "mqtt")
+
+	if token := s.mqttContext.client.Unsubscribe(topic); token.Wait() && token.Error() != nil {
+		logger.Log("msg", "unsubscribe failed", "topic", topic, "error", token.Error())
+		return token.Error()
+	}
+	logger.Log("msg", "unsubscribe succeeded", "topic", topic)
+
+	return nil
+}
+
 func callbackSub(c mqtt.Client, m mqtt.Message) {
 
 	type Message struct {
