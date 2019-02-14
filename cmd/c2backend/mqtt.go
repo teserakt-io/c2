@@ -2,9 +2,9 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"unicode/utf8"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -152,10 +152,10 @@ func callbackSub(c mqtt.Client, m mqtt.Message) {
 
 	b, err := json.Marshal(msg)
 
-	// TODO: send to ES
-	if err == nil {
-		fmt.Println(string(b))
-	}
+	ctx := context.Background()
+
+	// TODO: handle error
+	esClient.Index().Index("messages").Type("message").BodyString(string(b)).Do(ctx)
 }
 
 func (s *C2) publish(payload []byte, topic string, qos byte) error {
