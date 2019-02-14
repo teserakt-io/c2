@@ -150,7 +150,7 @@ func callbackSub(c mqtt.Client, m mqtt.Message) {
 		}
 	}
 
-	b, err := json.Marshal(msg)
+	b, _ := json.Marshal(msg)
 
 	ctx := context.Background()
 
