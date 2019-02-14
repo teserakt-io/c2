@@ -2,10 +2,12 @@
 # C2 configuration file, to be edited manually
 ###############################################################
 
-# general settings
+# Other settings
 ###############################################################
 ## in non-prod, allow sqlite, use 100% sampling rate, etc.
 production: false
+## ElasticSeach address
+es-url: http://127.0.0.1:9200
 
 # MQTT settings
 ###############################################################
@@ -18,8 +20,7 @@ mqtt-QoS-pub: 2
 ## QoS level of messages received
 mqtt-QoS-sub: 1
 
-
-# database settings
+# Database settings
 ###############################################################
 ## supported types are sqlite3 and postgres
 db-type: sqlite3

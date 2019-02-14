@@ -104,12 +104,12 @@ func main() {
 	}
 	close(stopc)
 	if !pass {
-		fmt.Fprintf(os.Stdout, "Tests failed.\n%s\n", err)
+		fmt.Fprintf(os.Stdout, "One or more tests failed.\n%s\n", err)
 		exitCode = 1
 	} else {
 		fmt.Fprintf(os.Stdout, "TESTS PASSED!\n")
 	}
 	fmt.Fprintf(os.Stderr, "\n")
-	fmt.Fprintf(os.Stderr, "C2Backend Output\n")
+	fmt.Fprintf(os.Stderr, "c2backend output\n")
 	<-waitdrunc
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -20,14 +21,16 @@ import (
 	"contrib.go.opencensus.io/exporter/ocagent"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
+
+	"github.com/olivere/elastic"
 )
 
 // variables set at build time
 var gitCommit string
 var buildDate string
 
-// globally defined constants
-const configfilename = "c2"
+// TODO: get rid of global
+var esClient *elastic.Client
 
 // C2 is the C2's state
 type C2 struct {
@@ -85,6 +88,7 @@ func main() {
 		isProd       = c.GetBool("production")
 		grpcAddr     = c.GetString("grpc-host-port")
 		httpAddr     = c.GetString("http-host-port")
+		esURL        = c.GetString("es-url")
 		mqttBroker   = c.GetString("mqtt-broker")
 		mqttPassword = c.GetString("mqtt-password")
 		mqttUsername = c.GetString("mqtt-username")
@@ -191,6 +195,8 @@ func main() {
 		return
 	}
 
+	c2.logger.Log("msg", "database open")
+
 	defer db.Close()
 
 	c2.logger.Log("msg", "database open")
@@ -208,6 +214,7 @@ func main() {
 		c2.logger.Log("msg", "database setup failed", "error", err)
 		return
 	}
+	c2.logger.Log("msg", "database initialized")
 
 	// create critical error channel
 	var errc = make(chan error)
@@ -229,6 +236,7 @@ func main() {
 		c2.logger.Log("msg", "MQTT client creation failed", "error", err)
 		return
 	}
+	c2.logger.Log("msg", "MQTT client created")
 
 	c2.mqttContext.qosPub = mqttQoSPub
 	c2.mqttContext.qosSub = mqttQoSSub
@@ -236,11 +244,18 @@ func main() {
 	// subscribe to topics in the DB if not already done
 	c2.subscribeToDBTopics()
 
+	// initialize ElasticSearch
+	if err := createESClient(esURL); err != nil {
+		c2.logger.Log("msg", "ElasticSearch setup failed", "error", err)
+	}
+	c2.logger.Log("msg", "ElasticSearch setup successfully")
+
 	// initialize OpenCensus
 	if err := setupOpencensusInstrumentation(isProd); err != nil {
 		c2.logger.Log("msg", "OpenCensus instrumentation setup failed", "error", err)
 		return
 	}
+	c2.logger.Log("msg", "OpenCensus instrumentation setup successfully")
 
 	// create grpc server
 	grpcStarter := &startServerConfig{
@@ -279,6 +294,8 @@ func config(logger log.Logger, pathResolver *e4.AppPathResolver) *viper.Viper {
 
 	v.SetDefault("production", false)
 
+	v.SetDefault("es-url", "http://localhost:9200")
+
 	v.SetDefault("mqtt-broker", "tcp://localhost:1883")
 	v.SetDefault("mqtt-ID", "e4c2")
 	v.SetDefault("mqtt-username", "")
@@ -293,6 +310,7 @@ func config(logger log.Logger, pathResolver *e4.AppPathResolver) *viper.Viper {
 
 	// Allow the whole environment to be configured by
 	// env variables for testing.
+	v.BindEnv("es-url", "E4C2_ES_URL")
 	v.BindEnv("mqtt-broker", "E4C2_MQTT_BROKER")
 	v.BindEnv("mqtt-ID", "E4C2_MQTT_ID")
 	v.BindEnv("mqtt-QoS-pub", "E4C2_MQTT_QOS_PUB")
@@ -324,6 +342,33 @@ func config(logger log.Logger, pathResolver *e4.AppPathResolver) *viper.Viper {
 	}
 
 	return v
+}
+
+func createESClient(url string) error {
+	var err error
+	esClient, err = elastic.NewClient(
+		elastic.SetURL(url),
+		elastic.SetSniff(false),
+	)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	exists, err := esClient.IndexExists("messages").Do(ctx)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		createIndex, err := esClient.CreateIndex("messages").Do(ctx)
+		if err != nil {
+			return err
+		}
+		if !createIndex.Acknowledged {
+			return fmt.Errorf("index creation not acknowledged")
+		}
+	}
+
+	return nil
 }
 
 func setupOpencensusInstrumentation(isProd bool) error {

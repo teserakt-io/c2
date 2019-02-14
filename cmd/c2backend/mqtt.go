@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"unicode/utf8"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-kit/kit/log"
@@ -21,6 +24,20 @@ type startMQTTClientConfig struct {
 	id       string
 	password string
 	username string
+}
+
+type loggedMessage struct {
+	Duplicate       bool   `json:"duplicate"`
+	Qos             byte   `json:"qos"`
+	Retained        bool   `json:"retained"`
+	Topic           string `json:"topic"`
+	MessageID       uint16 `json:"messageid"`
+	Payload         []byte `json:"payload"`
+	LooksEncrypted  bool   `json:"looksencrypted"`
+	LooksCompressed bool   `json:"lookscompressed"`
+	IsBase64        bool   `json:"isbase64"`
+	IsUTF8          bool   `json:"isutf8"`
+	IsJSON          bool   `json:"isjson"`
 }
 
 func (s *C2) createMQTTClient(scfg *startMQTTClientConfig) error {
@@ -101,26 +118,41 @@ func (s *C2) unsubscribeFromTopic(topic string) error {
 
 func callbackSub(c mqtt.Client, m mqtt.Message) {
 
-	type Message struct {
-		Duplicate bool
-		Qos       byte
-		Retained  bool
-		Topic     string
-		MessageID uint16
-		Payload   []byte
+	msg := &loggedMessage{
+		Duplicate:       m.Duplicate(),
+		Qos:             m.Qos(),
+		Retained:        m.Retained(),
+		Topic:           m.Topic(),
+		MessageID:       m.MessageID(),
+		Payload:         m.Payload(),
+		IsUTF8:          utf8.Valid(m.Payload()),
+		IsJSON:          false,
+		IsBase64:        false,
+		LooksCompressed: false,
+		LooksEncrypted:  false,
 	}
 
-	msg := &Message{
-		Duplicate: m.Duplicate(),
-		Qos:       m.Qos(),
-		Retained:  m.Retained(),
-		Topic:     m.Topic(),
-		MessageID: m.MessageID(),
-		Payload:   m.Payload(),
+	// try to determine type
+	if !msg.IsUTF8 {
+		if looksCompressed(m.Payload()) {
+			msg.LooksCompressed = true
+		} else {
+			msg.LooksEncrypted = looksEncrypted(m.Payload())
+		}
+	} else {
+		var js map[string]interface{}
+		if json.Unmarshal(m.Payload(), &js) == nil {
+			msg.IsJSON = true
+		} else {
+			if _, err := base64.StdEncoding.DecodeString(string(m.Payload())); err == nil {
+				msg.IsBase64 = true
+			}
+		}
 	}
 
 	b, err := json.Marshal(msg)
 
+	// TODO: send to ES
 	if err == nil {
 		fmt.Println(string(b))
 	}
@@ -147,4 +179,58 @@ func (s *C2) sendCommandToClient(id, payload []byte) error {
 	qos := byte(2)
 
 	return s.publish(payload, topic, qos)
+}
+
+func looksEncrypted(data []byte) bool {
+	// efficient, lazy heuristic, FN/FP-prone
+	// will fail if e.g. ciphertext is prepended with non-random nonce
+	if len(data) < 16 {
+		// make the assumption that <16-byte data won't be encrypted
+		return false
+	}
+	counter := make(map[int]int)
+	for i := range data[:16] {
+		counter[int(data[i])]++
+	}
+	if len(counter) < 10 {
+		return false
+	}
+	// if encrypted, fails with low prob
+
+	return true
+}
+
+func looksCompressed(data []byte) bool {
+
+	// application/zip
+	if bytes.Equal(data[:4], []byte("\x50\x4b\x03\x04")) {
+		return true
+	}
+
+	// application/x-gzip
+	if bytes.Equal(data[:3], []byte("\x1F\x8B\x08")) {
+		return true
+	}
+
+	// application/x-rar-compressed
+	if bytes.Equal(data[:7], []byte("\x52\x61\x72\x20\x1A\x07\x00")) {
+		return true
+	}
+
+	// zlib no/low compression
+	if bytes.Equal(data[:2], []byte("\x78\x01")) {
+		return true
+	}
+
+	// zlib default compression
+	if bytes.Equal(data[:2], []byte("\x78\x9c")) {
+		return true
+	}
+
+	// zlib best compression
+	if bytes.Equal(data[:2], []byte("\x78\xda")) {
+		return true
+	}
+
+	return false
 }

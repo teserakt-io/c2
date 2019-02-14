@@ -30,24 +30,6 @@ services:
     networks:
       - e4monitoring
 
-  logstash:
-    image: docker.elastic.co/logstash/logstash:${ELKTAG}
-    container_name: e4-logstash
-    ports:
-      - 5000:5000
-      - 9600:9600
-    secrets:
-      - source: logstash.conf
-        target: /usr/share/logstash/pipeline/logstash.conf
-      - source: logstash.yml
-        target: /usr/share/logstash/config/logstash.yml
-    links:
-      - elasticsearch
-    depends_on:
-      - elasticsearch
-    networks:
-      - e4monitoring
-
   kibana:
     image: docker.elastic.co/kibana/kibana:${ELKTAG}
     container_name: e4-kibana
@@ -96,8 +78,3 @@ networks:
 secrets:
   kibana.yml:
     file: ${E4CONFDIR}/kibana.yml
-  logstash.conf:
-    file: ${E4CONFDIR}/logstash.conf
-  logstash.yml:
-    file: ${E4CONFDIR}/logstash.yml
-
