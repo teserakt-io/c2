@@ -28,6 +28,7 @@ import (
 // variables set at build time
 var gitCommit string
 var buildDate string
+var gitTag string
 
 // globally defined constants
 const configfilename = "c2"
@@ -57,7 +58,11 @@ func main() {
 	var c2 C2
 
 	// show banner
-	fmt.Printf("E4: C2 back-end - version %s-%s\n", buildDate, gitCommit[:4])
+	if len(gitTag) == 0 {
+		fmt.Printf("E4: C2 back-end - version %s-%s\n", buildDate, gitCommit[:4])
+	} else {
+		fmt.Printf("E4: C2 back-end - version %s (%s-%s)\n", gitTag, buildDate, gitCommit[:4])
+	}
 	fmt.Println("Copyright (c) Teserakt AG, 2018-2019")
 
 	// init logger
