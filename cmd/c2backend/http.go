@@ -13,18 +13,15 @@ import (
 	"github.com/gorilla/mux"
 	"go.opencensus.io/plugin/ochttp"
 
+	"gitlab.com/teserakt/c2backend/internal/config"
 	e4 "gitlab.com/teserakt/e4common"
 )
 
-func (s *C2) createHTTPServer(scfg *startServerConfig) error {
-	httpAddr := scfg.addr
-	httpCert := scfg.certFile
-	httpKey := scfg.keyFile
-
+func (s *C2) createHTTPServer(scfg config.ServerCfg) error {
 	var logger = log.With(s.logger, "protocol", "http")
-	logger.Log("addr", httpAddr)
+	logger.Log("addr", scfg.Addr)
 
-	tlsCert, err := tls.LoadX509KeyPair(httpCert, httpKey)
+	tlsCert, err := tls.LoadX509KeyPair(scfg.Cert, scfg.Key)
 	if err != nil {
 		return err
 	}
@@ -77,13 +74,13 @@ func (s *C2) createHTTPServer(scfg *startServerConfig) error {
 	}
 
 	apiServer := &http.Server{
-		Addr:         httpAddr,
+		Addr:         scfg.Addr,
 		Handler:      och,
 		TLSConfig:    tlsConfig,
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
 	}
 
-	return apiServer.ListenAndServeTLS(httpCert, httpKey)
+	return apiServer.ListenAndServeTLS(scfg.Cert, scfg.Key)
 }
 
 func (s *C2) handleNewClient(w http.ResponseWriter, r *http.Request) {

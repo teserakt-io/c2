@@ -12,28 +12,27 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	"gitlab.com/teserakt/c2backend/internal/config"
 )
 
-func (s *C2) createGRPCServer(scfg *startServerConfig) error {
-	grpcAddr := scfg.addr
-	grpcCert := scfg.certFile
-	grpcKey := scfg.keyFile
+func (s *C2) createGRPCServer(scfg config.ServerCfg) error {
 
 	var logger = log.With(s.logger, "protocol", "grpc")
-	logger.Log("addr", grpcAddr)
+	logger.Log("addr", scfg.Addr)
 
-	lis, err := net.Listen("tcp", grpcAddr)
+	lis, err := net.Listen("tcp", scfg.Addr)
 	if err != nil {
 		logger.Log("msg", "failed to listen", "error", err)
 		return err
 	}
 
-	creds, err := credentials.NewServerTLSFromFile(grpcCert, grpcKey)
+	creds, err := credentials.NewServerTLSFromFile(scfg.Cert, scfg.Key)
 	if err != nil {
-		logger.Log("msg", "failed to get credentials", "cert", grpcCert, "key", grpcKey, "error", err)
+		logger.Log("msg", "failed to get credentials", "cert", scfg.Cert, "key", scfg.Key, "error", err)
 		return err
 	}
-	logger.Log("msg", "using TLS for gRPC", "cert", grpcCert, "key", grpcKey, "error", err)
+	logger.Log("msg", "using TLS for gRPC", "cert", scfg.Cert, "key", scfg.Key, "error", err)
 
 	if err = view.Register(ocgrpc.DefaultServerViews...); err != nil {
 		logger.Log("msg", "failed to register ocgrpc server views", "error", err)

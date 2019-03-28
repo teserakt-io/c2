@@ -25,4 +25,5 @@ require (
 	go.opencensus.io v0.19.0
 	golang.org/x/net v0.0.0-20181217023233-e147a9138326
 	google.golang.org/grpc v1.17.0
+	gopkg.in/d4l3k/messagediff.v1 v1.2.1
 )
