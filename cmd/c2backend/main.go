@@ -86,7 +86,8 @@ func main() {
 	cfg, err := configLoader.Load()
 	if err != nil {
 		c2.logger.Log("error", err)
-		os.Exit(1)
+
+		return
 	}
 
 	if cfg.DB.SecureConnection == config.DBSecureConnectionInsecure {
@@ -106,14 +107,15 @@ func main() {
 	dbConnectionString, err := cfg.DB.ConnectionString()
 	if err != nil {
 		c2.logger.Log("error", err)
-		os.Exit(1)
+
+		return
 	}
 
 	db, err := gorm.Open(cfg.DB.Type.String(), dbConnectionString)
 	if err != nil {
 		c2.logger.Log("msg", "database opening failed", "error", err)
 
-		os.Exit(1)
+		return
 	}
 	defer db.Close()
 
@@ -131,7 +133,7 @@ func main() {
 	if err != nil {
 		c2.logger.Log("msg", "database setup failed", "error", err)
 
-		os.Exit(1)
+		return
 	}
 
 	// create critical error channel
@@ -157,6 +159,7 @@ func main() {
 		logger.Log("msg", "mqtt parameters", "broker", cfg.MQTT.Broker, "id", cfg.MQTT.ID, "username", cfg.MQTT.Username)
 		if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
 			logger.Log("msg", "connection failed", "error", token.Error())
+
 			return
 		}
 
@@ -168,6 +171,7 @@ func main() {
 	// initialize OpenCensus
 	if err := setupOpencensusInstrumentation(cfg.IsProd); err != nil {
 		c2.logger.Log("msg", "OpenCensus instrumentation setup failed", "error", err)
+
 		return
 	}
 
