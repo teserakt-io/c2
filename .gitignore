@@ -5,3 +5,5 @@ builds/
 configs/config.yaml
 docs/*.pdf
 docs/*.html
+test/
+configs/*.pem

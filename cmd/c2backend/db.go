@@ -6,7 +6,7 @@ import (
 	"errors"
 	"strings"
 
-	e4 "gitlab.com/teserakt/common"
+	e4 "gitlab.com/teserakt/e4common"
 
 	"github.com/jinzhu/gorm"
 )
@@ -49,7 +49,7 @@ func (s *C2) dbInitialize() error {
 	return nil
 }
 
-func (s *C2) insertIDKey(id, key []byte) error {
+func (s *C2) dbInsertIDKey(id, key []byte) error {
 	protectedkey, err := e4.Encrypt(s.keyenckey[:], nil, key)
 	if err != nil {
 		return err
@@ -67,22 +67,25 @@ func (s *C2) insertIDKey(id, key []byte) error {
 	return nil
 }
 
-func (s *C2) insertTopicKey(topic string, key []byte) error {
+func (s *C2) dbInsertTopicKey(topic string, key []byte) error {
 	protectedkey, err := e4.Encrypt(s.keyenckey[:], nil, key)
 	if err != nil {
 		return err
 	}
 	topickey := TopicKey{Topic: topic, Key: protectedkey}
 	if s.db.NewRecord(topickey) {
-		s.db.Create(&topickey)
+		if result := s.db.Create(&topickey); result.Error != nil {
+			return result.Error
+		}
 	} else {
-		s.db.Model(&topickey).Updates(topickey)
+		if result := s.db.Model(&topickey).Updates(topickey); result.Error != nil {
+			return result.Error
+		}
 	}
-	// TODO: failures from GORM?
 	return nil
 }
 
-func (s *C2) getIDKey(id []byte) ([]byte, error) {
+func (s *C2) dbGetIDKey(id []byte) ([]byte, error) {
 	var idkey IDKey
 	result := s.db.Where(&IDKey{E4ID: id}).First(&idkey)
 	if gorm.IsRecordNotFoundError(result.Error) {
@@ -102,7 +105,7 @@ func (s *C2) getIDKey(id []byte) ([]byte, error) {
 	return clearkey, nil
 }
 
-func (s *C2) getTopicKey(topic string) ([]byte, error) {
+func (s *C2) dbGetTopicKey(topic string) ([]byte, error) {
 	var topickey TopicKey
 	result := s.db.Where(&TopicKey{Topic: topic}).First(&topickey)
 	if gorm.IsRecordNotFoundError(result.Error) {
@@ -121,7 +124,7 @@ func (s *C2) getTopicKey(topic string) ([]byte, error) {
 	return clearkey, nil
 }
 
-func (s *C2) deleteIDKey(id []byte) error {
+func (s *C2) dbDeleteIDKey(id []byte) error {
 	var idkey IDKey
 
 	if result := s.db.Where(&IDKey{E4ID: id}).First(&idkey); result.Error != nil {
@@ -150,7 +153,7 @@ func (s *C2) deleteIDKey(id []byte) error {
 	return nil
 }
 
-func (s *C2) deleteTopicKey(topic string) error {
+func (s *C2) dbDeleteTopicKey(topic string) error {
 	var topicKey TopicKey
 	if result := s.db.Where(&TopicKey{Topic: topic}).First(&topicKey); result.Error != nil {
 		if gorm.IsRecordNotFoundError(result.Error) {
@@ -176,7 +179,7 @@ func (s *C2) deleteTopicKey(topic string) error {
 	return nil
 }
 
-func (s *C2) countIDKeys() (int, error) {
+func (s *C2) dbCountIDKeys() (int, error) {
 	var idkey IDKey
 	var count int
 	if result := s.db.Model(&idkey).Count(&count); result.Error != nil {
@@ -185,7 +188,7 @@ func (s *C2) countIDKeys() (int, error) {
 	return count, nil
 }
 
-func (s *C2) countTopicKeys() (int, error) {
+func (s *C2) dbCountTopicKeys() (int, error) {
 	var topickey TopicKey
 	var count int
 	if result := s.db.Model(&topickey).Count(&count); result.Error != nil {
@@ -226,7 +229,7 @@ func (s *C2) dbGetTopicsList() ([]string, error) {
 
 // This function links a topic and an id/key. The link is created in both
 // directions (IDkey to Topics, Topic to IDkeys).
-func (s *C2) linkIDTopic(id []byte, topic string) error {
+func (s *C2) dbLinkIDTopic(id []byte, topic string) error {
 
 	var idkey IDKey
 	var topickey TopicKey
@@ -260,7 +263,7 @@ func (s *C2) linkIDTopic(id []byte, topic string) error {
 
 // This function removes the relationship between a Topic and an ID, but
 // does not delete the Topic or the ID.
-func (s *C2) unlinkIDTopic(id []byte, topic string) error {
+func (s *C2) dbUnlinkIDTopic(id []byte, topic string) error {
 
 	var idkey IDKey
 	var topickey TopicKey
@@ -285,13 +288,27 @@ func (s *C2) unlinkIDTopic(id []byte, topic string) error {
 		return err
 	}
 
+	if err := tx.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			tx.Rollback()
+			return errors.New("ID/Client appears to have been deleted, this is just an unlink")
+		}
+	}
+	if err := tx.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			tx.Rollback()
+			return errors.New("Topic appears to have been deleted, this is just an unlink")
+		}
+		return err
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *C2) countTopicsForID(id []byte) (int, error) {
+func (s *C2) dbCountTopicsForID(id []byte) (int, error) {
 
 	var idkey IDKey
 
@@ -306,7 +323,7 @@ func (s *C2) countTopicsForID(id []byte) (int, error) {
 	return count, nil
 }
 
-func (s *C2) getTopicsForID(id []byte, offset int, count int) ([]string, error) {
+func (s *C2) dbGetTopicsForID(id []byte, offset int, count int) ([]string, error) {
 
 	var idkey IDKey
 	var topickeys []TopicKey
@@ -330,7 +347,7 @@ func (s *C2) getTopicsForID(id []byte, offset int, count int) ([]string, error) 
 	return topics, nil
 }
 
-func (s *C2) countIDsForTopic(topic string) (int, error) {
+func (s *C2) dbCountIDsForTopic(topic string) (int, error) {
 	var topickey TopicKey
 
 	if err := s.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
@@ -344,7 +361,7 @@ func (s *C2) countIDsForTopic(topic string) (int, error) {
 	return count, nil
 }
 
-func (s *C2) getIdsforTopic(topic string, offset int, count int) ([]string, error) {
+func (s *C2) dbGetIdsforTopic(topic string, offset int, count int) ([]string, error) {
 
 	var topickey TopicKey
 	var idkeys []IDKey

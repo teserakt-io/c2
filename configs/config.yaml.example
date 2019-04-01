@@ -2,6 +2,11 @@
 # C2 configuration file, to be edited manually
 ###############################################################
 
+# general settings
+###############################################################
+## in non-prod, allow sqlite, use 100% sampling rate, etc.
+production: false
+
 # MQTT settings
 ###############################################################
 ## broker host:port, must include protocol prefix, e.g. "tcp://"
@@ -24,25 +29,31 @@ db-file: /tmp/e4c2test.sqlite
 #db-password: teserakte4
 ## set to true to show detailed logging of database operations 
 #db-logging: 1
+## host of the db
+db-host: localhost
+## db name
+db-database: e4
 ## passphrase used to derive the key to encrypt keys in the db
 db-encryption-passphrase: meh
+## TLS connection: enable || selfsigned || insecure
+db-secure-connection: enable
 
 # gRPC settings
 ###############################################################
 # host:port, e.g. 0.0.0.0:5555
 grpc-host-port: 0.0.0.0:5555
 # path to the PEM-encoded certificate file
-grpc-cert: cmd/c2backend/c2-cert.pem
+grpc-cert: c2-cert.pem
 # path to the PEM-encoded private key file
-grpc-key: cmd/c2backend/c2-key.pem
+grpc-key: c2-key.pem
 
 # HTTP settings
 ###############################################################
 # host:port, e.g. 0.0.0.0:8888
 http-host-port: 0.0.0.0:8888
 # path to the PEM-encoded certificate file
-http-cert: cmd/c2backend/c2-cert.pem
+http-cert: c2-cert.pem
 # path to the PEM-encoded private key file
-http-key: cmd/c2backend/c2-key.pem
+http-key: c2-key.pem
 
 

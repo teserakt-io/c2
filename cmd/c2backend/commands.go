@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 
-	e4 "gitlab.com/teserakt/common"
+	e4 "gitlab.com/teserakt/e4common"
 )
 
 // CreateAndProtectForID creates a protected command for a given ID.
@@ -16,7 +16,7 @@ func (s *C2) CreateAndProtectForID(cmd e4.Command, topichash, key, id []byte) ([
 	}
 
 	// get key of the given id
-	idkey, err := s.getIDKey(id)
+	idkey, err := s.dbGetIDKey(id)
 	if err != nil {
 		return nil, err
 	}
