@@ -1,6 +1,7 @@
 module gitlab.com/teserakt/c2backend
 
 require (
+	contrib.go.opencensus.io/exporter/ocagent v0.4.3
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20181014144952-4e0d7dc8888f // indirect
 	github.com/eclipse/paho.mqtt.golang v1.1.1
@@ -10,7 +11,6 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
-	github.com/google/go-cmp v0.2.0 // indirect
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
 	github.com/jinzhu/gorm v1.9.2
@@ -24,9 +24,9 @@ require (
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/spf13/viper v1.2.1
 	gitlab.com/teserakt/e4common v0.0.0-20190110144444-ec3c2ff40a1e
-	gitlab.com/teserakt/test-common v0.0.0-20181129064038-b9333f3ec8e0
-	golang.org/x/net v0.0.0-20181129055619-fae4c4e3ad76
-	google.golang.org/grpc v1.16.0
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	gopkg.in/yaml.v2 v2.2.2 // indirect
+	gitlab.com/teserakt/test-common v0.0.0-20190204160809-8e9083c8f838
+	go.opencensus.io v0.19.0
+	golang.org/x/net v0.0.0-20181217023233-e147a9138326
+	google.golang.org/grpc v1.17.0
+	gopkg.in/d4l3k/messagediff.v1 v1.2.1
 )

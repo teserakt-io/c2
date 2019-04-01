@@ -74,11 +74,14 @@ func (s *C2) dbInsertTopicKey(topic string, key []byte) error {
 	}
 	topickey := TopicKey{Topic: topic, Key: protectedkey}
 	if s.db.NewRecord(topickey) {
-		s.db.Create(&topickey)
+		if result := s.db.Create(&topickey); result.Error != nil {
+			return result.Error
+		}
 	} else {
-		s.db.Model(&topickey).Updates(topickey)
+		if result := s.db.Model(&topickey).Updates(topickey); result.Error != nil {
+			return result.Error
+		}
 	}
-	// TODO: failures from GORM?
 	return nil
 }
 
@@ -282,6 +285,20 @@ func (s *C2) dbUnlinkIDTopic(id []byte, topic string) error {
 
 	if err := tx.Model(&idkey).Association("TopicKeys").Delete(&topickey).Error; err != nil {
 		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			tx.Rollback()
+			return errors.New("ID/Client appears to have been deleted, this is just an unlink")
+		}
+	}
+	if err := tx.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			tx.Rollback()
+			return errors.New("Topic appears to have been deleted, this is just an unlink")
+		}
 		return err
 	}
 

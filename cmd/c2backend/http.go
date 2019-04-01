@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -8,10 +9,79 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
+	"go.opencensus.io/plugin/ochttp"
 
+	"gitlab.com/teserakt/c2backend/internal/config"
 	e4 "gitlab.com/teserakt/e4common"
 )
+
+func (s *C2) createHTTPServer(scfg config.ServerCfg) error {
+	var logger = log.With(s.logger, "protocol", "http")
+	logger.Log("addr", scfg.Addr)
+
+	tlsCert, err := tls.LoadX509KeyPair(scfg.Cert, scfg.Key)
+	if err != nil {
+		return err
+	}
+
+	tlsConfig := &tls.Config{Certificates: []tls.Certificate{tlsCert},
+		MinVersion:               tls.VersionTLS12,
+		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+		PreferServerCipherSuites: true,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+		},
+	}
+
+	route := mux.NewRouter()
+	route.Use(corsMiddleware)
+	route.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	})
+
+	route.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		resp := Response{w}
+		resp.Text(http.StatusNotFound, "Nothing here")
+	})
+
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/key/{key:[0-9a-f]{128}}", s.handleNewClient).Methods("POST")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", s.handleRemoveClient).Methods("DELETE")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topic/{topic}", s.handleNewTopicClient).Methods("PUT")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topic/{topic}", s.handleRemoveTopicClient).Methods("DELETE")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topics/count", s.handleGetClientTopicCount).Methods("GET")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}/topics/{offset:[0-9]+}/{count:[0-9]+}", s.handleGetClientTopics).Methods("GET")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", s.handleResetClient).Methods("PUT")
+	route.HandleFunc("/e4/topic/{topic}", s.handleNewTopic).Methods("POST")
+	route.HandleFunc("/e4/topic/{topic}", s.handleRemoveTopic).Methods("DELETE")
+	route.HandleFunc("/e4/client/{id:[0-9a-f]{64}}", s.handleNewClientKey).Methods("PATCH")
+	route.HandleFunc("/e4/topic/{topic}/message/{message}", s.handleSendMessage).Methods("POST")
+	route.HandleFunc("/e4/topic/{topic}/clients/count", s.handleGetTopicClientCount).Methods("GET")
+	route.HandleFunc("/e4/topic/{topic}/clients/{offset:[0-9]+}/{count:[0-9]+}", s.handleGetTopicClients).Methods("GET")
+
+	route.HandleFunc("/e4/topic", s.handleGetTopics).Methods("GET")
+	route.HandleFunc("/e4/client", s.handleGetClients).Methods("GET")
+
+	logger.Log("msg", "starting https server")
+
+	och := &ochttp.Handler{
+		Handler: route,
+	}
+
+	apiServer := &http.Server{
+		Addr:         scfg.Addr,
+		Handler:      och,
+		TLSConfig:    tlsConfig,
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+	}
+
+	return apiServer.ListenAndServeTLS(scfg.Cert, scfg.Key)
+}
 
 func (s *C2) handleNewClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
