@@ -7,7 +7,7 @@ echo ""
 
 goimports -w cmd/$PROJECT
 
-GIT_COMMIT=$(git rev-list -1 HEAD)
+GIT_COMMIT=$(git rev-parse --short HEAD)
 GIT_TAG=$(git describe --exact-match HEAD)
 NOW=$(date "+%Y%m%d")
 
