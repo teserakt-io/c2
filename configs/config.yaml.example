@@ -6,7 +6,9 @@
 ###############################################################
 ## in non-prod, allow sqlite, use 100% sampling rate, etc.
 production: false
-## ElasticSeach address
+## enable monitoring? (and thus ElasticSearch)
+monitoring: true
+## ElasticSearch address
 es-url: http://127.0.0.1:9200
 
 # MQTT settings

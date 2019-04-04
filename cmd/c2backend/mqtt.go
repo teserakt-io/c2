@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"unicode/utf8"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -73,11 +74,18 @@ func (s *C2) subscribeToDBTopics() error {
 
 	logger := log.With(s.logger, "protocol", "mqtt")
 
+	if len(topics) == 0 {
+		logger.Log("msg", "no topic found in the db, no subscribe request sent")
+		return nil
+	}
+
 	// create map string->qos as needed by SubscribeMultiple
 	filters := make(map[string]byte)
 	for i := 0; i < len(topics); i += 1 {
 		filters[topics[i]] = byte(s.mqttContext.qosSub)
 	}
+
+	fmt.Println(filters)
 
 	if token := s.mqttContext.client.SubscribeMultiple(filters, callbackSub); token.Wait() && token.Error() != nil {
 		logger.Log("msg", "subscribe-multiple failed", "topics", len(topics), "error", token.Error())
@@ -154,7 +162,6 @@ func callbackSub(c mqtt.Client, m mqtt.Message) {
 
 	ctx := context.Background()
 
-	// TODO: handle error
 	esClient.Index().Index("messages").Type("message").BodyString(string(b)).Do(ctx)
 }
 
