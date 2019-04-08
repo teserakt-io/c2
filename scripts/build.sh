@@ -8,6 +8,7 @@ echo ""
 goimports -w cmd/$PROJECT
 
 GIT_COMMIT=$(git rev-parse --short HEAD)
+GIT_TAG=$(git describe --exact-match HEAD)
 NOW=$(date "+%Y%m%d")
 
 GOOS=`uname -s | tr '[:upper:]' '[:lower:]'` 
