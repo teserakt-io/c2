@@ -113,6 +113,8 @@ github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
+gitlab.com/teserakt/c2backend v0.0.0-20190401093528-a39d25156fcf h1:cpDaBI897sCw0IEoeGYdv8fURmmtDFTz8hudq+gb3Cs=
+gitlab.com/teserakt/c2backend v0.0.0-20190401093528-a39d25156fcf/go.mod h1:p5IkCr4A4N3XGl/FumVUii03tq4B8ixqVVkz+fa5J5Q=
 gitlab.com/teserakt/e4common v0.0.0-20190110144444-ec3c2ff40a1e h1:P3/uwZFXhds8Ut4hyze3Ru5SEMPhsU3SdAXCYFmy0Y0=
 gitlab.com/teserakt/e4common v0.0.0-20190110144444-ec3c2ff40a1e/go.mod h1:PZJpR15s6qXkBfUrVrmrqfqaX9OlpbN36Ndg50cIivI=
 gitlab.com/teserakt/test-common v0.0.0-20190204160809-8e9083c8f838 h1:VN0B538i9F8o7F4V/YNk7ftMlFL0qQt3Doc4hQ2QEKU=
@@ -168,6 +170,8 @@ google.golang.org/grpc v1.17.0/go.mod h1:6QZJwpn2B+Zp71q/5VxRsJ6NXXVCE5NRUHRo+f3
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 h1:qIbj1fsPNlZgppZ+VLlY7N33q108Sa+fhmuc+sWQYwY=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/d4l3k/messagediff.v1 v1.2.1 h1:70AthpjunwzUiarMHyED52mj9UwtAnE89l1Gmrt3EU0=
+gopkg.in/d4l3k/messagediff.v1 v1.2.1/go.mod h1:EUzikiKadqXWcD1AzJLagx0j/BeeWGtn++04Xniyg44=
 gopkg.in/yaml.v2 v2.2.1/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.2 h1:ZCJp+EgiOT7lHqUV2J862kp8Qj64Jo6az82+3Td9dZw=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=

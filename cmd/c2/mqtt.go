@@ -10,6 +10,7 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-kit/kit/log"
+	"gitlab.com/teserakt/c2/internal/config"
 	e4 "gitlab.com/teserakt/e4common"
 )
 
@@ -18,13 +19,6 @@ type MQTTContext struct {
 	client mqtt.Client
 	qosSub int
 	qosPub int
-}
-
-type startMQTTClientConfig struct {
-	addr     string
-	id       string
-	password string
-	username string
 }
 
 type loggedMessage struct {
@@ -41,18 +35,18 @@ type loggedMessage struct {
 	IsJSON          bool   `json:"isjson"`
 }
 
-func (s *C2) createMQTTClient(scfg *startMQTTClientConfig) error {
+func (s *C2) createMQTTClient(scfg *config.MQTTCfg) error {
 
 	// TODO: secure connection to broker
 	logger := log.With(s.logger, "protocol", "mqtt")
-	logger.Log("addr", scfg.addr)
+	logger.Log("addr", scfg.Broker)
 	mqOpts := mqtt.NewClientOptions()
-	mqOpts.AddBroker(scfg.addr)
-	mqOpts.SetClientID(scfg.id)
-	mqOpts.SetPassword(scfg.password)
-	mqOpts.SetUsername(scfg.username)
+	mqOpts.AddBroker(scfg.Broker)
+	mqOpts.SetClientID(scfg.ID)
+	mqOpts.SetPassword(scfg.Password)
+	mqOpts.SetUsername(scfg.Username)
 	mqttClient := mqtt.NewClient(mqOpts)
-	logger.Log("msg", "mqtt parameters", "broker", scfg.addr, "id", scfg.id, "username", scfg.username)
+	logger.Log("msg", "mqtt parameters", "broker", scfg.Broker, "id", scfg.ID, "username", scfg.Username)
 	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
 		logger.Log("msg", "connection failed", "error", token.Error())
 		return token.Error()

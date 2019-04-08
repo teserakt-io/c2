@@ -48,17 +48,15 @@ db-secure-connection: enable
 # host:port, e.g. 0.0.0.0:5555
 grpc-host-port: 0.0.0.0:5555
 # path to the PEM-encoded certificate file
-grpc-cert: cmd/c2/c2-cert.pem
+grpc-cert: c2-cert.pem
 # path to the PEM-encoded private key file
-grpc-key: cmd/c2b/c2-key.pem
+grpc-key: c2-key.pem
 
 # HTTP settings
 ###############################################################
 # host:port, e.g. 0.0.0.0:8888
 http-host-port: 0.0.0.0:8888
 # path to the PEM-encoded certificate file
-http-cert: cmd/c2/c2-cert.pem
+http-cert: c2-cert.pem
 # path to the PEM-encoded private key file
-http-key: cmd/c2/c2-key.pem
-
-
+http-key: c2-key.pem
