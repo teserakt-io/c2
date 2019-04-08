@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"gitlab.com/teserakt/c2backend/internal/config"
+	"gitlab.com/teserakt/c2/internal/config"
 )
 
 func (s *C2) createGRPCServer(scfg config.ServerCfg) error {

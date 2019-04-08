@@ -122,7 +122,17 @@ func (s *C2) newTopic(topic string) error {
 		logger.Log("msg", "insertTopicKey failed", "error", err)
 		return err
 	}
-	logger.Log("msg", "succeeded", "topic", topic)
+	logger.Log("msg", "insertTopicKey succeeded", "topic", topic)
+
+	// If monitoring enabled, i.e. if esClient non-nil, then add subscribe
+	if esClient != nil {
+		err = s.subscribeToTopic(topic)
+		if err != nil {
+			logger.Log("msg", "subscribeToTopic failed", "topic", topic, "error", err)
+			return err
+		}
+		logger.Log("msg", "subscribeToTopic succeeded", "topic", topic)
+	}
 
 	return nil
 }
@@ -130,6 +140,16 @@ func (s *C2) newTopic(topic string) error {
 func (s *C2) removeTopic(topic string) error {
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopic")
+
+	// If monitoring enabled, i.e. if esClient non-nil, then unsubscribe
+	if esClient != nil {
+		err := s.unsubscribeFromTopic(topic)
+		if err != nil {
+			logger.Log("msg", "unsubscribeFromTopic failed", "error", err)
+		} else {
+			logger.Log("msg", "unsubscribeFromTopic succeeded")
+		}
+	}
 
 	err := s.dbDeleteTopicKey(topic)
 	if err != nil {

@@ -1,0 +1,80 @@
+# run as docker-compose up -d
+# inspired from
+# https://github.com/elastic/stack-docker/blob/master/docker-compose.yml
+# https://github.com/maxyermayank/docker-compose-elasticsearch-kibana
+
+# set environment variables: 
+# ELKTAG the version of ELK to use (E, L, K versions)
+# E4CONFDIR the location of e4 configs.
+# example:
+# TAG=6.6.0 E4CONFDIR=../configs sudo -E docker-compose -f elk-docker-compose.yml up
+
+version: '3.6'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELKTAG}
+    container_name: e4-elasticsearch
+    environment:
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - 9200:9200
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    cap_add:
+      - ALL
+    volumes:
+      - esdata1:/usr/share/elasticsearch/data
+    networks:
+      - e4monitoring
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${ELKTAG}
+    container_name: e4-kibana
+    environment:
+      # it is critical NOT to use localhost here. localhost refers 
+      # to the container localhost and is loopback, so this doesn't 
+      # work very well for the config file.
+      # server host must bind to 0.0.0.0 to listen for incoming 
+      # connections, see: https://github.com/elastic/kibana/issues/12918
+      SERVER_HOST: 0.0.0.0
+      SERVER_NAME: e4-kibana
+      ELASTICSEARCH_URL: http://e4-elasticsearch:9200
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_HOST: e4-elasticsearch
+      ELASTICSEARCH_PORT: 9200
+      KIBANA_PWD: KIBANA_PWD=changeme
+    ports:
+      - 5601:5601
+    expose:
+      - 5601
+    secrets:
+      - source: kibana.yml
+        target: /usr/share/kibana/config/kibana.yml
+    ulimits:
+      nproc: 65535
+      memlock:
+        soft: -1
+        hard: -1
+    cap_add:
+      - ALL
+    # force kibana to wait for elasticsearch. links and depends_on 
+    # ought to be the same, but let's be safe.
+    links:
+      - elasticsearch
+    depends_on:
+      - elasticsearch
+    networks:
+      - e4monitoring
+
+volumes:
+  esdata1:
+
+networks:
+  e4monitoring:
+
+secrets:
+  kibana.yml:
+    file: ${E4CONFDIR}/kibana.yml

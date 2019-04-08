@@ -18,9 +18,9 @@ build:base:
   before_script:
     - go get golang.org/x/tools/cmd/goimports
     - go install golang.org/x/tools/cmd/goimports
-    - mkdir -p /go/src/teserakt/e4/c2backend
-    - ln -s /builds/Teserakt/c2backend/  /go/src/teserakt/e4/c2backend
-    - cd /go/src/teserakt/e4/c2backend/
+    - mkdir -p /go/src/teserakt/e4/c2
+    - ln -s /builds/Teserakt/c2/  /go/src/teserakt/e4/c2
+    - cd /go/src/teserakt/e4/c2/
   script:
     - ./scripts/build.sh
 

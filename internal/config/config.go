@@ -40,7 +40,8 @@ type Loader interface {
 
 // Config type holds the application configuration
 type Config struct {
-	IsProd bool
+	IsProd  bool
+	Monitor bool
 
 	GRPC ServerCfg
 	HTTP ServerCfg
@@ -48,6 +49,8 @@ type Config struct {
 	MQTT MQTTCfg
 
 	DB DBCfg
+
+	ES ESCfg
 }
 
 // ServerCfg holds configuration for a server
@@ -61,7 +64,8 @@ type ServerCfg struct {
 type MQTTCfg struct {
 	ID       string
 	Broker   string
-	QOS      int
+	QoSPub   int
+	QoSSub   int
 	Username string
 	Password string
 }
@@ -77,6 +81,12 @@ type DBCfg struct {
 	Password         string
 	Passphrase       string
 	SecureConnection DBSecureConnectionType
+}
+
+// ESCfg holds ElasticSearch config
+type ESCfg struct {
+	Enable bool
+	URL    string
 }
 
 // ConnectionString returns the string to use to establish the db connection

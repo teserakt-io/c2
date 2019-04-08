@@ -1,15 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	stdlog "log"
 
-	"gitlab.com/teserakt/c2backend/internal/config"
+	"gitlab.com/teserakt/c2/internal/config"
 
 	e4 "gitlab.com/teserakt/e4common"
 
@@ -23,7 +23,7 @@ import (
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/olivere/elastic"
 )
 
 // variables set at build time
@@ -31,12 +31,13 @@ var gitCommit string
 var buildDate string
 var gitTag string
 
+var esClient *elastic.Client
+
 // C2 is the C2's state
 type C2 struct {
-	keyenckey [e4.KeyLen]byte
-	db        *gorm.DB
-
-	mqttClient     mqtt.Client
+	keyenckey      [e4.KeyLen]byte
+	db             *gorm.DB
+	mqttContext    MQTTContext
 	logger         log.Logger
 	configResolver *e4.AppPathResolver
 }
@@ -57,7 +58,7 @@ func main() {
 	fmt.Println("Copyright (c) Teserakt AG, 2018-2019")
 
 	// init logger
-	logFileName := fmt.Sprintf("/var/log/e4_c2backend.log")
+	logFileName := fmt.Sprintf("/var/log/e4_c2.log")
 	logFile, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
 	if err != nil {
 		fmt.Printf("[ERROR] logs: unable to open file '%v' to write logs: %v\n", logFileName, err)
@@ -135,6 +136,7 @@ func main() {
 
 		return
 	}
+	c2.logger.Log("msg", "database initialized")
 
 	// create critical error channel
 	var errc = make(chan error)
@@ -144,36 +146,38 @@ func main() {
 		errc <- fmt.Errorf("%s", <-c)
 	}()
 
-	// start mqtt client
+	// start MQTT client
 	{
-		logger := log.With(c2.logger, "protocol", "mqtt")
-		logger.Log("addr", cfg.MQTT.Broker)
-
-		mqOpts := mqtt.NewClientOptions()
-		mqOpts.AddBroker(cfg.MQTT.Broker)
-		mqOpts.SetClientID(cfg.MQTT.ID)
-		mqOpts.SetPassword(cfg.MQTT.Password)
-		mqOpts.SetUsername(cfg.MQTT.Username)
-
-		mqttClient := mqtt.NewClient(mqOpts)
-		logger.Log("msg", "mqtt parameters", "broker", cfg.MQTT.Broker, "id", cfg.MQTT.ID, "username", cfg.MQTT.Username)
-		if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
-			logger.Log("msg", "connection failed", "error", token.Error())
-
+		if err := c2.createMQTTClient(&cfg.MQTT); err != nil {
+			c2.logger.Log("msg", "MQTT client creation failed", "error", err)
 			return
 		}
+		c2.logger.Log("msg", "MQTT client created")
 
-		logger.Log("msg", "connected to broker")
-		// instantiate C2
-		c2.mqttClient = mqttClient
+		c2.mqttContext.qosPub = cfg.MQTT.QoSPub
+		c2.mqttContext.qosSub = cfg.MQTT.QoSSub
+
+		// subscribe to topics in the DB if not already done
+		c2.subscribeToDBTopics()
+	}
+
+	// initialize ElasticSearch
+	if cfg.ES.Enable {
+		if err := createESClient(cfg.ES.URL); err != nil {
+			c2.logger.Log("msg", "ElasticSearch setup failed", "error", err)
+		}
+		c2.logger.Log("msg", "ElasticSearch setup successfully")
+	} else {
+		esClient = nil
+		c2.logger.Log("msg", "monitoring disabled: ElasticSearch not setup")
 	}
 
 	// initialize OpenCensus
 	if err := setupOpencensusInstrumentation(cfg.IsProd); err != nil {
 		c2.logger.Log("msg", "OpenCensus instrumentation setup failed", "error", err)
-
 		return
 	}
+	c2.logger.Log("msg", "OpenCensus instrumentation setup successfully")
 
 	go func() {
 		errc <- c2.createGRPCServer(cfg.GRPC)
@@ -186,20 +190,38 @@ func main() {
 	c2.logger.Log("error", <-errc)
 }
 
-// CORS middleware
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
-		next.ServeHTTP(w, r)
-	})
+func createESClient(url string) error {
+	var err error
+	esClient, err = elastic.NewClient(
+		elastic.SetURL(url),
+		elastic.SetSniff(false),
+	)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	exists, err := esClient.IndexExists("messages").Do(ctx)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		createIndex, err := esClient.CreateIndex("messages").Do(ctx)
+		if err != nil {
+			return err
+		}
+		if !createIndex.Acknowledged {
+			return fmt.Errorf("index creation not acknowledged")
+		}
+	}
+
+	return nil
 }
 
 func setupOpencensusInstrumentation(isProd bool) error {
 	oce, err := ocagent.NewExporter(
 		// TODO: (@odeke-em), enable ocagent-exporter.WithCredentials option.
 		ocagent.WithInsecure(),
-		ocagent.WithServiceName("c2backend"))
+		ocagent.WithServiceName("c2"))
 
 	if err != nil {
 		return fmt.Errorf("failed to create the OpenCensus Agent exporter: %v", err)

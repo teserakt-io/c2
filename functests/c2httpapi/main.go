@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	c2t "gitlab.com/teserakt/c2backend/pkg/c2test"
+	c2t "gitlab.com/teserakt/c2/pkg/c2test"
 	e4test "gitlab.com/teserakt/test-common"
 )
 
@@ -38,7 +38,7 @@ func main() {
 		}
 	}()
 
-	c2binary, earlyerr := e4test.FindAndCheckPathFile("bin/c2backend")
+	c2binary, earlyerr := e4test.FindAndCheckPathFile("bin/c2")
 	if earlyerr != nil {
 		fmt.Fprintf(os.Stderr, "Error: .\n%s", earlyerr)
 		exitCode = 1
@@ -104,12 +104,12 @@ func main() {
 	}
 	close(stopc)
 	if !pass {
-		fmt.Fprintf(os.Stdout, "Tests failed.\n%s\n", err)
+		fmt.Fprintf(os.Stdout, "One or more tests failed.\n%s\n", err)
 		exitCode = 1
 	} else {
 		fmt.Fprintf(os.Stdout, "TESTS PASSED!\n")
 	}
 	fmt.Fprintf(os.Stderr, "\n")
-	fmt.Fprintf(os.Stderr, "C2Backend Output\n")
+	fmt.Fprintf(os.Stderr, "c2 output\n")
 	<-waitdrunc
 }

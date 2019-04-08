@@ -1,4 +1,4 @@
-# c2backend
+# c2
 
 C2 back-end application, with gRPC server (for CLI) and HTTP server (for web UI). 
 

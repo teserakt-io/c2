@@ -34,7 +34,7 @@ then
 
   CMDPATH=teserakt/e4go/cmd
   # Cross compile
-  BINS="c2backend c2cli"
+  BINS="c2 c2cli"
   OSS="darwin linux windows"
   for BIN in $BINS; do
     for OS in $OSS; do
