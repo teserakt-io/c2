@@ -9,7 +9,7 @@
 FROM golang:1.11 as buildenv
 
 # workdir
-ARG BUILDDIR=/build/teserakt/e4/c2backend
+ARG BUILDDIR=/build/teserakt/e4/c2
 
 WORKDIR /go/src/
 RUN mkdir -p /go/src/
@@ -29,7 +29,7 @@ RUN yum upgrade -y
 
 # This is the resulting container.
 # This container should be run like this:
-# docker run -v $E4CONF:/opt/e4/configs -v $E4LOGFILE:/var/log/e4_c2backend.log \
+# docker run -v $E4CONF:/opt/e4/configs -v $E4LOGFILE:/var/log/e4_c2.log \
 # -p 5555:5555 -p 8888:8888
 FROM runtime_base as c2
 LABEL maintainer="antony@teserakt.io"
@@ -39,9 +39,9 @@ LABEL vendor="Teserakt AG"
 RUN mkdir -p /opt/e4/bin/ && \
     mkdir -p /opt/e4/configs/
 
-COPY --from=buildenv $BUILDDIR/bin/c2backend /opt/e4/bin/c2backend
-RUN chmod +x /opt/e4/bin/c2backend
+COPY --from=buildenv $BUILDDIR/bin/c2/opt/e4/bin/c2
+RUN chmod +x /opt/e4/bin/c2
 
-CMD ["/opt/e4/bin/c2backend"]
+CMD ["/opt/e4/bin/c2"]
 
 

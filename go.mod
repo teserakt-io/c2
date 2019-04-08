@@ -1,4 +1,4 @@
-module gitlab.com/teserakt/c2backend
+module gitlab.com/teserakt/c2
 
 require (
 	contrib.go.opencensus.io/exporter/ocagent v0.4.3

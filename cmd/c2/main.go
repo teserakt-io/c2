@@ -60,7 +60,7 @@ func main() {
 	fmt.Println("Copyright (c) Teserakt AG, 2018-2019")
 
 	// init logger
-	logFileName := fmt.Sprintf("/var/log/e4_c2backend.log")
+	logFileName := fmt.Sprintf("/var/log/e4_c2.log")
 	logFile, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
 	if err != nil {
 		fmt.Printf("[ERROR] logs: unable to open file '%v' to write logs: %v\n", logFileName, err)
@@ -86,6 +86,7 @@ func main() {
 	c := config(log.With(c2.logger, "unit", "config"), c2.configResolver)
 	var (
 		isProd       = c.GetBool("production")
+		monitoring   = c.GetBool("monitoring")
 		grpcAddr     = c.GetString("grpc-host-port")
 		httpAddr     = c.GetString("http-host-port")
 		esURL        = c.GetString("es-url")
@@ -245,10 +246,15 @@ func main() {
 	c2.subscribeToDBTopics()
 
 	// initialize ElasticSearch
-	if err := createESClient(esURL); err != nil {
-		c2.logger.Log("msg", "ElasticSearch setup failed", "error", err)
+	if monitoring {
+		if err := createESClient(esURL); err != nil {
+			c2.logger.Log("msg", "ElasticSearch setup failed", "error", err)
+		}
+		c2.logger.Log("msg", "ElasticSearch setup successfully")
+	} else {
+		esClient = nil
+		c2.logger.Log("msg", "monitoring disabled: ElasticSearch not setup")
 	}
-	c2.logger.Log("msg", "ElasticSearch setup successfully")
 
 	// initialize OpenCensus
 	if err := setupOpencensusInstrumentation(isProd); err != nil {
@@ -293,6 +299,7 @@ func config(logger log.Logger, pathResolver *e4.AppPathResolver) *viper.Viper {
 	v.AddConfigPath(pathResolver.ConfigDir())
 
 	v.SetDefault("production", false)
+	v.SetDefault("monitoring", false)
 
 	v.SetDefault("es-url", "http://localhost:9200")
 
@@ -375,7 +382,7 @@ func setupOpencensusInstrumentation(isProd bool) error {
 	oce, err := ocagent.NewExporter(
 		// TODO: (@odeke-em), enable ocagent-exporter.WithCredentials option.
 		ocagent.WithInsecure(),
-		ocagent.WithServiceName("c2backend"))
+		ocagent.WithServiceName("c2"))
 
 	if err != nil {
 		return fmt.Errorf("failed to create the OpenCensus Agent exporter: %v", err)

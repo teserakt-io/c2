@@ -1,3 +1,3 @@
 #!/bin/sh
 
-cd cmd/c2backend/ && go test 
+cd cmd/c2/ && go test 

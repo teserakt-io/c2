@@ -65,6 +65,10 @@
 * secure https (A)
 * clean documentation from doc/ (A+J)
 * unit tests for relevant functionality (db done, e4common crypto improve) (A)
+* Mon: isEncrypted()
+* Mon: subscribe to topics and log messages
+* Mon: ELK startup scripts and configs
+* brokers: add hivemq start script
 
 # WIP
 
@@ -72,15 +76,11 @@
 * fix docker build.
 * Continuous integration
 * Config file fixes for go modules.
-* Mon: ELK startup scripts and configs
 
 # TODO
 
-* Mon: subscribe to topics and log messages
 * Mon: put config files in /opt/e4/configs?
-* Mon: add logstash to docker compose
-* Mon: isEncrypted()
-* brokers: add hivemq start script
+* Mon: do functests/c2mqtt
 * oc: dockerize prometheus
 
 * Config parameters involving relative files should be resolved by searching 
@@ -89,14 +89,11 @@
 * 512b -> 256b keys, (same key for SIV MAC and encrypt) -> update clients + specs
 * 256b -> 128b ids
 * continuous integration
-* fine-tune MQTT client options
 * config to be loaded in its own file.
 
 # FUTURE
 
 * http service: use <https://github.com/gin-gonic/gin>?
-* middleware for monitoring/tracing (Jaeger, Sentry, etc.), see go-kit
-* monitoring of all topics' messages (separate service/ui?)
 * binary packaging
   - binary in /opt/e4/, db in /var/lib/e4/db/
   - https://stackoverflow.com/a/29600086

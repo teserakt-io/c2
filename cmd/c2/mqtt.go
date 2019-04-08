@@ -126,6 +126,11 @@ func (s *C2) unsubscribeFromTopic(topic string) error {
 
 func callbackSub(c mqtt.Client, m mqtt.Message) {
 
+	// Only index message if monitoring enabled, i.e. if esClient is defined
+	if esClient == nil {
+		return
+	}
+
 	msg := &loggedMessage{
 		Duplicate:       m.Duplicate(),
 		Qos:             m.Qos(),

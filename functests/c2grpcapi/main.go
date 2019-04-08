@@ -12,7 +12,7 @@ import (
 	e4 "gitlab.com/teserakt/e4common"
 	e4test "gitlab.com/teserakt/test-common"
 
-	c2t "gitlab.com/teserakt/c2backend/pkg/c2test"
+	c2t "gitlab.com/teserakt/c2/pkg/c2test"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -45,7 +45,7 @@ func main() {
 		}
 	}()
 
-	c2binary, earlyerr := e4test.FindAndCheckPathFile("bin/c2backend")
+	c2binary, earlyerr := e4test.FindAndCheckPathFile("bin/c2")
 	if earlyerr != nil {
 		fmt.Fprintf(os.Stderr, "Error: .\n%s", earlyerr)
 		exitCode = 1
@@ -132,6 +132,6 @@ func main() {
 		fmt.Fprintf(os.Stdout, "TESTS PASSED!\n")
 	}
 	fmt.Fprintf(os.Stderr, "\n")
-	fmt.Fprintf(os.Stderr, "c2backend output\n")
+	fmt.Fprintf(os.Stderr, "c2 output\n")
 	<-waitdrunc
 }
