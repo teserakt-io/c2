@@ -19,10 +19,6 @@ import (
 
 	"github.com/go-kit/kit/log"
 
-	"contrib.go.opencensus.io/exporter/ocagent"
-	"go.opencensus.io/stats/view"
-	"go.opencensus.io/trace"
-
 	"github.com/olivere/elastic"
 )
 
@@ -31,8 +27,6 @@ var gitCommit string
 var buildDate string
 var gitTag string
 
-var esClient *elastic.Client
-
 // C2 is the C2's state
 type C2 struct {
 	keyenckey      [e4.KeyLen]byte
@@ -40,6 +34,7 @@ type C2 struct {
 	mqttContext    MQTTContext
 	logger         log.Logger
 	configResolver *e4.AppPathResolver
+	esClient       *elastic.Client
 }
 
 func main() {
@@ -163,12 +158,12 @@ func main() {
 
 	// initialize ElasticSearch
 	if cfg.ES.Enable {
-		if err := createESClient(cfg.ES.URL); err != nil {
+		if err := c2.createESClient(cfg.ES.URL); err != nil {
 			c2.logger.Log("msg", "ElasticSearch setup failed", "error", err)
 		}
 		c2.logger.Log("msg", "ElasticSearch setup successfully")
 	} else {
-		esClient = nil
+		c2.esClient = nil
 		c2.logger.Log("msg", "monitoring disabled: ElasticSearch not setup")
 	}
 
@@ -190,9 +185,9 @@ func main() {
 	c2.logger.Log("error", <-errc)
 }
 
-func createESClient(url string) error {
+func (c2 *C2) createESClient(url string) error {
 	var err error
-	esClient, err = elastic.NewClient(
+	c2.esClient, err = elastic.NewClient(
 		elastic.SetURL(url),
 		elastic.SetSniff(false),
 	)
@@ -200,42 +195,18 @@ func createESClient(url string) error {
 		return err
 	}
 	ctx := context.Background()
-	exists, err := esClient.IndexExists("messages").Do(ctx)
+	exists, err := c2.esClient.IndexExists("messages").Do(ctx)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		createIndex, err := esClient.CreateIndex("messages").Do(ctx)
+		createIndex, err := c2.esClient.CreateIndex("messages").Do(ctx)
 		if err != nil {
 			return err
 		}
 		if !createIndex.Acknowledged {
 			return fmt.Errorf("index creation not acknowledged")
 		}
-	}
-
-	return nil
-}
-
-func setupOpencensusInstrumentation(isProd bool) error {
-	oce, err := ocagent.NewExporter(
-		// TODO: (@odeke-em), enable ocagent-exporter.WithCredentials option.
-		ocagent.WithInsecure(),
-		ocagent.WithServiceName("c2"))
-
-	if err != nil {
-		return fmt.Errorf("failed to create the OpenCensus Agent exporter: %v", err)
-	}
-
-	// and now finally register it as a Trace Exporter
-	trace.RegisterExporter(oce)
-	view.RegisterExporter(oce)
-
-	if isProd == false {
-		// setting trace sample rate to 100%
-		trace.ApplyConfig(trace.Config{
-			DefaultSampler: trace.AlwaysSample(),
-		})
 	}
 
 	return nil
