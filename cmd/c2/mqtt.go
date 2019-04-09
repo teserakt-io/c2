@@ -81,7 +81,9 @@ func (s *C2) subscribeToDBTopics() error {
 
 	fmt.Println(filters)
 
-	if token := s.mqttContext.client.SubscribeMultiple(filters, callbackSub); token.Wait() && token.Error() != nil {
+	if token := s.mqttContext.client.SubscribeMultiple(filters, func(c mqtt.Client, m mqtt.Message) {
+		callbackSub(s, c, m)
+	}); token.Wait() && token.Error() != nil {
 		logger.Log("msg", "subscribe-multiple failed", "topics", len(topics), "error", token.Error())
 		return token.Error()
 	}
@@ -96,7 +98,9 @@ func (s *C2) subscribeToTopic(topic string) error {
 
 	qos := byte(s.mqttContext.qosSub)
 
-	if token := s.mqttContext.client.Subscribe(topic, qos, callbackSub); token.Wait() && token.Error() != nil {
+	if token := s.mqttContext.client.Subscribe(topic, qos, func(c mqtt.Client, m mqtt.Message) {
+		callbackSub(s, c, m)
+	}); token.Wait() && token.Error() != nil {
 		logger.Log("msg", "subscribe failed", "topic", topic, "error", token.Error())
 		return token.Error()
 	}
@@ -118,10 +122,10 @@ func (s *C2) unsubscribeFromTopic(topic string) error {
 	return nil
 }
 
-func callbackSub(c mqtt.Client, m mqtt.Message) {
+func callbackSub(s *C2, c mqtt.Client, m mqtt.Message) {
 
 	// Only index message if monitoring enabled, i.e. if esClient is defined
-	if esClient == nil {
+	if s.esClient == nil {
 		return
 	}
 
@@ -161,7 +165,7 @@ func callbackSub(c mqtt.Client, m mqtt.Message) {
 
 	ctx := context.Background()
 
-	esClient.Index().Index("messages").Type("message").BodyString(string(b)).Do(ctx)
+	s.esClient.Index().Index("messages").Type("message").BodyString(string(b)).Do(ctx)
 }
 
 func (s *C2) publish(payload []byte, topic string, qos byte) error {
