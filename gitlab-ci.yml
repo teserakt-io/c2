@@ -2,7 +2,7 @@
 # Currently we build using docker in a mirror of docker/Dockerfile.c2 
 # It may be worth building that image, instead. 
 
-# TODO: docker-in-docker
+# TODO: need to see if we can get this script to produce docker images as well.
 
 
 stages:
@@ -10,7 +10,7 @@ stages:
   - test
 
 build:base:
-  image: golang:1.11
+  image: golang:1.12
   stage: build
   only:
     - develop
@@ -18,23 +18,21 @@ build:base:
   before_script:
     - go get golang.org/x/tools/cmd/goimports
     - go install golang.org/x/tools/cmd/goimports
-    - mkdir -p /go/src/teserakt/e4/c2
-    - ln -s /builds/Teserakt/c2/  /go/src/teserakt/e4/c2
-    - cd /go/src/teserakt/e4/c2/
   script:
     - ./scripts/build.sh
 
 # docker-in-docker build
-build:docker:
-  image: docker:stable
-  script:
-    - ./scripts/docker.sh
+#build:docker:
+#  image: docker:stable
+# script:
+#    - ./scripts/docker.sh
 
 test:base:
-  image: golang:1.11
+  image: golang:1.12
   stage: test
   only:
     - develop
     - master
   script:
     - ./scripts/unittests.sh
+    - ./scripts/test.sh
