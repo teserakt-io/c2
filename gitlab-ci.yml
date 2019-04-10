@@ -4,7 +4,7 @@
 
 # TODO: need to see if we can get this script to produce docker images as well.
 
-
+image: golang:1.12
 stages:
   - build
   - test
@@ -12,6 +12,7 @@ stages:
 
 before_script:
   # https://docs.gitlab.com/ee/ci/ssh_keys/
+  - echo "Configuring git"
   - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
   - eval $(ssh-agent -s)
   - echo "$SSH_CI_KEY" | tr -d '\r' | ssh-add - > /dev/null
@@ -20,28 +21,15 @@ before_script:
 
   # Force use of ssh urls instead of https for gitlab.com. Has to be done before any go get...
   - git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/"
+  - go get golang.org/x/tools/cmd/goimports
+  - go install golang.org/x/tools/cmd/goimports
 
-
-build:base:
-  image: golang:1.12
+build:
   stage: build
-  only:
-    - develop
-    - master
-  before_script:
-    - go get golang.org/x/tools/cmd/goimports
-    - go install golang.org/x/tools/cmd/goimports
   script:
     - ./scripts/build.sh
 
-# docker-in-docker build
-#build:docker:
-#  image: docker:stable
-# script:
-#    - ./scripts/docker.sh
-
-test:base:
-  image: golang:1.12
+test:
   stage: test
   only:
     - develop
