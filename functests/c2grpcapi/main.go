@@ -62,6 +62,7 @@ func main() {
 	DBNAME := fmt.Sprintf("E4C2_DB_FILE=%s", e4test.GetRandomDBName())
 	BROKER := "E4C2_MQTT_BROKER=tcp://mqtt.teserakt.io:1883"
 	fmt.Fprintf(os.Stderr, "Database set to %s\n", DBNAME)
+	fmt.Fprintf(os.Stderr, "Broker set to %s\n", BROKER)
 
 	env := []string{"E4C2_DB_TYPE=sqlite3"}
 	env = append(env, DBNAME)
