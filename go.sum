@@ -81,6 +81,8 @@ github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329/go.mod h1:C1wdFJiN
 github.com/mattn/go-sqlite3 v1.10.0 h1:jbhqpg7tQe4SupckyijYiy0mJJ/pRyHvXf7JdWK860o=
 github.com/mattn/go-sqlite3 v1.10.0/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
+github.com/miscreant/miscreant v0.3.0 h1:bCn4zQMvNeeFBE3PWrG9ePFLPZyttBPhJ/WDqyqWrLQ=
+github.com/miscreant/miscreant v0.3.0/go.mod h1:ZKWeIKfbJej2zjb1OUXJaaP1DnCb4yoTtcR90O7BOD4=
 github.com/miscreant/miscreant-go v0.0.0-20181010193435-325cbd69228b h1:VPhrxAgvd0d0xSZP4P8zzWZntso2NE0m69dmDEXM53I=
 github.com/miscreant/miscreant-go v0.0.0-20181010193435-325cbd69228b/go.mod h1:Vj6lPE3LxPymcFxg7hm9aDIJWCyhJMnxSNC/y9ZHtN8=
 github.com/mitchellh/mapstructure v1.1.2 h1:fmNYVwqnSfB9mZU6OS2O6GsXM+wcskZDuKQzvN1EDeE=
@@ -119,6 +121,8 @@ github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljT
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 gitlab.com/teserakt/e4common v0.0.0-20190110144444-ec3c2ff40a1e h1:P3/uwZFXhds8Ut4hyze3Ru5SEMPhsU3SdAXCYFmy0Y0=
 gitlab.com/teserakt/e4common v0.0.0-20190110144444-ec3c2ff40a1e/go.mod h1:PZJpR15s6qXkBfUrVrmrqfqaX9OlpbN36Ndg50cIivI=
+gitlab.com/teserakt/e4common v0.0.0-20190411072004-53aa95d9735a h1:Qcu4/tONLAd6X0G5sCk56yRCAMNjoKvYuqrjyd3HcRQ=
+gitlab.com/teserakt/e4common v0.0.0-20190411072004-53aa95d9735a/go.mod h1:oLoFi8GU7OcUQRnyqej4QNiLUHNjM9p44VM9IBDoiEk=
 gitlab.com/teserakt/test-common v0.0.0-20190204160809-8e9083c8f838 h1:VN0B538i9F8o7F4V/YNk7ftMlFL0qQt3Doc4hQ2QEKU=
 gitlab.com/teserakt/test-common v0.0.0-20190204160809-8e9083c8f838/go.mod h1:ME/xECCaML1avUzixbm78mVIZVu8MRdOqzvUngIuMeg=
 go.opencensus.io v0.18.1-0.20181204023538-aab39bd6a98b/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=
