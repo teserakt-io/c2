@@ -1,11 +1,13 @@
-module gitlab.com/teserakt/c2backend
+module gitlab.com/teserakt/c2
 
 require (
 	contrib.go.opencensus.io/exporter/ocagent v0.4.3
 	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/d4l3k/messagediff v1.2.1 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20181014144952-4e0d7dc8888f // indirect
 	github.com/eclipse/paho.mqtt.golang v1.1.1
 	github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5 // indirect
+	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/go-kit/kit v0.8.0
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-sql-driver/mysql v1.4.1 // indirect
@@ -18,7 +20,10 @@ require (
 	github.com/jinzhu/now v0.0.0-20181116074157-8ec929ed50c3 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.0.0 // indirect
+	github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329 // indirect
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect
+	github.com/olivere/elastic v6.2.16+incompatible
+	github.com/pkg/errors v0.8.1 // indirect
 	github.com/spf13/viper v1.3.1
 	gitlab.com/teserakt/e4common v0.0.0-20190110144444-ec3c2ff40a1e
 	gitlab.com/teserakt/test-common v0.0.0-20190204160809-8e9083c8f838

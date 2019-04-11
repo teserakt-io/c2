@@ -22,7 +22,7 @@ For a list of public brokers see <https://github.com/mqtt/mqtt.github.io/wiki/pu
 
 ## 2. Run the C2 backend
 
-Run bin/c2backend, it will list for gRPC connections on port 5555 by default. 
+Run bin/c2, it will list for gRPC connections on port 5555 by default. 
 
 See configs/config.yaml for parameters.
 

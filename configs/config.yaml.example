@@ -2,7 +2,7 @@
 # C2 configuration file, to be edited manually
 ###############################################################
 
-# general settings
+# Other settings
 ###############################################################
 ## in non-prod, allow sqlite, use 100% sampling rate, etc.
 production: false
@@ -14,10 +14,11 @@ mqtt-broker: tcp://localhost:1883
 ## MQTT ID of the C2
 mqtt-ID: e4c2
 ## QoS level of command messages sent to clients (2 recommended)
-mqtt-QoS: 2
+mqtt-QoS-pub: 2
+## QoS level of messages received
+mqtt-QoS-sub: 1
 
-
-# database settings
+# Database settings
 ###############################################################
 ## supported types are sqlite3 and postgres
 db-type: sqlite3
@@ -56,4 +57,10 @@ http-cert: c2-cert.pem
 # path to the PEM-encoded private key file
 http-key: c2-key.pem
 
+# ES settings
+###############################################################
+## enable monitoring? (and thus ElasticSearch)
+es-enable: true
+## ElasticSearch address
+es-url: http://127.0.0.1:9200
 

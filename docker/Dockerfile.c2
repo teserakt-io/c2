@@ -1,5 +1,5 @@
 
-# C2 Backend Dockerfile
+# C2 Dockerfile
 # This dockerfile operates as a multi-stage file. 
 # Build, base image preparation and final image all occur separately
 # This ensures we throw away any build artefacts and source code
@@ -12,7 +12,7 @@ RUN yum upgrade -y
 
 # This is the resulting container.
 # This container should be run like this:
-# docker run -v $E4CONF:/opt/e4/configs -v $E4LOGFILE:/var/log/e4_c2backend.log \
+# docker run -v $E4CONF:/opt/e4/configs -v $E4LOGFILE:/var/log/e4_c2.log \
 # -p 5555:5555 -p 8888:8888
 FROM runtime_base as c2
 LABEL maintainer="team@teserakt.io"
@@ -22,9 +22,9 @@ LABEL vendor="Teserakt AG"
 RUN mkdir -p /opt/e4/bin/ && \
     mkdir -p /opt/e4/configs/
 
-COPY ./bin/c2backend.linux.amd64 /opt/e4/bin/c2backend
-RUN chmod +x /opt/e4/bin/c2backend
+COPY ./bin/c2.linux.amd64 /opt/e4/bin/c2
+RUN chmod +x /opt/e4/bin/c2
 
-CMD ["/opt/e4/bin/c2backend"]
+CMD ["/opt/e4/bin/c2"]
 
 

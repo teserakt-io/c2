@@ -35,7 +35,7 @@ following the instructions on
 <https://opencensus.io/codelabs/prometheus/> and
 <https://prometheus.io/docs/introduction/first_steps/>.
 
-Run e.g. as follows (using the config file in c2backend/configs)
+Run e.g. as follows (using the config file in c2/configs)
 
 ``` 
 $ prometheus --config.file=configs/prometheus.yaml
