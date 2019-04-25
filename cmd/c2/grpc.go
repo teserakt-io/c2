@@ -367,8 +367,8 @@ func checkRequest(ctx context.Context, in *e4.C2Request, needID, needKey, needTo
 	defer span.End()
 
 	if needID {
-		if !e4.IsValidID(in.Id) {
-			return errors.New("invalid id")
+		if err := e4.IsValidID(in.Id); err != nil {
+			return err
 		}
 	} else {
 		if in.Id != nil {
@@ -376,8 +376,8 @@ func checkRequest(ctx context.Context, in *e4.C2Request, needID, needKey, needTo
 		}
 	}
 	if needKey {
-		if !e4.IsValidKey(in.Key) {
-			return errors.New("invalid key")
+		if err := e4.IsValidKey(in.Key); err != nil {
+			return err
 		}
 	} else {
 		if in.Key != nil {
@@ -385,8 +385,8 @@ func checkRequest(ctx context.Context, in *e4.C2Request, needID, needKey, needTo
 		}
 	}
 	if needTopic {
-		if !e4.IsValidTopic(in.Topic) {
-			return errors.New("invalid topic")
+		if err := e4.IsValidTopic(in.Topic); err != nil {
+			return err
 		}
 	} else {
 		if in.Topic != "" {
@@ -398,5 +398,6 @@ func checkRequest(ctx context.Context, in *e4.C2Request, needID, needKey, needTo
 			return errors.New("No data to return with zero count")
 		}
 	}
+
 	return nil
 }

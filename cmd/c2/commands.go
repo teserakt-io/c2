@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	e4 "gitlab.com/teserakt/e4common"
 )
@@ -35,8 +36,8 @@ func CreateCommand(cmd e4.Command, topichash, key []byte) ([]byte, error) {
 	switch cmd {
 
 	case e4.RemoveTopic:
-		if !e4.IsValidTopicHash(topichash) {
-			return nil, errors.New("invalid topic hash for RemoveTopic")
+		if err := e4.IsValidTopicHash(topichash); err != nil {
+			return nil, fmt.Errorf("invalid topic hash for RemoveTopic: %s", err)
 		}
 		if key != nil {
 			return nil, errors.New("unexpected key for RemoveTopic")
@@ -50,8 +51,8 @@ func CreateCommand(cmd e4.Command, topichash, key []byte) ([]byte, error) {
 		return []byte{cmd.ToByte()}, nil
 
 	case e4.SetIDKey:
-		if !e4.IsValidKey(key) {
-			return nil, errors.New("invalid key for SetIdKey")
+		if err := e4.IsValidKey(key); err != nil {
+			return nil, fmt.Errorf("invalid key for SetIdKey: %s", err)
 		}
 		if topichash != nil {
 			return nil, errors.New("unexpected topichash for SetIdKey")
@@ -59,11 +60,11 @@ func CreateCommand(cmd e4.Command, topichash, key []byte) ([]byte, error) {
 		return append([]byte{cmd.ToByte()}, key...), nil
 
 	case e4.SetTopicKey:
-		if !e4.IsValidKey(key) {
-			return nil, errors.New("invalid key for SetTopicKey")
+		if err := e4.IsValidKey(key); err != nil {
+			return nil, fmt.Errorf("invalid key for SetTopicKey: %s", err)
 		}
-		if !e4.IsValidTopicHash(topichash) {
-			return nil, errors.New("invalid topic hash for SetTopicKey")
+		if err := e4.IsValidTopicHash(topichash); err != nil {
+			return nil, fmt.Errorf("invalid topic hash for SetTopicKey: %s", err)
 		}
 		return append(append([]byte{cmd.ToByte()}, key...), topichash...), nil
 	}
