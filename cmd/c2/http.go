@@ -92,25 +92,50 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func decodeAndValidateID(idstr string) ([]byte, error) {
+	id, err := hex.DecodeString(idstr)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := e4.IsValidID(id); err != nil {
+		return nil, err
+	}
+
+	return id, nil
+}
+
+func decodeAndValidateKey(keystr string) ([]byte, error) {
+	key, err := hex.DecodeString(keystr)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := e4.IsValidKey(key); err != nil {
+		return nil, err
+	}
+
+	return key, nil
+}
+
 func (s *C2) handleNewClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
-	id, err := hex.DecodeString(params["id"])
-	if err != nil || !e4.IsValidID(id) {
-		resp.Text(http.StatusNotFound, "invalid ID")
+	id, err := decodeAndValidateID(params["id"])
+	if err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
-	key, err := hex.DecodeString(params["key"])
-	if err != nil || !e4.IsValidKey(key) {
-		resp.Text(http.StatusNotFound, "invalid key")
+	key, err := decodeAndValidateKey(params["key"])
+	if err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid key: %s", err))
 		return
 	}
 
-	ret := s.newClient(id, key)
-	if ret != nil {
-		resp.Text(http.StatusNotFound, "newClient failed")
+	if err := s.newClient(id, key); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("newClient failed: %s", err))
 		return
 	}
 
@@ -121,15 +146,14 @@ func (s *C2) handleRemoveClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
-	id, err := hex.DecodeString(params["id"])
-	if err != nil || !e4.IsValidID(id) {
-		resp.Text(http.StatusNotFound, "invalid ID")
+	id, err := decodeAndValidateID(params["id"])
+	if err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
-	ret := s.removeClient(id)
-	if ret != nil {
-		resp.Text(http.StatusNotFound, "removeClient failed")
+	if err := s.removeClient(id); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("removeClient failed: %s", err))
 		return
 	}
 
@@ -140,21 +164,20 @@ func (s *C2) handleNewTopicClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
-	id, err := hex.DecodeString(params["id"])
-	if err != nil || !e4.IsValidID(id) {
-		resp.Text(http.StatusNotFound, "invalid ID")
+	id, err := decodeAndValidateID(params["id"])
+	if err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
 	topic := params["topic"]
-	if err != nil || !e4.IsValidTopic(topic) {
-		resp.Text(http.StatusNotFound, "invalid topic")
+	if err := e4.IsValidTopic(topic); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
-	ret := s.newTopicClient(id, topic)
-	if ret != nil {
-		resp.Text(http.StatusNotFound, "newTopicClient failed")
+	if err := s.newTopicClient(id, topic); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("newTopicClient failed: %s", err))
 		return
 	}
 
@@ -165,21 +188,20 @@ func (s *C2) handleRemoveTopicClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
-	id, err := hex.DecodeString(params["id"])
-	if err != nil || !e4.IsValidID(id) {
-		resp.Text(http.StatusNotFound, "invalid ID")
+	id, err := decodeAndValidateID(params["id"])
+	if err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
 	topic := params["topic"]
-	if err != nil || !e4.IsValidTopic(topic) {
-		resp.Text(http.StatusNotFound, "invalid topic")
+	if err := e4.IsValidTopic(topic); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
-	ret := s.removeTopicClient(id, topic)
-	if ret != nil {
-		resp.Text(http.StatusNotFound, "remoteTopicClient failed")
+	if err := s.removeTopicClient(id, topic); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("remoteTopicClient failed: %s", err))
 		return
 	}
 
@@ -190,15 +212,14 @@ func (s *C2) handleResetClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
-	id, err := hex.DecodeString(params["id"])
-	if err != nil || !e4.IsValidID(id) {
-		resp.Text(http.StatusNotFound, "invalid ID")
+	id, err := decodeAndValidateID(params["id"])
+	if err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
-	ret := s.resetClient(id)
-	if ret != nil {
-		resp.Text(http.StatusNotFound, "resetClient failed")
+	if err := s.resetClient(id); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("resetClient failed: %s", err))
 		return
 	}
 
@@ -210,14 +231,13 @@ func (s *C2) handleNewTopic(w http.ResponseWriter, r *http.Request) {
 	resp := Response{w}
 
 	topic := params["topic"]
-	if !e4.IsValidTopic(topic) {
-		resp.Text(http.StatusNotFound, "invalid topic")
+	if err := e4.IsValidTopic(topic); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
-	ret := s.newTopic(topic)
-	if ret != nil {
-		resp.Text(http.StatusNotFound, "newTopic failed")
+	if err := s.newTopic(topic); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("newTopic failed: %s", err))
 		return
 	}
 
@@ -229,14 +249,13 @@ func (s *C2) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
 	resp := Response{w}
 
 	topic := params["topic"]
-	if !e4.IsValidTopic(topic) {
-		resp.Text(http.StatusNotFound, "invalid topic")
+	if err := e4.IsValidTopic(topic); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
-	ret := s.removeTopic(topic)
-	if ret != nil {
-		resp.Text(http.StatusNotFound, "removeTopic failed")
+	if err := s.removeTopic(topic); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("removeTopic failed: %s", err))
 		return
 	}
 
@@ -247,15 +266,14 @@ func (s *C2) handleNewClientKey(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
-	id, err := hex.DecodeString(params["id"])
-	if err != nil || !e4.IsValidID(id) {
-		resp.Text(http.StatusNotFound, "invalid ID")
+	id, err := decodeAndValidateID(params["id"])
+	if err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
-	ret := s.newClientKey(id)
-	if ret != nil {
-		resp.Text(http.StatusNotFound, "newClientKey failed")
+	if err := s.newClientKey(id); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("newClientKey failed: %s", err))
 		return
 	}
 
@@ -288,9 +306,9 @@ func (s *C2) handleGetClientTopicCount(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
-	id, err := hex.DecodeString(params["id"])
-	if err != nil || !e4.IsValidID(id) {
-		resp.Text(http.StatusNotFound, "invalid ID")
+	id, err := decodeAndValidateID(params["id"])
+	if err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
@@ -307,9 +325,9 @@ func (s *C2) handleGetClientTopics(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
-	id, err := hex.DecodeString(params["id"])
-	if err != nil || !e4.IsValidID(id) {
-		resp.Text(http.StatusNotFound, "invalid ID")
+	id, err := decodeAndValidateID(params["id"])
+	if err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
@@ -377,14 +395,13 @@ func (s *C2) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 	topic := params["topic"]
 	message := params["message"]
 
-	if !e4.IsValidTopic(topic) {
-		resp.Text(http.StatusNotFound, "invalid topic")
+	if err := e4.IsValidTopic(topic); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
-	err := s.sendMessage(topic, message)
-	if err != nil {
-		resp.Text(http.StatusNotFound, "message not sent")
+	if err := s.sendMessage(topic, message); err != nil {
+		resp.Text(http.StatusNotFound, fmt.Sprintf("message not sent: %s", err))
 		return
 	}
 
