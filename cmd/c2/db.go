@@ -54,12 +54,18 @@ func (s *C2) dbInsertIDKey(id, key []byte) error {
 	if err != nil {
 		return err
 	}
-	idkey := IDKey{E4ID: id, Key: protectedkey}
+
+	var idkey IDKey
+	s.db.Where(&IDKey{E4ID: id}).First(&idkey)
 	if s.db.NewRecord(idkey) {
+		idkey = IDKey{E4ID: id, Key: protectedkey}
+
 		if result := s.db.Create(&idkey); result.Error != nil {
 			return result.Error
 		}
 	} else {
+		idkey.Key = protectedkey
+
 		if result := s.db.Model(&idkey).Updates(idkey); result.Error != nil {
 			return result.Error
 		}
