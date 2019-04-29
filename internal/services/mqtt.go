@@ -1,24 +1,31 @@
-package main
+package services
 
 import (
 	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"unicode/utf8"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-kit/kit/log"
+	"github.com/olivere/elastic"
+
 	"gitlab.com/teserakt/c2/internal/config"
-	e4 "gitlab.com/teserakt/e4common"
 )
 
-// MQTTContext ...
-type MQTTContext struct {
-	client mqtt.Client
-	qosSub int
-	qosPub int
+// MQTTClient ...
+type MQTTClient interface {
+	SubscribeToTopic(topic string) error
+	UnsubscribeFromTopic(topic string) error
+	Publish(payload []byte, topic string, qos byte) error
+}
+
+type mqttClient struct {
+	mqtt     mqtt.Client
+	config   config.MQTTCfg
+	logger   log.Logger
+	esClient *elastic.Client
 }
 
 type loggedMessage struct {
@@ -35,73 +42,90 @@ type loggedMessage struct {
 	IsJSON          bool   `json:"isjson"`
 }
 
-func (s *C2) createMQTTClient(scfg *config.MQTTCfg) error {
-
+// NewMQTTClient creates and connect a new MQTT client
+func NewMQTTClient(scfg config.MQTTCfg, logger log.Logger, esClient *elastic.Client) (MQTTClient, error) {
 	// TODO: secure connection to broker
-	logger := log.With(s.logger, "protocol", "mqtt")
+	// TODO: fb: Move that out
+	//mqttLogger := log.With(logger, "protocol", "mqtt")
+
 	logger.Log("addr", scfg.Broker)
+
 	mqOpts := mqtt.NewClientOptions()
 	mqOpts.AddBroker(scfg.Broker)
 	mqOpts.SetClientID(scfg.ID)
 	mqOpts.SetPassword(scfg.Password)
 	mqOpts.SetUsername(scfg.Username)
-	mqttClient := mqtt.NewClient(mqOpts)
+
+	mqtt := mqtt.NewClient(mqOpts)
+
 	logger.Log("msg", "mqtt parameters", "broker", scfg.Broker, "id", scfg.ID, "username", scfg.Username)
-	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
+	if token := mqtt.Connect(); token.Wait() && token.Error() != nil {
 		logger.Log("msg", "connection failed", "error", token.Error())
-		return token.Error()
+		return nil, token.Error()
 	}
+
 	logger.Log("msg", "connected to broker")
-	// instantiate C2
-	s.mqttContext.client = mqttClient
-	return nil
+
+	return &mqttClient{
+		mqtt:     mqtt,
+		config:   scfg,
+		logger:   logger,
+		esClient: esClient,
+	}, nil
 }
 
-func (s *C2) subscribeToDBTopics() error {
+// TODO: fb: wtf
+// func (s *C2) subscribeToDBTopics() error {
 
-	topics, err := s.dbGetTopicsList()
+// 	topics, err := s.dbGetTopicsList()
 
-	if err != nil {
-		s.logger.Log("msg", "failed to get topic list from db", "error", err)
-		return err
-	}
+// 	if err != nil {
+// 		s.logger.Log("msg", "failed to get topic list from db", "error", err)
+// 		return err
+// 	}
 
-	logger := log.With(s.logger, "protocol", "mqtt")
+// 	logger := log.With(s.logger, "protocol", "mqtt")
 
-	if len(topics) == 0 {
-		logger.Log("msg", "no topic found in the db, no subscribe request sent")
+// 	if len(topics) == 0 {
+// 		logger.Log("msg", "no topic found in the db, no subscribe request sent")
+// 		return nil
+// 	}
+
+// 	// create map string->qos as needed by SubscribeMultiple
+// 	filters := make(map[string]byte)
+// 	for i := 0; i < len(topics); i += 1 {
+// 		filters[topics[i]] = byte(s.mqttContext.qosSub)
+// 	}
+
+// 	fmt.Println(filters)
+
+// 	if token := s.mqttContext.client.SubscribeMultiple(filters, func(c mqtt.Client, m mqtt.Message) {
+// 		callbackSub(s, c, m)
+// 	}); token.Wait() && token.Error() != nil {
+// 		logger.Log("msg", "subscribe-multiple failed", "topics", len(topics), "error", token.Error())
+// 		return token.Error()
+// 	}
+// 	logger.Log("msg", "subscribe-multiple succeeded", "topics", len(topics))
+
+// 	return nil
+// }
+
+func (c *mqttClient) SubscribeToTopic(topic string) error {
+	// Only index message if monitoring enabled, i.e. if esClient is defined
+	if c.esClient == nil {
+
 		return nil
 	}
 
-	// create map string->qos as needed by SubscribeMultiple
-	filters := make(map[string]byte)
-	for i := 0; i < len(topics); i += 1 {
-		filters[topics[i]] = byte(s.mqttContext.qosSub)
-	}
+	logger := log.With(c.logger, "protocol", "mqtt")
 
-	fmt.Println(filters)
+	qos := byte(c.config.QoSSub)
 
-	if token := s.mqttContext.client.SubscribeMultiple(filters, func(c mqtt.Client, m mqtt.Message) {
-		callbackSub(s, c, m)
-	}); token.Wait() && token.Error() != nil {
-		logger.Log("msg", "subscribe-multiple failed", "topics", len(topics), "error", token.Error())
-		return token.Error()
-	}
-	logger.Log("msg", "subscribe-multiple succeeded", "topics", len(topics))
-
-	return nil
-}
-
-func (s *C2) subscribeToTopic(topic string) error {
-
-	logger := log.With(s.logger, "protocol", "mqtt")
-
-	qos := byte(s.mqttContext.qosSub)
-
-	if token := s.mqttContext.client.Subscribe(topic, qos, func(c mqtt.Client, m mqtt.Message) {
-		callbackSub(s, c, m)
+	if token := c.mqtt.Subscribe(topic, qos, func(mqttClient mqtt.Client, message mqtt.Message) {
+		c.onMessage(message)
 	}); token.Wait() && token.Error() != nil {
 		logger.Log("msg", "subscribe failed", "topic", topic, "error", token.Error())
+
 		return token.Error()
 	}
 	logger.Log("msg", "subscribe succeeded", "topic", topic)
@@ -109,11 +133,16 @@ func (s *C2) subscribeToTopic(topic string) error {
 	return nil
 }
 
-func (s *C2) unsubscribeFromTopic(topic string) error {
+func (c *mqttClient) UnsubscribeFromTopic(topic string) error {
+	// Only index message if monitoring enabled, i.e. if esClient is defined
+	if c.esClient == nil {
 
-	logger := log.With(s.logger, "protocol", "mqtt")
+		return nil
+	}
 
-	if token := s.mqttContext.client.Unsubscribe(topic); token.Wait() && token.Error() != nil {
+	logger := log.With(c.logger, "protocol", "mqtt")
+
+	if token := c.mqtt.Unsubscribe(topic); token.Wait() && token.Error() != nil {
 		logger.Log("msg", "unsubscribe failed", "topic", topic, "error", token.Error())
 		return token.Error()
 	}
@@ -122,13 +151,21 @@ func (s *C2) unsubscribeFromTopic(topic string) error {
 	return nil
 }
 
-func callbackSub(s *C2, c mqtt.Client, m mqtt.Message) {
+func (c *mqttClient) Publish(payload []byte, topic string, qos byte) error {
+	logger := log.With(c.logger, "protocol", "mqtt")
 
-	// Only index message if monitoring enabled, i.e. if esClient is defined
-	if s.esClient == nil {
-		return
+	payloadstring := string(payload)
+
+	if token := c.mqtt.Publish(topic, qos, true, payloadstring); token.Wait() && token.Error() != nil {
+		logger.Log("msg", "publish failed", "topic", topic, "error", token.Error())
+		return token.Error()
 	}
+	logger.Log("msg", "publish succeeded", "topic", topic)
 
+	return nil
+}
+
+func (c *mqttClient) onMessage(m mqtt.Message) {
 	msg := &loggedMessage{
 		Duplicate:       m.Duplicate(),
 		Qos:             m.Qos(),
@@ -162,33 +199,9 @@ func callbackSub(s *C2, c mqtt.Client, m mqtt.Message) {
 	}
 
 	b, _ := json.Marshal(msg)
-
 	ctx := context.Background()
 
-	s.esClient.Index().Index("messages").Type("message").BodyString(string(b)).Do(ctx)
-}
-
-func (s *C2) publish(payload []byte, topic string, qos byte) error {
-
-	logger := log.With(s.logger, "protocol", "mqtt")
-
-	payloadstring := string(payload)
-
-	if token := s.mqttContext.client.Publish(topic, qos, true, payloadstring); token.Wait() && token.Error() != nil {
-		logger.Log("msg", "publish failed", "topic", topic, "error", token.Error())
-		return token.Error()
-	}
-	logger.Log("msg", "publish succeeded", "topic", topic)
-
-	return nil
-}
-
-func (s *C2) sendCommandToClient(id, payload []byte) error {
-
-	topic := e4.TopicForID(id)
-	qos := byte(2)
-
-	return s.publish(payload, topic, qos)
+	c.esClient.Index().Index("messages").Type("message").BodyString(string(b)).Do(ctx)
 }
 
 func looksEncrypted(data []byte) bool {
@@ -211,7 +224,6 @@ func looksEncrypted(data []byte) bool {
 }
 
 func looksCompressed(data []byte) bool {
-
 	// application/zip
 	if bytes.Equal(data[:4], []byte("\x50\x4b\x03\x04")) {
 		return true

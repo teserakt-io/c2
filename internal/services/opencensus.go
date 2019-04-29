@@ -1,4 +1,4 @@
-package main
+package services
 
 import (
 	"fmt"
@@ -8,7 +8,25 @@ import (
 	"go.opencensus.io/trace"
 )
 
-func setupOpencensusInstrumentation(isProd bool) error {
+// OpenCensus defines an OpenCensus service
+type OpenCensus interface {
+	Setup() error
+}
+
+type openCensus struct {
+	isProd bool
+}
+
+var _ OpenCensus = &openCensus{}
+
+// NewOpenSensus creates a new OpenCensus service
+func NewOpenSensus(isProd bool) OpenCensus {
+	return &openCensus{
+		isProd: isProd,
+	}
+}
+
+func (oc *openCensus) Setup() error {
 	oce, err := ocagent.NewExporter(
 		// TODO: (@odeke-em), enable ocagent-exporter.WithCredentials option.
 		ocagent.WithInsecure(),
@@ -22,7 +40,7 @@ func setupOpencensusInstrumentation(isProd bool) error {
 	trace.RegisterExporter(oce)
 	view.RegisterExporter(oce)
 
-	if isProd == false {
+	if oc.isProd == false {
 		// setting trace sample rate to 100%
 		trace.ApplyConfig(trace.Config{
 			DefaultSampler: trace.AlwaysSample(),

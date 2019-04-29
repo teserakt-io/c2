@@ -28,7 +28,6 @@ require (
 	gitlab.com/teserakt/e4common v0.0.0-20190425163902-b048c5ad71d3
 	gitlab.com/teserakt/test-common v0.0.0-20190204160809-8e9083c8f838
 	go.opencensus.io v0.19.0
-	golang.org/x/net v0.0.0-20181217023233-e147a9138326
 	google.golang.org/grpc v1.17.0
 	gopkg.in/d4l3k/messagediff.v1 v1.2.1
 )
