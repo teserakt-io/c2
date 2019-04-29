@@ -54,12 +54,18 @@ func (s *C2) dbInsertIDKey(id, key []byte) error {
 	if err != nil {
 		return err
 	}
-	idkey := IDKey{E4ID: id, Key: protectedkey}
+
+	var idkey IDKey
+	s.db.Where(&IDKey{E4ID: id}).First(&idkey)
 	if s.db.NewRecord(idkey) {
+		idkey = IDKey{E4ID: id, Key: protectedkey}
+
 		if result := s.db.Create(&idkey); result.Error != nil {
 			return result.Error
 		}
 	} else {
+		idkey.Key = protectedkey
+
 		if result := s.db.Model(&idkey).Updates(idkey); result.Error != nil {
 			return result.Error
 		}
@@ -68,17 +74,22 @@ func (s *C2) dbInsertIDKey(id, key []byte) error {
 }
 
 func (s *C2) dbInsertTopicKey(topic string, key []byte) error {
-	protectedkey, err := e4.Encrypt(s.keyenckey[:], nil, key)
+	protectedKey, err := e4.Encrypt(s.keyenckey[:], nil, key)
 	if err != nil {
 		return err
 	}
-	topickey := TopicKey{Topic: topic, Key: protectedkey}
-	if s.db.NewRecord(topickey) {
-		if result := s.db.Create(&topickey); result.Error != nil {
+
+	var topicKey TopicKey
+	s.db.Where(&TopicKey{Topic: topic}).First(&topicKey)
+
+	if s.db.NewRecord(topicKey) {
+		topicKey = TopicKey{Topic: topic, Key: protectedKey}
+		if result := s.db.Create(&topicKey); result.Error != nil {
 			return result.Error
 		}
 	} else {
-		if result := s.db.Model(&topickey).Updates(topickey); result.Error != nil {
+		topicKey.Key = protectedKey
+		if result := s.db.Model(&topicKey).Updates(topicKey); result.Error != nil {
 			return result.Error
 		}
 	}
