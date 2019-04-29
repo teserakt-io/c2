@@ -11,13 +11,11 @@ if [ -z "$(docker --version | grep 18.09)" ]; then
     exit 1
 fi
 
-# ssh-agent is required to forward the connection to the docker build process.
+# A running ssh-agent is required to forward the connection to the docker build process.
 # This allow to reuse host ssh / git configuration to clone private repositories from gitlab.
-if ps -p $SSH_AGENT_PID > /dev/null
-then
-   echo "ssh-agent is already running"
-else
-    eval `ssh-agent -s`
+if [ -z "$SSH_AUTH_SOCK" ]; then
+    echo "SSH_AUTH_SOCK is required to run the docker build"
+    exit 1
 fi
 
 E4_VERSION=""
