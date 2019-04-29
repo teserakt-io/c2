@@ -1,0 +1,96 @@
+version: '3.7'
+
+services:
+
+  vernemq:
+    image: erlio/docker-vernemq
+    ports:
+      - "127.0.0.1:1883:1883"
+    environment:
+      - DOCKER_VERNEMQ_ALLOW_ANONYMOUS=on
+
+  # hivemq:
+  #   image: hivemq/hivemq3
+  #   ports:
+  #     - "127.0.0.1:1883:1883"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.6.0
+    container_name: e4-elasticsearch
+    environment:
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - 127.0.0.1:9200:9200
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    cap_add:
+      - ALL
+    volumes:
+      - esdata1:/usr/share/elasticsearch/data
+    networks:
+      - e4monitoring
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.6.0
+    container_name: e4-kibana
+    environment:
+      SERVER_HOST: 0.0.0.0
+      SERVER_NAME: e4-kibana
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: 9200
+      KIBANA_PWD: KIBANA_PWD=changeme
+    ports:
+      - 127.0.0.1:5601:5601
+    volumes:
+      - ./configs/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    ulimits:
+      nproc: 65535
+      memlock:
+        soft: -1
+        hard: -1
+    cap_add:
+      - ALL
+    depends_on:
+      - elasticsearch
+    networks:
+      - e4monitoring
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 127.0.0.1:9090:9090
+    volumes:
+      - ./configs/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - oc-agent
+    networks:
+      - e4monitoring
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - 127.0.0.1:16686:16686
+    networks:
+      - e4monitoring
+
+  oc-agent:
+    build: docker/ocagent
+    ports:
+      - 127.0.0.1:9999:9999
+    volumes:
+      - ./configs/ocagent.yaml:/etc/ocagent/config.yaml:ro
+    depends_on:
+      - jaeger
+    networks:
+      - e4monitoring
+
+volumes:
+  esdata1:
+
+networks:
+  e4monitoring:
