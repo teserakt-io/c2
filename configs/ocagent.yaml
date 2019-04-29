@@ -7,7 +7,7 @@ exporters:
     collector_endpoint: "http://jaeger:14268/api/traces"
 
   prometheus:
-    namespace: "teserakt"
+    namespace: "c2"
     address: "0.0.0.0:9998"
 
 zpages:
