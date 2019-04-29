@@ -15,7 +15,7 @@ services:
   #     - "127.0.0.1:1883:1883"
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.6.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELKTAG}
     container_name: e4-elasticsearch
     environment:
       - bootstrap.memory_lock=true
@@ -34,7 +34,7 @@ services:
       - e4monitoring
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.6.0
+    image: docker.elastic.co/kibana/kibana:${ELKTAG}
     container_name: e4-kibana
     environment:
       SERVER_HOST: 0.0.0.0
