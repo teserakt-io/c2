@@ -11,4 +11,4 @@ exporters:
     address: "0.0.0.0:9998"
 
 zpages:
-    port: 9999
+  port: 9999
