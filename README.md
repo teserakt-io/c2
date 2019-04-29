@@ -14,6 +14,12 @@ docker-compose up -d
 
 This will boot up MQTT broker, ELK, prometheus, jaeger and oc-agent and then start up C2.
 
+### Services list
+
+- [http://localhost:9200]: elasticsearch endpoint
+- [http://localhost:5601]: kibana UI
+- [http://localhost:16686]: jaeger UI
+- [http://localhost:9090]: prometheus UI
 
 ## Development
 
