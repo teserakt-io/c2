@@ -1,14 +1,14 @@
 receivers:
   opencensus:
-    address: "127.0.0.1:55678"
+    address: "localhost:55678"
 
 exporters:
   jaeger:
-    collector_endpoint: "http://localhost:14268/api/traces"
+    collector_endpoint: "http://jaeger:14268/api/traces"
 
   prometheus:
-    namespace: "teserakt"
-    address: "localhost:9998"
+    namespace: "c2"
+    address: "0.0.0.0:9998"
 
 zpages:
-    port: 9999
+  port: 9999

@@ -10,4 +10,4 @@ scrape_configs:
     scrape_interval: 10s
 
     static_configs:
-      - targets: ['localhost:9998']
+      - targets: ['oc-agent:9998']
