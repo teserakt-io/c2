@@ -20,7 +20,7 @@ This will boot up MQTT broker, ELK, prometheus, jaeger and oc-agent and then sta
 To set up a development environment for C2:
 
 ```bash
-mv configs/config.yaml.example configs/config.yaml
+cp configs/config.yaml.example configs/config.yaml
 openssl req -nodes -newkey rsa:2048 -keyout configs/c2-key.pem -x509 -sha256 -days 365 -out configs/c2-cert.pem -subj "/CN=localhost
 ```
 
