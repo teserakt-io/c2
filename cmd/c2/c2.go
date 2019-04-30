@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"gitlab.com/teserakt/c2/internal/analytics"
 	"gitlab.com/teserakt/c2/internal/api"
 	"gitlab.com/teserakt/c2/internal/config"
 	"gitlab.com/teserakt/c2/internal/models"
@@ -95,7 +96,7 @@ func main() {
 	}
 	logger.Log("msg", "database initialized")
 
-	esClient, err := services.NewElasticClient(cfg.ES)
+	esClient, err := analytics.NewElasticClient(cfg.ES)
 	if err != nil {
 		logger.Log("msg", "ElasticSearch setup failed", "error", err)
 
@@ -141,7 +142,7 @@ func main() {
 	}
 
 	// initialize OpenCensus
-	oc := services.NewOpenSensus(cfg.IsProd)
+	oc := analytics.NewOpenSensus(cfg.IsProd)
 	if err := oc.Setup(); err != nil {
 		logger.Log("msg", "OpenCensus instrumentation setup failed", "error", err)
 		return
