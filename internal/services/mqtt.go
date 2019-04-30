@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"unicode/utf8"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -16,6 +17,7 @@ import (
 
 // MQTTClient ...
 type MQTTClient interface {
+	SubscribeToTopics(topics []string) error
 	SubscribeToTopic(topic string) error
 	UnsubscribeFromTopic(topic string) error
 	Publish(payload []byte, topic string, qos byte) error
@@ -45,9 +47,6 @@ type loggedMessage struct {
 // NewMQTTClient creates and connect a new MQTT client
 func NewMQTTClient(scfg config.MQTTCfg, logger log.Logger, esClient *elastic.Client) (MQTTClient, error) {
 	// TODO: secure connection to broker
-	// TODO: fb: Move that out
-	//mqttLogger := log.With(logger, "protocol", "mqtt")
-
 	logger.Log("addr", scfg.Broker)
 
 	mqOpts := mqtt.NewClientOptions()
@@ -74,46 +73,34 @@ func NewMQTTClient(scfg config.MQTTCfg, logger log.Logger, esClient *elastic.Cli
 	}, nil
 }
 
-// TODO: fb: wtf
-// func (s *C2) subscribeToDBTopics() error {
+func (c *mqttClient) SubscribeToTopics(topics []string) error {
+	if len(topics) == 0 {
+		c.logger.Log("msg", "no topic found in the db, no subscribe request sent")
+		return nil
+	}
 
-// 	topics, err := s.dbGetTopicsList()
+	// create map string->qos as needed by SubscribeMultiple
+	filters := make(map[string]byte)
+	for i := 0; i < len(topics); i++ {
+		filters[topics[i]] = byte(c.config.QoSSub)
+	}
 
-// 	if err != nil {
-// 		s.logger.Log("msg", "failed to get topic list from db", "error", err)
-// 		return err
-// 	}
+	fmt.Println(filters)
 
-// 	logger := log.With(s.logger, "protocol", "mqtt")
+	if token := c.mqtt.SubscribeMultiple(filters, func(mqttClient mqtt.Client, m mqtt.Message) {
+		c.onMessage(m)
+	}); token.Wait() && token.Error() != nil {
+		c.logger.Log("msg", "subscribe-multiple failed", "topics", len(topics), "error", token.Error())
+		return token.Error()
+	}
+	c.logger.Log("msg", "subscribe-multiple succeeded", "topics", len(topics))
 
-// 	if len(topics) == 0 {
-// 		logger.Log("msg", "no topic found in the db, no subscribe request sent")
-// 		return nil
-// 	}
-
-// 	// create map string->qos as needed by SubscribeMultiple
-// 	filters := make(map[string]byte)
-// 	for i := 0; i < len(topics); i += 1 {
-// 		filters[topics[i]] = byte(s.mqttContext.qosSub)
-// 	}
-
-// 	fmt.Println(filters)
-
-// 	if token := s.mqttContext.client.SubscribeMultiple(filters, func(c mqtt.Client, m mqtt.Message) {
-// 		callbackSub(s, c, m)
-// 	}); token.Wait() && token.Error() != nil {
-// 		logger.Log("msg", "subscribe-multiple failed", "topics", len(topics), "error", token.Error())
-// 		return token.Error()
-// 	}
-// 	logger.Log("msg", "subscribe-multiple succeeded", "topics", len(topics))
-
-// 	return nil
-// }
+	return nil
+}
 
 func (c *mqttClient) SubscribeToTopic(topic string) error {
 	// Only index message if monitoring enabled, i.e. if esClient is defined
 	if c.esClient == nil {
-
 		return nil
 	}
 

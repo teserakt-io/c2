@@ -36,8 +36,8 @@ type Database interface {
 
 	InsertIDKey(id, protectedkey []byte) error
 	InsertTopicKey(topic string, protectedKey []byte) error
-	GetIDKey(id []byte) (*IDKey, error)
-	GetTopicKey(topic string) (*TopicKey, error)
+	GetIDKey(id []byte) (IDKey, error)
+	GetTopicKey(topic string) (TopicKey, error)
 	DeleteIDKey(id []byte) error
 	DeleteTopicKey(topic string) error
 	CountIDKeys() (int, error)
@@ -143,14 +143,14 @@ func (gdb *gormDB) InsertIDKey(id, protectedkey []byte) error {
 			return result.Error
 		}
 	}
+
 	return nil
 }
 
 func (gdb *gormDB) InsertTopicKey(topic string, protectedKey []byte) error {
-
 	var topicKey TopicKey
-	gdb.db.Where(&TopicKey{Topic: topic}).First(&topicKey)
 
+	gdb.db.Where(&TopicKey{Topic: topic}).First(&topicKey)
 	if gdb.db.NewRecord(topicKey) {
 		topicKey = TopicKey{Topic: topic, Key: protectedKey}
 		if result := gdb.db.Create(&topicKey); result.Error != nil {
@@ -162,35 +162,36 @@ func (gdb *gormDB) InsertTopicKey(topic string, protectedKey []byte) error {
 			return result.Error
 		}
 	}
+
 	return nil
 }
 
-func (gdb *gormDB) GetIDKey(id []byte) (*IDKey, error) {
-	var idkey *IDKey
+func (gdb *gormDB) GetIDKey(id []byte) (IDKey, error) {
+	var idkey IDKey
 
-	result := gdb.db.Where(&IDKey{E4ID: id}).First(idkey)
+	result := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey)
 
 	if result.Error != nil {
-		return nil, result.Error
+		return IDKey{}, result.Error
 	}
 
 	if !bytes.Equal(id, idkey.E4ID) {
-		return nil, errors.New("Internal error: struct not populated but GORM indicated success")
+		return IDKey{}, errors.New("Internal error: struct not populated but GORM indicated success")
 	}
 
 	return idkey, nil
 }
 
-func (gdb *gormDB) GetTopicKey(topic string) (*TopicKey, error) {
-	var topickey *TopicKey
+func (gdb *gormDB) GetTopicKey(topic string) (TopicKey, error) {
+	var topickey TopicKey
 
-	result := gdb.db.Where(&TopicKey{Topic: topic}).First(topickey)
+	result := gdb.db.Where(&TopicKey{Topic: topic}).First(&topickey)
 	if result.Error != nil {
-		return nil, result.Error
+		return TopicKey{}, result.Error
 	}
 
 	if strings.Compare(topickey.Topic, topic) != 0 {
-		return nil, errors.New("Internal error: struct not populated but GORM indicated success")
+		return TopicKey{}, errors.New("Internal error: struct not populated but GORM indicated success")
 	}
 
 	return topickey, nil
@@ -200,11 +201,7 @@ func (gdb *gormDB) DeleteIDKey(id []byte) error {
 	var idkey IDKey
 
 	if result := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey); result.Error != nil {
-		if gorm.IsRecordNotFoundError(result.Error) {
-			return errors.New("ID not found, nothing to delete")
-		}
 		return result.Error
-
 	}
 
 	// safety check:
@@ -230,9 +227,6 @@ func (gdb *gormDB) DeleteIDKey(id []byte) error {
 func (gdb *gormDB) DeleteTopicKey(topic string) error {
 	var topicKey TopicKey
 	if result := gdb.db.Where(&TopicKey{Topic: topic}).First(&topicKey); result.Error != nil {
-		if gorm.IsRecordNotFoundError(result.Error) {
-			return errors.New("ID not found, nothing to delete")
-		}
 		return result.Error
 	}
 

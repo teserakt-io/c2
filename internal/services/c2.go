@@ -20,6 +20,7 @@ type C2 interface {
 	ResetClient(id []byte) error
 	NewTopic(topic string) error
 	RemoveTopic(topic string) error
+	GetTopicList() ([]string, error)
 	SendMessage(topic, msg string) error
 	GetAllTopicIds() ([]string, error)
 	GetAllClientHexIds() ([]string, error)
@@ -222,6 +223,20 @@ func (s *c2) RemoveTopic(topic string) error {
 	logger.Log("msg", "succeeded", "topic", topic)
 
 	return nil
+}
+
+func (s *c2) GetTopicList() ([]string, error) {
+	topicKeys, err := s.db.GetAllTopics()
+	if err != nil {
+		return nil, err
+	}
+
+	var topics []string
+	for _, topicKey := range topicKeys {
+		topics = append(topics, topicKey.Topic)
+	}
+
+	return topics, nil
 }
 
 func (s *c2) SendMessage(topic, msg string) error {

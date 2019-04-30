@@ -8,6 +8,7 @@ import (
 	"gitlab.com/teserakt/c2/internal/config"
 )
 
+// NewElasticClient creates a new ElasticSearch client
 func NewElasticClient(cfg config.ESCfg) (*elastic.Client, error) {
 	if !cfg.Enable {
 		return nil, nil

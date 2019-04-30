@@ -131,8 +131,16 @@ func main() {
 	}()
 
 	// subscribe to topics in the DB if not already done
-	// TODO: fb: this !
-	// c2.subscribeToDBTopics()
+	topics, err := c2Service.GetTopicList()
+	if err != nil {
+		logger.Log("msg", "Failed to fetch all existing topics", "error", err)
+	}
+
+	if err := mqttClient.SubscribeToTopics(topics); err != nil {
+		logger.Log("msg", "Subscribing to all existing topics failed", "error", err)
+
+		return
+	}
 
 	// initialize OpenCensus
 	oc := services.NewOpenSensus(cfg.IsProd)

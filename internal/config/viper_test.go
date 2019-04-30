@@ -53,7 +53,8 @@ func TestViperLoader(t *testing.T) {
 			MQTT: MQTTCfg{
 				ID:     "mqttid",
 				Broker: "tcp://mqtt.broker:1234",
-				QOS:    3,
+				QoSPub: 1,
+				QoSSub: 2,
 			},
 			DB: DBCfg{
 				Logging:          true,
