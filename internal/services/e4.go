@@ -12,8 +12,8 @@ import (
 	e4 "gitlab.com/teserakt/e4common"
 )
 
-// C2 describe the available methods on the C2 service
-type C2 interface {
+// E4 describe the available methods on the E4 service
+type E4 interface {
 	NewClient(id, key []byte) error
 	RemoveClient(id []byte) error
 	NewTopicClient(id []byte, topic string) error
@@ -33,16 +33,16 @@ type C2 interface {
 	GetIdsforTopic(topic string, offset, count int) ([]string, error)
 }
 
-type c2 struct {
+type e4impl struct {
 	db         models.Database
 	mqttClient protocols.MQTTClient
 	logger     log.Logger
 	keyenckey  []byte
 }
 
-var _ C2 = &c2{}
+var _ E4 = &e4impl{}
 
-func (s *c2) encryptKey(key []byte) ([]byte, error) {
+func (s *e4impl) encryptKey(key []byte) ([]byte, error) {
 	protectedkey, err := e4.Encrypt(s.keyenckey, nil, key)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (s *c2) encryptKey(key []byte) ([]byte, error) {
 	return protectedkey, nil
 }
 
-func (s *c2) decryptKey(enckey []byte) ([]byte, error) {
+func (s *e4impl) decryptKey(enckey []byte) ([]byte, error) {
 	key, err := e4.Decrypt(s.keyenckey, nil, enckey)
 	if err != nil {
 		return nil, err
@@ -60,9 +60,9 @@ func (s *c2) decryptKey(enckey []byte) ([]byte, error) {
 	return key, nil
 }
 
-// NewC2 creates a new C2 service
-func NewC2(db models.Database, mqttClient protocols.MQTTClient, logger log.Logger, keyenckey []byte) C2 {
-	return &c2{
+// NewE4 creates a new E4 service
+func NewE4(db models.Database, mqttClient protocols.MQTTClient, logger log.Logger, keyenckey []byte) E4 {
+	return &e4impl{
 		db:         db,
 		mqttClient: mqttClient,
 		logger:     logger,
@@ -70,7 +70,7 @@ func NewC2(db models.Database, mqttClient protocols.MQTTClient, logger log.Logge
 	}
 }
 
-func (s *c2) NewClient(id, key []byte) error {
+func (s *e4impl) NewClient(id, key []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClient")
 
 	protectedkey, err := s.encryptKey(key)
@@ -88,7 +88,7 @@ func (s *c2) NewClient(id, key []byte) error {
 	return nil
 }
 
-func (s *c2) RemoveClient(id []byte) error {
+func (s *e4impl) RemoveClient(id []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeClient")
 
 	err := s.db.DeleteIDKey(id)
@@ -100,7 +100,7 @@ func (s *c2) RemoveClient(id []byte) error {
 	return nil
 }
 
-func (s *c2) NewTopicClient(id []byte, topic string) error {
+func (s *e4impl) NewTopicClient(id []byte, topic string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newTopicClient")
 
 	topicKey, err := s.db.GetTopicKey(topic)
@@ -137,7 +137,7 @@ func (s *c2) NewTopicClient(id []byte, topic string) error {
 	return nil
 }
 
-func (s *c2) RemoveTopicClient(id []byte, topic string) error {
+func (s *e4impl) RemoveTopicClient(id []byte, topic string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopicClient")
 
 	topichash := e4.HashTopic(topic)
@@ -163,7 +163,7 @@ func (s *c2) RemoveTopicClient(id []byte, topic string) error {
 	return nil
 }
 
-func (s *c2) ResetClient(id []byte) error {
+func (s *e4impl) ResetClient(id []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "resetClient")
 
 	payload, err := s.CreateAndProtectForID(e4.ResetTopics, nil, nil, id)
@@ -181,7 +181,7 @@ func (s *c2) ResetClient(id []byte) error {
 	return nil
 }
 
-func (s *c2) NewTopic(topic string) error {
+func (s *e4impl) NewTopic(topic string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newTopic")
 
 	key := e4.RandomKey()
@@ -207,7 +207,7 @@ func (s *c2) NewTopic(topic string) error {
 	return nil
 }
 
-func (s *c2) RemoveTopic(topic string) error {
+func (s *e4impl) RemoveTopic(topic string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopic")
 
 	err := s.mqttClient.UnsubscribeFromTopic(topic)
@@ -226,7 +226,7 @@ func (s *c2) RemoveTopic(topic string) error {
 	return nil
 }
 
-func (s *c2) GetTopicList() ([]string, error) {
+func (s *e4impl) GetTopicList() ([]string, error) {
 	topicKeys, err := s.db.GetAllTopics()
 	if err != nil {
 		return nil, err
@@ -240,7 +240,7 @@ func (s *c2) GetTopicList() ([]string, error) {
 	return topics, nil
 }
 
-func (s *c2) SendMessage(topic, msg string) error {
+func (s *e4impl) SendMessage(topic, msg string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "sendMessage")
 
 	topickey, err := s.db.GetTopicKey(topic)
@@ -264,7 +264,7 @@ func (s *c2) SendMessage(topic, msg string) error {
 	return nil
 }
 
-func (s *c2) NewClientKey(id []byte) error {
+func (s *e4impl) NewClientKey(id []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClientKey")
 
 	key := e4.RandomKey()
@@ -297,7 +297,7 @@ func (s *c2) NewClientKey(id []byte) error {
 }
 
 // CreateAndProtectForID creates a protected command for a given ID.
-func (s *c2) CreateAndProtectForID(cmd e4.Command, topichash, key, id []byte) ([]byte, error) {
+func (s *e4impl) CreateAndProtectForID(cmd e4.Command, topichash, key, id []byte) ([]byte, error) {
 
 	command, err := createCommand(cmd, topichash, key)
 	if err != nil {
@@ -324,7 +324,7 @@ func (s *c2) CreateAndProtectForID(cmd e4.Command, topichash, key, id []byte) ([
 	return payload, nil
 }
 
-func (s *c2) GetAllTopicIds() ([]string, error) {
+func (s *e4impl) GetAllTopicIds() ([]string, error) {
 	topicKeys, err := s.db.GetAllTopics()
 	if err != nil {
 		return nil, err
@@ -338,7 +338,7 @@ func (s *c2) GetAllTopicIds() ([]string, error) {
 	return topics, nil
 }
 
-func (s *c2) GetAllClientHexIds() ([]string, error) {
+func (s *e4impl) GetAllClientHexIds() ([]string, error) {
 	idkeys, err := s.db.GetAllIDKeys()
 	if err != nil {
 		return nil, err
@@ -352,11 +352,11 @@ func (s *c2) GetAllClientHexIds() ([]string, error) {
 	return hexids, nil
 }
 
-func (s *c2) CountTopicsForID(id []byte) (int, error) {
+func (s *e4impl) CountTopicsForID(id []byte) (int, error) {
 	return s.db.CountTopicsForID(id)
 }
 
-func (s *c2) GetTopicsForID(id []byte, offset, count int) ([]string, error) {
+func (s *e4impl) GetTopicsForID(id []byte, offset, count int) ([]string, error) {
 	topicKeys, err := s.db.GetTopicsForID(id, offset, count)
 	if err != nil {
 		return nil, err
@@ -370,11 +370,11 @@ func (s *c2) GetTopicsForID(id []byte, offset, count int) ([]string, error) {
 	return topics, nil
 }
 
-func (s *c2) CountIDsForTopic(topic string) (int, error) {
+func (s *e4impl) CountIDsForTopic(topic string) (int, error) {
 	return s.db.CountIDsForTopic(topic)
 }
 
-func (s *c2) GetIdsforTopic(topic string, offset, count int) ([]string, error) {
+func (s *e4impl) GetIdsforTopic(topic string, offset, count int) ([]string, error) {
 	idKeys, err := s.db.GetIdsforTopic(topic, offset, count)
 	if err != nil {
 		return nil, err
@@ -428,7 +428,7 @@ func createCommand(cmd e4.Command, topichash, key []byte) ([]byte, error) {
 	return nil, errors.New("invalid command")
 }
 
-func (s *c2) sendCommandToClient(id, payload []byte) error {
+func (s *e4impl) sendCommandToClient(id, payload []byte) error {
 	topic := e4.TopicForID(id)
 	qos := byte(2)
 

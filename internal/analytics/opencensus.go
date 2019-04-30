@@ -19,8 +19,8 @@ type openCensus struct {
 
 var _ OpenCensus = &openCensus{}
 
-// NewOpenSensus creates a new OpenCensus service
-func NewOpenSensus(isProd bool) OpenCensus {
+// NewOpenCensus creates a new OpenCensus service
+func NewOpenCensus(isProd bool) OpenCensus {
 	return &openCensus{
 		isProd: isProd,
 	}
