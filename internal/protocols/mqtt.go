@@ -1,4 +1,4 @@
-package services
+package protocols
 
 import (
 	"bytes"

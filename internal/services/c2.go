@@ -8,6 +8,7 @@ import (
 	"github.com/go-kit/kit/log"
 
 	"gitlab.com/teserakt/c2/internal/models"
+	"gitlab.com/teserakt/c2/internal/protocols"
 	e4 "gitlab.com/teserakt/e4common"
 )
 
@@ -34,7 +35,7 @@ type C2 interface {
 
 type c2 struct {
 	db         models.Database
-	mqttClient MQTTClient
+	mqttClient protocols.MQTTClient
 	logger     log.Logger
 	keyenckey  []byte
 }
@@ -60,7 +61,7 @@ func (s *c2) decryptKey(enckey []byte) ([]byte, error) {
 }
 
 // NewC2 creates a new C2 service
-func NewC2(db models.Database, mqttClient MQTTClient, logger log.Logger, keyenckey []byte) C2 {
+func NewC2(db models.Database, mqttClient protocols.MQTTClient, logger log.Logger, keyenckey []byte) C2 {
 	return &c2{
 		db:         db,
 		mqttClient: mqttClient,
