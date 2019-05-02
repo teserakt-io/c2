@@ -8,25 +8,18 @@ import (
 	"go.opencensus.io/trace"
 )
 
-// OpenCensus defines an OpenCensus service
-type OpenCensus interface {
-	Setup() error
-}
+// DeploymentMode describe the per environment analytics configuration modes
+type DeploymentMode int
 
-type openCensus struct {
-	isProd bool
-}
+// List of available DeploymentMode
+const (
+	Development DeploymentMode = iota
+	Production
+)
 
-var _ OpenCensus = &openCensus{}
-
-// NewOpenCensus creates a new OpenCensus service
-func NewOpenCensus(isProd bool) OpenCensus {
-	return &openCensus{
-		isProd: isProd,
-	}
-}
-
-func (oc *openCensus) Setup() error {
+// SetupObservability will configure the various observers for C2.
+// currently register an opencensus exporter
+func (m DeploymentMode) SetupObservability() error {
 	oce, err := ocagent.NewExporter(
 		// TODO: (@odeke-em), enable ocagent-exporter.WithCredentials option.
 		ocagent.WithInsecure(),
@@ -40,7 +33,9 @@ func (oc *openCensus) Setup() error {
 	trace.RegisterExporter(oce)
 	view.RegisterExporter(oce)
 
-	if oc.isProd == false {
+	switch m {
+	case Production:
+	default:
 		// setting trace sample rate to 100%
 		trace.ApplyConfig(trace.Config{
 			DefaultSampler: trace.AlwaysSample(),

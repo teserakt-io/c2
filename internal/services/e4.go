@@ -393,7 +393,7 @@ func createCommand(cmd e4.Command, topichash, key []byte) ([]byte, error) {
 
 	case e4.RemoveTopic:
 		if err := e4.IsValidTopicHash(topichash); err != nil {
-			return nil, fmt.Errorf("invalid topic hash for RemoveTopic: %s", err)
+			return nil, fmt.Errorf("invalid topic hash for RemoveTopic: %v", err)
 		}
 		if key != nil {
 			return nil, errors.New("unexpected key for RemoveTopic")
@@ -408,7 +408,7 @@ func createCommand(cmd e4.Command, topichash, key []byte) ([]byte, error) {
 
 	case e4.SetIDKey:
 		if err := e4.IsValidKey(key); err != nil {
-			return nil, fmt.Errorf("invalid key for SetIdKey: %s", err)
+			return nil, fmt.Errorf("invalid key for SetIdKey: %v", err)
 		}
 		if topichash != nil {
 			return nil, errors.New("unexpected topichash for SetIdKey")
@@ -417,10 +417,10 @@ func createCommand(cmd e4.Command, topichash, key []byte) ([]byte, error) {
 
 	case e4.SetTopicKey:
 		if err := e4.IsValidKey(key); err != nil {
-			return nil, fmt.Errorf("invalid key for SetTopicKey: %s", err)
+			return nil, fmt.Errorf("invalid key for SetTopicKey: %v", err)
 		}
 		if err := e4.IsValidTopicHash(topichash); err != nil {
-			return nil, fmt.Errorf("invalid topic hash for SetTopicKey: %s", err)
+			return nil, fmt.Errorf("invalid topic hash for SetTopicKey: %v", err)
 		}
 		return append(append([]byte{cmd.ToByte()}, key...), topichash...), nil
 	}

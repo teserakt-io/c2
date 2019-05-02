@@ -9,6 +9,8 @@ import (
 )
 
 // NewElasticClient creates a new ElasticSearch client
+// that is connected to the URL specified in cfg. If the
+// "messages" index doesn't exist, it will try to create it.
 func NewElasticClient(cfg config.ESCfg) (*elastic.Client, error) {
 	if !cfg.Enable {
 		return nil, nil
@@ -31,6 +33,7 @@ func NewElasticClient(cfg config.ESCfg) (*elastic.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if !exists {
 		createIndex, err := esClient.CreateIndex("messages").Do(ctx)
 		if err != nil {

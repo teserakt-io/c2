@@ -35,11 +35,11 @@ var (
 // Validate check Config and returns an error if anything is invalid
 func (c Config) Validate() error {
 	if err := c.GRPC.Validate(); err != nil {
-		return fmt.Errorf("GRPC configuration validation error: %s", err.Error())
+		return fmt.Errorf("GRPC configuration validation error: %v", err)
 	}
 
 	if err := c.HTTP.Validate(); err != nil {
-		return fmt.Errorf("HTTP configuration validation error: %s", err.Error())
+		return fmt.Errorf("HTTP configuration validation error: %v", err)
 	}
 
 	if err := c.MQTT.Validate(); err != nil {
@@ -47,7 +47,7 @@ func (c Config) Validate() error {
 	}
 
 	if err := c.DB.Validate(); err != nil {
-		return fmt.Errorf("DB configuration validation error: %s", err.Error())
+		return fmt.Errorf("DB configuration validation error: %v", err)
 	}
 
 	return nil

@@ -80,9 +80,9 @@ func (c *mqttClient) SubscribeToTopics(topics []string) error {
 	}
 
 	// create map string->qos as needed by SubscribeMultiple
-	filters := make(map[string]byte)
-	for i := 0; i < len(topics); i++ {
-		filters[topics[i]] = byte(c.config.QoSSub)
+	filters := make(map[string]byte, len(topics))
+	for _, topic := range topics {
+		filters[topic] = byte(c.config.QoSSub)
 	}
 
 	fmt.Println(filters)
@@ -123,7 +123,6 @@ func (c *mqttClient) SubscribeToTopic(topic string) error {
 func (c *mqttClient) UnsubscribeFromTopic(topic string) error {
 	// Only index message if monitoring enabled, i.e. if esClient is defined
 	if c.esClient == nil {
-
 		return nil
 	}
 
@@ -141,9 +140,9 @@ func (c *mqttClient) UnsubscribeFromTopic(topic string) error {
 func (c *mqttClient) Publish(payload []byte, topic string, qos byte) error {
 	logger := log.With(c.logger, "protocol", "mqtt")
 
-	payloadstring := string(payload)
+	payloadStr := string(payload)
 
-	if token := c.mqtt.Publish(topic, qos, true, payloadstring); token.Wait() && token.Error() != nil {
+	if token := c.mqtt.Publish(topic, qos, true, payloadStr); token.Wait() && token.Error() != nil {
 		logger.Log("msg", "publish failed", "topic", topic, "error", token.Error())
 		return token.Error()
 	}

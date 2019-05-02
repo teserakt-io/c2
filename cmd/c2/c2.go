@@ -17,8 +17,8 @@ var buildDate string
 var gitTag string
 
 func main() {
-
-	defer os.Exit(1)
+	exitCode := 0
+	defer os.Exit(exitCode)
 
 	// show banner
 	if len(gitTag) == 0 {
@@ -51,14 +51,14 @@ func main() {
 	cfg, err := configLoader.Load()
 	if err != nil {
 		logger.Log("error", err)
-
+		exitCode = 1
 		return
 	}
 
 	c2, err := c2.New(logger, cfg)
 	if err != nil {
 		logger.Log("error", err)
-
+		exitCode = 1
 		return
 	}
 	defer c2.Close()
@@ -68,7 +68,7 @@ func main() {
 
 	if err := c2.ListenAndServe(); err != nil {
 		logger.Log("error", err)
-
+		exitCode = 1
 		return
 	}
 }

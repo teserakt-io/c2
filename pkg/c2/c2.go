@@ -41,10 +41,11 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	// compatibility for packages that do not understand go-kit logger:
 	stdloglogger := stdlog.New(log.NewStdlibAdapter(logger), "", 0)
 
-	if cfg.DB.SecureConnection == config.DBSecureConnectionInsecure {
+	switch cfg.DB.SecureConnection {
+	case config.DBSecureConnectionInsecure:
 		logger.Log("msg", "Unencrypted database connection.")
 		fmt.Fprintf(os.Stderr, "WARNING: Unencrypted database connection. We do not recommend this setup.\n")
-	} else if cfg.DB.SecureConnection == config.DBSecureConnectionSelfSigned {
+	case config.DBSecureConnectionSelfSigned:
 		logger.Log("msg", "Self signed certificate used. We do not recommend this setup.")
 		fmt.Fprintf(os.Stderr, "WARNING: Self-signed connection to database. We do not recommend this setup.\n")
 	}
@@ -55,7 +56,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	if err != nil {
 		logger.Log("msg", "database creation failed", "error", err)
 
-		return nil, fmt.Errorf("failed to initialise database: %s", err)
+		return nil, fmt.Errorf("failed to initialise database: %v", err)
 	}
 
 	logger.Log("msg", "database open")
@@ -63,7 +64,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	if err := db.Migrate(); err != nil {
 		logger.Log("msg", "database setup failed", "error", err)
 
-		return nil, fmt.Errorf("Database migration failed: %s", err)
+		return nil, fmt.Errorf("Database migration failed: %v", err)
 	}
 	logger.Log("msg", "database initialized")
 
@@ -71,7 +72,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	if err != nil {
 		logger.Log("msg", "ElasticSearch setup failed", "error", err)
 
-		return nil, fmt.Errorf("ElasticSearch setup failed: %s", err)
+		return nil, fmt.Errorf("ElasticSearch setup failed: %v", err)
 	}
 
 	logger.Log("msg", "ElasticSearch setup successfully (or disabled by configuration)")
@@ -80,7 +81,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	if err != nil {
 		logger.Log("msg", "MQTT client creation failed", "error", err)
 
-		return nil, fmt.Errorf("MQTT client creation failed: %s", err)
+		return nil, fmt.Errorf("MQTT client creation failed: %v", err)
 	}
 
 	logger.Log("msg", "MQTT client created")
@@ -92,15 +93,17 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		e4.HashPwd(cfg.DB.Passphrase),
 	)
 
-	// initialize OpenCensus
-	oc := analytics.NewOpenCensus(cfg.IsProd)
-	if err := oc.Setup(); err != nil {
-		logger.Log("msg", "OpenCensus instrumentation setup failed", "error", err)
-
-		return nil, fmt.Errorf("OpenCensus instrumentation setup failed: %s", err)
+	// initialize Observability
+	deploymentMode := analytics.Production
+	if !cfg.IsProd {
+		deploymentMode = analytics.Development
 	}
+	if err := deploymentMode.SetupObservability(); err != nil {
+		logger.Log("msg", "Observability instrumentation setup failed", "error", err)
 
-	logger.Log("msg", "OpenCensus instrumentation setup successfully")
+		return nil, fmt.Errorf("Observability instrumentation setup failed: %v", err)
+	}
+	logger.Log("msg", "Observability instrumentation setup successfully")
 
 	return &C2{
 		cfg:        cfg,
@@ -130,7 +133,6 @@ func (c *C2) EnableGRPCEndpoint() {
 
 // ListenAndServe will start C2
 func (c *C2) ListenAndServe() error {
-
 	if len(c.endpoints) == 0 {
 		return errors.New("no configured endpoints to serve C2")
 	}
@@ -140,13 +142,13 @@ func (c *C2) ListenAndServe() error {
 	if err != nil {
 		c.logger.Log("msg", "Failed to fetch all existing topics", "error", err)
 
-		return fmt.Errorf("Failed to fetch all existing topics: %s", err)
+		return fmt.Errorf("Failed to fetch all existing topics: %v", err)
 	}
 
 	if err := c.mqttClient.SubscribeToTopics(topics); err != nil {
 		c.logger.Log("msg", "Subscribing to all existing topics failed", "error", err)
 
-		return fmt.Errorf("Subscribing to all existing topics failed: %s", err)
+		return fmt.Errorf("Subscribing to all existing topics failed: %v", err)
 	}
 
 	// create critical error channel
@@ -154,7 +156,7 @@ func (c *C2) ListenAndServe() error {
 	go func() {
 		var sigc = make(chan os.Signal, 1)
 		signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
-		errc <- fmt.Errorf("%s", <-sigc)
+		errc <- fmt.Errorf("%v", <-sigc)
 	}()
 
 	for _, endpoint := range c.endpoints {
