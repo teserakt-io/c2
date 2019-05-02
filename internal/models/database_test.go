@@ -590,4 +590,14 @@ func testDatabase(t *testing.T, setup setupFunc) {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
 	})
+
+	t.Run("Migrate on already migrated DB doesn't fail", func(t *testing.T) {
+		db, tearDown := setup(t)
+		defer tearDown()
+
+		err := db.Migrate()
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
 }

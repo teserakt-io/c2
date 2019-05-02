@@ -105,26 +105,60 @@ func (gdb *gormDB) Migrate() error {
 		IDKey{},
 		TopicKey{},
 	)
+	if result.Error != nil {
+		return result.Error
+	}
 
 	switch gdb.config.Type {
 	case DBDialectPostgres:
 		// Postgres require to add relations manually as AutoMigrate won't do it.
 		// see: https://github.com/jinzhu/gorm/issues/450
-		gdb.Connection().Exec(`
-			ALTER TABLE idkeys_topickeys ADD CONSTRAINT idkeys_topickeys_idkey_fk FOREIGN KEY (id_key_id) REFERENCES id_keys (id) ON DELETE CASCADE;
-			ALTER TABLE idkeys_topickeys ADD CONSTRAINT idkeys_topickeys_topickey_fk FOREIGN KEY (topic_key_id) REFERENCES topic_keys (id);
-		`)
-		//
 
-	}
+		// Add foreign key on idKey id
+		exists, err := gdb.pgCheckConstraint("idkeys_topickeys_idkey_fk", "idkeys_topickeys")
+		if err != nil {
+			return err
+		}
 
-	if result.Error != nil {
-		return result.Error
+		if !exists {
+			if err := gdb.Connection().Exec("ALTER TABLE idkeys_topickeys ADD CONSTRAINT idkeys_topickeys_idkey_fk FOREIGN KEY(id_key_id) REFERENCES id_keys (id) ON DELETE CASCADE;").Error; err != nil {
+				return err
+			}
+		}
+
+		// Add foreign key on topic id
+		exists, err = gdb.pgCheckConstraint("idkeys_topickeys_idkey_fk", "idkeys_topickeys")
+		if err != nil {
+			return err
+		}
+
+		if !exists {
+			if err := gdb.Connection().Exec("ALTER TABLE idkeys_topickeys ADD CONSTRAINT idkeys_topickeys_idkey_fk FOREIGN KEY(id_key_id) REFERENCES id_keys (id) ON DELETE CASCADE;").Error; err != nil {
+				return err
+			}
+		}
 	}
 
 	gdb.logger.Println("Database Migration Finished.")
 
 	return nil
+}
+
+// pgCheckConstraint probe the db to check if a foreign key with `name` exists on `table`
+// This method only support postgres dialect and will return an error otherwise.
+func (gdb *gormDB) pgCheckConstraint(name, table string) (bool, error) {
+	if gdb.config.Type != DBDialectPostgres {
+		return false, errors.New("invalid db dialect, only postgres is supported")
+	}
+
+	type constraintCounter struct {
+		Count int
+	}
+
+	var counter constraintCounter
+	result := gdb.Connection().Raw(`SELECT COUNT(1) FROM information_schema.table_constraints WHERE constraint_name=? AND table_name=?;`, name, table).Scan(&counter)
+
+	return counter.Count > 0, result.Error
 }
 
 func (gdb *gormDB) Connection() *gorm.DB {
