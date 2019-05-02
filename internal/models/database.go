@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 
@@ -20,6 +21,10 @@ import (
 var (
 	// ErrUnsupportedDialect is returned when creating a new database with a Config having an unsupported dialect
 	ErrUnsupportedDialect = errors.New("unsupported database dialect")
+	// ErrTopicKeyNotFound is returned when the topic cannot be found in the database
+	ErrTopicKeyNotFound = errors.New("topicKey not found in database")
+	// ErrIDKeyNotFound is returned when the key cannot be found in the database
+	ErrIDKeyNotFound = errors.New("IDKey not found in database")
 )
 
 // List of available DB dialects
@@ -65,22 +70,14 @@ func NewDB(config config.DBCfg, logger *log.Logger) (Database, error) {
 	var db *gorm.DB
 	var err error
 
-	switch config.Type {
-	case DBDialectSQLite:
-		cnxStr, err := config.ConnectionString()
-		if err != nil {
-			return nil, err
-		}
+	cnxStr, err := config.ConnectionString()
+	if err != nil {
+		return nil, err
+	}
 
-		db, err = gorm.Open(config.Type.String(), cnxStr)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		err = ErrUnsupportedDialect
-		if err != nil {
-			return nil, err
-		}
+	db, err = gorm.Open(config.Type.String(), cnxStr)
+	if err != nil {
+		return nil, err
 	}
 
 	db.LogMode(config.Logging)
@@ -101,13 +98,25 @@ func (gdb *gormDB) Migrate() error {
 		// Enable foreign key support for sqlite3
 		gdb.Connection().Exec("PRAGMA foreign_keys = ON")
 	case DBDialectPostgres:
-		gdb.Connection().Exec("SET search_path TO e4_c2_test;") // What is this ?
+		gdb.Connection().Exec(fmt.Sprintf("SET search_path TO %s;", gdb.config.Schema))
 	}
 
 	result := gdb.Connection().AutoMigrate(
 		IDKey{},
 		TopicKey{},
 	)
+
+	switch gdb.config.Type {
+	case DBDialectPostgres:
+		// Postgres require to add relations manually as AutoMigrate won't do it.
+		// see: https://github.com/jinzhu/gorm/issues/450
+		gdb.Connection().Exec(`
+			ALTER TABLE idkeys_topickeys ADD CONSTRAINT idkeys_topickeys_idkey_fk FOREIGN KEY (id_key_id) REFERENCES id_keys (id) ON DELETE CASCADE;
+			ALTER TABLE idkeys_topickeys ADD CONSTRAINT idkeys_topickeys_topickey_fk FOREIGN KEY (topic_key_id) REFERENCES topic_keys (id);
+		`)
+		//
+
+	}
 
 	if result.Error != nil {
 		return result.Error
@@ -235,11 +244,11 @@ func (gdb *gormDB) DeleteTopicKey(topic string) error {
 	}
 
 	tx := gdb.db.Begin()
-	if result := gdb.db.Model(&topicKey).Association("IDKeys").Clear(); result.Error != nil {
+	if result := tx.Model(&topicKey).Association("IDKeys").Clear(); result.Error != nil {
 		tx.Rollback()
 		return result.Error
 	}
-	if result := gdb.db.Delete(&topicKey); result.Error != nil {
+	if result := tx.Delete(&topicKey); result.Error != nil {
 		tx.Rollback()
 		return result.Error
 	}
@@ -291,21 +300,22 @@ func (gdb *gormDB) GetAllTopics() ([]TopicKey, error) {
 // This function links a topic and an id/key. The link is created in both
 // directions (IDkey to Topics, Topic to IDkeys).
 func (gdb *gormDB) LinkIDTopic(id []byte, topic string) error {
-
 	var idkey IDKey
 	var topickey TopicKey
 
 	if err := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
-			return errors.New("ID Key not found, cannot link to topic")
+			return ErrIDKeyNotFound
 		}
-		return err
 
+		return err
 	}
+
 	if err := gdb.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
-			return errors.New("ID Key not found, cannot link to IDkey")
+			return ErrTopicKeyNotFound
 		}
+
 		return err
 	}
 
@@ -324,19 +334,18 @@ func (gdb *gormDB) LinkIDTopic(id []byte, topic string) error {
 // This function removes the relationship between a Topic and an ID, but
 // does not delete the Topic or the ID.
 func (gdb *gormDB) UnlinkIDTopic(id []byte, topic string) error {
-
 	var idkey IDKey
 	var topickey TopicKey
 
 	if err := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
-			return errors.New("ID Key not found, cannot unlink from topic")
+			return ErrIDKeyNotFound
 		}
 		return err
 	}
 	if err := gdb.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
-			return errors.New("ID Key not found, cannot unlink from IDkey")
+			return ErrTopicKeyNotFound
 		}
 		return err
 	}
@@ -386,9 +395,6 @@ func (gdb *gormDB) CountIDsForTopic(topic string) (int, error) {
 	var topickey TopicKey
 
 	if err := gdb.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return 0, errors.New("Topic key not found, cannot link to ID")
-		}
 		return 0, err
 	}
 
@@ -401,9 +407,6 @@ func (gdb *gormDB) CountTopicsForID(id []byte) (int, error) {
 	var idkey IDKey
 
 	if err := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return 0, errors.New("ID Key not found, cannot link to topic")
-		}
 		return 0, err
 	}
 
@@ -418,9 +421,6 @@ func (gdb *gormDB) GetIdsforTopic(topic string, offset int, count int) ([]IDKey,
 	var idkeys []IDKey
 
 	if err := gdb.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return nil, errors.New("ID Key not found, cannot link to topic")
-		}
 		return nil, err
 	}
 

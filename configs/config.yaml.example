@@ -22,13 +22,13 @@ mqtt-QoS-sub: 1
 ###############################################################
 ## supported types are sqlite3 and postgres
 db-type: sqlite3
-## 
+##
 db-file: /tmp/e4c2test.sqlite
 ## username to connect to postgres
 #db-username: e4_c2_test
 ## password to connect to postgres
 #db-password: teserakte4
-## set to true to show detailed logging of database operations 
+## set to true to show detailed logging of database operations
 #db-logging: 1
 ## host of the db
 db-host: localhost
@@ -38,6 +38,8 @@ db-database: e4
 db-encryption-passphrase: meh
 ## TLS connection: enable || selfsigned || insecure
 db-secure-connection: enable
+# Postgres database schema
+# db-schema: e4_c2_test
 
 # gRPC settings
 ###############################################################
@@ -63,4 +65,3 @@ http-key: c2-key.pem
 es-enable: true
 ## ElasticSearch address
 es-url: http://127.0.0.1:9200
-

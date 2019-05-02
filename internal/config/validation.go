@@ -28,6 +28,8 @@ var (
 	// ErrInvalidSecureConnection is returned when an invalid secure connection mode is provided.
 	// see available config.DBSecureConnectionType
 	ErrInvalidSecureConnection = errors.New("invalid secure connection mode")
+	// ErrNoSchema is returned when database configuration is missing a schema (postgres only)
+	ErrNoSchema = errors.New("no schema supplied")
 )
 
 // Validate check Config and returns an error if anything is invalid
@@ -104,6 +106,10 @@ func (c DBCfg) validatePostgres() error {
 
 	if len(c.Password) == 0 {
 		return ErrNoPassword
+	}
+
+	if len(c.Schema) == 0 {
+		return ErrNoSchema
 	}
 
 	if c.SecureConnection != DBSecureConnectionEnabled &&
