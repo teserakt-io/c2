@@ -73,9 +73,10 @@ func TestDBPostgres(t *testing.T) {
 
 		db, err := NewDB(dbCfg, logger)
 		if err != nil {
-			if strings.Contains(err.Error(), "no such host") {
+			switch {
+			case strings.Contains(err.Error(), "no such host"), strings.Contains(err.Error(), "connection refused"):
 				t.Skipf("Cannot connect to postgres server, skipping postgres db tests: %v", err)
-			} else {
+			default:
 				t.Fatalf("Error connecting to postgres server: %v", err)
 			}
 		}
@@ -439,25 +440,16 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		defer tearDown()
 
 		idKey := IDKey{ID: 1, E4ID: []byte("i-1"), Key: []byte("key")}
-		topic := TopicKey{ID: 1, Topic: "t-1", Key: []byte("key")}
-
-		if err := db.LinkIDTopic(idKey.E4ID, topic.Topic); err != ErrIDKeyNotFound {
-			t.Errorf("Expected error to be %v, got %v", ErrIDKeyNotFound, err)
-		}
-
 		if err := db.InsertIDKey(idKey.E4ID, idKey.Key); err != nil {
-			t.Errorf("Expected no error, got %v", err)
+			t.Fatalf("Failed to insert IDKey: %v", err)
 		}
 
-		if err := db.LinkIDTopic(idKey.E4ID, topic.Topic); err != ErrTopicKeyNotFound {
-			t.Errorf("Expected error to be %v, got %v", ErrTopicKeyNotFound, err)
-		}
-
+		topic := TopicKey{ID: 1, Topic: "t-1", Key: []byte("key")}
 		if err := db.InsertTopicKey(topic.Topic, topic.Key); err != nil {
-			t.Errorf("Expected no error, got %v", err)
+			t.Fatalf("Failed to insert TopicKey: %v", err)
 		}
 
-		if err := db.LinkIDTopic(idKey.E4ID, topic.Topic); err != nil {
+		if err := db.LinkIDTopic(idKey, topic); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
@@ -495,7 +487,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 			t.Errorf("Expected idKeys to be %#v, got %#v", []IDKey{idKey}, idKeys)
 		}
 
-		if err := db.UnlinkIDTopic(idKey.E4ID, topic.Topic); err != nil {
+		if err := db.UnlinkIDTopic(idKey, topic); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
@@ -534,6 +526,48 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 	})
 
+	t.Run("Link with unkow records return errors", func(t *testing.T) {
+		db, tearDown := setup(t)
+		defer tearDown()
+
+		idKey := IDKey{E4ID: []byte("a"), Key: []byte("b")}
+		topicKey := TopicKey{Topic: "c", Key: []byte("d")}
+
+		if err := db.LinkIDTopic(idKey, topicKey); err != ErrIDKeyNoPrimaryKey {
+			t.Errorf("Expected error to be %v, got %v", ErrIDKeyNoPrimaryKey, err)
+		}
+
+		if err := db.InsertIDKey(idKey.E4ID, idKey.Key); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		idKey.ID = 1
+
+		if err := db.LinkIDTopic(idKey, topicKey); err != ErrTopicKeyNoPrimaryKey {
+			t.Errorf("Expected error to be %v, got %v", ErrTopicKeyNoPrimaryKey, err)
+		}
+	})
+
+	t.Run("Unlink with unkow records return errors", func(t *testing.T) {
+		db, tearDown := setup(t)
+		defer tearDown()
+
+		idKey := IDKey{E4ID: []byte("a"), Key: []byte("b")}
+		topicKey := TopicKey{Topic: "c", Key: []byte("d")}
+
+		if err := db.UnlinkIDTopic(idKey, topicKey); err != ErrIDKeyNoPrimaryKey {
+			t.Errorf("Expected error to be %v, got %v", ErrIDKeyNoPrimaryKey, err)
+		}
+
+		if err := db.InsertIDKey(idKey.E4ID, idKey.Key); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		idKey.ID = 1
+
+		if err := db.UnlinkIDTopic(idKey, topicKey); err != ErrTopicKeyNoPrimaryKey {
+			t.Errorf("Expected error to be %v, got %v", ErrTopicKeyNoPrimaryKey, err)
+		}
+	})
+
 	t.Run("GetIdsforTopic with unknow topic returns a RecordNotFound error", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
@@ -551,23 +585,6 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		_, err := db.GetTopicsForID([]byte("unknow"), 0, 1)
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
-		}
-	})
-
-	t.Run("Unlink with unkow records return errors", func(t *testing.T) {
-		db, tearDown := setup(t)
-		defer tearDown()
-
-		if err := db.UnlinkIDTopic([]byte("unknow"), "unknow"); err != ErrIDKeyNotFound {
-			t.Errorf("Expected error to be %v, got %v", ErrIDKeyNotFound, err)
-		}
-
-		if err := db.InsertIDKey([]byte("a"), []byte("key")); err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
-		if err := db.UnlinkIDTopic([]byte("a"), "unknow"); err != ErrTopicKeyNotFound {
-			t.Errorf("Expected error to be %v, got %v", ErrTopicKeyNotFound, err)
 		}
 	})
 

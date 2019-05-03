@@ -1,5 +1,7 @@
 package protocols
 
+//go:generate mockgen -destination=mqtt_mocks.go -package protocols -self_package gitlab.com/teserakt/c2/internal/protocols gitlab.com/teserakt/c2/internal/protocols MQTTClient
+
 import (
 	"bytes"
 	"context"
@@ -13,6 +15,13 @@ import (
 	"github.com/olivere/elastic"
 
 	"gitlab.com/teserakt/c2/internal/config"
+)
+
+// List of MQTT availabe QoS
+var (
+	QoSAtMostOnce  = byte(0)
+	QosAtLeastOnce = byte(1)
+	QoSExactlyOnce = byte(2)
 )
 
 // MQTTClient ...
@@ -29,6 +38,8 @@ type mqttClient struct {
 	logger   log.Logger
 	esClient *elastic.Client
 }
+
+var _ MQTTClient = &mqttClient{}
 
 type loggedMessage struct {
 	Duplicate       bool   `json:"duplicate"`

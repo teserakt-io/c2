@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"gitlab.com/teserakt/c2/internal/commands"
+
 	"github.com/go-kit/kit/log"
 
 	"gitlab.com/teserakt/c2/internal/analytics"
@@ -89,6 +91,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	e4Service := services.NewE4(
 		db,
 		mqttClient,
+		commands.NewFactory(),
 		log.With(logger, "protocol", "c2"),
 		e4.HashPwd(cfg.DB.Passphrase),
 	)

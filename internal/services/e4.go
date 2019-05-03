@@ -2,11 +2,11 @@ package services
 
 import (
 	"encoding/hex"
-	"errors"
 	"fmt"
 
 	"github.com/go-kit/kit/log"
 
+	"gitlab.com/teserakt/c2/internal/commands"
 	"gitlab.com/teserakt/c2/internal/models"
 	"gitlab.com/teserakt/c2/internal/protocols"
 	e4 "gitlab.com/teserakt/e4common"
@@ -26,7 +26,6 @@ type E4 interface {
 	GetAllTopicIds() ([]string, error)
 	GetAllClientHexIds() ([]string, error)
 	NewClientKey(id []byte) error
-	CreateAndProtectForID(cmd e4.Command, topichash, key, id []byte) ([]byte, error)
 	CountTopicsForID(id []byte) (int, error)
 	CountIDsForTopic(topic string) (int, error)
 	GetTopicsForID(id []byte, offset, count int) ([]string, error)
@@ -34,47 +33,38 @@ type E4 interface {
 }
 
 type e4impl struct {
-	db         models.Database
-	mqttClient protocols.MQTTClient
-	logger     log.Logger
-	keyenckey  []byte
+	db             models.Database
+	mqttClient     protocols.MQTTClient
+	commandFactory commands.Factory
+	logger         log.Logger
+	keyenckey      []byte
 }
 
 var _ E4 = &e4impl{}
 
-func (s *e4impl) encryptKey(key []byte) ([]byte, error) {
-	protectedkey, err := e4.Encrypt(s.keyenckey, nil, key)
-	if err != nil {
-		return nil, err
-	}
-
-	return protectedkey, nil
-}
-
-func (s *e4impl) decryptKey(enckey []byte) ([]byte, error) {
-	key, err := e4.Decrypt(s.keyenckey, nil, enckey)
-	if err != nil {
-		return nil, err
-	}
-
-	return key, nil
-}
-
 // NewE4 creates a new E4 service
-func NewE4(db models.Database, mqttClient protocols.MQTTClient, logger log.Logger, keyenckey []byte) E4 {
+func NewE4(
+	db models.Database,
+	mqttClient protocols.MQTTClient,
+	commandFactory commands.Factory,
+	logger log.Logger,
+	keyenckey []byte,
+) E4 {
 	return &e4impl{
-		db:         db,
-		mqttClient: mqttClient,
-		logger:     logger,
-		keyenckey:  keyenckey,
+		db:             db,
+		mqttClient:     mqttClient,
+		commandFactory: commandFactory,
+		logger:         logger,
+		keyenckey:      keyenckey,
 	}
 }
 
 func (s *e4impl) NewClient(id, key []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClient")
 
-	protectedkey, err := s.encryptKey(key)
+	protectedkey, err := e4.Encrypt(s.keyenckey, nil, key)
 	if err != nil {
+		logger.Log("msg", "failed to encrypt key", "error", err)
 		return err
 	}
 
@@ -103,56 +93,74 @@ func (s *e4impl) RemoveClient(id []byte) error {
 func (s *e4impl) NewTopicClient(id []byte, topic string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newTopicClient")
 
+	idKey, err := s.db.GetIDKey(id)
+	if err != nil {
+		logger.Log("msg", "failed to retrieve idKey", "error", err)
+		return err
+	}
+
 	topicKey, err := s.db.GetTopicKey(topic)
 	if err != nil {
-		logger.Log("msg", "getTopicKey failed", "error", err)
+		logger.Log("msg", "failed to retrieve topicKey", "error", err)
 		return err
 	}
 
-	key, err := s.decryptKey(topicKey.Key)
+	clearTopicKey, err := topicKey.DecryptKey(s.keyenckey)
 	if err != nil {
+		logger.Log("msg", "failed to decrypt topicKey", "error", err)
 		return err
 	}
 
-	topichash := e4.HashTopic(topic)
-
-	payload, err := s.CreateAndProtectForID(e4.SetTopicKey, topichash, key, id)
+	command, err := s.commandFactory.CreateSetTopicKeyCommand(topicKey.Hash(), clearTopicKey)
 	if err != nil {
-		logger.Log("msg", "CreateAndProtectForID failed", "error", err)
+		logger.Log("msg", "failed to create setTopicKey command", "error", err)
 		return err
 	}
-	err = s.sendCommandToClient(id, payload)
+
+	err = s.sendCommandToClient(command, idKey)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
 	}
 
-	err = s.db.LinkIDTopic(id, topic)
+	err = s.db.LinkIDTopic(idKey, topicKey)
 	if err != nil {
 		logger.Log("msg", "Database record of client-topic link failed", err)
 		return err
 	}
 
-	logger.Log("msg", "succeeded", "client", e4.PrettyID(id), "topic", topic, "topichash", topichash)
+	logger.Log("msg", "succeeded", "client", e4.PrettyID(id), "topic", topic, "topichash", topicKey.Hash())
 	return nil
 }
 
 func (s *e4impl) RemoveTopicClient(id []byte, topic string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopicClient")
 
-	topichash := e4.HashTopic(topic)
-
-	payload, err := s.CreateAndProtectForID(e4.RemoveTopic, topichash, nil, id)
+	topicKey, err := s.db.GetTopicKey(topic)
 	if err != nil {
-		logger.Log("msg", "CreateAndProtectForID failed", "error", err)
+		logger.Log("msg", "failed to retrieve topicKey", "error", err)
 		return err
 	}
-	err = s.sendCommandToClient(id, payload)
+
+	idKey, err := s.db.GetIDKey(id)
+	if err != nil {
+		logger.Log("msg", "failed to retrieve idKey", "error", err)
+		return err
+	}
+
+	command, err := s.commandFactory.CreateRemoveTopicCommand(topicKey.Hash())
+	if err != nil {
+		logger.Log("msg", "failed to create removeTopic command", "error", err)
+		return err
+	}
+
+	err = s.sendCommandToClient(command, idKey)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
 	}
-	err = s.db.UnlinkIDTopic(id, topic)
+
+	err = s.db.UnlinkIDTopic(idKey, topicKey)
 	if err != nil {
 		logger.Log("msg", "Cannot remove DB record of client-topic link", err)
 		return err
@@ -166,16 +174,24 @@ func (s *e4impl) RemoveTopicClient(id []byte, topic string) error {
 func (s *e4impl) ResetClient(id []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "resetClient")
 
-	payload, err := s.CreateAndProtectForID(e4.ResetTopics, nil, nil, id)
+	idKey, err := s.db.GetIDKey(id)
 	if err != nil {
-		logger.Log("msg", "CreateAndProtectForID failed", "error", err)
+		logger.Log("msg", "failed to retrieve idKey", "error", err)
 		return err
 	}
-	err = s.sendCommandToClient(id, payload)
+
+	command, err := s.commandFactory.CreateResetTopicsCommand()
+	if err != nil {
+		logger.Log("msg", "failed to create resetTopics command", "error", err)
+		return err
+	}
+
+	err = s.sendCommandToClient(command, idKey)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
 	}
+
 	logger.Log("msg", "succeeded", "client", e4.PrettyID(id))
 
 	return nil
@@ -243,13 +259,19 @@ func (s *e4impl) GetTopicList() ([]string, error) {
 func (s *e4impl) SendMessage(topic, msg string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "sendMessage")
 
-	topickey, err := s.db.GetTopicKey(topic)
+	topicKey, err := s.db.GetTopicKey(topic)
 	if err != nil {
-		logger.Log("msg", "getTopicKey failed", "error", err)
+		logger.Log("msg", "failed to retrieve topicKey", "error", err)
 		return err
 	}
 
-	payload, err := e4.Protect([]byte(msg), topickey.Key)
+	clearTopicKey, err := topicKey.DecryptKey(s.keyenckey)
+	if err != nil {
+		logger.Log("msg", "failed to decrypt topicKey", "error", err)
+		return err
+	}
+
+	payload, err := e4.Protect([]byte(msg), clearTopicKey)
 	if err != nil {
 		logger.Log("msg", "Protect failed", "error", err)
 		return err
@@ -267,21 +289,26 @@ func (s *e4impl) SendMessage(topic, msg string) error {
 func (s *e4impl) NewClientKey(id []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClientKey")
 
-	key := e4.RandomKey()
-
-	// first send to the client, and only update locally afterwards
-	payload, err := s.CreateAndProtectForID(e4.SetIDKey, nil, key, id)
+	idKey, err := s.db.GetIDKey(id)
 	if err != nil {
-		logger.Log("msg", "CreateAndProtectForID failed", "error", err)
+		logger.Log("msg", "failed to retrieve idKey", "error", err)
 		return err
 	}
-	err = s.sendCommandToClient(id, payload)
+
+	newKey := e4.RandomKey()
+	command, err := s.commandFactory.CreateSetIDKeyCommand(newKey)
+	if err != nil {
+		logger.Log("msg", "failed to create SetIDKey command", "error", err)
+		return err
+	}
+
+	err = s.sendCommandToClient(command, idKey)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
 	}
 
-	protectedkey, err := e4.Encrypt(s.keyenckey[:], nil, key)
+	protectedkey, err := e4.Encrypt(s.keyenckey, nil, newKey)
 	if err != nil {
 		return err
 	}
@@ -294,34 +321,6 @@ func (s *e4impl) NewClientKey(id []byte) error {
 	logger.Log("msg", "succeeded", "id", e4.PrettyID(id))
 
 	return nil
-}
-
-// CreateAndProtectForID creates a protected command for a given ID.
-func (s *e4impl) CreateAndProtectForID(cmd e4.Command, topichash, key, id []byte) ([]byte, error) {
-
-	command, err := createCommand(cmd, topichash, key)
-	if err != nil {
-		return nil, err
-	}
-
-	// get key of the given id
-	idkey, err := s.db.GetIDKey(id)
-	if err != nil {
-		return nil, err
-	}
-
-	clearkey, err := e4.Decrypt(s.keyenckey, nil, idkey.Key)
-	if err != nil {
-		return nil, err
-	}
-
-	// protect
-	payload, err := e4.Protect(command, clearkey)
-	if err != nil {
-		return nil, err
-	}
-
-	return payload, nil
 }
 
 func (s *e4impl) GetAllTopicIds() ([]string, error) {
@@ -346,7 +345,7 @@ func (s *e4impl) GetAllClientHexIds() ([]string, error) {
 
 	var hexids []string
 	for _, idkey := range idkeys {
-		hexids = append(hexids, hex.EncodeToString(idkey.E4ID[0:]))
+		hexids = append(hexids, hex.EncodeToString(idkey.E4ID))
 	}
 
 	return hexids, nil
@@ -388,49 +387,16 @@ func (s *e4impl) GetIdsforTopic(topic string, offset, count int) ([]string, erro
 	return hexids, nil
 }
 
-func createCommand(cmd e4.Command, topichash, key []byte) ([]byte, error) {
-	switch cmd {
-
-	case e4.RemoveTopic:
-		if err := e4.IsValidTopicHash(topichash); err != nil {
-			return nil, fmt.Errorf("invalid topic hash for RemoveTopic: %v", err)
-		}
-		if key != nil {
-			return nil, errors.New("unexpected key for RemoveTopic")
-		}
-		return append([]byte{cmd.ToByte()}, topichash...), nil
-
-	case e4.ResetTopics:
-		if topichash != nil || key != nil {
-			return nil, errors.New("unexpected argument for ResetTopics")
-		}
-		return []byte{cmd.ToByte()}, nil
-
-	case e4.SetIDKey:
-		if err := e4.IsValidKey(key); err != nil {
-			return nil, fmt.Errorf("invalid key for SetIdKey: %v", err)
-		}
-		if topichash != nil {
-			return nil, errors.New("unexpected topichash for SetIdKey")
-		}
-		return append([]byte{cmd.ToByte()}, key...), nil
-
-	case e4.SetTopicKey:
-		if err := e4.IsValidKey(key); err != nil {
-			return nil, fmt.Errorf("invalid key for SetTopicKey: %v", err)
-		}
-		if err := e4.IsValidTopicHash(topichash); err != nil {
-			return nil, fmt.Errorf("invalid topic hash for SetTopicKey: %v", err)
-		}
-		return append(append([]byte{cmd.ToByte()}, key...), topichash...), nil
+func (s *e4impl) sendCommandToClient(command commands.Command, idKey models.IDKey) error {
+	clearIDKey, err := idKey.DecryptKey(s.keyenckey)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt idKey: %v", err)
 	}
 
-	return nil, errors.New("invalid command")
-}
+	payload, err := command.Protect(clearIDKey)
+	if err != nil {
+		return fmt.Errorf("failed to protected command: %v", err)
+	}
 
-func (s *e4impl) sendCommandToClient(id, payload []byte) error {
-	topic := e4.TopicForID(id)
-	qos := byte(2)
-
-	return s.mqttClient.Publish(payload, topic, qos)
+	return s.mqttClient.Publish(payload, idKey.Topic(), protocols.QoSExactlyOnce)
 }

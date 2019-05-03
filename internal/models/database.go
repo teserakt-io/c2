@@ -1,5 +1,7 @@
 package models
 
+//go:generate mockgen -destination=database_mocks.go -package models -self_package gitlab.com/teserakt/c2/internal/models gitlab.com/teserakt/c2/internal/models Database
+
 import (
 	"bytes"
 	"errors"
@@ -25,6 +27,10 @@ var (
 	ErrTopicKeyNotFound = errors.New("topicKey not found in database")
 	// ErrIDKeyNotFound is returned when the key cannot be found in the database
 	ErrIDKeyNotFound = errors.New("IDKey not found in database")
+	// ErrIDKeyNoPrimaryKey is returned when an IDKey is provided but it doesn't have a primary key set
+	ErrIDKeyNoPrimaryKey = errors.New("IDKey doesn't have primary key")
+	// ErrTopicKeyNoPrimaryKey is returned when an TopicKey is provided but it doesn't have a primary key set
+	ErrTopicKeyNoPrimaryKey = errors.New("TopicKey doesn't have primary key")
 )
 
 // List of available DB dialects
@@ -49,8 +55,8 @@ type Database interface {
 	CountTopicKeys() (int, error)
 	GetAllIDKeys() ([]IDKey, error)
 	GetAllTopics() ([]TopicKey, error)
-	LinkIDTopic(id []byte, topic string) error
-	UnlinkIDTopic(id []byte, topic string) error
+	LinkIDTopic(idKey IDKey, topicKey TopicKey) error
+	UnlinkIDTopic(idKey IDKey, topicKey TopicKey) error
 	CountTopicsForID(id []byte) (int, error)
 	GetTopicsForID(id []byte, offset int, count int) ([]TopicKey, error)
 	CountIDsForTopic(topic string) (int, error)
@@ -333,28 +339,17 @@ func (gdb *gormDB) GetAllTopics() ([]TopicKey, error) {
 
 // This function links a topic and an id/key. The link is created in both
 // directions (IDkey to Topics, Topic to IDkeys).
-func (gdb *gormDB) LinkIDTopic(id []byte, topic string) error {
-	var idkey IDKey
-	var topickey TopicKey
-
-	if err := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return ErrIDKeyNotFound
-		}
-
-		return err
+func (gdb *gormDB) LinkIDTopic(idKey IDKey, topicKey TopicKey) error {
+	if gdb.db.NewRecord(idKey) {
+		return ErrIDKeyNoPrimaryKey
 	}
 
-	if err := gdb.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return ErrTopicKeyNotFound
-		}
-
-		return err
+	if gdb.db.NewRecord(topicKey) {
+		return ErrTopicKeyNoPrimaryKey
 	}
 
 	tx := gdb.db.Begin()
-	if err := tx.Model(&idkey).Association("TopicKeys").Append(&topickey).Error; err != nil {
+	if err := tx.Model(&idKey).Association("TopicKeys").Append(&topicKey).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -367,35 +362,27 @@ func (gdb *gormDB) LinkIDTopic(id []byte, topic string) error {
 
 // This function removes the relationship between a Topic and an ID, but
 // does not delete the Topic or the ID.
-func (gdb *gormDB) UnlinkIDTopic(id []byte, topic string) error {
-	var idkey IDKey
-	var topickey TopicKey
-
-	if err := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return ErrIDKeyNotFound
-		}
-		return err
+func (gdb *gormDB) UnlinkIDTopic(idKey IDKey, topicKey TopicKey) error {
+	if gdb.db.NewRecord(idKey) {
+		return ErrIDKeyNoPrimaryKey
 	}
-	if err := gdb.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return ErrTopicKeyNotFound
-		}
-		return err
+
+	if gdb.db.NewRecord(topicKey) {
+		return ErrTopicKeyNoPrimaryKey
 	}
 
 	tx := gdb.db.Begin()
-	if err := tx.Model(&idkey).Association("TopicKeys").Delete(&topickey).Error; err != nil {
+	if err := tx.Model(&idKey).Association("TopicKeys").Delete(&topicKey).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
-	if err := tx.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
+	if err := tx.Where(&IDKey{ID: idKey.ID}).First(&idKey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			tx.Rollback()
 			return errors.New("ID/Client appears to have been deleted, this is just an unlink")
 		}
 	}
-	if err := tx.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
+	if err := tx.Where(&TopicKey{ID: topicKey.ID}).First(&topicKey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			tx.Rollback()
 			return errors.New("Topic appears to have been deleted, this is just an unlink")
