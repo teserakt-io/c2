@@ -141,7 +141,7 @@ func (c *C2) ListenAndServe() error {
 	}
 
 	// subscribe to topics in the DB if not already done
-	topics, err := c.e4Service.GetTopicList()
+	topics, err := c.e4Service.GetAllTopicIds()
 	if err != nil {
 		c.logger.Log("msg", "Failed to fetch all existing topics", "error", err)
 

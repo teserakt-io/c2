@@ -21,7 +21,6 @@ type E4 interface {
 	ResetClient(id []byte) error
 	NewTopic(topic string) error
 	RemoveTopic(topic string) error
-	GetTopicList() ([]string, error)
 	SendMessage(topic, msg string) error
 	GetAllTopicIds() ([]string, error)
 	GetAllClientHexIds() ([]string, error)
@@ -136,15 +135,15 @@ func (s *e4impl) NewTopicClient(id []byte, topic string) error {
 func (s *e4impl) RemoveTopicClient(id []byte, topic string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopicClient")
 
-	topicKey, err := s.db.GetTopicKey(topic)
-	if err != nil {
-		logger.Log("msg", "failed to retrieve topicKey", "error", err)
-		return err
-	}
-
 	idKey, err := s.db.GetIDKey(id)
 	if err != nil {
 		logger.Log("msg", "failed to retrieve idKey", "error", err)
+		return err
+	}
+
+	topicKey, err := s.db.GetTopicKey(topic)
+	if err != nil {
+		logger.Log("msg", "failed to retrieve topicKey", "error", err)
 		return err
 	}
 
@@ -213,7 +212,7 @@ func (s *e4impl) NewTopic(topic string) error {
 	}
 	logger.Log("msg", "insertTopicKey succeeded", "topic", topic)
 
-	err = s.mqttClient.SubscribeToTopic(topic)
+	err = s.mqttClient.SubscribeToTopic(topic) // Monitoring
 	if err != nil {
 		logger.Log("msg", "subscribeToTopic failed", "topic", topic, "error", err)
 		return err
@@ -226,7 +225,7 @@ func (s *e4impl) NewTopic(topic string) error {
 func (s *e4impl) RemoveTopic(topic string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopic")
 
-	err := s.mqttClient.UnsubscribeFromTopic(topic)
+	err := s.mqttClient.UnsubscribeFromTopic(topic) // Monitoring
 	if err != nil {
 		logger.Log("msg", "unsubscribeFromTopic failed", "error", err)
 	} else {
@@ -240,20 +239,6 @@ func (s *e4impl) RemoveTopic(topic string) error {
 	logger.Log("msg", "succeeded", "topic", topic)
 
 	return nil
-}
-
-func (s *e4impl) GetTopicList() ([]string, error) {
-	topicKeys, err := s.db.GetAllTopics()
-	if err != nil {
-		return nil, err
-	}
-
-	var topics []string
-	for _, topicKey := range topicKeys {
-		topics = append(topics, topicKey.Topic)
-	}
-
-	return topics, nil
 }
 
 func (s *e4impl) SendMessage(topic, msg string) error {
@@ -276,7 +261,7 @@ func (s *e4impl) SendMessage(topic, msg string) error {
 		logger.Log("msg", "Protect failed", "error", err)
 		return err
 	}
-	err = s.mqttClient.Publish(payload, topic, byte(0))
+	err = s.mqttClient.Publish(payload, topic, protocols.QoSAtMostOnce)
 	if err != nil {
 		logger.Log("msg", "publish failed", "error", err)
 		return err
