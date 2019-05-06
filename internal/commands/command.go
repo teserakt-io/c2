@@ -42,10 +42,5 @@ func (c e4Command) Content() ([]byte, error) {
 
 // Protect returns an encrypoted command payload with the given key
 func (c e4Command) Protect(key []byte) ([]byte, error) {
-	payload, err := e4.Protect(c, key)
-	if err != nil {
-		return nil, err
-	}
-
-	return payload, nil
+	return e4.Protect(c, key)
 }
