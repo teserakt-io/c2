@@ -62,6 +62,15 @@ func TestE4Command(t *testing.T) {
 		if reflect.DeepEqual(payload, cmd) == true {
 			t.Errorf("Expected payload to be different from original command")
 		}
+
+		unprotected, err := e4.Unprotect(payload, key)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if reflect.DeepEqual(unprotected, []byte(cmd)) == false {
+			t.Errorf("Expected to retrieve original command %v, got %v", cmd, unprotected)
+		}
 	})
 
 	t.Run("Protect with invalid key returns error", func(t *testing.T) {
