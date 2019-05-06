@@ -6,6 +6,7 @@ package commands
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	e4common "gitlab.com/teserakt/e4common"
 	reflect "reflect"
 )
 
@@ -32,6 +33,21 @@ func (m *MockCommand) EXPECT() *MockCommandMockRecorder {
 	return m.recorder
 }
 
+// Content mocks base method
+func (m *MockCommand) Content() ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Content")
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Content indicates an expected call of Content
+func (mr *MockCommandMockRecorder) Content() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Content", reflect.TypeOf((*MockCommand)(nil).Content))
+}
+
 // Protect mocks base method
 func (m *MockCommand) Protect(arg0 []byte) ([]byte, error) {
 	m.ctrl.T.Helper()
@@ -45,4 +61,19 @@ func (m *MockCommand) Protect(arg0 []byte) ([]byte, error) {
 func (mr *MockCommandMockRecorder) Protect(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Protect", reflect.TypeOf((*MockCommand)(nil).Protect), arg0)
+}
+
+// Type mocks base method
+func (m *MockCommand) Type() (e4common.Command, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Type")
+	ret0, _ := ret[0].(e4common.Command)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Type indicates an expected call of Type
+func (mr *MockCommandMockRecorder) Type() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Type", reflect.TypeOf((*MockCommand)(nil).Type))
 }
