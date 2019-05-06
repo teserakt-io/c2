@@ -34,19 +34,25 @@ func decryptKey(t *testing.T, keyEncKey []byte, encKey []byte) []byte {
 	return key
 }
 
-func newKey() []byte {
+func newKey(t *testing.T) []byte {
 	key := make([]byte, e4.KeyLen)
-	rand.Read(key)
+	_, err := rand.Read(key)
+	if err != nil {
+		t.Fatalf("Failed to generate key: %v", err)
+	}
 
 	return key
 }
 
 func createTestIDKey(t *testing.T, e4Key []byte) (models.IDKey, []byte) {
-	clearIDKey := newKey()
+	clearIDKey := newKey(t)
 	encryptedIDKey := encryptKey(t, e4Key, clearIDKey)
 
 	id := make([]byte, e4.IDLen)
-	rand.Read(id)
+	_, err := rand.Read(id)
+	if err != nil {
+		t.Fatalf("Failed to generate ID: %v", err)
+	}
 
 	idKey := models.IDKey{
 		E4ID: id,
@@ -57,7 +63,7 @@ func createTestIDKey(t *testing.T, e4Key []byte) (models.IDKey, []byte) {
 }
 
 func createTestTopicKey(t *testing.T, e4Key []byte) (models.TopicKey, []byte) {
-	clearTopicKey := newKey()
+	clearTopicKey := newKey(t)
 	encryptedTopicKey := encryptKey(t, e4Key, clearTopicKey)
 
 	topicKey := models.TopicKey{
@@ -78,7 +84,7 @@ func TestE4(t *testing.T) {
 
 	logger := log.NewNopLogger()
 
-	e4Key := newKey()
+	e4Key := newKey(t)
 
 	service := NewE4(mockDB, mockMQTTClient, mockCommandFactory, logger, e4Key)
 
