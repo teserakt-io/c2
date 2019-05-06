@@ -5,7 +5,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/d4l3k/messagediff v1.2.1 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20181014144952-4e0d7dc8888f // indirect
-	github.com/eclipse/paho.mqtt.golang v1.1.1
+	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5 // indirect
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/go-kit/kit v0.8.0
