@@ -1,0 +1,17 @@
+production: true
+mqtt-broker: tcp://mqtt.broker:1234
+mqtt-ID: mqttid
+mqtt-QoS-pub: 1
+mqtt-QoS-sub: 2
+db-type: sqlite3
+db-file: /path/to/db/file
+db-encryption-passphrase: passphrase
+db-secure-connection: selfsigned
+db-schema: ""
+db-logging: true
+grpc-host-port: 0.0.0.0:1234
+grpc-cert: /path/to/grpc/cert
+grpc-key: /path/to/grpc/key
+http-host-port: 0.0.0.0:5678
+http-cert: /path/to/http/cert
+http-key: /path/to/http/key
