@@ -28,11 +28,11 @@ type APIEndpoint interface {
 
 // C2 ...
 type C2 struct {
-	cfg        config.Config
-	db         models.Database
-	logger     log.Logger
-	e4Service  services.E4
-	mqttClient protocols.MQTTClient
+	cfg          config.Config
+	db           models.Database
+	logger       log.Logger
+	e4Service    services.E4
+	pubSubClient protocols.PubSubClient
 
 	endpoints []APIEndpoint
 }
@@ -70,7 +70,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	}
 	logger.Log("msg", "database initialized")
 
-	esClient, err := analytics.NewElasticClient(cfg.ES)
+	monitor, err := analytics.NewESMessageMonitor(cfg.ES)
 	if err != nil {
 		logger.Log("msg", "ElasticSearch setup failed", "error", err)
 
@@ -79,7 +79,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 
 	logger.Log("msg", "ElasticSearch setup successfully (or disabled by configuration)")
 
-	mqttClient, err := protocols.NewMQTTClient(cfg.MQTT, log.With(logger, "protocol", "mqtt"), esClient)
+	pubSubClient, err := protocols.NewMQTTPubSubClient(cfg.MQTT, log.With(logger, "protocol", "mqtt"), monitor)
 	if err != nil {
 		logger.Log("msg", "MQTT client creation failed", "error", err)
 
@@ -88,9 +88,13 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 
 	logger.Log("msg", "MQTT client created")
 
+	if err := pubSubClient.Connect(); err != nil {
+		return nil, fmt.Errorf("MQTT client connection failed: %v", err)
+	}
+
 	e4Service := services.NewE4(
 		db,
-		mqttClient,
+		pubSubClient,
 		commands.NewFactory(),
 		log.With(logger, "protocol", "c2"),
 		e4.HashPwd(cfg.DB.Passphrase),
@@ -109,17 +113,18 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	logger.Log("msg", "Observability instrumentation setup successfully")
 
 	return &C2{
-		cfg:        cfg,
-		db:         db,
-		logger:     logger,
-		e4Service:  e4Service,
-		mqttClient: mqttClient,
+		cfg:          cfg,
+		db:           db,
+		logger:       logger,
+		e4Service:    e4Service,
+		pubSubClient: pubSubClient,
 	}, nil
 }
 
 // Close closes all internal C2 connections
 func (c *C2) Close() {
 	c.db.Close()
+	c.pubSubClient.Disconnect()
 }
 
 // EnableHTTPEndpoint will turn on C2 over HTTP
@@ -148,7 +153,7 @@ func (c *C2) ListenAndServe() error {
 		return fmt.Errorf("Failed to fetch all existing topics: %v", err)
 	}
 
-	if err := c.mqttClient.SubscribeToTopics(topics); err != nil {
+	if err := c.pubSubClient.SubscribeToTopics(topics); err != nil {
 		c.logger.Log("msg", "Subscribing to all existing topics failed", "error", err)
 
 		return fmt.Errorf("Subscribing to all existing topics failed: %v", err)

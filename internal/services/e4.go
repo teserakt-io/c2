@@ -33,7 +33,7 @@ type E4 interface {
 
 type e4impl struct {
 	db             models.Database
-	mqttClient     protocols.MQTTClient
+	mqttClient     protocols.PubSubClient
 	commandFactory commands.Factory
 	logger         log.Logger
 	keyenckey      []byte
@@ -44,7 +44,7 @@ var _ E4 = &e4impl{}
 // NewE4 creates a new E4 service
 func NewE4(
 	db models.Database,
-	mqttClient protocols.MQTTClient,
+	mqttClient protocols.PubSubClient,
 	commandFactory commands.Factory,
 	logger log.Logger,
 	keyenckey []byte,

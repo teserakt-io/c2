@@ -1,20 +1,25 @@
 package protocols
 
-//go:generate mockgen -destination=mqtt_mocks.go -package protocols -self_package gitlab.com/teserakt/c2/internal/protocols gitlab.com/teserakt/c2/internal/protocols MQTTClient
+//go:generate mockgen -destination=mqtt_mocks.go -package protocols -self_package gitlab.com/teserakt/c2/internal/protocols gitlab.com/teserakt/c2/internal/protocols MQTTClient,MQTTMessage,MQTTToken
 
 import (
-	"bytes"
-	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"time"
 	"unicode/utf8"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-kit/kit/log"
-	"github.com/olivere/elastic"
 
+	"gitlab.com/teserakt/c2/internal/analytics"
 	"gitlab.com/teserakt/c2/internal/config"
+)
+
+var (
+	// ErrMQTTTimeout is returned when the response from the mqtt broker timeout
+	ErrMQTTTimeout = errors.New("mqtt timed out")
 )
 
 // List of MQTT availabe QoS
@@ -24,67 +29,83 @@ var (
 	QoSExactlyOnce = byte(2)
 )
 
-// MQTTClient ...
+// MQTTClient defines a minimal mqtt.Client needed to support E4 protocol
 type MQTTClient interface {
-	SubscribeToTopics(topics []string) error
-	SubscribeToTopic(topic string) error
-	UnsubscribeFromTopic(topic string) error
-	Publish(payload []byte, topic string, qos byte) error
+	mqtt.Client
 }
 
-type mqttClient struct {
-	mqtt     mqtt.Client
-	config   config.MQTTCfg
-	logger   log.Logger
-	esClient *elastic.Client
+// MQTTMessage wrap around a mqtt.Message
+type MQTTMessage interface {
+	mqtt.Message
 }
 
-var _ MQTTClient = &mqttClient{}
-
-type loggedMessage struct {
-	Duplicate       bool   `json:"duplicate"`
-	Qos             byte   `json:"qos"`
-	Retained        bool   `json:"retained"`
-	Topic           string `json:"topic"`
-	MessageID       uint16 `json:"messageid"`
-	Payload         []byte `json:"payload"`
-	LooksEncrypted  bool   `json:"looksencrypted"`
-	LooksCompressed bool   `json:"lookscompressed"`
-	IsBase64        bool   `json:"isbase64"`
-	IsUTF8          bool   `json:"isutf8"`
-	IsJSON          bool   `json:"isjson"`
+// MQTTToken wrap around a mqtt.Token
+type MQTTToken interface {
+	mqtt.Token
 }
 
-// NewMQTTClient creates and connect a new MQTT client
-func NewMQTTClient(scfg config.MQTTCfg, logger log.Logger, esClient *elastic.Client) (MQTTClient, error) {
+type mqttPubSubClient struct {
+	mqtt              MQTTClient
+	config            config.MQTTCfg
+	logger            log.Logger
+	monitor           analytics.MessageMonitor
+	waitTimeout       time.Duration
+	disconnectTimeout uint // idk why they used uint here instead of a time.Duration. They do convert internally tho.
+}
+
+var _ PubSubClient = &mqttPubSubClient{}
+
+// NewMQTTPubSubClient creates and connect a new PubSubClient over MQTT
+func NewMQTTPubSubClient(
+	cfg config.MQTTCfg,
+	logger log.Logger,
+	monitor analytics.MessageMonitor,
+) (PubSubClient, error) {
 	// TODO: secure connection to broker
-	logger.Log("addr", scfg.Broker)
-
 	mqOpts := mqtt.NewClientOptions()
-	mqOpts.AddBroker(scfg.Broker)
-	mqOpts.SetClientID(scfg.ID)
-	mqOpts.SetPassword(scfg.Password)
-	mqOpts.SetUsername(scfg.Username)
+	mqOpts.AddBroker(cfg.Broker)
+	mqOpts.SetClientID(cfg.ID)
+	mqOpts.SetPassword(cfg.Password)
+	mqOpts.SetUsername(cfg.Username)
 
 	mqtt := mqtt.NewClient(mqOpts)
 
-	logger.Log("msg", "mqtt parameters", "broker", scfg.Broker, "id", scfg.ID, "username", scfg.Username)
-	if token := mqtt.Connect(); token.Wait() && token.Error() != nil {
-		logger.Log("msg", "connection failed", "error", token.Error())
-		return nil, token.Error()
-	}
-
-	logger.Log("msg", "connected to broker")
-
-	return &mqttClient{
-		mqtt:     mqtt,
-		config:   scfg,
-		logger:   logger,
-		esClient: esClient,
+	return &mqttPubSubClient{
+		mqtt:              mqtt,
+		config:            cfg,
+		logger:            logger,
+		monitor:           monitor,
+		waitTimeout:       1 * time.Second,
+		disconnectTimeout: 1000,
 	}, nil
 }
 
-func (c *mqttClient) SubscribeToTopics(topics []string) error {
+func (c *mqttPubSubClient) Connect() error {
+	c.logger.Log("msg", "mqtt parameters", "broker", c.config.Broker, "id", c.config.ID, "username", c.config.Username)
+	token := c.mqtt.Connect()
+	// WaitTimeout instead of Wait or this will block indefinitively the execution if the server is down
+	if !token.WaitTimeout(c.waitTimeout) {
+		c.logger.Log("msg", "connection failed", "error", ErrMQTTTimeout)
+		return ErrMQTTTimeout
+	}
+
+	if token.Error() != nil {
+		c.logger.Log("msg", "connection failed", "error", token.Error())
+		return token.Error()
+	}
+
+	c.logger.Log("msg", "connected to broker")
+
+	return nil
+}
+
+func (c *mqttPubSubClient) Disconnect() error {
+	c.mqtt.Disconnect(c.disconnectTimeout)
+
+	return nil
+}
+
+func (c *mqttPubSubClient) SubscribeToTopics(topics []string) error {
 	if len(topics) == 0 {
 		c.logger.Log("msg", "no topic found in the db, no subscribe request sent")
 		return nil
@@ -95,12 +116,17 @@ func (c *mqttClient) SubscribeToTopics(topics []string) error {
 	for _, topic := range topics {
 		filters[topic] = byte(c.config.QoSSub)
 	}
-
 	fmt.Println(filters)
 
-	if token := c.mqtt.SubscribeMultiple(filters, func(mqttClient mqtt.Client, m mqtt.Message) {
-		c.onMessage(m)
-	}); token.Wait() && token.Error() != nil {
+	token := c.mqtt.SubscribeMultiple(filters, func(mqttClient mqtt.Client, m mqtt.Message) {
+		c.logMessage(m)
+	})
+	if !token.WaitTimeout(c.waitTimeout) {
+		c.logger.Log("msg", "subscribe-multiple failed", "topics", len(topics), "error", ErrMQTTTimeout)
+
+		return ErrMQTTTimeout
+	}
+	if token.Error() != nil {
 		c.logger.Log("msg", "subscribe-multiple failed", "topics", len(topics), "error", token.Error())
 		return token.Error()
 	}
@@ -109,9 +135,9 @@ func (c *mqttClient) SubscribeToTopics(topics []string) error {
 	return nil
 }
 
-func (c *mqttClient) SubscribeToTopic(topic string) error {
+func (c *mqttPubSubClient) SubscribeToTopic(topic string) error {
 	// Only index message if monitoring enabled, i.e. if esClient is defined
-	if c.esClient == nil {
+	if !c.monitor.Enabled() {
 		return nil
 	}
 
@@ -119,9 +145,15 @@ func (c *mqttClient) SubscribeToTopic(topic string) error {
 
 	qos := byte(c.config.QoSSub)
 
-	if token := c.mqtt.Subscribe(topic, qos, func(mqttClient mqtt.Client, message mqtt.Message) {
-		c.onMessage(message)
-	}); token.Wait() && token.Error() != nil {
+	token := c.mqtt.Subscribe(topic, qos, func(mqttClient mqtt.Client, message mqtt.Message) {
+		c.logMessage(message)
+	})
+	if !token.WaitTimeout(c.waitTimeout) {
+		logger.Log("msg", "subscribe failed", "topic", topic, "error", ErrMQTTTimeout)
+
+		return ErrMQTTTimeout
+	}
+	if token.Error() != nil {
 		logger.Log("msg", "subscribe failed", "topic", topic, "error", token.Error())
 
 		return token.Error()
@@ -131,15 +163,21 @@ func (c *mqttClient) SubscribeToTopic(topic string) error {
 	return nil
 }
 
-func (c *mqttClient) UnsubscribeFromTopic(topic string) error {
+func (c *mqttPubSubClient) UnsubscribeFromTopic(topic string) error {
 	// Only index message if monitoring enabled, i.e. if esClient is defined
-	if c.esClient == nil {
+	if !c.monitor.Enabled() {
 		return nil
 	}
 
 	logger := log.With(c.logger, "protocol", "mqtt")
 
-	if token := c.mqtt.Unsubscribe(topic); token.Wait() && token.Error() != nil {
+	token := c.mqtt.Unsubscribe(topic)
+	if !token.WaitTimeout(c.waitTimeout) {
+		logger.Log("msg", "unsubscribe failed", "topic", topic, "error", ErrMQTTTimeout)
+
+		return ErrMQTTTimeout
+	}
+	if token.Error() != nil {
 		logger.Log("msg", "unsubscribe failed", "topic", topic, "error", token.Error())
 		return token.Error()
 	}
@@ -148,12 +186,18 @@ func (c *mqttClient) UnsubscribeFromTopic(topic string) error {
 	return nil
 }
 
-func (c *mqttClient) Publish(payload []byte, topic string, qos byte) error {
+func (c *mqttPubSubClient) Publish(payload []byte, topic string, qos byte) error {
 	logger := log.With(c.logger, "protocol", "mqtt")
 
 	payloadStr := string(payload)
 
-	if token := c.mqtt.Publish(topic, qos, true, payloadStr); token.Wait() && token.Error() != nil {
+	token := c.mqtt.Publish(topic, qos, true, payloadStr)
+	if !token.WaitTimeout(c.waitTimeout) {
+		logger.Log("msg", "publish failed", "topic", topic, "error", ErrMQTTTimeout)
+
+		return ErrMQTTTimeout
+	}
+	if token.Error() != nil {
 		logger.Log("msg", "publish failed", "topic", topic, "error", token.Error())
 		return token.Error()
 	}
@@ -162,8 +206,8 @@ func (c *mqttClient) Publish(payload []byte, topic string, qos byte) error {
 	return nil
 }
 
-func (c *mqttClient) onMessage(m mqtt.Message) {
-	msg := &loggedMessage{
+func (c *mqttPubSubClient) logMessage(m MQTTMessage) {
+	msg := analytics.LoggedMessage{
 		Duplicate:       m.Duplicate(),
 		Qos:             m.Qos(),
 		Retained:        m.Retained(),
@@ -179,10 +223,10 @@ func (c *mqttClient) onMessage(m mqtt.Message) {
 
 	// try to determine type
 	if !msg.IsUTF8 {
-		if looksCompressed(m.Payload()) {
+		if analytics.LooksCompressed(m.Payload()) {
 			msg.LooksCompressed = true
 		} else {
-			msg.LooksEncrypted = looksEncrypted(m.Payload())
+			msg.LooksEncrypted = analytics.LooksEncrypted(m.Payload())
 		}
 	} else {
 		var js map[string]interface{}
@@ -195,61 +239,5 @@ func (c *mqttClient) onMessage(m mqtt.Message) {
 		}
 	}
 
-	b, _ := json.Marshal(msg)
-	ctx := context.Background()
-
-	c.esClient.Index().Index("messages").Type("message").BodyString(string(b)).Do(ctx)
-}
-
-func looksEncrypted(data []byte) bool {
-	// efficient, lazy heuristic, FN/FP-prone
-	// will fail if e.g. ciphertext is prepended with non-random nonce
-	if len(data) < 16 {
-		// make the assumption that <16-byte data won't be encrypted
-		return false
-	}
-	counter := make(map[int]int)
-	for i := range data[:16] {
-		counter[int(data[i])]++
-	}
-	if len(counter) < 10 {
-		return false
-	}
-	// if encrypted, fails with low prob
-
-	return true
-}
-
-func looksCompressed(data []byte) bool {
-	// application/zip
-	if bytes.Equal(data[:4], []byte("\x50\x4b\x03\x04")) {
-		return true
-	}
-
-	// application/x-gzip
-	if bytes.Equal(data[:3], []byte("\x1F\x8B\x08")) {
-		return true
-	}
-
-	// application/x-rar-compressed
-	if bytes.Equal(data[:7], []byte("\x52\x61\x72\x20\x1A\x07\x00")) {
-		return true
-	}
-
-	// zlib no/low compression
-	if bytes.Equal(data[:2], []byte("\x78\x01")) {
-		return true
-	}
-
-	// zlib default compression
-	if bytes.Equal(data[:2], []byte("\x78\x9c")) {
-		return true
-	}
-
-	// zlib best compression
-	if bytes.Equal(data[:2], []byte("\x78\xda")) {
-		return true
-	}
-
-	return false
+	c.monitor.OnMessage(msg)
 }

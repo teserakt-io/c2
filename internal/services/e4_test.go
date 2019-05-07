@@ -79,14 +79,14 @@ func TestE4(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockDB := models.NewMockDatabase(mockCtrl)
-	mockMQTTClient := protocols.NewMockMQTTClient(mockCtrl)
+	mockPubSubClient := protocols.NewMockPubSubClient(mockCtrl)
 	mockCommandFactory := commands.NewMockFactory(mockCtrl)
 
 	logger := log.NewNopLogger()
 
 	e4Key := newKey(t)
 
-	service := NewE4(mockDB, mockMQTTClient, mockCommandFactory, logger, e4Key)
+	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, logger, e4Key)
 
 	t.Run("NewClient encrypt key and save properly", func(t *testing.T) {
 		idKey, clearKey := createTestIDKey(t, e4Key)
@@ -122,7 +122,7 @@ func TestE4(t *testing.T) {
 			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(topicKey.Hash(), clearTopicKey).Return(mockCommand, nil),
 			mockCommand.EXPECT().Protect(clearIDKey).Return(commandPayload, nil),
 
-			mockMQTTClient.EXPECT().Publish(commandPayload, idKey.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(commandPayload, idKey.Topic(), protocols.QoSExactlyOnce),
 
 			mockDB.EXPECT().LinkIDTopic(idKey, topicKey),
 		)
@@ -146,7 +146,7 @@ func TestE4(t *testing.T) {
 			mockCommandFactory.EXPECT().CreateRemoveTopicCommand(topicKey.Hash()).Return(mockCommand, nil),
 			mockCommand.EXPECT().Protect(clearIDKey).Return(commandPayload, nil),
 
-			mockMQTTClient.EXPECT().Publish(commandPayload, idKey.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(commandPayload, idKey.Topic(), protocols.QoSExactlyOnce),
 
 			mockDB.EXPECT().UnlinkIDTopic(idKey, topicKey),
 		)
@@ -168,7 +168,7 @@ func TestE4(t *testing.T) {
 			mockCommandFactory.EXPECT().CreateResetTopicsCommand().Return(mockCommand, nil),
 			mockCommand.EXPECT().Protect(clearIDKey).Return(commandPayload, nil),
 
-			mockMQTTClient.EXPECT().Publish(commandPayload, idKey.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(commandPayload, idKey.Topic(), protocols.QoSExactlyOnce),
 		)
 
 		if err := service.ResetClient(idKey.E4ID); err != nil {
@@ -181,7 +181,7 @@ func TestE4(t *testing.T) {
 
 		gomock.InOrder(
 			mockDB.EXPECT().InsertTopicKey(topic, gomock.Any()),
-			mockMQTTClient.EXPECT().SubscribeToTopic(topic),
+			mockPubSubClient.EXPECT().SubscribeToTopic(topic),
 		)
 
 		if err := service.NewTopic(topic); err != nil {
@@ -194,7 +194,7 @@ func TestE4(t *testing.T) {
 		topic := "topic"
 
 		gomock.InOrder(
-			mockMQTTClient.EXPECT().UnsubscribeFromTopic(topic),
+			mockPubSubClient.EXPECT().UnsubscribeFromTopic(topic),
 			mockDB.EXPECT().DeleteTopicKey(topic),
 		)
 
@@ -234,7 +234,7 @@ func TestE4(t *testing.T) {
 
 		gomock.InOrder(
 			mockDB.EXPECT().GetTopicKey(topicKey.Topic).Return(topicKey, nil),
-			mockMQTTClient.EXPECT().Publish(expectedPayload, topicKey.Topic, protocols.QoSAtMostOnce),
+			mockPubSubClient.EXPECT().Publish(expectedPayload, topicKey.Topic, protocols.QoSAtMostOnce),
 		)
 
 		if err := service.SendMessage(topicKey.Topic, message); err != nil {
@@ -265,7 +265,7 @@ func TestE4(t *testing.T) {
 
 			}).Return(mockCommand, nil),
 			mockCommand.EXPECT().Protect(clearIDKey).Return(commandPayload, nil),
-			mockMQTTClient.EXPECT().Publish(commandPayload, idKey.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(commandPayload, idKey.Topic(), protocols.QoSExactlyOnce),
 			mockDB.EXPECT().InsertIDKey(idKey.E4ID, gomock.Any()).Do(func(id, key []byte) {
 				if reflect.DeepEqual(key, protectedNewKey) == false {
 					t.Errorf("Expected protected new key to be %#v, got %#v", protectedNewKey, key)
