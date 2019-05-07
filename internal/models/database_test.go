@@ -1,14 +1,13 @@
 package models
 
 import (
+	"github.com/jinzhu/gorm"
 	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/jinzhu/gorm"
 
 	"gitlab.com/teserakt/c2/internal/config"
 )
@@ -56,6 +55,7 @@ func TestDBSQLite(t *testing.T) {
 }
 
 func TestDBPostgres(t *testing.T) {
+
 	setup := func(t *testing.T) (Database, func()) {
 		dbCfg := config.DBCfg{
 			Type:             DBDialectPostgres,
@@ -74,6 +74,11 @@ func TestDBPostgres(t *testing.T) {
 		db, err := NewDB(dbCfg, logger)
 		if err != nil {
 			switch {
+			case strings.Contains(err.Error(), "authentication failed"):
+				// TODO: we should probably support a flag here such that
+				// if we know the environment is good, we Fatalf instead.
+				// for example inside gitlab ci.
+				t.Skipf("Cannot authenticate with postgres server, skipping postgres db tests: %v", err)
 			case strings.Contains(err.Error(), "no such host"), strings.Contains(err.Error(), "connection refused"):
 				t.Skipf("Cannot connect to postgres server, skipping postgres db tests: %v", err)
 			default:
