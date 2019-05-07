@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 	"unicode/utf8"
 
@@ -106,8 +105,13 @@ func (c *mqttPubSubClient) Disconnect() error {
 }
 
 func (c *mqttPubSubClient) SubscribeToTopics(topics []string) error {
+	if !c.monitor.Enabled() {
+		c.logger.Log("msg", "monitoring is not enabled, skipping topics subscription")
+		return nil
+	}
+
 	if len(topics) == 0 {
-		c.logger.Log("msg", "no topic found in the db, no subscribe request sent")
+		c.logger.Log("msg", "no topic provided, no subscribe request sent")
 		return nil
 	}
 
@@ -116,7 +120,6 @@ func (c *mqttPubSubClient) SubscribeToTopics(topics []string) error {
 	for _, topic := range topics {
 		filters[topic] = byte(c.config.QoSSub)
 	}
-	fmt.Println(filters)
 
 	token := c.mqtt.SubscribeMultiple(filters, func(mqttClient mqtt.Client, m mqtt.Message) {
 		c.logMessage(m)
@@ -138,14 +141,13 @@ func (c *mqttPubSubClient) SubscribeToTopics(topics []string) error {
 func (c *mqttPubSubClient) SubscribeToTopic(topic string) error {
 	// Only index message if monitoring enabled, i.e. if esClient is defined
 	if !c.monitor.Enabled() {
+		c.logger.Log("msg", "monitoring is not enabled, skipping topic subscription")
 		return nil
 	}
 
 	logger := log.With(c.logger, "protocol", "mqtt")
 
-	qos := byte(c.config.QoSSub)
-
-	token := c.mqtt.Subscribe(topic, qos, func(mqttClient mqtt.Client, message mqtt.Message) {
+	token := c.mqtt.Subscribe(topic, byte(c.config.QoSSub), func(mqttClient mqtt.Client, message mqtt.Message) {
 		c.logMessage(message)
 	})
 	if !token.WaitTimeout(c.waitTimeout) {
