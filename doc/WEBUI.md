@@ -110,6 +110,13 @@ mobile browsers.
 
 ## REST API
 
+In the following API, `topic` is any acceptable MQTT topic. Special characters 
+in this topic will be url-encoded. `id` is a 32-character hexadecimal value that 
+identifies the client. `key` is a 64-character hexadecimal value that identifies 
+the key.
+
+`offset` and `count` are integers. 
+
 E4 C2 API:
 
 * POST /e4/client/{id}/key/{key}: `new_client(id, key)`
@@ -128,14 +135,52 @@ E4 C2 API:
 
 * PATCH /e4/client/{id}/: `new_client_key(id)` 
 
-Other endpoints:
+* GET /e4/topic/: lists of all topics. This API may be unsafe.
 
-* GET /e4/topic/: lists of all topics
-
-* GET /e4/client/: lists all client ids
+* GET /e4/client/: lists all client ids. This API may be unsafe.
 
 * GET /e4/client/{id}: lists the topics support by id
 
-* GET /e4/topic/{topic}: lists the ids supporting topic
+* GET /e4/topic/{topic}/clients/count - lists the number of clients with 
+  the topic key for a specific topic.
 
+* GET /e4/topic/{topic}/client/{offset}/{count} - retrieves clients that 
+  have access to the given topic, starting at the offset given by offset and 
+  retrieving count number of such devices, to enable paginated retrieval 
+  of clients.
 
+* GET /e4/client/{id}/topics/count - returns the number of topics to which a 
+  given client identified by `id` is subscribed to and have access to the 
+  topic key.
+
+* GET /e4/client/{id}/topics/{offset}/{count} - returns the topics associated 
+  with a given client identified by `id`, starting from offset and returning 
+  count in number.
+
+## User stories
+
+The following are a series of user stores that specify how the user should 
+experience the product.
+
+ 1. The User has an embedded device, which they describe with a known identifier 
+    they may use internally. An example might be "Sensor-CH-VD-1003-ID-200". 
+    They wish to enroll this device in the C2.
+
+ 2. The User has a number of enrolled devices in the C2. They wish to create a 
+    group communication channel for one or more of these devices with a given 
+    topic name and add the device to that topic.
+
+ 3. The User has a topic and a device name. They want to find out what topics 
+    that device is subscribed to, so they can check if it is in the topic 
+    name they have. Having done this, they then wish to find out what other 
+    devices share that topic (regardless of the outcome of the first query).
+
+ 4. The user has decommisioned a device. They wish to remove it from the C2 
+    using the webui.
+
+ 5. The user has decided that a topic may no longer be used and are removing 
+    it. They remove it from the C2.
+
+ 6. The user wishes to reset a device. 
+
+ 7. The user wishes to alter the key for a client.
