@@ -75,6 +75,7 @@ func (loader *viperConfigLoader) Load() (Config, error) {
 		{&cfg.DB.File, "db-file", viperString, "", "E4C2_DB_FILE"},
 		{&cfg.DB.Host, "db-host", viperString, "", ""},
 		{&cfg.DB.Database, "db-database", viperString, "", ""},
+		{&cfg.DB.Schema, "db-schema", viperString, "", ""},
 		{&cfg.DB.Username, "db-username", viperString, "", "E4C2_DB_USERNAME"},
 		{&cfg.DB.Password, "db-password", viperString, "", "E4C2_DB_PASSWORD"},
 		{&cfg.DB.Passphrase, "db-encryption-passphrase", viperString, "", "E4C2_DB_ENCRYPTION_PASSPHRASE"},

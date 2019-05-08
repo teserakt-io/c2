@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"crypto/tls"
@@ -9,19 +9,41 @@ import (
 	"net/http"
 	"strconv"
 
+	"gitlab.com/teserakt/c2/internal/config"
+	"gitlab.com/teserakt/c2/internal/services"
+	e4 "gitlab.com/teserakt/e4common"
+
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"go.opencensus.io/plugin/ochttp"
-
-	"gitlab.com/teserakt/c2/internal/config"
-	e4 "gitlab.com/teserakt/e4common"
 )
 
-func (s *C2) createHTTPServer(scfg config.ServerCfg) error {
-	var logger = log.With(s.logger, "protocol", "http")
-	logger.Log("addr", scfg.Addr)
+// HTTPServer defines methods available on a C2 HTTP server
+type HTTPServer interface {
+	ListenAndServe() error
+}
 
-	tlsCert, err := tls.LoadX509KeyPair(scfg.Cert, scfg.Key)
+type httpServer struct {
+	e4Service services.E4
+	logger    log.Logger
+	cfg       config.ServerCfg
+}
+
+var _ HTTPServer = &httpServer{}
+
+// NewHTTPServer creates a new http server for C2
+func NewHTTPServer(scfg config.ServerCfg, e4Service services.E4, logger log.Logger) HTTPServer {
+	return &httpServer{
+		e4Service: e4Service,
+		logger:    logger,
+		cfg:       scfg,
+	}
+}
+
+func (s *httpServer) ListenAndServe() error {
+	s.logger.Log("addr", s.cfg.Addr)
+
+	tlsCert, err := tls.LoadX509KeyPair(s.cfg.Cert, s.cfg.Key)
 	if err != nil {
 		return err
 	}
@@ -67,20 +89,20 @@ func (s *C2) createHTTPServer(scfg config.ServerCfg) error {
 	route.HandleFunc("/e4/topic", s.handleGetTopics).Methods("GET")
 	route.HandleFunc("/e4/client", s.handleGetClients).Methods("GET")
 
-	logger.Log("msg", "starting https server")
+	s.logger.Log("msg", "starting https server")
 
 	och := &ochttp.Handler{
 		Handler: route,
 	}
 
 	apiServer := &http.Server{
-		Addr:         scfg.Addr,
+		Addr:         s.cfg.Addr,
 		Handler:      och,
 		TLSConfig:    tlsConfig,
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
 	}
 
-	return apiServer.ListenAndServeTLS(scfg.Cert, scfg.Key)
+	return apiServer.ListenAndServeTLS(s.cfg.Cert, s.cfg.Key)
 }
 
 // CORS middleware
@@ -118,7 +140,7 @@ func decodeAndValidateKey(keystr string) ([]byte, error) {
 	return key, nil
 }
 
-func (s *C2) handleNewClient(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleNewClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -134,7 +156,7 @@ func (s *C2) handleNewClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.newClient(id, key); err != nil {
+	if err := s.e4Service.NewClient(id, key); err != nil {
 		resp.Text(http.StatusNotFound, fmt.Sprintf("newClient failed: %s", err))
 		return
 	}
@@ -142,7 +164,7 @@ func (s *C2) handleNewClient(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2) handleRemoveClient(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleRemoveClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -152,7 +174,7 @@ func (s *C2) handleRemoveClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.removeClient(id); err != nil {
+	if err := s.e4Service.RemoveClient(id); err != nil {
 		resp.Text(http.StatusNotFound, fmt.Sprintf("removeClient failed: %s", err))
 		return
 	}
@@ -160,7 +182,7 @@ func (s *C2) handleRemoveClient(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2) handleNewTopicClient(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleNewTopicClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -176,7 +198,7 @@ func (s *C2) handleNewTopicClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.newTopicClient(id, topic); err != nil {
+	if err := s.e4Service.NewTopicClient(id, topic); err != nil {
 		resp.Text(http.StatusNotFound, fmt.Sprintf("newTopicClient failed: %s", err))
 		return
 	}
@@ -184,7 +206,7 @@ func (s *C2) handleNewTopicClient(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2) handleRemoveTopicClient(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleRemoveTopicClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -200,7 +222,7 @@ func (s *C2) handleRemoveTopicClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.removeTopicClient(id, topic); err != nil {
+	if err := s.e4Service.RemoveTopicClient(id, topic); err != nil {
 		resp.Text(http.StatusNotFound, fmt.Sprintf("remoteTopicClient failed: %s", err))
 		return
 	}
@@ -208,7 +230,7 @@ func (s *C2) handleRemoveTopicClient(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2) handleResetClient(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleResetClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -218,7 +240,7 @@ func (s *C2) handleResetClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.resetClient(id); err != nil {
+	if err := s.e4Service.ResetClient(id); err != nil {
 		resp.Text(http.StatusNotFound, fmt.Sprintf("resetClient failed: %s", err))
 		return
 	}
@@ -226,7 +248,7 @@ func (s *C2) handleResetClient(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2) handleNewTopic(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleNewTopic(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -236,7 +258,7 @@ func (s *C2) handleNewTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.newTopic(topic); err != nil {
+	if err := s.e4Service.NewTopic(topic); err != nil {
 		resp.Text(http.StatusNotFound, fmt.Sprintf("newTopic failed: %s", err))
 		return
 	}
@@ -244,7 +266,7 @@ func (s *C2) handleNewTopic(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -254,7 +276,7 @@ func (s *C2) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.removeTopic(topic); err != nil {
+	if err := s.e4Service.RemoveTopic(topic); err != nil {
 		resp.Text(http.StatusNotFound, fmt.Sprintf("removeTopic failed: %s", err))
 		return
 	}
@@ -262,7 +284,7 @@ func (s *C2) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2) handleNewClientKey(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleNewClientKey(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -272,7 +294,7 @@ func (s *C2) handleNewClientKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.newClientKey(id); err != nil {
+	if err := s.e4Service.NewClientKey(id); err != nil {
 		resp.Text(http.StatusNotFound, fmt.Sprintf("newClientKey failed: %s", err))
 		return
 	}
@@ -280,9 +302,9 @@ func (s *C2) handleNewClientKey(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *C2) handleGetClients(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleGetClients(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	ids, err := s.dbGetIDListHex()
+	ids, err := s.e4Service.GetAllClientHexIds()
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -290,9 +312,9 @@ func (s *C2) handleGetClients(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&ids)
 }
 
-func (s *C2) handleGetTopics(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleGetTopics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	topics, err := s.dbGetTopicsList()
+	topics, err := s.e4Service.GetAllTopicIds()
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -300,7 +322,7 @@ func (s *C2) handleGetTopics(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&topics)
 }
 
-func (s *C2) handleGetClientTopicCount(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleGetClientTopicCount(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
@@ -312,7 +334,7 @@ func (s *C2) handleGetClientTopicCount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := s.dbCountTopicsForID(id)
+	count, err := s.e4Service.CountTopicsForID(id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -320,7 +342,7 @@ func (s *C2) handleGetClientTopicCount(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&count)
 }
 
-func (s *C2) handleGetClientTopics(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleGetClientTopics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	resp := Response{w}
@@ -342,7 +364,7 @@ func (s *C2) handleGetClientTopics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	topics, err := s.dbGetTopicsForID(id, int(offset), int(count))
+	topics, err := s.e4Service.GetTopicsForID(id, int(offset), int(count))
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -350,11 +372,11 @@ func (s *C2) handleGetClientTopics(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&topics)
 }
 
-func (s *C2) handleGetTopicClientCount(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleGetTopicClientCount(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 
-	count, err := s.dbCountIDsForTopic(params["topic"])
+	count, err := s.e4Service.CountIDsForTopic(params["topic"])
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -363,7 +385,7 @@ func (s *C2) handleGetTopicClientCount(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (s *C2) handleGetTopicClients(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleGetTopicClients(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	resp := Response{w}
@@ -380,7 +402,7 @@ func (s *C2) handleGetTopicClients(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clients, err := s.dbGetIdsforTopic(topic, int(offset), int(count))
+	clients, err := s.e4Service.GetIdsforTopic(topic, int(offset), int(count))
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -388,7 +410,7 @@ func (s *C2) handleGetTopicClients(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&clients)
 }
 
-func (s *C2) handleSendMessage(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	resp := Response{w}
 
@@ -400,7 +422,7 @@ func (s *C2) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.sendMessage(topic, message); err != nil {
+	if err := s.e4Service.SendMessage(topic, message); err != nil {
 		resp.Text(http.StatusNotFound, fmt.Sprintf("message not sent: %s", err))
 		return
 	}

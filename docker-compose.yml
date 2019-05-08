@@ -89,8 +89,23 @@ services:
     networks:
       - e4monitoring
 
+  postgres:
+    image: postgres:alpine
+    environment:
+      # Must be same as in configs/config.yaml#db-password
+      - POSTGRES_PASSWORD=teserakt4
+      # Must be same as configs/config.yaml#db-username
+      - POSTGRES_USER=e4_c2_test
+      # Must be same as configs/config.yaml#db-database
+      - POSTGRES_DB=e4
+    ports:
+      - 127.0.0.1:5432:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
 volumes:
   esdata1:
+  postgres-data:
 
 networks:
   e4monitoring:

@@ -74,7 +74,7 @@ func main() {
 			Name:     "",
 			Critical: true,
 			Result:   false,
-			Error:    fmt.Errorf("Daemon did not launch after timeout %s", timeoutSeconds),
+			Error:    fmt.Errorf("Daemon did not launch after timeout %d", timeoutSeconds),
 		}
 	}
 

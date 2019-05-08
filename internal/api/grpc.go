@@ -1,68 +1,77 @@
-package main
+package api
 
 import (
+	"context"
 	"errors"
 	"net"
 
-	"github.com/go-kit/kit/log"
+	"gitlab.com/teserakt/c2/internal/config"
+	"gitlab.com/teserakt/c2/internal/services"
 	e4 "gitlab.com/teserakt/e4common"
+
+	"github.com/go-kit/kit/log"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-
-	"gitlab.com/teserakt/c2/internal/config"
 )
 
-func (s *C2) createGRPCServer(scfg config.ServerCfg) error {
+// GRPCServer defines available endpoints on a GRPC server
+type GRPCServer interface {
+	e4.C2Server
+	ListenAndServe() error
+}
 
-	var logger = log.With(s.logger, "protocol", "grpc")
-	logger.Log("addr", scfg.Addr)
+type grpcServer struct {
+	logger    log.Logger
+	cfg       config.ServerCfg
+	e4Service services.E4
+}
 
-	lis, err := net.Listen("tcp", scfg.Addr)
+var _ GRPCServer = &grpcServer{}
+
+// NewGRPCServer creates a new server over GRPC
+func NewGRPCServer(scfg config.ServerCfg, e4Service services.E4, logger log.Logger) GRPCServer {
+	return &grpcServer{
+		cfg:       scfg,
+		logger:    logger,
+		e4Service: e4Service,
+	}
+}
+
+func (s *grpcServer) ListenAndServe() error {
+	lis, err := net.Listen("tcp", s.cfg.Addr)
 	if err != nil {
-		logger.Log("msg", "failed to listen", "error", err)
+		s.logger.Log("msg", "failed to listen", "error", err)
+
 		return err
 	}
 
-	creds, err := credentials.NewServerTLSFromFile(scfg.Cert, scfg.Key)
+	creds, err := credentials.NewServerTLSFromFile(s.cfg.Cert, s.cfg.Key)
 	if err != nil {
-		logger.Log("msg", "failed to get credentials", "cert", scfg.Cert, "key", scfg.Key, "error", err)
+		s.logger.Log("msg", "failed to get credentials", "cert", s.cfg.Cert, "key", s.cfg.Key, "error", err)
 		return err
 	}
-	logger.Log("msg", "using TLS for gRPC", "cert", scfg.Cert, "key", scfg.Key, "error", err)
+
+	s.logger.Log("msg", "using TLS for gRPC", "cert", s.cfg.Cert, "key", s.cfg.Key)
 
 	if err = view.Register(ocgrpc.DefaultServerViews...); err != nil {
-		logger.Log("msg", "failed to register ocgrpc server views", "error", err)
+		s.logger.Log("msg", "failed to register ocgrpc server views", "error", err)
+
 		return err
 	}
 
 	srv := grpc.NewServer(grpc.Creds(creds), grpc.StatsHandler(&ocgrpc.ServerHandler{}))
-
 	e4.RegisterC2Server(srv, s)
 
-	count, err := s.dbCountIDKeys()
-	if err != nil {
-		logger.Log("msg", "failed to count id keys", "error", err)
-		return err
-	}
-	logger.Log("nbidkeys", count)
-	count, err = s.dbCountTopicKeys()
-	if err != nil {
-		logger.Log("msg", "failed to count topic keys", "error", err)
-		return err
-	}
+	s.logger.Log("msg", "Starting api grpc server", "addr", s.cfg.Addr)
 
-	logger.Log("nbtopickeys", count)
-	logger.Log("msg", "starting grpc server")
 	return srv.Serve(lis)
 }
 
 // C2Command processes a command received over gRPC by the CLI tool.
-func (s *C2) C2Command(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	//log.Printf("command received: %s", e4.C2Request_Command_name[int32(in.Command)])
+func (s *grpcServer) C2Command(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 	s.logger.Log("msg", "received gRPC request", "request", e4.C2Request_Command_name[int32(in.Command)])
 
 	switch in.Command {
@@ -100,7 +109,7 @@ func (s *C2) C2Command(ctx context.Context, in *e4.C2Request) (*e4.C2Response, e
 	return &e4.C2Response{Success: false, Err: "unknown command"}, nil
 }
 
-func (s *C2) gRPCnewClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCnewClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCnewClient")
 	defer span.End()
@@ -110,7 +119,7 @@ func (s *C2) gRPCnewClient(ctx context.Context, in *e4.C2Request) (*e4.C2Respons
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	err = s.newClient(in.Id, in.Key)
+	err = s.e4Service.NewClient(in.Id, in.Key)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -118,7 +127,7 @@ func (s *C2) gRPCnewClient(ctx context.Context, in *e4.C2Request) (*e4.C2Respons
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCremoveClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCremoveClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCremoveClient")
 	defer span.End()
@@ -128,7 +137,7 @@ func (s *C2) gRPCremoveClient(ctx context.Context, in *e4.C2Request) (*e4.C2Resp
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	err = s.removeClient(in.Id)
+	err = s.e4Service.RemoveClient(in.Id)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -136,7 +145,7 @@ func (s *C2) gRPCremoveClient(ctx context.Context, in *e4.C2Request) (*e4.C2Resp
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCnewTopicClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCnewTopicClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCnewTopicClient")
 	defer span.End()
@@ -146,7 +155,7 @@ func (s *C2) gRPCnewTopicClient(ctx context.Context, in *e4.C2Request) (*e4.C2Re
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	err = s.newTopicClient(in.Id, in.Topic)
+	err = s.e4Service.NewTopicClient(in.Id, in.Topic)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -154,7 +163,7 @@ func (s *C2) gRPCnewTopicClient(ctx context.Context, in *e4.C2Request) (*e4.C2Re
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCremoveTopicClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCremoveTopicClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCremoveTopicClient")
 	defer span.End()
@@ -164,7 +173,7 @@ func (s *C2) gRPCremoveTopicClient(ctx context.Context, in *e4.C2Request) (*e4.C
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	err = s.removeTopicClient(in.Id, in.Topic)
+	err = s.e4Service.RemoveTopicClient(in.Id, in.Topic)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -172,7 +181,7 @@ func (s *C2) gRPCremoveTopicClient(ctx context.Context, in *e4.C2Request) (*e4.C
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCresetClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCresetClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCresetClient")
 	defer span.End()
@@ -182,7 +191,7 @@ func (s *C2) gRPCresetClient(ctx context.Context, in *e4.C2Request) (*e4.C2Respo
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	err = s.resetClient(in.Id)
+	err = s.e4Service.ResetClient(in.Id)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -190,7 +199,7 @@ func (s *C2) gRPCresetClient(ctx context.Context, in *e4.C2Request) (*e4.C2Respo
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCnewTopic(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCnewTopic(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCnewTopic")
 	defer span.End()
@@ -200,7 +209,7 @@ func (s *C2) gRPCnewTopic(ctx context.Context, in *e4.C2Request) (*e4.C2Response
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	err = s.newTopic(in.Topic)
+	err = s.e4Service.NewTopic(in.Topic)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -208,7 +217,7 @@ func (s *C2) gRPCnewTopic(ctx context.Context, in *e4.C2Request) (*e4.C2Response
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCremoveTopic(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCremoveTopic(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCremoveTopic")
 	defer span.End()
@@ -218,7 +227,7 @@ func (s *C2) gRPCremoveTopic(ctx context.Context, in *e4.C2Request) (*e4.C2Respo
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	err = s.removeTopic(in.Topic)
+	err = s.e4Service.RemoveTopic(in.Topic)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -226,7 +235,7 @@ func (s *C2) gRPCremoveTopic(ctx context.Context, in *e4.C2Request) (*e4.C2Respo
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCnewClientKey(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCnewClientKey(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCnewClientKey")
 	defer span.End()
@@ -236,7 +245,7 @@ func (s *C2) gRPCnewClientKey(ctx context.Context, in *e4.C2Request) (*e4.C2Resp
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	err = s.newClientKey(in.Id)
+	err = s.e4Service.NewClientKey(in.Id)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -244,12 +253,12 @@ func (s *C2) gRPCnewClientKey(ctx context.Context, in *e4.C2Request) (*e4.C2Resp
 	return &e4.C2Response{Success: true, Err: ""}, nil
 }
 
-func (s *C2) gRPCgetClients(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCgetClients(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCgetClients")
 	defer span.End()
 
-	ids, err := s.dbGetIDListHex()
+	ids, err := s.e4Service.GetAllClientHexIds()
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -257,12 +266,12 @@ func (s *C2) gRPCgetClients(ctx context.Context, in *e4.C2Request) (*e4.C2Respon
 	return &e4.C2Response{Success: true, Err: "", Ids: ids}, nil
 }
 
-func (s *C2) gRPCgetTopics(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCgetTopics(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCgetTopics")
 	defer span.End()
 
-	topics, err := s.dbGetTopicsList()
+	topics, err := s.e4Service.GetAllTopicIds()
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -270,7 +279,7 @@ func (s *C2) gRPCgetTopics(ctx context.Context, in *e4.C2Request) (*e4.C2Respons
 	return &e4.C2Response{Success: true, Err: "", Topics: topics}, nil
 }
 
-func (s *C2) gRPCgetClientTopicCount(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCgetClientTopicCount(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCgetClientTopicCount")
 	defer span.End()
@@ -280,7 +289,7 @@ func (s *C2) gRPCgetClientTopicCount(ctx context.Context, in *e4.C2Request) (*e4
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	count, err := s.dbCountTopicsForID(in.Id)
+	count, err := s.e4Service.CountTopicsForID(in.Id)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -288,7 +297,7 @@ func (s *C2) gRPCgetClientTopicCount(ctx context.Context, in *e4.C2Request) (*e4
 	return &e4.C2Response{Success: true, Err: "", Count: uint64(count)}, nil
 }
 
-func (s *C2) gRPCgetClientTopics(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCgetClientTopics(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCgetClientTopics")
 	defer span.End()
@@ -298,7 +307,7 @@ func (s *C2) gRPCgetClientTopics(ctx context.Context, in *e4.C2Request) (*e4.C2R
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	topics, err := s.dbGetTopicsForID(in.Id, int(in.Offset), int(in.Count))
+	topics, err := s.e4Service.GetTopicsForID(in.Id, int(in.Offset), int(in.Count))
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -306,7 +315,7 @@ func (s *C2) gRPCgetClientTopics(ctx context.Context, in *e4.C2Request) (*e4.C2R
 	return &e4.C2Response{Success: true, Err: "", Topics: topics}, nil
 }
 
-func (s *C2) gRPCgetTopicClientCount(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCgetTopicClientCount(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCgetTopicClientCount")
 	defer span.End()
@@ -316,7 +325,7 @@ func (s *C2) gRPCgetTopicClientCount(ctx context.Context, in *e4.C2Request) (*e4
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	count, err := s.dbCountIDsForTopic(in.Topic)
+	count, err := s.e4Service.CountIDsForTopic(in.Topic)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -324,7 +333,7 @@ func (s *C2) gRPCgetTopicClientCount(ctx context.Context, in *e4.C2Request) (*e4
 	return &e4.C2Response{Success: true, Err: "", Count: uint64(count)}, nil
 }
 
-func (s *C2) gRPCgetTopicClients(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCgetTopicClients(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCgetTopicClients")
 	defer span.End()
@@ -334,7 +343,7 @@ func (s *C2) gRPCgetTopicClients(ctx context.Context, in *e4.C2Request) (*e4.C2R
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	clients, err := s.dbGetIdsforTopic(in.Topic, int(in.Offset), int(in.Count))
+	clients, err := s.e4Service.GetIdsforTopic(in.Topic, int(in.Offset), int(in.Count))
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
@@ -342,7 +351,7 @@ func (s *C2) gRPCgetTopicClients(ctx context.Context, in *e4.C2Request) (*e4.C2R
 	return &e4.C2Response{Success: true, Err: "", Ids: clients}, nil
 }
 
-func (s *C2) gRPCsendMessage(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
+func (s *grpcServer) gRPCsendMessage(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
 
 	ctx, span := trace.StartSpan(ctx, "gRPCsendMessage")
 	defer span.End()
@@ -352,7 +361,7 @@ func (s *C2) gRPCsendMessage(ctx context.Context, in *e4.C2Request) (*e4.C2Respo
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}
 
-	err = s.sendMessage(in.Topic, in.Msg)
+	err = s.e4Service.SendMessage(in.Topic, in.Msg)
 	if err != nil {
 		return &e4.C2Response{Success: false, Err: err.Error()}, nil
 	}

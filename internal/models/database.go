@@ -1,0 +1,453 @@
+package models
+
+//go:generate mockgen -destination=database_mocks.go -package models -self_package gitlab.com/teserakt/c2/internal/models gitlab.com/teserakt/c2/internal/models Database
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"log"
+	"strings"
+
+	"github.com/jinzhu/gorm"
+
+	// Load available database drivers
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	// _ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+	// _ "github.com/jinzhu/gorm/dialects/mssql"
+
+	"gitlab.com/teserakt/c2/internal/config"
+)
+
+var (
+	// ErrUnsupportedDialect is returned when creating a new database with a Config having an unsupported dialect
+	ErrUnsupportedDialect = errors.New("unsupported database dialect")
+	// ErrTopicKeyNotFound is returned when the topic cannot be found in the database
+	ErrTopicKeyNotFound = errors.New("topicKey not found in database")
+	// ErrIDKeyNotFound is returned when the key cannot be found in the database
+	ErrIDKeyNotFound = errors.New("IDKey not found in database")
+	// ErrIDKeyNoPrimaryKey is returned when an IDKey is provided but it doesn't have a primary key set
+	ErrIDKeyNoPrimaryKey = errors.New("IDKey doesn't have primary key")
+	// ErrTopicKeyNoPrimaryKey is returned when an TopicKey is provided but it doesn't have a primary key set
+	ErrTopicKeyNoPrimaryKey = errors.New("TopicKey doesn't have primary key")
+)
+
+// List of available DB dialects
+const (
+	DBDialectSQLite   = "sqlite3"
+	DBDialectPostgres = "postgres"
+)
+
+// Database describes a generic database implementation
+type Database interface {
+	Close() error
+	Connection() *gorm.DB
+	Migrate() error
+
+	InsertIDKey(id, protectedkey []byte) error
+	InsertTopicKey(topic string, protectedKey []byte) error
+	GetIDKey(id []byte) (IDKey, error)
+	GetTopicKey(topic string) (TopicKey, error)
+	DeleteIDKey(id []byte) error
+	DeleteTopicKey(topic string) error
+	CountIDKeys() (int, error)
+	CountTopicKeys() (int, error)
+	GetAllIDKeys() ([]IDKey, error)
+	GetAllTopics() ([]TopicKey, error)
+	LinkIDTopic(idKey IDKey, topicKey TopicKey) error
+	UnlinkIDTopic(idKey IDKey, topicKey TopicKey) error
+	CountTopicsForID(id []byte) (int, error)
+	GetTopicsForID(id []byte, offset int, count int) ([]TopicKey, error)
+	CountIDsForTopic(topic string) (int, error)
+	GetIdsforTopic(topic string, offset int, count int) ([]IDKey, error)
+}
+
+type gormDB struct {
+	db     *gorm.DB
+	config config.DBCfg
+	logger *log.Logger
+}
+
+var _ Database = &gormDB{}
+
+// NewDB creates a new database
+func NewDB(config config.DBCfg, logger *log.Logger) (Database, error) {
+	var db *gorm.DB
+	var err error
+
+	cnxStr, err := config.ConnectionString()
+	if err != nil {
+		return nil, err
+	}
+
+	db, err = gorm.Open(config.Type.String(), cnxStr)
+	if err != nil {
+		return nil, err
+	}
+
+	db.LogMode(config.Logging)
+	db.SetLogger(logger)
+
+	return &gormDB{
+		db:     db,
+		config: config,
+		logger: logger,
+	}, nil
+}
+
+func (gdb *gormDB) Migrate() error {
+	gdb.logger.Println("Database Migration Started.")
+
+	switch gdb.config.Type {
+	case DBDialectSQLite:
+		// Enable foreign key support for sqlite3
+		gdb.Connection().Exec("PRAGMA foreign_keys = ON")
+	case DBDialectPostgres:
+		gdb.Connection().Exec(fmt.Sprintf("SET search_path TO %s;", gdb.config.Schema))
+	}
+
+	result := gdb.Connection().AutoMigrate(
+		IDKey{},
+		TopicKey{},
+	)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	switch gdb.config.Type {
+	case DBDialectPostgres:
+		// Postgres require to add relations manually as AutoMigrate won't do it.
+		// see: https://github.com/jinzhu/gorm/issues/450
+
+		// Add foreign key on idKey id
+		exists, err := gdb.pgCheckConstraint("idkeys_topickeys_idkey_fk", "idkeys_topickeys")
+		if err != nil {
+			return err
+		}
+
+		if !exists {
+			if err := gdb.Connection().Exec("ALTER TABLE idkeys_topickeys ADD CONSTRAINT idkeys_topickeys_idkey_fk FOREIGN KEY(id_key_id) REFERENCES id_keys (id) ON DELETE CASCADE;").Error; err != nil {
+				return err
+			}
+		}
+
+		// Add foreign key on topic id
+		exists, err = gdb.pgCheckConstraint("idkeys_topickeys_idkey_fk", "idkeys_topickeys")
+		if err != nil {
+			return err
+		}
+
+		if !exists {
+			if err := gdb.Connection().Exec("ALTER TABLE idkeys_topickeys ADD CONSTRAINT idkeys_topickeys_idkey_fk FOREIGN KEY(id_key_id) REFERENCES id_keys (id) ON DELETE CASCADE;").Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	gdb.logger.Println("Database Migration Finished.")
+
+	return nil
+}
+
+// pgCheckConstraint probe the db to check if a foreign key with `name` exists on `table`
+// This method only support postgres dialect and will return an error otherwise.
+func (gdb *gormDB) pgCheckConstraint(name, table string) (bool, error) {
+	if gdb.config.Type != DBDialectPostgres {
+		return false, errors.New("invalid db dialect, only postgres is supported")
+	}
+
+	type constraintCounter struct {
+		Count int
+	}
+
+	var counter constraintCounter
+	result := gdb.Connection().Raw(`SELECT COUNT(1) FROM information_schema.table_constraints WHERE constraint_name=? AND table_name=?;`, name, table).Scan(&counter)
+
+	return counter.Count > 0, result.Error
+}
+
+func (gdb *gormDB) Connection() *gorm.DB {
+	return gdb.db
+}
+
+func (gdb *gormDB) Close() error {
+	return gdb.db.Close()
+}
+
+func (gdb *gormDB) InsertIDKey(id, protectedkey []byte) error {
+	var idkey IDKey
+
+	gdb.db.Where(&IDKey{E4ID: id}).First(&idkey)
+	if gdb.db.NewRecord(idkey) {
+		idkey = IDKey{E4ID: id, Key: protectedkey}
+
+		if result := gdb.db.Create(&idkey); result.Error != nil {
+			return result.Error
+		}
+	} else {
+		idkey.Key = protectedkey
+
+		if result := gdb.db.Model(&idkey).Updates(idkey); result.Error != nil {
+			return result.Error
+		}
+	}
+
+	return nil
+}
+
+func (gdb *gormDB) InsertTopicKey(topic string, protectedKey []byte) error {
+	var topicKey TopicKey
+
+	gdb.db.Where(&TopicKey{Topic: topic}).First(&topicKey)
+	if gdb.db.NewRecord(topicKey) {
+		topicKey = TopicKey{Topic: topic, Key: protectedKey}
+		if result := gdb.db.Create(&topicKey); result.Error != nil {
+			return result.Error
+		}
+	} else {
+		topicKey.Key = protectedKey
+		if result := gdb.db.Model(&topicKey).Updates(topicKey); result.Error != nil {
+			return result.Error
+		}
+	}
+
+	return nil
+}
+
+func (gdb *gormDB) GetIDKey(id []byte) (IDKey, error) {
+	var idkey IDKey
+
+	result := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey)
+
+	if result.Error != nil {
+		return IDKey{}, result.Error
+	}
+
+	if !bytes.Equal(id, idkey.E4ID) {
+		return IDKey{}, errors.New("Internal error: struct not populated but GORM indicated success")
+	}
+
+	return idkey, nil
+}
+
+func (gdb *gormDB) GetTopicKey(topic string) (TopicKey, error) {
+	var topickey TopicKey
+
+	result := gdb.db.Where(&TopicKey{Topic: topic}).First(&topickey)
+	if result.Error != nil {
+		return TopicKey{}, result.Error
+	}
+
+	if strings.Compare(topickey.Topic, topic) != 0 {
+		return TopicKey{}, errors.New("Internal error: struct not populated but GORM indicated success")
+	}
+
+	return topickey, nil
+}
+
+func (gdb *gormDB) DeleteIDKey(id []byte) error {
+	var idkey IDKey
+
+	if result := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey); result.Error != nil {
+		return result.Error
+	}
+
+	// safety check:
+	if !bytes.Equal(idkey.E4ID, id) {
+		return errors.New("Single record not populated correctly; preventing whole DB delete")
+	}
+
+	tx := gdb.db.Begin()
+	if result := tx.Model(&idkey).Association("TopicKeys").Clear(); result.Error != nil {
+		tx.Rollback()
+		return result.Error
+	}
+	if result := tx.Delete(&idkey); result.Error != nil {
+		tx.Rollback()
+		return result.Error
+	}
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (gdb *gormDB) DeleteTopicKey(topic string) error {
+	var topicKey TopicKey
+	if result := gdb.db.Where(&TopicKey{Topic: topic}).First(&topicKey); result.Error != nil {
+		return result.Error
+	}
+
+	if topicKey.Topic != topic {
+		return errors.New("Single record not populated correctly; preventing whole DB delete")
+	}
+
+	tx := gdb.db.Begin()
+	if result := tx.Model(&topicKey).Association("IDKeys").Clear(); result.Error != nil {
+		tx.Rollback()
+		return result.Error
+	}
+	if result := tx.Delete(&topicKey); result.Error != nil {
+		tx.Rollback()
+		return result.Error
+	}
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (gdb *gormDB) CountIDKeys() (int, error) {
+	var idkey IDKey
+	var count int
+	if result := gdb.db.Model(&idkey).Count(&count); result.Error != nil {
+		return 0, result.Error
+	}
+	return count, nil
+}
+
+func (gdb *gormDB) CountTopicKeys() (int, error) {
+	var topickey TopicKey
+	var count int
+	if result := gdb.db.Model(&topickey).Count(&count); result.Error != nil {
+		return 0, result.Error
+	}
+	return count, nil
+}
+
+func (gdb *gormDB) GetAllIDKeys() ([]IDKey, error) {
+	var idkeys []IDKey
+	if result := gdb.db.Find(&idkeys); result.Error != nil {
+		return nil, result.Error
+	}
+
+	return idkeys, nil
+}
+
+func (gdb *gormDB) GetAllTopics() ([]TopicKey, error) {
+	var topickeys []TopicKey
+	if result := gdb.db.Find(&topickeys); result.Error != nil {
+		return nil, result.Error
+	}
+
+	return topickeys, nil
+}
+
+/* -- M2M Functions -- */
+
+// This function links a topic and an id/key. The link is created in both
+// directions (IDkey to Topics, Topic to IDkeys).
+func (gdb *gormDB) LinkIDTopic(idKey IDKey, topicKey TopicKey) error {
+	if gdb.db.NewRecord(idKey) {
+		return ErrIDKeyNoPrimaryKey
+	}
+
+	if gdb.db.NewRecord(topicKey) {
+		return ErrTopicKeyNoPrimaryKey
+	}
+
+	tx := gdb.db.Begin()
+	if err := tx.Model(&idKey).Association("TopicKeys").Append(&topicKey).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// This function removes the relationship between a Topic and an ID, but
+// does not delete the Topic or the ID.
+func (gdb *gormDB) UnlinkIDTopic(idKey IDKey, topicKey TopicKey) error {
+	if gdb.db.NewRecord(idKey) {
+		return ErrIDKeyNoPrimaryKey
+	}
+
+	if gdb.db.NewRecord(topicKey) {
+		return ErrTopicKeyNoPrimaryKey
+	}
+
+	tx := gdb.db.Begin()
+	if err := tx.Model(&idKey).Association("TopicKeys").Delete(&topicKey).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Where(&IDKey{ID: idKey.ID}).First(&idKey).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			tx.Rollback()
+			return errors.New("ID/Client appears to have been deleted, this is just an unlink")
+		}
+	}
+	if err := tx.Where(&TopicKey{ID: topicKey.ID}).First(&topicKey).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			tx.Rollback()
+			return errors.New("Topic appears to have been deleted, this is just an unlink")
+		}
+		return err
+	}
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (gdb *gormDB) GetTopicsForID(id []byte, offset int, count int) ([]TopicKey, error) {
+
+	var idkey IDKey
+	var topickeys []TopicKey
+
+	if err := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
+		return nil, err
+	}
+
+	if err := gdb.db.Model(&idkey).Offset(offset).Limit(count).Related(&topickeys, "TopicKeys").Error; err != nil {
+		return nil, err
+	}
+
+	return topickeys, nil
+}
+
+func (gdb *gormDB) CountIDsForTopic(topic string) (int, error) {
+	var topickey TopicKey
+
+	if err := gdb.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
+		return 0, err
+	}
+
+	count := gdb.db.Model(&topickey).Association("IDKeys").Count()
+	return count, nil
+}
+
+func (gdb *gormDB) CountTopicsForID(id []byte) (int, error) {
+
+	var idkey IDKey
+
+	if err := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
+		return 0, err
+	}
+
+	count := gdb.db.Model(&idkey).Association("TopicKeys").Count()
+
+	return count, nil
+}
+
+func (gdb *gormDB) GetIdsforTopic(topic string, offset int, count int) ([]IDKey, error) {
+
+	var topickey TopicKey
+	var idkeys []IDKey
+
+	if err := gdb.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
+		return nil, err
+	}
+
+	if err := gdb.db.Model(&topickey).Offset(offset).Limit(count).Related(&idkeys, "IDKeys").Error; err != nil {
+		return nil, err
+	}
+
+	return idkeys, nil
+}

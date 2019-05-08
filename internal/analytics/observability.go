@@ -1,4 +1,4 @@
-package main
+package analytics
 
 import (
 	"fmt"
@@ -8,7 +8,18 @@ import (
 	"go.opencensus.io/trace"
 )
 
-func setupOpencensusInstrumentation(isProd bool) error {
+// DeploymentMode describe the per environment analytics configuration modes
+type DeploymentMode int
+
+// List of available DeploymentMode
+const (
+	Development DeploymentMode = iota
+	Production
+)
+
+// SetupObservability will configure the various observers for C2.
+// currently register an opencensus exporter
+func (m DeploymentMode) SetupObservability() error {
 	oce, err := ocagent.NewExporter(
 		// TODO: (@odeke-em), enable ocagent-exporter.WithCredentials option.
 		ocagent.WithInsecure(),
@@ -22,7 +33,9 @@ func setupOpencensusInstrumentation(isProd bool) error {
 	trace.RegisterExporter(oce)
 	view.RegisterExporter(oce)
 
-	if isProd == false {
+	switch m {
+	case Production:
+	default:
 		// setting trace sample rate to 100%
 		trace.ApplyConfig(trace.Config{
 			DefaultSampler: trace.AlwaysSample(),

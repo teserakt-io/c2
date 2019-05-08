@@ -6,5 +6,5 @@ builds/
 configs/config.yaml
 docs/*.pdf
 docs/*.html
-test/
+test/bin
 configs/*.pem

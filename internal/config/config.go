@@ -80,6 +80,7 @@ type DBCfg struct {
 	Username         string
 	Password         string
 	Passphrase       string
+	Schema           string
 	SecureConnection DBSecureConnectionType
 }
 

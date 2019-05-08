@@ -28,16 +28,18 @@ var (
 	// ErrInvalidSecureConnection is returned when an invalid secure connection mode is provided.
 	// see available config.DBSecureConnectionType
 	ErrInvalidSecureConnection = errors.New("invalid secure connection mode")
+	// ErrNoSchema is returned when database configuration is missing a schema (postgres only)
+	ErrNoSchema = errors.New("no schema supplied")
 )
 
 // Validate check Config and returns an error if anything is invalid
 func (c Config) Validate() error {
 	if err := c.GRPC.Validate(); err != nil {
-		return fmt.Errorf("GRPC configuration validation error: %s", err.Error())
+		return fmt.Errorf("GRPC configuration validation error: %v", err)
 	}
 
 	if err := c.HTTP.Validate(); err != nil {
-		return fmt.Errorf("HTTP configuration validation error: %s", err.Error())
+		return fmt.Errorf("HTTP configuration validation error: %v", err)
 	}
 
 	if err := c.MQTT.Validate(); err != nil {
@@ -45,7 +47,7 @@ func (c Config) Validate() error {
 	}
 
 	if err := c.DB.Validate(); err != nil {
-		return fmt.Errorf("DB configuration validation error: %s", err.Error())
+		return fmt.Errorf("DB configuration validation error: %v", err)
 	}
 
 	return nil
@@ -104,6 +106,10 @@ func (c DBCfg) validatePostgres() error {
 
 	if len(c.Password) == 0 {
 		return ErrNoPassword
+	}
+
+	if len(c.Schema) == 0 {
+		return ErrNoSchema
 	}
 
 	if c.SecureConnection != DBSecureConnectionEnabled &&
