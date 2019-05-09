@@ -27,6 +27,20 @@ func TestE4Command(t *testing.T) {
 		}
 	})
 
+	t.Run("Content with no content check", func(t *testing.T) {
+		cmd := e4Command([]byte{0x01})
+
+		content, err := cmd.Content()
+		if err != nil {
+			t.Errorf("Expected some output, got %v", err)
+		}
+
+		expectedContent := []byte{}
+		if reflect.DeepEqual(content, expectedContent) == false {
+			t.Errorf("Expected content to be %v, got %v", expectedContent, content)
+		}
+	})
+
 	t.Run("Content returns the expected content", func(t *testing.T) {
 		cmd := e4Command([]byte{0x01, 0x02, 0x03})
 
