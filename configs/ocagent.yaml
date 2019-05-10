@@ -1,6 +1,6 @@
 receivers:
   opencensus:
-    address: "localhost:55678"
+    address: "0.0.0.0:55678"
 
 exporters:
   jaeger:

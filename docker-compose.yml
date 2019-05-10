@@ -82,6 +82,7 @@ services:
     build: docker/ocagent
     ports:
       - 127.0.0.1:9999:9999 # expose zPages (from custom port defined in configs/ocagent.yaml)
+      - 127.0.0.1:55678:55678
     volumes:
       - ./configs/ocagent.yaml:/etc/ocagent/config.yaml:ro
     depends_on:
