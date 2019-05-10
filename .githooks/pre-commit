@@ -35,3 +35,12 @@ else
     echo "$(tput setaf 2)No replace directives in go.mod, OK to commit.$(tput sgr0)"
 fi
 
+echo "Checking for root=true in .editorconfig"
+
+if [[ $(grep -c "root" .editorconfig) -gt 0 ]]; then
+    echo "$(tput setaf 1)Please do not set root=true in .editorconfig, this prevents global editorconfigs from providing user prefs.$(tput sgr0)"
+    exit 1;
+else
+    echo "$(tput setaf 2)No root=true in editorconfig. OK to commit.$(tput sgr0)"
+fi
+
