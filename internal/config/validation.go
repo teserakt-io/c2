@@ -43,7 +43,11 @@ func (c Config) Validate() error {
 	}
 
 	if err := c.MQTT.Validate(); err != nil {
-		return fmt.Errorf("MQTT configuration validation error ")
+		return fmt.Errorf("MQTT configuration validation error %v", err)
+	}
+
+	if err := c.Kafka.Validate(); err != nil {
+		return fmt.Errorf("Kafka configuration validation error: %v", err)
 	}
 
 	if err := c.DB.Validate(); err != nil {
@@ -72,6 +76,11 @@ func (c ServerCfg) Validate() error {
 
 // Validate checks MQTTCfg and returns an error if anything is invalid
 func (c MQTTCfg) Validate() error {
+	return nil
+}
+
+// Validate checks KafkaCfg and returns an error if anything is invalid
+func (c KafkaCfg) Validate() error {
 	return nil
 }
 

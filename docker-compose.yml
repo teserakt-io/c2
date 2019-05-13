@@ -19,6 +19,8 @@ services:
     container_name: e4-elasticsearch
     environment:
       - bootstrap.memory_lock=true
+      # avoid error: max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]
+      - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
       - 127.0.0.1:9200:9200
@@ -104,9 +106,32 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
+  zookeeper:
+    image: zookeeper
+    ports:
+      - 127.0.0.1:2181:2181
+
+  kafka:
+    image: confluentinc/cp-kafka:5.2.1
+    ports:
+      - 127.0.0.1:9092:9092
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka:19092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+    volumes:
+      - kafkadata1:/var/lib/kafka/data
+    depends_on:
+      - zookeeper
+
 volumes:
   esdata1:
   postgres-data:
+  kafkadata1:
 
 networks:
   e4monitoring:

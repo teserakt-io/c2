@@ -35,6 +35,7 @@ type viperType int
 const (
 	viperInt viperType = iota
 	viperString
+	viperStringSlice
 	viperBool
 	viperDBType
 	viperSecureConnection
@@ -69,6 +70,8 @@ func (loader *viperConfigLoader) Load() (Config, error) {
 		{&cfg.MQTT.QoSSub, "mqtt-qos-sub", viperInt, 1, "E4C2_MQTT_QOS_SUB"},
 		{&cfg.MQTT.Username, "mqtt-username", viperString, "", ""},
 		{&cfg.MQTT.Password, "mqtt-password", viperString, "", ""},
+
+		{&cfg.Kafka.Brokers, "kafka-brokers", viperStringSlice, "", ""},
 
 		{&cfg.DB.Logging, "db-logging", viperBool, false, ""},
 		{&cfg.DB.Type, "db-type", viperDBType, "", "E4C2_DB_TYPE"},
@@ -122,6 +125,9 @@ func (loader *viperConfigLoader) loadFields(fields []viperCfgField) error {
 		case viperString:
 			v := field.target.(*string)
 			*v = loader.v.GetString(field.keyName)
+		case viperStringSlice:
+			v := field.target.(*[]string)
+			*v = loader.v.GetStringSlice(field.keyName)
 		case viperBool:
 			v := field.target.(*bool)
 			value := loader.v.GetBool(field.keyName)
