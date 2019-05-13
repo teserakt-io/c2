@@ -3,6 +3,7 @@ mqtt-broker: tcp://mqtt.broker:1234
 mqtt-ID: mqttid
 mqtt-QoS-pub: 2
 mqtt-QoS-sub: 1
+kafka-brokers: domain1:9092 domain2:9092
 db-type: sqlite3
 db-file: /path/to/db/file
 db-secure-connection: selfsigned
