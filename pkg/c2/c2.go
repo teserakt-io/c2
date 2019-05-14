@@ -81,11 +81,17 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 
 	logger.Log("msg", "ElasticSearch setup successfully (or disabled by configuration)")
 
-	pubSubClient := protocols.NewMQTTPubSubClient(cfg.MQTT, log.With(logger, "protocol", "mqtt"), monitor)
-	logger.Log("msg", "MQTT client created")
-
-	pubSubClient = protocols.NewKafkaPubSubClient(cfg.Kafka, log.With(logger, "protocol", "kafka"), monitor)
-	logger.Log("msg", "Kafka client created")
+	var pubSubClient protocols.PubSubClient
+	switch {
+	case cfg.MQTT.Enabled:
+		pubSubClient = protocols.NewMQTTPubSubClient(cfg.MQTT, log.With(logger, "protocol", "mqtt"), monitor)
+		logger.Log("msg", "MQTT client created")
+	case cfg.Kafka.Enabled:
+		pubSubClient = protocols.NewKafkaPubSubClient(cfg.Kafka, log.With(logger, "protocol", "kafka"), monitor)
+		logger.Log("msg", "Kafka client created")
+	default:
+		return nil, errors.New("no pubSub client enabled from configuration, cannot start c2 without one")
+	}
 
 	if err := pubSubClient.Connect(); err != nil {
 		return nil, fmt.Errorf("MQTT client connection failed: %v", err)
