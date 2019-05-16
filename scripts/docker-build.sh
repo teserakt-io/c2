@@ -31,7 +31,7 @@ printf "=> c2"
 DOCKER_BUILDKIT=1 docker build \
     --ssh default \
     --target c2 \
-    --tag "e4/c2:$E4_VERSION" \
-    --tag "e4/c2:$E4_GIT_COMMIT" \
+    --tag "registry.gitlab.com/teserakt/c2:$E4_VERSION" \
+    --tag "registry.gitlab.com/teserakt/c2:$E4_GIT_COMMIT" \
     -f "${DIR}/../docker/c2/Dockerfile" \
     "${DIR}/../"

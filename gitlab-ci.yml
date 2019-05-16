@@ -1,8 +1,4 @@
 # E4 C2 Backend gitlab ci file
-# Currently we build using docker in a mirror of docker/Dockerfile.c2 
-# It may be worth building that image, instead. 
-
-# TODO: need to see if we can get this script to produce docker images as well.
 
 image: golang:1.12
 stages:
@@ -27,14 +23,18 @@ before_script:
 build:
   stage: build
   script:
-    - ./scripts/build.sh
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - export BUILDVERSION=${CI_COMMIT_REF_NAME}
+    - echo "Building docker image with BUILDVERSION=${BUILDVERSION}"
+    - ./scripts/docker-build.sh
+    - docker push registry.gitlab.com/teserakt/c2:${BUILDVERSION}
 
-test:
+unittest:
   stage: test
-  only:
-    - develop
-    - master
   script:
     - ./scripts/unittests.sh
-      # TODO: investigate why this hangs:
-      # - ./scripts/test.sh
+
+functest:
+  stage: test
+  script:
+    - ./scripts/test.sh
