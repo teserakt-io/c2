@@ -2,9 +2,8 @@
 
 image: golang:1.12
 stages:
-  - build
   - test
-
+  - build
 
 before_script:
   # https://docs.gitlab.com/ee/ci/ssh_keys/
@@ -22,6 +21,8 @@ before_script:
 
 build:
   stage: build
+  tags:
+    - docker
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - export BUILDVERSION=${CI_COMMIT_REF_NAME}
