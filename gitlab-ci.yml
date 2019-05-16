@@ -1,14 +1,15 @@
 # E4 C2 Backend gitlab ci file
 
-image: golang:1.12-alpine
+image: golang:1.12
 
 stages:
-# - test
+  - test
   - build
 
 before_script:
   # Packages
-  - apk update && apk add openssh-client git bash
+  - PACKAGES="openssh-client git bash"
+  - command -v apt >/dev/null 2>&1 && (apt-get update && apt-get install -y ${PACKAGES}) || (apk update && apk add ${PACKAGES})
 
   # https://docs.gitlab.com/ee/ci/ssh_keys/
   - echo "Configuring git"
@@ -34,10 +35,10 @@ build:
     - ./scripts/docker-build.sh
     - docker push registry.gitlab.com/teserakt/c2:${BUILDVERSION}
 
-# unittest:
-#   stage: test
-#   script:
-#     - ./scripts/unittests.sh
+unittest:
+  stage: test
+  script:
+    - ./scripts/unittests.sh
 
 # TODO: check why this hang (see https://gitlab.com/Teserakt/c2/issues/1)
 # functest:

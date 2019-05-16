@@ -31,4 +31,9 @@ RUN ln -s /dev/stdout /var/log/e4_c2.log
 
 WORKDIR /opt/e4
 
+# Default GRPC
+EXPOSE 5555
+# Default HTTp
+EXPOSE 8888
+
 CMD ["/opt/e4/bin/c2"]
