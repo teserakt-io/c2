@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -18,10 +18,10 @@ if [ -z "$SSH_AUTH_SOCK" ]; then
     exit 1
 fi
 
-E4_VERSION=""
+E4_VERSION="${BUILDVERSION}"
 E4_GIT_COMMIT=$(git rev-list -1 HEAD)
 
-if [[ -z "$BUILDVERSION" ]]; then
+if [[ -z "$E4_VERSION" ]]; then
     E4_VERSION="devel"
 fi
 
