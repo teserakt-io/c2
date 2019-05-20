@@ -1,19 +1,18 @@
 # E4 C2 Backend gitlab ci file
-# Currently we build using docker in a mirror of docker/Dockerfile.c2 
-# It may be worth building that image, instead. 
-
-# TODO: need to see if we can get this script to produce docker images as well.
 
 image: golang:1.12
-stages:
-  - build
-  - test
 
+stages:
+  - test
+  - build
 
 before_script:
+  # Packages
+  - PACKAGES="openssh-client git bash"
+  - command -v apt >/dev/null 2>&1 && (apt-get update && apt-get install -y ${PACKAGES}) || (apk update && apk add ${PACKAGES})
+
   # https://docs.gitlab.com/ee/ci/ssh_keys/
   - echo "Configuring git"
-  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
   - eval $(ssh-agent -s)
   - echo "$SSH_CI_KEY" | tr -d '\r' | ssh-add - > /dev/null
   - mkdir -p ~/.ssh && chmod 600 ~/.ssh
@@ -21,20 +20,28 @@ before_script:
 
   # Force use of ssh urls instead of https for gitlab.com. Has to be done before any go get...
   - git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/"
-  - go get golang.org/x/tools/cmd/goimports
-  - go install golang.org/x/tools/cmd/goimports
 
 build:
+  image: docker:stable
   stage: build
+  tags:
+    - docker
+  services:
+    - docker:dind
   script:
-    - ./scripts/build.sh
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - export BUILDVERSION=${CI_COMMIT_REF_NAME//\//_} # stip / off the branch name and replace by _ to have a valid docker tag format
+    - echo "Building docker image with BUILDVERSION=${BUILDVERSION}"
+    - ./scripts/docker-build.sh
+    - docker push registry.gitlab.com/teserakt/c2:${BUILDVERSION}
 
-test:
+unittest:
   stage: test
-  only:
-    - develop
-    - master
   script:
     - ./scripts/unittests.sh
-      # TODO: investigate why this hangs:
-      # - ./scripts/test.sh
+
+# TODO: check why this hang (see https://gitlab.com/Teserakt/c2/issues/1)
+# functest:
+#   stage: test
+#   script:
+#     - ./scripts/test.sh

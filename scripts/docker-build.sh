@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -18,10 +18,10 @@ if [ -z "$SSH_AUTH_SOCK" ]; then
     exit 1
 fi
 
-E4_VERSION=""
+E4_VERSION="${BUILDVERSION}"
 E4_GIT_COMMIT=$(git rev-list -1 HEAD)
 
-if [[ -z "$BUILDVERSION" ]]; then
+if [[ -z "$E4_VERSION" ]]; then
     E4_VERSION="devel"
 fi
 
@@ -31,7 +31,7 @@ printf "=> c2"
 DOCKER_BUILDKIT=1 docker build \
     --ssh default \
     --target c2 \
-    --tag "e4/c2:$E4_VERSION" \
-    --tag "e4/c2:$E4_GIT_COMMIT" \
+    --tag "registry.gitlab.com/teserakt/c2:$E4_VERSION" \
+    --tag "registry.gitlab.com/teserakt/c2:$E4_GIT_COMMIT" \
     -f "${DIR}/../docker/c2/Dockerfile" \
     "${DIR}/../"
