@@ -212,6 +212,36 @@ func (s *e4impl) NewTopic(topic string) error {
 	}
 	logger.Log("msg", "insertTopicKey succeeded", "topic", topic)
 
+	topicKey, err := s.db.GetTopicKey(topic)
+	if err != nil {
+		logger.Log("msg", "getTopicKey failed", "error", err)
+		return err
+	}
+
+	// Send the new key to all subscribed clients
+	command, err := s.commandFactory.CreateSetTopicKeyCommand(topicKey.Hash(), key)
+	if err != nil {
+		logger.Log("msg", "failed to create setTopicKey command", "error", err)
+		return err
+	}
+
+	idCount, err := s.db.CountIDsForTopic(topic)
+	if err != nil {
+		logger.Log("msg", "countIDsForTopic failed", "error", err)
+		return err
+	}
+
+	if idCount > 0 {
+		idKeys, err := s.db.GetIdsforTopic(topic, 0, idCount)
+		for _, idKey := range idKeys {
+			err = s.sendCommandToClient(command, idKey)
+			if err != nil {
+				logger.Log("msg", "sendCommandToClient failed", "error", err)
+				return err
+			}
+		}
+	}
+
 	err = s.pubSubClient.SubscribeToTopic(topic) // Monitoring
 	if err != nil {
 		logger.Log("msg", "subscribeToTopic failed", "topic", topic, "error", err)

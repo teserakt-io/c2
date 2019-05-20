@@ -21,12 +21,15 @@ import (
 // HTTPServer defines methods available on a C2 HTTP server
 type HTTPServer interface {
 	ListenAndServe() error
+	Close() error
 }
 
 type httpServer struct {
 	e4Service services.E4
 	logger    log.Logger
 	cfg       config.ServerCfg
+
+	apiServer *http.Server
 }
 
 var _ HTTPServer = &httpServer{}
@@ -95,14 +98,18 @@ func (s *httpServer) ListenAndServe() error {
 		Handler: route,
 	}
 
-	apiServer := &http.Server{
+	s.apiServer = &http.Server{
 		Addr:         s.cfg.Addr,
 		Handler:      och,
 		TLSConfig:    tlsConfig,
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
 	}
 
-	return apiServer.ListenAndServeTLS(s.cfg.Cert, s.cfg.Key)
+	return s.apiServer.ListenAndServeTLS(s.cfg.Cert, s.cfg.Key)
+}
+
+func (s *httpServer) Close() error {
+	return s.apiServer.Close()
 }
 
 // CORS middleware

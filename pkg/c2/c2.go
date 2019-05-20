@@ -24,6 +24,7 @@ import (
 // APIEndpoint defines an interface that all C2 api endpoints must implement
 type APIEndpoint interface {
 	ListenAndServe() error
+	Close() error
 }
 
 // C2 ...
@@ -130,6 +131,9 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 func (c *C2) Close() {
 	c.db.Close()
 	c.pubSubClient.Disconnect()
+	for _, endpoint := range c.endpoints {
+		endpoint.Close()
+	}
 }
 
 // EnableHTTPEndpoint will turn on C2 over HTTP

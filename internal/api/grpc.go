@@ -21,12 +21,15 @@ import (
 type GRPCServer interface {
 	e4.C2Server
 	ListenAndServe() error
+	Close() error
 }
 
 type grpcServer struct {
 	logger    log.Logger
 	cfg       config.ServerCfg
 	e4Service services.E4
+
+	apiServer *grpc.Server
 }
 
 var _ GRPCServer = &grpcServer{}
@@ -62,12 +65,18 @@ func (s *grpcServer) ListenAndServe() error {
 		return err
 	}
 
-	srv := grpc.NewServer(grpc.Creds(creds), grpc.StatsHandler(&ocgrpc.ServerHandler{}))
-	e4.RegisterC2Server(srv, s)
+	s.apiServer = grpc.NewServer(grpc.Creds(creds), grpc.StatsHandler(&ocgrpc.ServerHandler{}))
+	e4.RegisterC2Server(s.apiServer, s)
 
 	s.logger.Log("msg", "Starting api grpc server", "addr", s.cfg.Addr)
 
-	return srv.Serve(lis)
+	return s.apiServer.Serve(lis)
+}
+
+func (s *grpcServer) Close() error {
+	s.apiServer.Stop()
+
+	return nil
 }
 
 // C2Command processes a command received over gRPC by the CLI tool.
