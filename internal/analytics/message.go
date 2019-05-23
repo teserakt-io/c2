@@ -2,21 +2,23 @@ package analytics
 
 import (
 	"bytes"
+	"time"
 )
 
 // LoggedMessage defines a type holding the data to be logged on C2 messages
 type LoggedMessage struct {
-	Duplicate       bool   `json:"duplicate"`
-	Qos             byte   `json:"qos"`
-	Retained        bool   `json:"retained"`
-	Topic           string `json:"topic"`
-	MessageID       uint16 `json:"messageid"`
-	Payload         []byte `json:"payload"`
-	LooksEncrypted  bool   `json:"looksencrypted"`
-	LooksCompressed bool   `json:"lookscompressed"`
-	IsBase64        bool   `json:"isbase64"`
-	IsUTF8          bool   `json:"isutf8"`
-	IsJSON          bool   `json:"isjson"`
+	Timestamp       time.Time `json:"timestamp"`
+	Duplicate       bool      `json:"duplicate"`
+	Qos             byte      `json:"qos"`
+	Retained        bool      `json:"retained"`
+	Topic           string    `json:"topic"`
+	MessageID       uint16    `json:"messageid"`
+	Payload         []byte    `json:"payload"`
+	LooksEncrypted  bool      `json:"looksencrypted"`
+	LooksCompressed bool      `json:"lookscompressed"`
+	IsBase64        bool      `json:"isbase64"`
+	IsUTF8          bool      `json:"isutf8"`
+	IsJSON          bool      `json:"isjson"`
 }
 
 // LooksEncrypted indicate whenever given data looks encrypted or not.

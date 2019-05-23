@@ -8,13 +8,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"gitlab.com/teserakt/c2/internal/commands"
-
 	"github.com/go-kit/kit/log"
+	"github.com/olivere/elastic"
 
 	"gitlab.com/teserakt/c2/internal/analytics"
 	"gitlab.com/teserakt/c2/internal/api"
+	"gitlab.com/teserakt/c2/internal/commands"
 	"gitlab.com/teserakt/c2/internal/config"
+	c2log "gitlab.com/teserakt/c2/internal/log"
 	"gitlab.com/teserakt/c2/internal/models"
 	"gitlab.com/teserakt/c2/internal/protocols"
 	"gitlab.com/teserakt/c2/internal/services"
@@ -39,6 +40,29 @@ type C2 struct {
 
 // New creates a new C2
 func New(logger log.Logger, cfg config.Config) (*C2, error) {
+	var err error
+	var esClient *elastic.Client
+
+	if cfg.ES.Enable {
+		esClient, err = elastic.NewClient(
+			elastic.SetURL(cfg.ES.URLs...),
+			elastic.SetSniff(false),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if cfg.ES.IsC2LoggingEnabled() {
+		// extend logger to forward log to ES
+		esLogger, err := c2log.WithElasticSearch(logger, esClient, cfg.ES.C2LogsIndexName)
+		logger = log.With(esLogger)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create ES logger: %v", err)
+		}
+
+		logger.Log("msg", "elasticsearch log forwarding enabled")
+	}
 
 	// compatibility for packages that do not understand go-kit logger:
 	stdloglogger := stdlog.New(log.NewStdlibAdapter(logger), "", 0)
@@ -70,14 +94,12 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	}
 	logger.Log("msg", "database initialized")
 
-	monitor, err := analytics.NewESMessageMonitor(cfg.ES)
-	if err != nil {
-		logger.Log("msg", "ElasticSearch setup failed", "error", err)
-
-		return nil, fmt.Errorf("ElasticSearch setup failed: %v", err)
-	}
-
-	logger.Log("msg", "ElasticSearch setup successfully (or disabled by configuration)")
+	monitor := analytics.NewESMessageMonitor(
+		esClient,
+		logger,
+		cfg.ES.IsC2LoggingEnabled(),
+		cfg.ES.MessageIndexName,
+	)
 
 	pubSubClient, err := protocols.NewMQTTPubSubClient(cfg.MQTT, log.With(logger, "protocol", "mqtt"), monitor)
 	if err != nil {

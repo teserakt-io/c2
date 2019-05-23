@@ -73,6 +73,13 @@ func TestViperLoader(t *testing.T) {
 				Cert: "/path/to/http/cert",
 				Key:  "/path/to/http/key",
 			},
+			ES: ESCfg{
+				C2LogsIndexName:      "logs",
+				MessageIndexName:     "messages",
+				URLs:                 []string{},
+				enableC2Logging:      true,
+				enableMessageLogging: true,
+			},
 		}
 
 		diff, equal := messagediff.PrettyDiff(expectedCfg, cfg)

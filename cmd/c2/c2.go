@@ -34,9 +34,9 @@ func main() {
 		fmt.Printf("[ERROR] logs: unable to open file '%v' to write logs: %v\n", logFileName, err)
 		fmt.Print("[WARN] logs: falling back to standard output only\n")
 		logFile = os.Stdout
+	} else { // we don't want to close os.Stdout
+		defer logFile.Close()
 	}
-
-	defer logFile.Close()
 
 	logger := log.NewJSONLogger(logFile)
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)

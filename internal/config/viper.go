@@ -35,6 +35,7 @@ type viperType int
 const (
 	viperInt viperType = iota
 	viperString
+	viperStringSlice
 	viperBool
 	viperDBType
 	viperSecureConnection
@@ -82,7 +83,11 @@ func (loader *viperConfigLoader) Load() (Config, error) {
 		{&cfg.DB.SecureConnection, "db-secure-connection", viperSecureConnection, "enable", "E4C2_DB_SECURE_CONNECTION"},
 
 		{&cfg.ES.Enable, "es-enable", viperBool, false, "E4C2_ES_ENABLE"},
-		{&cfg.ES.URL, "es-url", viperString, "", "E4C2_ES_URL"},
+		{&cfg.ES.URLs, "es-urls", viperStringSlice, "", "E4C2_ES_URLS"},
+		{&cfg.ES.enableC2Logging, "es-c2-logging-enable", viperBool, true, ""},
+		{&cfg.ES.C2LogsIndexName, "es-c2-logging-index", viperString, "logs", ""},
+		{&cfg.ES.enableMessageLogging, "es-message-logging-enable", viperBool, true, ""},
+		{&cfg.ES.MessageIndexName, "es-message-logging-index", viperString, "messages", ""},
 	}
 
 	if err := loader.loadFields(viperFields); err != nil {
@@ -122,6 +127,9 @@ func (loader *viperConfigLoader) loadFields(fields []viperCfgField) error {
 		case viperString:
 			v := field.target.(*string)
 			*v = loader.v.GetString(field.keyName)
+		case viperStringSlice:
+			v := field.target.(*[]string)
+			*v = loader.v.GetStringSlice(field.keyName)
 		case viperBool:
 			v := field.target.(*bool)
 			value := loader.v.GetBool(field.keyName)

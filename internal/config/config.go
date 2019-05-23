@@ -86,8 +86,22 @@ type DBCfg struct {
 
 // ESCfg holds ElasticSearch config
 type ESCfg struct {
-	Enable bool
-	URL    string
+	Enable               bool
+	URLs                 []string
+	enableC2Logging      bool
+	enableMessageLogging bool
+	C2LogsIndexName      string
+	MessageIndexName     string
+}
+
+// IsC2LoggingEnabled indiquate whenever C2 logging is enabled in configuration
+func (c ESCfg) IsC2LoggingEnabled() bool {
+	return c.Enable && c.enableC2Logging
+}
+
+// IsMessageLoggingEnabled indiqate whenever broker message must be logged to elasticsearch
+func (c ESCfg) IsMessageLoggingEnabled() bool {
+	return c.Enable && c.enableMessageLogging
 }
 
 // ConnectionString returns the string to use to establish the db connection

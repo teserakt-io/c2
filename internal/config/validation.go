@@ -12,7 +12,6 @@ var (
 	ErrNoCert = errors.New("no certificate path supplied")
 	// ErrNoKey is returned when the key path is missing from configuration
 	ErrNoKey = errors.New("no key path supplied")
-
 	// ErrNoPassphrase is returned when the passphrase is missing from configuration
 	ErrNoPassphrase = errors.New("no database passphrase supplied")
 	// ErrNoDatabase is returned when the database name is missing
@@ -30,6 +29,10 @@ var (
 	ErrInvalidSecureConnection = errors.New("invalid secure connection mode")
 	// ErrNoSchema is returned when database configuration is missing a schema (postgres only)
 	ErrNoSchema = errors.New("no schema supplied")
+	// ErrAtLeatOneURLRequired is returned when a list of urls is empty but require at least one
+	ErrAtLeatOneURLRequired = errors.New("at least one url is required")
+	// ErrIndexNameRequired is returned when a index name is empty but required
+	ErrIndexNameRequired = errors.New("index name is required")
 )
 
 // Validate check Config and returns an error if anything is invalid
@@ -43,7 +46,11 @@ func (c Config) Validate() error {
 	}
 
 	if err := c.MQTT.Validate(); err != nil {
-		return fmt.Errorf("MQTT configuration validation error ")
+		return fmt.Errorf("MQTT configuration validation error: %v", err)
+	}
+
+	if err := c.ES.Validate(); err != nil {
+		return fmt.Errorf("ES configuration validation error: %v", err)
 	}
 
 	if err := c.DB.Validate(); err != nil {
@@ -72,6 +79,23 @@ func (c ServerCfg) Validate() error {
 
 // Validate checks MQTTCfg and returns an error if anything is invalid
 func (c MQTTCfg) Validate() error {
+	return nil
+}
+
+// Validate checks ESCfg and returns an error if anything is invalid
+func (c ESCfg) Validate() error {
+	if c.Enable && len(c.URLs) == 0 {
+		return ErrAtLeatOneURLRequired
+	}
+
+	if c.IsC2LoggingEnabled() && len(c.C2LogsIndexName) == 0 {
+		return ErrIndexNameRequired
+	}
+
+	if c.IsMessageLoggingEnabled() && len(c.MessageIndexName) == 0 {
+		return ErrIndexNameRequired
+	}
+
 	return nil
 }
 

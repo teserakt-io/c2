@@ -61,7 +61,15 @@ http-key: c2-key.pem
 
 # ES settings
 ###############################################################
-## enable monitoring? (and thus ElasticSearch)
+## enable elasticsearch and thus require a running server
 es-enable: true
-## ElasticSearch address
-es-url: http://127.0.0.1:9200
+## space separated list of available elasticsearch severs: http://host1:port1 http://host2:port2
+es-urls: http://127.0.0.1:9200
+## enable C2 logs forwarding to elasticsearch
+es-c2-logging-enable: true
+## name of the elasticSearch index for C2 logs
+es-c2-logging-index: logs
+## enable broker messages logging to elasticsearch
+es-message-logging-enable: true
+## name of the elasticSearch index for messages
+es-message-logging-index: messages

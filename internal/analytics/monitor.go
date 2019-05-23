@@ -4,11 +4,9 @@ package analytics
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
+	"github.com/go-kit/kit/log"
 	"github.com/olivere/elastic"
-	"gitlab.com/teserakt/c2/internal/config"
 )
 
 // MessageMonitor defines an interface able to monitor C2 messages
@@ -18,61 +16,38 @@ type MessageMonitor interface {
 }
 
 type esMessageMonitor struct {
-	esClient *elastic.Client
-	cfg      config.ESCfg
+	esClient    *elastic.Client
+	logger      log.Logger
+	enabled     bool
+	esIndexName string
 }
 
 var _ MessageMonitor = &esMessageMonitor{}
 
 // NewESMessageMonitor creates a new message monitor backed by elasticSearch
-func NewESMessageMonitor(cfg config.ESCfg) (MessageMonitor, error) {
-	monitor := &esMessageMonitor{
-		cfg: cfg,
+func NewESMessageMonitor(esClient *elastic.Client, logger log.Logger, enabled bool, esIndexName string) MessageMonitor {
+	return &esMessageMonitor{
+		esClient:    esClient,
+		logger:      logger,
+		enabled:     enabled,
+		esIndexName: esIndexName,
 	}
-
-	if !cfg.Enable {
-		return monitor, nil // Doesn't attempt to connect to ES when not enabled
-	}
-
-	esClient, err := elastic.NewClient(
-		elastic.SetURL(cfg.URL),
-		elastic.SetSniff(false),
-	)
-
-	if err != nil {
-		return nil, err
-	}
-	monitor.esClient = esClient
-
-	ctx := context.Background()
-
-	// TODO: elastic usually work with index having a date in it, like log-YYYY-MM-DD
-	// it make is easier to query / manage the indexes. Should we use it like this ?
-	exists, err := esClient.IndexExists("messages").Do(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if !exists {
-		createIndex, err := esClient.CreateIndex("messages").Do(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !createIndex.Acknowledged {
-			return nil, fmt.Errorf("index creation not acknowledged")
-		}
-	}
-
-	return monitor, nil
 }
 
 func (m *esMessageMonitor) Enabled() bool {
-	return m.cfg.Enable
+	return m.enabled
 }
 
 func (m *esMessageMonitor) OnMessage(msg LoggedMessage) {
-	b, _ := json.Marshal(msg)
-	ctx := context.Background()
+	if !m.enabled {
+		return
+	}
 
-	m.esClient.Index().Index("messages").Type("message").BodyString(string(b)).Do(ctx)
+	_, err := m.esClient.Index().Index(m.esIndexName).Type("message").
+		BodyJson(msg).
+		Do(context.Background())
+	if err != nil {
+		m.logger.Log("msg", "failed to send LoggedMessage to elasticSearch", "error", err, "loggedMessage", msg)
+		return
+	}
 }
