@@ -3,6 +3,8 @@ package log
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/olivere/elastic"
@@ -30,11 +32,14 @@ func (l *elasticLogger) Log(keyvals ...interface{}) error {
 	go func() {
 		buf := bytes.NewBuffer(nil)
 		jsonLogger := log.NewJSONLogger(buf)
+		jsonLogger = log.With(jsonLogger, "@timestamp", log.DefaultTimestamp)
+
 		if err := jsonLogger.Log(keyvals...); err != nil {
 			l.logger.Log("msg", "failed to log keyvals to buffer", "error", err, "data", keyvals)
 		}
 
-		_, err := l.esClient.Index().Index(l.index).Type("log").
+		index := fmt.Sprintf("%s-%s", l.index, time.Now().Format("2006.01.02"))
+		_, err := l.esClient.Index().Index(index).Type("log").
 			BodyString(string(buf.Bytes())).
 			Refresh("true").
 			Do(context.Background())

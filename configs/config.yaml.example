@@ -67,9 +67,9 @@ es-enable: true
 es-urls: http://127.0.0.1:9200
 ## enable C2 logs forwarding to elasticsearch
 es-c2-logging-enable: true
-## name of the elasticSearch index for C2 logs
+## name of the elasticSearch index for C2 logs. The indexes will be created daily like so: <name>-YYYY.MM.DD
 es-c2-logging-index: logs
 ## enable broker messages logging to elasticsearch
 es-message-logging-enable: true
-## name of the elasticSearch index for messages
+## name of the elasticSearch index for messages. The indexes will be created daily like so: <name>-YYYY.MM.DD
 es-message-logging-index: messages

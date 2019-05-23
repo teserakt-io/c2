@@ -210,6 +210,7 @@ func (c *mqttPubSubClient) Publish(payload []byte, topic string, qos byte) error
 
 func (c *mqttPubSubClient) logMessage(m MQTTMessage) {
 	msg := analytics.LoggedMessage{
+		Timestamp:       time.Now(),
 		Duplicate:       m.Duplicate(),
 		Qos:             m.Qos(),
 		Retained:        m.Retained(),

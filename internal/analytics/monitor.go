@@ -4,6 +4,8 @@ package analytics
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/olivere/elastic"
@@ -43,7 +45,8 @@ func (m *esMessageMonitor) OnMessage(msg LoggedMessage) {
 		return
 	}
 
-	_, err := m.esClient.Index().Index(m.esIndexName).Type("message").
+	index := fmt.Sprintf("%s-%s", m.esIndexName, time.Now().Format("2006.01.02"))
+	_, err := m.esClient.Index().Index(index).Type("message").
 		BodyJson(msg).
 		Do(context.Background())
 	if err != nil {
