@@ -9,6 +9,7 @@ production: false
 
 # MQTT settings
 ###############################################################
+mqtt-enabled: true
 ## broker host:port, must include protocol prefix, e.g. "tcp://"
 mqtt-broker: tcp://localhost:1883
 ## MQTT ID of the C2
@@ -17,6 +18,12 @@ mqtt-ID: e4c2
 mqtt-QoS-pub: 2
 ## QoS level of messages received
 mqtt-QoS-sub: 1
+
+# Kafka settings
+###############################################################
+kafka-enabled: false
+## space separated list of available brokers: host1:port1 host2:port2
+kafka-brokers: localhost:9092
 
 # Database settings
 ###############################################################

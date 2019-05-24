@@ -1,7 +1,10 @@
 package protocols
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/Shopify/sarama"
 	"github.com/go-kit/kit/log"
@@ -19,7 +22,6 @@ type kafkaPubSubClient struct {
 	producer sarama.SyncProducer
 
 	connected        bool
-	stopChan         chan bool
 	subscribedTopics map[string]chan bool
 }
 
@@ -64,7 +66,6 @@ func (c *kafkaPubSubClient) Connect() error {
 	}
 	c.producer = producer
 
-	c.stopChan = make(chan bool)
 	c.connected = true
 
 	return nil
@@ -89,6 +90,8 @@ func (c *kafkaPubSubClient) Disconnect() error {
 		close(stopChan)
 	}
 
+	c.consumer = nil
+	c.producer = nil
 	c.connected = false
 	c.subscribedTopics = make(map[string]chan bool)
 
@@ -110,32 +113,32 @@ func (c *kafkaPubSubClient) SubscribeToTopic(rawTopic string) error {
 
 	partitionConsumer, err := c.consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
 	if err != nil {
-		c.logger.Log("msg", "failed to subscribe to topic", "topic", topic, "error", err)
+		c.logger.Log("msg", "failed to subscribe to topic", "topic", rawTopic, "error", err)
 		return err
 	}
 
 	stopChan := make(chan bool)
-	c.subscribedTopics[topic] = stopChan
+	c.subscribedTopics[rawTopic] = stopChan
 
-	go c.onMessage(partitionConsumer, stopChan)
+	go c.watchForMessages(partitionConsumer, stopChan)
 
-	c.logger.Log("msg", "successfully subscribed to topic", "topic", topic)
+	c.logger.Log("msg", "successfully subscribed to topic", "topic", rawTopic)
 
 	return nil
 }
 
 func (c *kafkaPubSubClient) UnsubscribeFromTopic(rawTopic string) error {
-	topic := filterTopicName(rawTopic)
-
-	stopChan, exists := c.subscribedTopics[topic]
+	stopChan, exists := c.subscribedTopics[rawTopic]
 	if !exists {
-		c.logger.Log("msg", "cannot unsubscribe to a non subscribed topic", "topic", topic)
+		c.logger.Log("msg", "cannot unsubscribe to a non subscribed topic", "topic", rawTopic)
 
 		return nil
 	}
 
+	delete(c.subscribedTopics, rawTopic)
+
 	close(stopChan)
-	c.logger.Log("msg", "successfully unsubscribed from topic", "topic", topic)
+	c.logger.Log("msg", "successfully unsubscribed from topic", "topic", rawTopic)
 
 	return nil
 }
@@ -158,19 +161,56 @@ func (c *kafkaPubSubClient) Publish(payload []byte, rawTopic string, qos byte) e
 	return nil
 }
 
-func (c *kafkaPubSubClient) onMessage(partitionConsumer sarama.PartitionConsumer, stopChan <-chan bool) {
-	select {
-	case err := <-partitionConsumer.Errors():
-		c.logger.Log("msg", "partitionConsumer error", "error", err)
-	case msg := <-partitionConsumer.Messages():
-		c.logger.Log("msg", "received kafka message", "data", msg)
-	case <-stopChan:
-		if err := partitionConsumer.Close(); err != nil {
-			c.logger.Log("msg", "failed to stop partition consumer", "error", err)
+func (c *kafkaPubSubClient) watchForMessages(partitionConsumer sarama.PartitionConsumer, stopChan <-chan bool) {
+	for {
+		select {
+		case err := <-partitionConsumer.Errors():
+			c.logger.Log("msg", "partitionConsumer error", "error", err)
+		case msg := <-partitionConsumer.Messages():
+			c.logger.Log("msg", "received kafka message", "data", msg)
+			loggedMsg := analytics.LoggedMessage{
+				Duplicate:       false,
+				Qos:             byte(0),
+				Retained:        false,
+				Topic:           msg.Topic,
+				MessageID:       0,
+				Payload:         msg.Value,
+				IsUTF8:          utf8.Valid(msg.Value),
+				IsJSON:          false,
+				IsBase64:        false,
+				LooksCompressed: false,
+				LooksEncrypted:  false,
+			}
+
+			// try to determine type
+			if !loggedMsg.IsUTF8 {
+				if analytics.LooksCompressed(loggedMsg.Payload) {
+					loggedMsg.LooksCompressed = true
+				} else {
+					loggedMsg.LooksEncrypted = analytics.LooksEncrypted(loggedMsg.Payload)
+				}
+			} else {
+				var js map[string]interface{}
+				if json.Unmarshal(loggedMsg.Payload, &js) == nil {
+					loggedMsg.IsJSON = true
+				} else {
+					c.logger.Log(string(loggedMsg.Payload))
+					if _, err := base64.StdEncoding.DecodeString(string(loggedMsg.Payload)); err == nil {
+						loggedMsg.IsBase64 = true
+					}
+				}
+			}
+
+			c.monitor.OnMessage(loggedMsg)
+		case <-stopChan:
+			c.logger.Log("msg", "stopping watching for messages by stop channel")
+			if err := partitionConsumer.Close(); err != nil {
+				c.logger.Log("msg", "failed to stop partition consumer", "error", err)
+				return
+			}
+
 			return
 		}
-
-		return
 	}
 }
 

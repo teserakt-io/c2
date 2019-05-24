@@ -63,6 +63,7 @@ type ServerCfg struct {
 
 // MQTTCfg holds configuration for MQTT
 type MQTTCfg struct {
+	Enabled bool
 	ID       string
 	Broker   string
 	QoSPub   int
@@ -73,6 +74,7 @@ type MQTTCfg struct {
 
 // KafkaCfg holds configuration for Kafka
 type KafkaCfg struct {
+	Enabled bool
 	Brokers []string
 }
 
