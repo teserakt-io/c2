@@ -51,10 +51,15 @@ func TestViperLoader(t *testing.T) {
 		expectedCfg := Config{
 			IsProd: true,
 			MQTT: MQTTCfg{
-				ID:     "mqttid",
-				Broker: "tcp://mqtt.broker:1234",
-				QoSPub: 1,
-				QoSSub: 2,
+				Enabled: true,
+				ID:      "mqttid",
+				Broker:  "tcp://mqtt.broker:1234",
+				QoSPub:  1,
+				QoSSub:  2,
+			},
+			Kafka: KafkaCfg{
+				Enabled: false,
+				Brokers: []string{"domain1:9092", "domain2:9092"},
 			},
 			DB: DBCfg{
 				Logging:          true,

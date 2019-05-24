@@ -64,12 +64,16 @@ func (loader *viperConfigLoader) Load() (Config, error) {
 		{&cfg.HTTP.Cert, "http-cert", viperString, "", "E4C2_HTTP_CERT"},
 		{&cfg.HTTP.Key, "http-key", viperString, "", "E4C2_HTTP_KEY"},
 
+		{&cfg.MQTT.Enabled, "mqtt-enabled", viperBool, true, "E4C2_MQTT_ENABLED"},
 		{&cfg.MQTT.ID, "mqtt-id", viperString, "e4c2", "E4C2_MQTT_ID"},
 		{&cfg.MQTT.Broker, "mqtt-broker", viperString, "tcp://localhost:1883", "E4C2_MQTT_BROKER"},
 		{&cfg.MQTT.QoSPub, "mqtt-qos-pub", viperInt, 2, "E4C2_MQTT_QOS_PUB"},
 		{&cfg.MQTT.QoSSub, "mqtt-qos-sub", viperInt, 1, "E4C2_MQTT_QOS_SUB"},
 		{&cfg.MQTT.Username, "mqtt-username", viperString, "", ""},
 		{&cfg.MQTT.Password, "mqtt-password", viperString, "", ""},
+
+		{&cfg.Kafka.Enabled, "kafka-enabled", viperBool, false, "E4C2_KAFKA_ENABLED"},
+		{&cfg.Kafka.Brokers, "kafka-brokers", viperStringSlice, "", ""},
 
 		{&cfg.DB.Logging, "db-logging", viperBool, false, ""},
 		{&cfg.DB.Type, "db-type", viperDBType, "", "E4C2_DB_TYPE"},

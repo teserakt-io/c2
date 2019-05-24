@@ -46,7 +46,8 @@ type Config struct {
 	GRPC ServerCfg
 	HTTP ServerCfg
 
-	MQTT MQTTCfg
+	MQTT  MQTTCfg
+	Kafka KafkaCfg
 
 	DB DBCfg
 
@@ -62,12 +63,19 @@ type ServerCfg struct {
 
 // MQTTCfg holds configuration for MQTT
 type MQTTCfg struct {
+	Enabled bool
 	ID       string
 	Broker   string
 	QoSPub   int
 	QoSSub   int
 	Username string
 	Password string
+}
+
+// KafkaCfg holds configuration for Kafka
+type KafkaCfg struct {
+	Enabled bool
+	Brokers []string
 }
 
 // DBCfg holds configuration for databases

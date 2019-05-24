@@ -3,6 +3,8 @@ module gitlab.com/teserakt/c2
 require (
 	contrib.go.opencensus.io/exporter/ocagent v0.4.3
 	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/DataDog/zstd v1.4.0 // indirect
+	github.com/Shopify/sarama v1.22.1
 	github.com/d4l3k/messagediff v1.2.1 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20181014144952-4e0d7dc8888f // indirect
 	github.com/eclipse/paho.mqtt.golang v1.2.0
@@ -29,6 +31,11 @@ require (
 	gitlab.com/teserakt/e4common v0.0.0-20190425163902-b048c5ad71d3
 	gitlab.com/teserakt/test-common v0.0.0-20190204160809-8e9083c8f838
 	go.opencensus.io v0.19.0
+	golang.org/x/crypto v0.0.0-20190506204251-e1dfcc566284 // indirect
+	golang.org/x/net v0.0.0-20190509222800-a4d6f7feada5 // indirect
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
+	golang.org/x/sys v0.0.0-20190509141414-a5b02f93d862 // indirect
+	golang.org/x/text v0.3.2 // indirect
 	google.golang.org/grpc v1.17.0
 	gopkg.in/d4l3k/messagediff.v1 v1.2.1
 )
