@@ -42,6 +42,7 @@ func (m *esMessageMonitor) Enabled() bool {
 
 func (m *esMessageMonitor) OnMessage(msg LoggedMessage) {
 	if !m.enabled {
+		m.logger.Log("msg", "message monitoring is not enabled, skipping logging.")
 		return
 	}
 
@@ -53,4 +54,5 @@ func (m *esMessageMonitor) OnMessage(msg LoggedMessage) {
 		m.logger.Log("msg", "failed to send LoggedMessage to elasticSearch", "error", err, "loggedMessage", msg)
 		return
 	}
+	m.logger.Log("msg", "successfully logged message to elasticsearch", "index", index)
 }

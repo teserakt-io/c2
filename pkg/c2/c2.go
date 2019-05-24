@@ -96,7 +96,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 
 	monitor := analytics.NewESMessageMonitor(
 		esClient,
-		logger,
+		log.With(logger, "protocol", "monitoring"),
 		cfg.ES.IsC2LoggingEnabled(),
 		cfg.ES.MessageIndexName,
 	)
