@@ -29,8 +29,8 @@ var (
 	ErrInvalidSecureConnection = errors.New("invalid secure connection mode")
 	// ErrNoSchema is returned when database configuration is missing a schema (postgres only)
 	ErrNoSchema = errors.New("no schema supplied")
-	// ErrAtLeatOneURLRequired is returned when a list of urls is empty but require at least one
-	ErrAtLeatOneURLRequired = errors.New("at least one url is required")
+	// ErrAtLeastOneURLRequired is returned when a list of urls is empty but require at least one
+	ErrAtLeastOneURLRequired = errors.New("at least one url is required")
 	// ErrIndexNameRequired is returned when a index name is empty but required
 	ErrIndexNameRequired = errors.New("index name is required")
 )
@@ -85,7 +85,7 @@ func (c MQTTCfg) Validate() error {
 // Validate checks ESCfg and returns an error if anything is invalid
 func (c ESCfg) Validate() error {
 	if c.Enable && len(c.URLs) == 0 {
-		return ErrAtLeatOneURLRequired
+		return ErrAtLeastOneURLRequired
 	}
 
 	if c.IsC2LoggingEnabled() && len(c.C2LogsIndexName) == 0 {
