@@ -33,7 +33,7 @@ type E4 interface {
 
 type e4impl struct {
 	db             models.Database
-	mqttClient     protocols.PubSubClient
+	pubSubClient   protocols.PubSubClient
 	commandFactory commands.Factory
 	logger         log.Logger
 	keyenckey      []byte
@@ -44,14 +44,14 @@ var _ E4 = &e4impl{}
 // NewE4 creates a new E4 service
 func NewE4(
 	db models.Database,
-	mqttClient protocols.PubSubClient,
+	pubSubClient protocols.PubSubClient,
 	commandFactory commands.Factory,
 	logger log.Logger,
 	keyenckey []byte,
 ) E4 {
 	return &e4impl{
 		db:             db,
-		mqttClient:     mqttClient,
+		pubSubClient:   pubSubClient,
 		commandFactory: commandFactory,
 		logger:         logger,
 		keyenckey:      keyenckey,
@@ -212,7 +212,7 @@ func (s *e4impl) NewTopic(topic string) error {
 	}
 	logger.Log("msg", "insertTopicKey succeeded", "topic", topic)
 
-	err = s.mqttClient.SubscribeToTopic(topic) // Monitoring
+	err = s.pubSubClient.SubscribeToTopic(topic) // Monitoring
 	if err != nil {
 		logger.Log("msg", "subscribeToTopic failed", "topic", topic, "error", err)
 		return err
@@ -225,7 +225,7 @@ func (s *e4impl) NewTopic(topic string) error {
 func (s *e4impl) RemoveTopic(topic string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopic")
 
-	err := s.mqttClient.UnsubscribeFromTopic(topic) // Monitoring
+	err := s.pubSubClient.UnsubscribeFromTopic(topic) // Monitoring
 	if err != nil {
 		logger.Log("msg", "unsubscribeFromTopic failed", "error", err)
 	} else {
@@ -261,7 +261,7 @@ func (s *e4impl) SendMessage(topic, msg string) error {
 		logger.Log("msg", "Protect failed", "error", err)
 		return err
 	}
-	err = s.mqttClient.Publish(payload, topic, protocols.QoSAtMostOnce)
+	err = s.pubSubClient.Publish(payload, topic, protocols.QoSAtMostOnce)
 	if err != nil {
 		logger.Log("msg", "publish failed", "error", err)
 		return err
@@ -383,5 +383,5 @@ func (s *e4impl) sendCommandToClient(command commands.Command, idKey models.IDKe
 		return fmt.Errorf("failed to protected command: %v", err)
 	}
 
-	return s.mqttClient.Publish(payload, idKey.Topic(), protocols.QoSExactlyOnce)
+	return s.pubSubClient.Publish(payload, idKey.Topic(), protocols.QoSExactlyOnce)
 }

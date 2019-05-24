@@ -71,6 +71,8 @@ func (loader *viperConfigLoader) Load() (Config, error) {
 		{&cfg.MQTT.Username, "mqtt-username", viperString, "", ""},
 		{&cfg.MQTT.Password, "mqtt-password", viperString, "", ""},
 
+		{&cfg.Kafka.Brokers, "kafka-brokers", viperStringSlice, "", ""},
+
 		{&cfg.DB.Logging, "db-logging", viperBool, false, ""},
 		{&cfg.DB.Type, "db-type", viperDBType, "", "E4C2_DB_TYPE"},
 		{&cfg.DB.File, "db-file", viperString, "", "E4C2_DB_FILE"},

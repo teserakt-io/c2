@@ -53,6 +53,10 @@ func (c Config) Validate() error {
 		return fmt.Errorf("ES configuration validation error: %v", err)
 	}
 
+	if err := c.Kafka.Validate(); err != nil {
+		return fmt.Errorf("Kafka configuration validation error: %v", err)
+	}
+
 	if err := c.DB.Validate(); err != nil {
 		return fmt.Errorf("DB configuration validation error: %v", err)
 	}
@@ -96,6 +100,10 @@ func (c ESCfg) Validate() error {
 		return ErrIndexNameRequired
 	}
 
+	return nil
+}
+
+func (c KafkaCfg) Validate() error {
 	return nil
 }
 

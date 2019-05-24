@@ -59,7 +59,7 @@ func NewMQTTPubSubClient(
 	cfg config.MQTTCfg,
 	logger log.Logger,
 	monitor analytics.MessageMonitor,
-) (PubSubClient, error) {
+) PubSubClient {
 	// TODO: secure connection to broker
 	mqOpts := mqtt.NewClientOptions()
 	mqOpts.AddBroker(cfg.Broker)
@@ -76,7 +76,7 @@ func NewMQTTPubSubClient(
 		monitor:           monitor,
 		waitTimeout:       1 * time.Second,
 		disconnectTimeout: 1000,
-	}, nil
+	}
 }
 
 func (c *mqttPubSubClient) Connect() error {

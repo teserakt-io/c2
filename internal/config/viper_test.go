@@ -56,6 +56,9 @@ func TestViperLoader(t *testing.T) {
 				QoSPub: 1,
 				QoSSub: 2,
 			},
+			Kafka: KafkaCfg{
+				Brokers: []string{"domain1:9092", "domain2:9092"},
+			},
 			DB: DBCfg{
 				Logging:          true,
 				Type:             DBTypeSQLite,

@@ -101,14 +101,15 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		cfg.ES.MessageIndexName,
 	)
 
-	pubSubClient, err := protocols.NewMQTTPubSubClient(cfg.MQTT, log.With(logger, "protocol", "mqtt"), monitor)
-	if err != nil {
-		logger.Log("msg", "MQTT client creation failed", "error", err)
+	// TODO switch between available protocols from config. Add config option to choose only 1.
 
-		return nil, fmt.Errorf("MQTT client creation failed: %v", err)
-	}
-
+	pubSubClient := protocols.NewMQTTPubSubClient(cfg.MQTT, log.With(logger, "protocol", "mqtt"), monitor)
 	logger.Log("msg", "MQTT client created")
+
+	/*
+		pubSubClient = protocols.NewKafkaPubSubClient(cfg.Kafka, log.With(logger, "protocol", "kafka"), monitor)
+		logger.Log("msg", "Kafka client created")
+	*/
 
 	if err := pubSubClient.Connect(); err != nil {
 		return nil, fmt.Errorf("MQTT client connection failed: %v", err)
