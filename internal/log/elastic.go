@@ -50,7 +50,8 @@ func (l *elasticLogger) Log(keyvals ...interface{}) error {
 		}
 	}()
 
-	// Default gokit logger is 3 levels deep in callstack, we need 2 more to keep proper caller displaying.
+	// Default gokit logger caller is fetched from 3 levels deep in callstack
+	// we need 2 more to keep proper caller displaying.
 	logger := log.With(l.logger, "caller", log.Caller(5))
 	if err := logger.Log(keyvals...); err != nil {
 		return err
