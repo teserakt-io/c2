@@ -111,51 +111,45 @@ mobile browsers.
 ## REST API
 
 In the following API, `topic` is any acceptable MQTT topic. Special characters 
-in this topic will be url-encoded. `id` is a 32-character hexadecimal value that 
-identifies the client. `key` is a 64-character hexadecimal value that identifies 
-the key.
+in this topic will be url-encoded. The following parameters appear:
 
-`offset` and `count` are integers. 
+ 1. `name` is any acceptable device name. This should be UTF-8 encoded and must be between 1-256 characters, not including whitespace or /.
+ 1. `key` is a 64-character hexadecimal value that is the value of the key.
+ 1. `offset` is an integer describing the position in the list of clients or topics from which to begin retrieval.
+ 1. `count` is an integer describing how many entries to return.
 
-E4 C2 API:
+All APIs featuring `offset` or `count`, and those with `all` qualifiers, may retrieve at most 100 entries. Requests to return more than this will be capped at this limit. There is no API to extract the full dataset in one go.
 
-* POST /e4/client/{id}/key/{key}: `new_client(id, key)`
+### E4 C2 HTTP API
 
-* DELETE /e4/client/{id}: `remove_client(id)`
+#### Creating, Managing and Removing Clients
 
-* PUT /e4/client/{id}/topic/{topic}: `new_topic_client(id, topic)`
+ * `POST /e4/client/name/{name}/key/{key}` - Create a Client with a given `name` and `key`.
+ * `PATCH /e4/client/name/{name}` - Create a client with a given `name` and generate the key on the C2.
+ * `DELETE /e4/client/name/{name}` - Remove a client identified by `name`.
+ * `PUT /e4/client/name/{name}` - Reset a client given `name`.
+ * `GET /e4/clients/count` - Return the total number of clients.
+ * `GET /e4/clients/{offset}/{count}` - Return `count` clients starting at `offset`.
+ * `GET /e4/clients/all` - Return all (max 100) clients.
 
-* DELETE /e4/client/{id}/topic/{topic}: `remove_topic_client(id, topic)`
+#### Creating, Managing and Removing Topics
 
-* PUT /e4/client/{id}: `reset_client(id)` 
+ * `POST /e4/topic/{topic}` - Create a topic `topic`.
+ * `DELETE /e4/topic/{topic}` - Delete a topic `topic`.
+ * `GET /e4/topics/all` - Retrieve all (max 100) topics.
+ * `GET /e4/topics/count` Return the count of the number of topics.
+ * `GET /e4/topics/{offset}/{count}` Return `count` topics starting from the topic with index `offset`.
 
-* POST /e4/topic/{topic}: `new_topic(topic)`
+#### Manage the links between Clients and Topics.
 
-* DELETE /e4/topic/{topic}: `remove_topic(topic)` 
+ * `PUT /e4/client/name/{name}/topic/{topic}` - Associate a client `name` with topic `topic`.
+ * `DELETE /e4/client/name/{name}/topic/{topic}` - Remove a client `name` from topic `topic`.
+ * `GET /e4/client/name/{name}/topics/count` - Given the client `name`, find the number of topics associated with it.
+ * `GET /e4/client/name/{name}/topics/{offset}/{count}` - Given the client `name`, retrieve `count` topics from offset `offset`.
 
-* PATCH /e4/client/{id}/: `new_client_key(id)` 
+#### Send messages on a topic
 
-* GET /e4/topic/: lists of all topics. This API may be unsafe.
-
-* GET /e4/client/: lists all client ids. This API may be unsafe.
-
-* GET /e4/client/{id}: lists the topics support by id
-
-* GET /e4/topic/{topic}/clients/count - lists the number of clients with 
-  the topic key for a specific topic.
-
-* GET /e4/topic/{topic}/client/{offset}/{count} - retrieves clients that 
-  have access to the given topic, starting at the offset given by offset and 
-  retrieving count number of such devices, to enable paginated retrieval 
-  of clients.
-
-* GET /e4/client/{id}/topics/count - returns the number of topics to which a 
-  given client identified by `id` is subscribed to and have access to the 
-  topic key.
-
-* GET /e4/client/{id}/topics/{offset}/{count} - returns the topics associated 
-  with a given client identified by `id`, starting from offset and returning 
-  count in number.
+ * POST `/e4/topic/{topic}/message/{message}` - sends a message `message` on channel `topic` using E4.
 
 ## User stories
 

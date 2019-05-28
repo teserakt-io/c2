@@ -44,22 +44,27 @@ func newKey(t *testing.T) []byte {
 	return key
 }
 
-func createTestIDKey(t *testing.T, e4Key []byte) (models.IDKey, []byte) {
-	clearIDKey := newKey(t)
-	encryptedIDKey := encryptKey(t, e4Key, clearIDKey)
+func createTestClient(t *testing.T, e4Key []byte) (models.Client, []byte) {
+	clearKey := newKey(t)
+	encryptedKey := encryptKey(t, e4Key, clearKey)
 
-	id := make([]byte, e4.IDLen)
-	_, err := rand.Read(id)
+	randombytes := make([]byte, e4.IDLen)
+
+	_, err := rand.Read(randombytes)
 	if err != nil {
-		t.Fatalf("Failed to generate ID: %v", err)
+		t.Fatalf("Failed to generate random bytes: %v", err)
 	}
 
-	idKey := models.IDKey{
+	name := hex.EncodeToString(randombytes)
+	id := e4.HashIDAlias(name)
+
+	client := models.Client{
+		Name: name,
 		E4ID: id,
-		Key:  encryptedIDKey,
+		Key:  encryptedKey,
 	}
 
-	return idKey, clearIDKey
+	return client, clearKey
 }
 
 func createTestTopicKey(t *testing.T, e4Key []byte) (models.TopicKey, []byte) {
@@ -89,89 +94,96 @@ func TestE4(t *testing.T) {
 	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, logger, e4Key)
 
 	t.Run("NewClient encrypt key and save properly", func(t *testing.T) {
-		idKey, clearKey := createTestIDKey(t, e4Key)
+		client, clearKey := createTestClient(t, e4Key)
 
-		mockDB.EXPECT().InsertIDKey(idKey.E4ID, idKey.Key)
+		mockDB.EXPECT().InsertClient(client.Name, client.E4ID, client.Key)
 
-		if err := service.NewClient(idKey.E4ID, clearKey); err != nil {
+		if err := service.NewClient(client.Name, client.E4ID, clearKey); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
 
-	t.Run("RemoveClient delete the client", func(t *testing.T) {
-		idKey, _ := createTestIDKey(t, e4Key)
+	t.Run("RemoveClientByID deletes the client", func(t *testing.T) {
+		client, _ := createTestClient(t, e4Key)
 
-		mockDB.EXPECT().DeleteIDKey(idKey.E4ID)
+		mockDB.EXPECT().DeleteClientByID(client.E4ID)
+		if err := service.RemoveClientByID(client.E4ID); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+	t.Run("RemoveClientByName deletes the client", func(t *testing.T) {
+		client, _ := createTestClient(t, e4Key)
 
-		if err := service.RemoveClient(idKey.E4ID); err != nil {
+		mockDB.EXPECT().DeleteClientByID(client.E4ID)
+		if err := service.RemoveClientByName(client.Name); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
 
 	t.Run("NewTopicClient links a client to a topic and notify it before updating DB", func(t *testing.T) {
-		idKey, clearIDKey := createTestIDKey(t, e4Key)
+		client, clearClientKey := createTestClient(t, e4Key)
 		topicKey, clearTopicKey := createTestTopicKey(t, e4Key)
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
 		commandPayload := []byte("command-payload")
 
 		gomock.InOrder(
-			mockDB.EXPECT().GetIDKey(idKey.E4ID).Return(idKey, nil),
+			mockDB.EXPECT().GetClientByName(client.Name).Return(client, nil),
 			mockDB.EXPECT().GetTopicKey(topicKey.Topic).Return(topicKey, nil),
 
 			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(topicKey.Hash(), clearTopicKey).Return(mockCommand, nil),
-			mockCommand.EXPECT().Protect(clearIDKey).Return(commandPayload, nil),
+			mockCommand.EXPECT().Protect(clearClientKey).Return(commandPayload, nil),
 
-			mockPubSubClient.EXPECT().Publish(commandPayload, idKey.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(commandPayload, client.Topic(), protocols.QoSExactlyOnce),
 
-			mockDB.EXPECT().LinkIDTopic(idKey, topicKey),
+			mockDB.EXPECT().LinkClientTopic(client, topicKey),
 		)
 
-		if err := service.NewTopicClient(idKey.E4ID, topicKey.Topic); err != nil {
+		if err := service.NewTopicClient(client.Name, client.E4ID, topicKey.Topic); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
 
 	t.Run("RemoveTopicClient unlink client from topic and notify it before updating DB", func(t *testing.T) {
-		idKey, clearIDKey := createTestIDKey(t, e4Key)
+		client, clearIDKey := createTestClient(t, e4Key)
 		topicKey, _ := createTestTopicKey(t, e4Key)
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
 		commandPayload := []byte("command-payload")
 
 		gomock.InOrder(
-			mockDB.EXPECT().GetIDKey(idKey.E4ID).Return(idKey, nil),
+			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
 			mockDB.EXPECT().GetTopicKey(topicKey.Topic).Return(topicKey, nil),
 
 			mockCommandFactory.EXPECT().CreateRemoveTopicCommand(topicKey.Hash()).Return(mockCommand, nil),
 			mockCommand.EXPECT().Protect(clearIDKey).Return(commandPayload, nil),
 
-			mockPubSubClient.EXPECT().Publish(commandPayload, idKey.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(commandPayload, client.Topic(), protocols.QoSExactlyOnce),
 
-			mockDB.EXPECT().UnlinkIDTopic(idKey, topicKey),
+			mockDB.EXPECT().UnlinkClientTopic(client, topicKey),
 		)
 
-		if err := service.RemoveTopicClient(idKey.E4ID, topicKey.Topic); err != nil {
+		if err := service.RemoveTopicClientByID(client.E4ID, topicKey.Topic); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
 
 	t.Run("ResetClient send a reset command to client", func(t *testing.T) {
-		idKey, clearIDKey := createTestIDKey(t, e4Key)
+		client, clearIDKey := createTestClient(t, e4Key)
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
 		commandPayload := []byte("command-payload")
 
 		gomock.InOrder(
-			mockDB.EXPECT().GetIDKey(idKey.E4ID).Return(idKey, nil),
+			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
 
 			mockCommandFactory.EXPECT().CreateResetTopicsCommand().Return(mockCommand, nil),
 			mockCommand.EXPECT().Protect(clearIDKey).Return(commandPayload, nil),
 
-			mockPubSubClient.EXPECT().Publish(commandPayload, idKey.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(commandPayload, client.Topic(), protocols.QoSExactlyOnce),
 		)
 
-		if err := service.ResetClient(idKey.E4ID); err != nil {
+		if err := service.ResetClientByID(client.E4ID); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
@@ -213,7 +225,7 @@ func TestE4(t *testing.T) {
 
 		mockDB.EXPECT().GetAllTopics().Return(topicKeys, nil)
 
-		topics, err := service.GetAllTopicIds()
+		topics, err := service.GetAllTopics()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -243,56 +255,23 @@ func TestE4(t *testing.T) {
 	})
 
 	t.Run("NewClientKey generates a new key, send it to the client and update the DB", func(t *testing.T) {
-		idKey, clearIDKey := createTestIDKey(t, e4Key)
-
-		mockCommand := commands.NewMockCommand(mockCtrl)
-		commandPayload := []byte("command-payload")
-
-		var protectedNewKey []byte
-
-		gomock.InOrder(
-			mockDB.EXPECT().GetIDKey(idKey.E4ID).Return(idKey, nil),
-			mockCommandFactory.EXPECT().CreateSetIDKeyCommand(gomock.Any()).Do(func(newKey []byte) {
-				if len(newKey) != e4.KeyLen {
-					t.Errorf("Expected newKey to be %d bytes, got %d", e4.KeyLen, len(newKey))
-				}
-
-				var err error
-				protectedNewKey, err = e4.Encrypt(e4Key, nil, newKey)
-				if err != nil {
-					t.Fatalf("Expected no error, got %v", err)
-				}
-
-			}).Return(mockCommand, nil),
-			mockCommand.EXPECT().Protect(clearIDKey).Return(commandPayload, nil),
-			mockPubSubClient.EXPECT().Publish(commandPayload, idKey.Topic(), protocols.QoSExactlyOnce),
-			mockDB.EXPECT().InsertIDKey(idKey.E4ID, gomock.Any()).Do(func(id, key []byte) {
-				if reflect.DeepEqual(key, protectedNewKey) == false {
-					t.Errorf("Expected protected new key to be %#v, got %#v", protectedNewKey, key)
-				}
-			}),
-		)
-
-		if err := service.NewClientKey(idKey.E4ID); err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
 	})
 
 	t.Run("GetAllClientHexIds returns all clients", func(t *testing.T) {
-		i1, _ := createTestIDKey(t, e4Key)
-		i2, _ := createTestIDKey(t, e4Key)
-		i3, _ := createTestIDKey(t, e4Key)
+		i1, _ := createTestClient(t, e4Key)
+		i2, _ := createTestClient(t, e4Key)
+		i3, _ := createTestClient(t, e4Key)
 
-		idKeys := []models.IDKey{i1, i2, i3}
+		clients := []models.Client{i1, i2, i3}
 		expectedIds := []string{
 			hex.EncodeToString(i1.E4ID),
 			hex.EncodeToString(i2.E4ID),
 			hex.EncodeToString(i3.E4ID),
 		}
 
-		mockDB.EXPECT().GetAllIDKeys().Return(idKeys, nil)
+		mockDB.EXPECT().GetAllClients().Return(clients, nil)
 
-		ids, err := service.GetAllClientHexIds()
+		ids, err := service.GetAllClientsAsHexIDs()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -303,13 +282,13 @@ func TestE4(t *testing.T) {
 	})
 
 	t.Run("CountTopicsForID return topic count", func(t *testing.T) {
-		idKey, _ := createTestIDKey(t, e4Key)
+		client, _ := createTestClient(t, e4Key)
 
 		expectedCount := 10
 
-		mockDB.EXPECT().CountTopicsForID(idKey.E4ID).Return(expectedCount, nil)
+		mockDB.EXPECT().CountTopicsForClientByID(client.E4ID).Return(expectedCount, nil)
 
-		count, err := service.CountTopicsForID(idKey.E4ID)
+		count, err := service.CountTopicsForClientByID(client.E4ID)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -320,7 +299,7 @@ func TestE4(t *testing.T) {
 	})
 
 	t.Run("GetTopicsForID returns topics for a given ID", func(t *testing.T) {
-		idKey, _ := createTestIDKey(t, e4Key)
+		client, _ := createTestClient(t, e4Key)
 		expectedOffset := 1
 		expectedCount := 2
 
@@ -331,9 +310,9 @@ func TestE4(t *testing.T) {
 		topicKeys := []models.TopicKey{t1, t2, t3}
 		expectedTopics := []string{t1.Topic, t2.Topic, t3.Topic}
 
-		mockDB.EXPECT().GetTopicsForID(idKey.E4ID, expectedOffset, expectedCount).Return(topicKeys, nil)
+		mockDB.EXPECT().GetTopicsForClientByID(client.E4ID, expectedOffset, expectedCount).Return(topicKeys, nil)
 
-		topics, err := service.GetTopicsForID(idKey.E4ID, expectedOffset, expectedCount)
+		topics, err := service.GetTopicsForClientByID(client.E4ID, expectedOffset, expectedCount)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -348,9 +327,9 @@ func TestE4(t *testing.T) {
 
 		expectedCount := 10
 
-		mockDB.EXPECT().CountIDsForTopic(topicKey.Topic).Return(expectedCount, nil)
+		mockDB.EXPECT().CountClientsForTopic(topicKey.Topic).Return(expectedCount, nil)
 
-		count, err := service.CountIDsForTopic(topicKey.Topic)
+		count, err := service.CountClientsForTopic(topicKey.Topic)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -365,26 +344,26 @@ func TestE4(t *testing.T) {
 		expectedOffset := 1
 		expectedCount := 2
 
-		i1, _ := createTestIDKey(t, e4Key)
-		i2, _ := createTestIDKey(t, e4Key)
-		i3, _ := createTestIDKey(t, e4Key)
+		i1, _ := createTestClient(t, e4Key)
+		i2, _ := createTestClient(t, e4Key)
+		i3, _ := createTestClient(t, e4Key)
 
-		idKeys := []models.IDKey{i1, i2, i3}
-		expectedIds := []string{
-			hex.EncodeToString(i1.E4ID),
-			hex.EncodeToString(i2.E4ID),
-			hex.EncodeToString(i3.E4ID),
+		clients := []models.Client{i1, i2, i3}
+		expectedNames := []string{
+			i1.Name,
+			i2.Name,
+			i3.Name,
 		}
 
-		mockDB.EXPECT().GetIdsforTopic(topicKey.Topic, expectedOffset, expectedCount).Return(idKeys, nil)
+		mockDB.EXPECT().GetClientsForTopic(topicKey.Topic, expectedOffset, expectedCount).Return(clients, nil)
 
-		ids, err := service.GetIdsforTopic(topicKey.Topic, expectedOffset, expectedCount)
+		ids, err := service.GetClientsByNameForTopic(topicKey.Topic, expectedOffset, expectedCount)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		if reflect.DeepEqual(ids, expectedIds) == false {
-			t.Errorf("Expected ids to be %v, got %v", expectedIds, ids)
+		if reflect.DeepEqual(ids, expectedNames) == false {
+			t.Errorf("Expected ids to be %v, got %v", expectedNames, ids)
 		}
 	})
 }

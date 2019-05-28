@@ -10,14 +10,14 @@ import (
 
 func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 
-	const TESTIDS = 4
-	const TESTTOPICS = 4
-	var testids [TESTIDS]e4test.TestIDKey
-	var testtopics [TESTTOPICS]e4test.TestTopicKey
+	const TESTCLIENTCOUNT = 4
+	const TESTTOPICCOUNT = 4
+	var testclients [TESTCLIENTCOUNT]e4test.TestClient
+	var testtopics [TESTTOPICCOUNT]e4test.TestTopicKey
 	var err error
 
-	for i := 0; i < TESTIDS; i++ {
-		err = testids[i].New()
+	for i := 0; i < TESTCLIENTCOUNT; i++ {
+		err = testclients[i].New()
 		if err != nil {
 			errc <- &e4test.TestResult{
 				Name:     "",
@@ -28,7 +28,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 			return
 		}
 	}
-	for i := 0; i < TESTTOPICS; i++ {
+	for i := 0; i < TESTTOPICCOUNT; i++ {
 		// we don't actually need keys for these tests;
 		// so don't generate them for the topics.
 		err = testtopics[i].New(false)
@@ -43,9 +43,9 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 		}
 	}
 
-	for i := 0; i < TESTIDS; i++ {
+	for i := 0; i < TESTCLIENTCOUNT; i++ {
 		result, err := e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_NEW_CLIENT,
-			testids[i].ID, testids[i].Key, "", "", 0, 0)
+			testclients[i].ID, testclients[i].Name, testclients[i].Key, "", "", 0, 0)
 		bresult, ok := result.(bool)
 		// must check bresult last, it won't be boolean unless the type assertion
 		// succeeds.
@@ -61,9 +61,9 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 	}
 	errc <- &e4test.TestResult{Name: "Add Clients", Result: true, Critical: false, Error: nil}
 
-	for i := 0; i < TESTTOPICS; i++ {
+	for i := 0; i < TESTTOPICCOUNT; i++ {
 		result, err := e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_NEW_TOPIC,
-			nil, nil, testtopics[i].TopicName, "", 0, 0)
+			nil, "", nil, testtopics[i].TopicName, "", 0, 0)
 		bresult, ok := result.(bool)
 		// must check bresult last, it won't be boolean unless the type assertion
 		// succeeds.
@@ -84,7 +84,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 
 	// *** Add the topic to the client.
 	result, err := e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_NEW_TOPIC_CLIENT,
-		testids[0].ID, nil, testtopics[0].TopicName, "", 0, 0)
+		nil, testclients[0].Name, nil, testtopics[0].TopicName, "", 0, 0)
 	bresult, ok := result.(bool)
 	if err != nil || !ok || !bresult {
 		if err == nil {
@@ -102,7 +102,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 
 	// *** Check the M2M link returns the topic we added
 	result, err = e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_GET_CLIENT_TOPICS,
-		testids[0].ID, nil, "", "", 0, 10)
+		nil, testclients[0].Name, nil, "", "", 0, 10)
 	clientTopics, ok := result.([]string)
 	if err != nil || !ok {
 		if err == nil {
@@ -130,7 +130,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 
 	// *** Remove the topic from the client (but not the C2)
 	result, err = e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_REMOVE_TOPIC_CLIENT,
-		testids[0].ID, nil, testtopics[0].TopicName, "", 0, 10)
+		nil, testclients[0].Name, nil, testtopics[0].TopicName, "", 0, 10)
 	bresult, ok = result.(bool)
 	if err != nil || !ok || !bresult {
 		if err == nil {
@@ -149,7 +149,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 
 	// *** Check Topic appears to have been removed from the client
 	result, err = e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_GET_CLIENT_TOPICS,
-		testids[0].ID, nil, "", "", 0, 10)
+		nil, testclients[0].Name, nil, "", "", 0, 10)
 	clientTopics, ok = result.([]string)
 	if err != nil || !ok {
 		if err == nil {
@@ -176,7 +176,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 
 	// *** Delete topic
 	result, err = e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_REMOVE_TOPIC,
-		nil, nil, testtopics[0].TopicName, "", 0, 10)
+		nil, "", nil, testtopics[0].TopicName, "", 0, 10)
 	bresult, ok = result.(bool)
 	if err != nil || !ok || !bresult {
 		if err == nil {
@@ -195,7 +195,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 
 	// *** Check double remove of topic fails
 	_, err = e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_REMOVE_TOPIC,
-		nil, nil, testtopics[0].TopicName, "", 0, 10)
+		nil, "", nil, testtopics[0].TopicName, "", 0, 10)
 	//bresult, ok = result.(bool)
 	if err == nil {
 		if err == nil {
@@ -214,7 +214,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 
 	// *** Get topics list
 	result, err = e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_GET_TOPICS,
-		testids[0].ID, nil, "", "", 0, 10)
+		nil, testclients[0].Name, nil, "", "", 0, 10)
 	clientTopics, ok = result.([]string)
 	if err != nil || !ok {
 		if err == nil {
@@ -228,7 +228,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 		}
 		return
 	}
-	if len(clientTopics) == 0 || len(clientTopics) != TESTTOPICS-1 {
+	if len(clientTopics) == 0 || len(clientTopics) != TESTTOPICCOUNT-1 {
 		errc <- &e4test.TestResult{
 			Name:     "Test Fetch Topics",
 			Result:   false,
@@ -237,7 +237,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 		}
 		return
 	}
-	for i := 1; i < TESTTOPICS; i++ {
+	for i := 1; i < TESTTOPICCOUNT; i++ {
 		found := false
 		testtopic := testtopics[i]
 		for j := 0; j < len(clientTopics); j++ {
@@ -260,7 +260,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 
 	// *** Get client list
 	result, err = e4test.GrpcC2SendCommand(grpcClient, e4.C2Request_GET_CLIENTS,
-		nil, nil, "", "", 0, 10)
+		nil, "", nil, "", "", 0, 10)
 	clientClients, ok := result.([]string)
 	if err != nil || !ok {
 		if err == nil {
@@ -274,7 +274,7 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 		}
 		return
 	}
-	if len(clientClients) == 0 || len(clientClients) != TESTIDS {
+	if len(clientClients) == 0 || len(clientClients) != TESTCLIENTCOUNT {
 		errc <- &e4test.TestResult{
 			Name:     "Test Fetch Clients",
 			Result:   false,
@@ -283,11 +283,11 @@ func TestGRPCApi(errc chan *e4test.TestResult, grpcClient e4.C2Client) {
 		}
 		return
 	}
-	for i := 0; i < TESTIDS; i++ {
+	for i := 0; i < TESTCLIENTCOUNT; i++ {
 		found := false
-		testclient := testids[i]
+		testclient := testclients[i]
 		for j := 0; j < len(clientClients); j++ {
-			if clientClients[j] == testclient.GetHexID() {
+			if clientClients[j] == testclient.GetName() {
 				found = true
 				break
 			}

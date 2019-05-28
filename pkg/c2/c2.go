@@ -38,6 +38,18 @@ type C2 struct {
 	endpoints []APIEndpoint
 }
 
+type C2Signal struct {
+	text string
+}
+
+func c2SignalOnErrorChannel(text string) *C2Signal {
+	return &C2Signal{text}
+}
+
+func (e *C2Signal) Error() string {
+	return e.text
+}
+
 // New creates a new C2
 func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	var err error
@@ -173,7 +185,7 @@ func (c *C2) ListenAndServe() error {
 	}
 
 	// subscribe to topics in the DB if not already done
-	topics, err := c.e4Service.GetAllTopicIds()
+	topics, err := c.e4Service.GetAllTopics()
 	if err != nil {
 		c.logger.Log("msg", "Failed to fetch all existing topics", "error", err)
 
@@ -191,7 +203,10 @@ func (c *C2) ListenAndServe() error {
 	go func() {
 		var sigc = make(chan os.Signal, 1)
 		signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
-		errc <- fmt.Errorf("%v", <-sigc)
+
+		// errc <- fmt.Errorf("%v", <-sigc)
+		sigerrtxt := fmt.Sprintf("%v", <-sigc)
+		errc <- c2SignalOnErrorChannel(sigerrtxt)
 	}()
 
 	for _, endpoint := range c.endpoints {

@@ -1,8 +1,8 @@
-# syntax = docker/dockerfile:1.0-experimental
+#syntax = docker/dockerfile:1.0-experimental
 
 FROM golang:1.12 as buildenv
-
-RUN mkdir -p ~/.ssh && echo "gitlab.com,35.231.145.151 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFSMqzJeV9rUzU4kWitGjeR4PWSa29SPqJ1fVkhtj3Hw9xjLVXVYrU9QlYWrOLXBpQ6KWjbjTDTdDkoohFzgbEY=" >> ~/.ssh/known_hosts
+#RUN mkdir -p ~/.ssh && echo "gitlab.com,35.231.145.151 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFSMqzJeV9rUzU4kWitGjeR4PWSa29SPqJ1fVkhtj3Hw9xjLVXVYrU9QlYWrOLXBpQ6KWjbjTDTdDkoohFzgbEY=" >> ~/.ssh/known_hosts
+RUN mkdir -p ~/.ssh && ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
 
 # Fix gitlab protocal to use ssh instead of https
 RUN git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/"

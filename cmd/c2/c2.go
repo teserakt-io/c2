@@ -55,18 +55,24 @@ func main() {
 		return
 	}
 
-	c2, err := c2.New(logger, cfg)
+	c2instance, err := c2.New(logger, cfg)
 	if err != nil {
 		logger.Log("error", err)
 		exitCode = 1
 		return
 	}
-	defer c2.Close()
+	defer c2instance.Close()
 
-	c2.EnableGRPCEndpoint()
-	c2.EnableHTTPEndpoint()
+	c2instance.EnableGRPCEndpoint()
+	c2instance.EnableHTTPEndpoint()
 
-	if err := c2.ListenAndServe(); err != nil {
+	if err := c2instance.ListenAndServe(); err != nil {
+		if _, ok := err.(*c2.C2Signal); ok {
+			logger.Log("msg", err)
+			logger.Log("msg", "Done")
+			exitCode = 0
+			return
+		}
 		logger.Log("error", err)
 		exitCode = 1
 		return

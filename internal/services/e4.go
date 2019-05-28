@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 
@@ -12,23 +13,70 @@ import (
 	e4 "gitlab.com/teserakt/e4common"
 )
 
+/* E4 API Naming
+
+   The APIs are duplicated at several levels within the C2 for a good reason,
+   so that we can separate out the various levels of logic. Naming however
+   needs to be consistent, or as consistent as possible.
+
+   E4 interface items should match the verbs in the specification as closely
+   as possible. However, go functions cannot have overloaded type signatures.
+   As such, we use the following syntax for all APIs:
+
+   VERB (ALL) Thing SUFFIX where:
+
+   SUFFIX takes these possible options and appears strictly in this order:
+
+	- For = Specifies that we are retrieving something for some specific value,
+	        GetTopicsForClient = Get Topics given CLIENT=client.
+    - As = Specifies how we retrieve it
+	- By  = If the thing we are retrieving has multiple query specifiers,
+	        By specifies how.
+	- Range = if the item in question has offset/count limits, this specifier
+	          is included.
+*/
+
 // E4 describe the available methods on the E4 service
 type E4 interface {
-	NewClient(id, key []byte) error
-	RemoveClient(id []byte) error
-	NewTopicClient(id []byte, topic string) error
-	RemoveTopicClient(id []byte, topic string) error
-	ResetClient(id []byte) error
+
+	// Client Only Manipulation
+	NewClient(name string, id, key []byte) error
+	NewClientKey(name string, id []byte) error
+	RemoveClientByID(id []byte) error
+	RemoveClientByName(name string) error
+	ResetClientByID(id []byte) error
+	ResetClientByName(name string) error
+	GetAllClientsAsHexIDs() ([]string, error)
+	GetAllClientsAsNames() ([]string, error)
+	GetClientsAsHexIDsRange(offset, count int) ([]string, error)
+	GetClientsAsNamesRange(offset, count int) ([]string, error)
+	CountClients() (int, error)
+
+	// Individual Topic Manipulaton
 	NewTopic(topic string) error
 	RemoveTopic(topic string) error
+	GetTopicsRange(offset, count int) ([]string, error)
+	GetAllTopics() ([]string, error)
+	CountTopics() (int, error)
+
+	// Linking, removing topic-client mappings:
+	NewTopicClient(name string, id []byte, topic string) error
+	RemoveTopicClientByID(id []byte, topic string) error
+	RemoveTopicClientByName(name string, topic string) error
+
+	// > Counting topics per client, or clients per topic.
+	CountTopicsForClientByID(id []byte) (int, error)
+	CountTopicsForClientByName(name string) (int, error)
+	CountClientsForTopic(topic string) (int, error)
+
+	// > Retrieving clients per topic or topics per client
+	GetTopicsForClientByID(id []byte, offset, count int) ([]string, error)
+	GetTopicsForClientByName(name string, offset, count int) ([]string, error)
+	GetClientsByNameForTopic(topic string, offset, count int) ([]string, error)
+	GetClientsByIDForTopic(topic string, offset, count int) ([]string, error)
+
+	// Communications
 	SendMessage(topic, msg string) error
-	GetAllTopicIds() ([]string, error)
-	GetAllClientHexIds() ([]string, error)
-	NewClientKey(id []byte) error
-	CountTopicsForID(id []byte) (int, error)
-	CountIDsForTopic(topic string) (int, error)
-	GetTopicsForID(id []byte, offset, count int) ([]string, error)
-	GetIdsforTopic(topic string, offset, count int) ([]string, error)
 }
 
 type e4impl struct {
@@ -58,8 +106,45 @@ func NewE4(
 	}
 }
 
-func (s *e4impl) NewClient(id, key []byte) error {
+func validateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
+
+	// The logic here is as follows:
+	// 1. We can pass name AND/OR id
+	// 2. If a name is passed and an ID, these should be consistent.
+	// 3. If just a name is passed, derive the ID here.
+	// 4. If a name is not passed, an empty string is acceptable
+	//    (but all lookups must be by ID)
+	//    This option will not be exposed to GRPC or HTTP APIs
+	//    and is reserved for any future protocol.
+
+	if len(name) != 0 {
+		if len(id) != 0 {
+			idtest := e4.HashIDAlias(name)
+			if bytes.Equal(idtest, id) == false {
+				return nil, fmt.Errorf("Inconsistent Name Alias and E4ID")
+			}
+			return id, nil
+		} else {
+			return e4.HashIDAlias(name), nil
+		}
+	} else {
+		if len(id) != e4.IDLen {
+			return nil, fmt.Errorf("Incorrect ID Length")
+		}
+		return id, nil
+	}
+}
+
+func (s *e4impl) NewClient(name string, id, key []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClient")
+
+	var newid []byte
+
+	newid, err := validateE4NameOrIDPair(name, id)
+	if err != nil {
+		logger.Log("msg", "Inconsistent E4 ID/Alias, refusing insert")
+		return err
+	}
 
 	protectedkey, err := e4.Encrypt(s.keyenckey, nil, key)
 	if err != nil {
@@ -67,35 +152,59 @@ func (s *e4impl) NewClient(id, key []byte) error {
 		return err
 	}
 
-	if err := s.db.InsertIDKey(id, protectedkey); err != nil {
-		logger.Log("msg", "insertIDKey failed", "error", err)
+	if err := s.db.InsertClient(name, newid, protectedkey); err != nil {
+		logger.Log("msg", "insertClient failed", "error", err)
 		return err
 	}
 
-	logger.Log("msg", "succeeded", "client", e4.PrettyID(id))
+	logger.Log("msg", "succeeded", "client", e4.PrettyID(newid))
 
 	return nil
 }
 
-func (s *e4impl) RemoveClient(id []byte) error {
+func (s *e4impl) RemoveClientByID(id []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeClient")
 
-	err := s.db.DeleteIDKey(id)
+	err := s.db.DeleteClientByID(id)
 	if err != nil {
-		logger.Log("msg", "deleteIDKey failed", "error", err)
+		logger.Log("msg", "deleteClient failed", "error", err)
 		return err
 	}
 	logger.Log("msg", "succeeded", "client", e4.PrettyID(id))
 	return nil
 }
 
-func (s *e4impl) NewTopicClient(id []byte, topic string) error {
+func (s *e4impl) RemoveClientByName(name string) error {
+	id := e4.HashIDAlias(name)
+	return s.RemoveClientByID(id)
+}
+
+func (s *e4impl) NewTopicClient(name string, id []byte, topic string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newTopicClient")
 
-	idKey, err := s.db.GetIDKey(id)
+	if name != "" && len(id) == 0 {
+		logger.Log("msg", "invalid ntc command received")
+	}
+
+	// A name or an ID can be passed to this function as well.
+	// We will first attempt a lookup by name. If this fails,
+	// we will pass the ID to the database first.
+	// Callers
+	var client models.Client
+	var clientname string
+
+	client, err := s.db.GetClientByName(name)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve idKey", "error", err)
-		return err
+		// we failed to retrieve the client by name. Now we try ID:
+
+		client, err = s.db.GetClientByID(id)
+		if err != nil {
+			logger.Log("msg", "failed to retrieve client", "error", err)
+			return err
+		}
+		clientname = fmt.Sprintf("id = %s", e4.PrettyID(id))
+	} else {
+		clientname = fmt.Sprintf("name = %s", name)
 	}
 
 	topicKey, err := s.db.GetTopicKey(topic)
@@ -116,28 +225,28 @@ func (s *e4impl) NewTopicClient(id []byte, topic string) error {
 		return err
 	}
 
-	err = s.sendCommandToClient(command, idKey)
+	err = s.sendCommandToClient(command, client)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
 	}
 
-	err = s.db.LinkIDTopic(idKey, topicKey)
+	err = s.db.LinkClientTopic(client, topicKey)
 	if err != nil {
 		logger.Log("msg", "Database record of client-topic link failed", err)
 		return err
 	}
 
-	logger.Log("msg", "succeeded", "client", e4.PrettyID(id), "topic", topic, "topichash", topicKey.Hash())
+	logger.Log("msg", "succeeded", "client", clientname, "topic", topic, "topichash", topicKey.Hash())
 	return nil
 }
 
-func (s *e4impl) RemoveTopicClient(id []byte, topic string) error {
+func (s *e4impl) RemoveTopicClientByID(id []byte, topic string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopicClient")
 
-	idKey, err := s.db.GetIDKey(id)
+	client, err := s.db.GetClientByID(id)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve idKey", "error", err)
+		logger.Log("msg", "failed to retrieve client", "error", err)
 		return err
 	}
 
@@ -153,13 +262,13 @@ func (s *e4impl) RemoveTopicClient(id []byte, topic string) error {
 		return err
 	}
 
-	err = s.sendCommandToClient(command, idKey)
+	err = s.sendCommandToClient(command, client)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
 	}
 
-	err = s.db.UnlinkIDTopic(idKey, topicKey)
+	err = s.db.UnlinkClientTopic(client, topicKey)
 	if err != nil {
 		logger.Log("msg", "Cannot remove DB record of client-topic link", err)
 		return err
@@ -170,12 +279,17 @@ func (s *e4impl) RemoveTopicClient(id []byte, topic string) error {
 	return nil
 }
 
-func (s *e4impl) ResetClient(id []byte) error {
+func (s *e4impl) RemoveTopicClientByName(name string, topic string) error {
+	id := e4.HashIDAlias(name)
+	return s.RemoveTopicClientByID(id, topic)
+}
+
+func (s *e4impl) ResetClientByID(id []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "resetClient")
 
-	idKey, err := s.db.GetIDKey(id)
+	client, err := s.db.GetClientByID(id)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve idKey", "error", err)
+		logger.Log("msg", "failed to retrieve client", "error", err)
 		return err
 	}
 
@@ -185,7 +299,7 @@ func (s *e4impl) ResetClient(id []byte) error {
 		return err
 	}
 
-	err = s.sendCommandToClient(command, idKey)
+	err = s.sendCommandToClient(command, client)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
@@ -194,6 +308,11 @@ func (s *e4impl) ResetClient(id []byte) error {
 	logger.Log("msg", "succeeded", "client", e4.PrettyID(id))
 
 	return nil
+}
+
+func (s *e4impl) ResetClientByName(name string) error {
+	id := e4.HashIDAlias(name)
+	return s.ResetClientByID(id)
 }
 
 func (s *e4impl) NewTopic(topic string) error {
@@ -271,23 +390,29 @@ func (s *e4impl) SendMessage(topic, msg string) error {
 	return nil
 }
 
-func (s *e4impl) NewClientKey(id []byte) error {
+func (s *e4impl) NewClientKey(name string, id []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClientKey")
 
-	idKey, err := s.db.GetIDKey(id)
+	newid, err := validateE4NameOrIDPair(name, id)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve idKey", "error", err)
+		logger.Log("msg", "Unable to validate name/id pair")
+		return err
+	}
+
+	client, err := s.db.GetClientByID(newid)
+	if err != nil {
+		logger.Log("msg", "failed to retrieve client", "error", err)
 		return err
 	}
 
 	newKey := e4.RandomKey()
 	command, err := s.commandFactory.CreateSetIDKeyCommand(newKey)
 	if err != nil {
-		logger.Log("msg", "failed to create SetIDKey command", "error", err)
+		logger.Log("msg", "failed to create SetClient command", "error", err)
 		return err
 	}
 
-	err = s.sendCommandToClient(command, idKey)
+	err = s.sendCommandToClient(command, client)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
@@ -298,9 +423,9 @@ func (s *e4impl) NewClientKey(id []byte) error {
 		return err
 	}
 
-	err = s.db.InsertIDKey(id, protectedkey)
+	err = s.db.InsertClient(name, id, protectedkey)
 	if err != nil {
-		logger.Log("msg", "insertIDKey failed", "error", err)
+		logger.Log("msg", "insertClient failed", "error", err)
 		return err
 	}
 	logger.Log("msg", "succeeded", "id", e4.PrettyID(id))
@@ -308,7 +433,7 @@ func (s *e4impl) NewClientKey(id []byte) error {
 	return nil
 }
 
-func (s *e4impl) GetAllTopicIds() ([]string, error) {
+func (s *e4impl) GetAllTopics() ([]string, error) {
 	topicKeys, err := s.db.GetAllTopics()
 	if err != nil {
 		return nil, err
@@ -318,30 +443,97 @@ func (s *e4impl) GetAllTopicIds() ([]string, error) {
 	for _, topickey := range topicKeys {
 		topics = append(topics, topickey.Topic)
 	}
-
 	return topics, nil
 }
 
-func (s *e4impl) GetAllClientHexIds() ([]string, error) {
-	idkeys, err := s.db.GetAllIDKeys()
+func (s *e4impl) GetAllClientsAsHexIDs() ([]string, error) {
+	clients, err := s.db.GetAllClients()
 	if err != nil {
 		return nil, err
 	}
 
 	var hexids []string
-	for _, idkey := range idkeys {
-		hexids = append(hexids, hex.EncodeToString(idkey.E4ID))
+	for _, client := range clients {
+		hexids = append(hexids, hex.EncodeToString(client.E4ID))
 	}
 
 	return hexids, nil
 }
 
-func (s *e4impl) CountTopicsForID(id []byte) (int, error) {
-	return s.db.CountTopicsForID(id)
+func (s *e4impl) GetAllClientsAsNames() ([]string, error) {
+	clients, err := s.db.GetAllClients()
+	if err != nil {
+		return nil, err
+	}
+
+	var names []string
+	for _, client := range clients {
+		names = append(names, client.Name)
+	}
+
+	return names, nil
 }
 
-func (s *e4impl) GetTopicsForID(id []byte, offset, count int) ([]string, error) {
-	topicKeys, err := s.db.GetTopicsForID(id, offset, count)
+func (s *e4impl) GetClientsAsHexIDsRange(offset, count int) ([]string, error) {
+	clients, err := s.db.GetClientsRange(offset, count)
+	if err != nil {
+		return nil, err
+	}
+
+	var hexids []string
+	for _, client := range clients {
+		hexids = append(hexids, hex.EncodeToString(client.E4ID))
+	}
+
+	return hexids, nil
+}
+
+func (s *e4impl) GetClientsAsNamesRange(offset, count int) ([]string, error) {
+	clients, err := s.db.GetClientsRange(offset, count)
+	if err != nil {
+		return nil, err
+	}
+
+	var names []string
+	for _, client := range clients {
+		names = append(names, client.Name)
+	}
+
+	return names, nil
+}
+
+func (s *e4impl) GetTopicsRange(offset, count int) ([]string, error) {
+	topics, err := s.db.GetTopicsRange(offset, count)
+	if err != nil {
+		return nil, err
+	}
+
+	var topicnames []string
+	for _, topic := range topics {
+		topicnames = append(topicnames, topic.Topic)
+	}
+
+	return topicnames, nil
+}
+
+func (s *e4impl) CountClients() (int, error) {
+	return s.db.CountClients()
+}
+
+func (s *e4impl) CountTopics() (int, error) {
+	return s.db.CountTopicKeys()
+}
+
+func (s *e4impl) CountTopicsForClientByID(id []byte) (int, error) {
+	return s.db.CountTopicsForClientByID(id)
+}
+
+func (s *e4impl) CountTopicsForClientByName(name string) (int, error) {
+	return s.db.CountTopicsForClientByName(name)
+}
+
+func (s *e4impl) GetTopicsForClientByID(id []byte, offset, count int) ([]string, error) {
+	topicKeys, err := s.db.GetTopicsForClientByID(id, offset, count)
 	if err != nil {
 		return nil, err
 	}
@@ -354,34 +546,53 @@ func (s *e4impl) GetTopicsForID(id []byte, offset, count int) ([]string, error) 
 	return topics, nil
 }
 
-func (s *e4impl) CountIDsForTopic(topic string) (int, error) {
-	return s.db.CountIDsForTopic(topic)
+func (s *e4impl) GetTopicsForClientByName(name string, offset, count int) ([]string, error) {
+	id := e4.HashIDAlias(name)
+	return s.GetTopicsForClientByID(id, offset, count)
 }
 
-func (s *e4impl) GetIdsforTopic(topic string, offset, count int) ([]string, error) {
-	idKeys, err := s.db.GetIdsforTopic(topic, offset, count)
+func (s *e4impl) CountClientsForTopic(topic string) (int, error) {
+	return s.db.CountClientsForTopic(topic)
+}
+
+func (s *e4impl) GetClientsByNameForTopic(topic string, offset, count int) ([]string, error) {
+	clients, err := s.db.GetClientsForTopic(topic, offset, count)
 	if err != nil {
 		return nil, err
 	}
 
-	var hexids []string
-	for _, idkey := range idKeys {
-		hexids = append(hexids, hex.EncodeToString(idkey.E4ID))
+	var names []string
+	for _, client := range clients {
+		names = append(names, client.Name)
 	}
 
-	return hexids, nil
+	return names, nil
 }
 
-func (s *e4impl) sendCommandToClient(command commands.Command, idKey models.IDKey) error {
-	clearIDKey, err := idKey.DecryptKey(s.keyenckey)
+func (s *e4impl) GetClientsByIDForTopic(topic string, offset, count int) ([]string, error) {
+	clients, err := s.db.GetClientsForTopic(topic, offset, count)
 	if err != nil {
-		return fmt.Errorf("failed to decrypt idKey: %v", err)
+		return nil, err
 	}
 
-	payload, err := command.Protect(clearIDKey)
+	var ids []string
+	for _, client := range clients {
+		ids = append(ids, hex.EncodeToString(client.E4ID))
+	}
+
+	return ids, nil
+}
+
+func (s *e4impl) sendCommandToClient(command commands.Command, client models.Client) error {
+	clearKey, err := client.DecryptKey(s.keyenckey)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt client: %v", err)
+	}
+
+	payload, err := command.Protect(clearKey)
 	if err != nil {
 		return fmt.Errorf("failed to protected command: %v", err)
 	}
 
-	return s.pubSubClient.Publish(payload, idKey.Topic(), protocols.QoSExactlyOnce)
+	return s.pubSubClient.Publish(payload, client.Topic(), protocols.QoSExactlyOnce)
 }

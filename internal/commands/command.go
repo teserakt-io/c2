@@ -2,7 +2,6 @@ package commands
 
 import (
 	"errors"
-
 	e4 "gitlab.com/teserakt/e4common"
 )
 

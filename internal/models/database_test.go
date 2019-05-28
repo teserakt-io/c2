@@ -10,6 +10,7 @@ import (
 	"github.com/jinzhu/gorm"
 
 	"gitlab.com/teserakt/c2/internal/config"
+	e4 "gitlab.com/teserakt/e4common"
 )
 
 // setupFunc defines a database setup function,
@@ -18,7 +19,7 @@ type setupFunc func(t *testing.T) (Database, func())
 
 func TestDBSQLite(t *testing.T) {
 	setup := func(t *testing.T) (Database, func()) {
-		f, err := ioutil.TempFile(os.TempDir(), "c2TestDb-")
+		f, err := ioutil.TempFile(os.TempDir(), "c2TestDb")
 		if err != nil {
 			t.Fatalf("Cannot create temporary file: %v", err)
 		}
@@ -102,48 +103,62 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		expectedIDKey := IDKey{
+		expectedClient := Client{
 			ID:   1,
-			E4ID: []byte("someID"),
+			Name: "expectedName",
+			E4ID: e4.HashIDAlias("expectedName"),
 			Key:  []byte("someKey"),
 		}
 
-		err := db.InsertIDKey(expectedIDKey.E4ID, expectedIDKey.Key)
+		err := db.InsertClient(expectedClient.Name, expectedClient.E4ID, expectedClient.Key)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		idKey, err := db.GetIDKey(expectedIDKey.E4ID)
+		client, err := db.GetClientByName(expectedClient.Name)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		if reflect.DeepEqual(idKey, expectedIDKey) == false {
-			t.Errorf("Expected idKey to be %#v, got %#v", expectedIDKey, idKey)
+		if reflect.DeepEqual(client, expectedClient) == false {
+			t.Errorf("Expected client to be %#v, got %#v", expectedClient, client)
 		}
 
-		expectedIDKey.Key = []byte("newKey")
-
-		err = db.InsertIDKey(expectedIDKey.E4ID, expectedIDKey.Key)
+		client, err = db.GetClientByID(expectedClient.E4ID)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		idKey, err = db.GetIDKey(expectedIDKey.E4ID)
+		if reflect.DeepEqual(client, expectedClient) == false {
+			t.Errorf("Expected client to be %#v, got %#v", expectedClient, client)
+		}
+
+		expectedClient.Key = []byte("newKey")
+
+		err = db.InsertClient(expectedClient.Name, expectedClient.E4ID, expectedClient.Key)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		if reflect.DeepEqual(idKey, expectedIDKey) == false {
-			t.Errorf("Expected idKey to be %#v, got %#v", expectedIDKey, idKey)
+		client, err = db.GetClientByID(expectedClient.E4ID)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if reflect.DeepEqual(client, expectedClient) == false {
+			t.Errorf("Expected client to be %#v, got %#v", expectedClient, client)
 		}
 	})
 
-	t.Run("GetIDKey with unknow id return record not found error", func(t *testing.T) {
+	t.Run("GetClient with unknown id return record not found error", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		_, err := db.GetIDKey([]byte("unknow"))
+		_, err := db.GetClientByID([]byte("unknown"))
+		if err != gorm.ErrRecordNotFound {
+			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
+		}
+		_, err = db.GetClientByName("unknown")
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
@@ -189,48 +204,68 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 	})
 
-	t.Run("GetTopicKey with unknow topic return record not found error", func(t *testing.T) {
+	t.Run("GetTopicKey with unknown topic return record not found error", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		_, err := db.GetTopicKey("unknow")
+		_, err := db.GetTopicKey("unknown")
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
 	})
 
-	t.Run("Delete properly delete IDKey", func(t *testing.T) {
+	t.Run("Delete properly delete Client", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		expectedIDKey := IDKey{
+		expectedClient := Client{
 			ID:   1,
-			E4ID: []byte("someID"),
+			Name: "someName",
+			E4ID: e4.HashIDAlias("someName"),
 			Key:  []byte("someKey"),
 		}
 
-		err := db.InsertIDKey(expectedIDKey.E4ID, expectedIDKey.Key)
+		err := db.InsertClient(expectedClient.Name, expectedClient.E4ID, expectedClient.Key)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		err = db.DeleteIDKey(expectedIDKey.E4ID)
+		err = db.DeleteClientByID(expectedClient.E4ID)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		_, err = db.GetIDKey(expectedIDKey.E4ID)
+		_, err = db.GetClientByID(expectedClient.E4ID)
+		if err != gorm.ErrRecordNotFound {
+			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
+		}
+
+		err = db.InsertClient(expectedClient.Name, expectedClient.E4ID, expectedClient.Key)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		err = db.DeleteClientByName(expectedClient.Name)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		_, err = db.GetClientByName(expectedClient.Name)
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
 
 	})
 
-	t.Run("Delete unknow IDKey return record not found", func(t *testing.T) {
+	t.Run("Delete unknown Client return record not found", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		err := db.DeleteIDKey([]byte("unknow"))
+		err := db.DeleteClientByID([]byte("unknown"))
+		if err != gorm.ErrRecordNotFound {
+			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
+		}
+		err = db.DeleteClientByName("unknown")
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
@@ -262,30 +297,30 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 	})
 
-	t.Run("Delete unknow topicKey returns record not found error", func(t *testing.T) {
+	t.Run("Delete unknown topicKey returns record not found error", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		err := db.DeleteTopicKey("unknow")
+		err := db.DeleteTopicKey("unknown")
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
 	})
 
-	t.Run("CountIDKeys properly count IDKeys", func(t *testing.T) {
+	t.Run("CountClients properly count Clients", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		ids := [][]byte{
-			[]byte("a"),
-			[]byte("b"),
-			[]byte("c"),
-			[]byte("d"),
-			[]byte("e"),
+		clients := []string{
+			"a",
+			"b",
+			"c",
+			"d",
+			"e",
 		}
 
-		for i, id := range ids {
-			c, err := db.CountIDKeys()
+		for i, name := range clients {
+			c, err := db.CountClients()
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
 			}
@@ -294,22 +329,22 @@ func testDatabase(t *testing.T, setup setupFunc) {
 				t.Errorf("Expected count to be %d, got %d", i, c)
 			}
 
-			err = db.InsertIDKey(id, []byte("key"))
+			err = db.InsertClient(name, e4.HashIDAlias(name), []byte("key"))
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
 			}
 		}
 
-		for i, id := range ids {
-			c, err := db.CountIDKeys()
+		for i, name := range clients {
+			c, err := db.CountClients()
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
 			}
-			if c != len(ids)-i {
-				t.Errorf("Expected count to be %d, got %d", len(ids)-i, c)
+			if c != len(clients)-i {
+				t.Errorf("Expected count to be %d, got %d", len(clients)-i, c)
 			}
 
-			err = db.DeleteIDKey(id)
+			err = db.DeleteClientByName(name)
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
 			}
@@ -361,39 +396,39 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 	})
 
-	t.Run("GetAllIDKeys returns all IDKeys", func(t *testing.T) {
+	t.Run("GetAllClients returns all Clients", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		idKeys, err := db.GetAllIDKeys()
+		clients, err := db.GetAllClients()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		if len(idKeys) != 0 {
-			t.Errorf("Expected %d IDKeys, got %d", 0, len(idKeys))
+		if len(clients) != 0 {
+			t.Errorf("Expected %d Clients, got %d", 0, len(clients))
 		}
 
-		expectedIDKeys := []IDKey{
-			IDKey{ID: 1, E4ID: []byte("a"), Key: []byte("key1")},
-			IDKey{ID: 2, E4ID: []byte("b"), Key: []byte("key2")},
-			IDKey{ID: 3, E4ID: []byte("c"), Key: []byte("key3")},
+		expectedClients := []Client{
+			Client{ID: 1, Name: "Client1", E4ID: e4.HashIDAlias("Client1"), Key: []byte("key1")},
+			Client{ID: 2, Name: "Client2", E4ID: e4.HashIDAlias("Client2"), Key: []byte("key2")},
+			Client{ID: 3, Name: "Client3", E4ID: e4.HashIDAlias("Client3"), Key: []byte("key3")},
 		}
 
-		for _, idKey := range expectedIDKeys {
-			err = db.InsertIDKey(idKey.E4ID, idKey.Key)
+		for _, client := range expectedClients {
+			err = db.InsertClient(client.Name, client.E4ID, client.Key)
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
 			}
 		}
 
-		idKeys, err = db.GetAllIDKeys()
+		clients, err = db.GetAllClients()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		if reflect.DeepEqual(idKeys, expectedIDKeys) == false {
-			t.Errorf("Expected idKeys to be %#v, got %#v", expectedIDKeys, idKeys)
+		if reflect.DeepEqual(clients, expectedClients) == false {
+			t.Errorf("Expected clients to be %#v, got %#v", expectedClients, clients)
 		}
 	})
 
@@ -429,17 +464,17 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 
 		if reflect.DeepEqual(topics, expectedTopics) == false {
-			t.Errorf("Expected idKeys to be %#v, got %#v", expectedTopics, topics)
+			t.Errorf("Expected clients to be %#v, got %#v", expectedTopics, topics)
 		}
 	})
 
-	t.Run("LinkIDTopic properly link an IDKey to a TopicKey", func(t *testing.T) {
+	t.Run("LinkClientTopic properly link an Client to a TopicKey", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		idKey := IDKey{ID: 1, E4ID: []byte("i-1"), Key: []byte("key")}
-		if err := db.InsertIDKey(idKey.E4ID, idKey.Key); err != nil {
-			t.Fatalf("Failed to insert IDKey: %v", err)
+		client := Client{ID: 1, Name: "i-1", E4ID: e4.HashIDAlias("i-1"), Key: []byte("key")}
+		if err := db.InsertClient(client.Name, client.E4ID, client.Key); err != nil {
+			t.Fatalf("Failed to insert Client: %v", err)
 		}
 
 		topic := TopicKey{ID: 1, Topic: "t-1", Key: []byte("key")}
@@ -447,11 +482,11 @@ func testDatabase(t *testing.T, setup setupFunc) {
 			t.Fatalf("Failed to insert TopicKey: %v", err)
 		}
 
-		if err := db.LinkIDTopic(idKey, topic); err != nil {
+		if err := db.LinkClientTopic(client, topic); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		count, err := db.CountIDsForTopic(topic.Topic)
+		count, err := db.CountClientsForTopic(topic.Topic)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -459,7 +494,14 @@ func testDatabase(t *testing.T, setup setupFunc) {
 			t.Errorf("Expected count to be 1, got %d", count)
 		}
 
-		count, err = db.CountTopicsForID(idKey.E4ID)
+		count, err = db.CountTopicsForClientByID(client.E4ID)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if count != 1 {
+			t.Errorf("Expected count to be 1, got %d", count)
+		}
+		count, err = db.CountTopicsForClientByName(client.Name)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -467,7 +509,15 @@ func testDatabase(t *testing.T, setup setupFunc) {
 			t.Errorf("Expected count to be 1, got %d", count)
 		}
 
-		topics, err := db.GetTopicsForID(idKey.E4ID, 0, 10)
+		topics, err := db.GetTopicsForClientByID(client.E4ID, 0, 10)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if reflect.DeepEqual(topics, []TopicKey{topic}) == false {
+			t.Errorf("Expected topics to be %#v, got %#v", []TopicKey{topic}, topics)
+		}
+		topics, err = db.GetTopicsForClientByName(client.Name, 0, 10)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -476,20 +526,20 @@ func testDatabase(t *testing.T, setup setupFunc) {
 			t.Errorf("Expected topics to be %#v, got %#v", []TopicKey{topic}, topics)
 		}
 
-		idKeys, err := db.GetIdsforTopic(topic.Topic, 0, 10)
+		clients, err := db.GetClientsForTopic(topic.Topic, 0, 10)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		if reflect.DeepEqual(idKeys, []IDKey{idKey}) == false {
-			t.Errorf("Expected idKeys to be %#v, got %#v", []IDKey{idKey}, idKeys)
+		if reflect.DeepEqual(clients, []Client{client}) == false {
+			t.Errorf("Expected clients to be %#v, got %#v", []Client{client}, clients)
 		}
 
-		if err := db.UnlinkIDTopic(idKey, topic); err != nil {
+		if err := db.UnlinkClientTopic(client, topic); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		topics, err = db.GetTopicsForID(idKey.E4ID, 0, 10)
+		topics, err = db.GetTopicsForClientByID(client.E4ID, 0, 10)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -498,16 +548,16 @@ func testDatabase(t *testing.T, setup setupFunc) {
 			t.Errorf("Expected no topics, got %#v", topics)
 		}
 
-		idKeys, err = db.GetIdsforTopic(topic.Topic, 0, 10)
+		clients, err = db.GetClientsForTopic(topic.Topic, 0, 10)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		if len(idKeys) != 0 {
-			t.Errorf("Expected no idKeys, got %#v", idKeys)
+		if len(clients) != 0 {
+			t.Errorf("Expected no clients, got %#v", clients)
 		}
 
-		count, err = db.CountIDsForTopic(topic.Topic)
+		count, err = db.CountClientsForTopic(topic.Topic)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -515,7 +565,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 			t.Errorf("Expected count to be 0, got %d", count)
 		}
 
-		count, err = db.CountTopicsForID(idKey.E4ID)
+		count, err = db.CountTopicsForClientByID(client.E4ID)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -528,69 +578,73 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		idKey := IDKey{E4ID: []byte("a"), Key: []byte("b")}
+		client := Client{Name: "a", E4ID: e4.HashIDAlias("a"), Key: []byte("b")}
 		topicKey := TopicKey{Topic: "c", Key: []byte("d")}
 
-		if err := db.LinkIDTopic(idKey, topicKey); err != ErrIDKeyNoPrimaryKey {
-			t.Errorf("Expected error to be %v, got %v", ErrIDKeyNoPrimaryKey, err)
+		if err := db.LinkClientTopic(client, topicKey); err != ErrClientNoPrimaryKey {
+			t.Errorf("Expected error to be %v, got %v", ErrClientNoPrimaryKey, err)
 		}
 
-		if err := db.InsertIDKey(idKey.E4ID, idKey.Key); err != nil {
+		if err := db.InsertClient(client.Name, client.E4ID, client.Key); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-		idKey.ID = 1
+		client.ID = 1
 
-		if err := db.LinkIDTopic(idKey, topicKey); err != ErrTopicKeyNoPrimaryKey {
+		if err := db.LinkClientTopic(client, topicKey); err != ErrTopicKeyNoPrimaryKey {
 			t.Errorf("Expected error to be %v, got %v", ErrTopicKeyNoPrimaryKey, err)
 		}
 	})
 
-	t.Run("Unlink with unkow records return errors", func(t *testing.T) {
+	t.Run("Unlink with unknown records return errors", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		idKey := IDKey{E4ID: []byte("a"), Key: []byte("b")}
+		client := Client{Name: "a", E4ID: e4.HashIDAlias("a"), Key: []byte("b")}
 		topicKey := TopicKey{Topic: "c", Key: []byte("d")}
 
-		if err := db.UnlinkIDTopic(idKey, topicKey); err != ErrIDKeyNoPrimaryKey {
-			t.Errorf("Expected error to be %v, got %v", ErrIDKeyNoPrimaryKey, err)
+		if err := db.UnlinkClientTopic(client, topicKey); err != ErrClientNoPrimaryKey {
+			t.Errorf("Expected error to be %v, got %v", ErrClientNoPrimaryKey, err)
 		}
 
-		if err := db.InsertIDKey(idKey.E4ID, idKey.Key); err != nil {
+		if err := db.InsertClient(client.Name, client.E4ID, client.Key); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-		idKey.ID = 1
+		client.ID = 1
 
-		if err := db.UnlinkIDTopic(idKey, topicKey); err != ErrTopicKeyNoPrimaryKey {
+		if err := db.UnlinkClientTopic(client, topicKey); err != ErrTopicKeyNoPrimaryKey {
 			t.Errorf("Expected error to be %v, got %v", ErrTopicKeyNoPrimaryKey, err)
 		}
 	})
 
-	t.Run("GetIdsforTopic with unknow topic returns a RecordNotFound error", func(t *testing.T) {
+	t.Run("GetIdsforTopic with unknown topic returns a RecordNotFound error", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		_, err := db.GetIdsforTopic("unknow", 0, 1)
+		_, err := db.GetClientsForTopic("unknown", 0, 1)
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
 	})
 
-	t.Run("GetTopicsForID with unknow topic returns a RecordNotFound error", func(t *testing.T) {
+	t.Run("GetTopicsForClientByXxx with unknown topic returns a RecordNotFound error", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		_, err := db.GetTopicsForID([]byte("unknow"), 0, 1)
+		_, err := db.GetTopicsForClientByID([]byte("unknown"), 0, 1)
+		if err != gorm.ErrRecordNotFound {
+			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
+		}
+		_, err = db.GetTopicsForClientByID([]byte("unknown"), 0, 1)
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
 	})
 
-	t.Run("CountIDsForTopic returns a record not found when topic doesn't exists", func(t *testing.T) {
+	t.Run("CountClientsForTopic returns a record not found when topic doesn't exists", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		_, err := db.CountIDsForTopic("unknow")
+		_, err := db.CountClientsForTopic("unknown")
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
@@ -600,7 +654,11 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		_, err := db.CountTopicsForID([]byte("unknow"))
+		_, err := db.CountTopicsForClientByID([]byte("unknown"))
+		if err != gorm.ErrRecordNotFound {
+			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
+		}
+		_, err = db.CountTopicsForClientByName("unknown")
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}

@@ -18,17 +18,20 @@ import (
 	// _ "github.com/jinzhu/gorm/dialects/mssql"
 
 	"gitlab.com/teserakt/c2/internal/config"
+	e4 "gitlab.com/teserakt/e4common"
 )
+
+const QUERY_LIMIT = 100
 
 var (
 	// ErrUnsupportedDialect is returned when creating a new database with a Config having an unsupported dialect
 	ErrUnsupportedDialect = errors.New("unsupported database dialect")
 	// ErrTopicKeyNotFound is returned when the topic cannot be found in the database
 	ErrTopicKeyNotFound = errors.New("topicKey not found in database")
-	// ErrIDKeyNotFound is returned when the key cannot be found in the database
-	ErrIDKeyNotFound = errors.New("IDKey not found in database")
-	// ErrIDKeyNoPrimaryKey is returned when an IDKey is provided but it doesn't have a primary key set
-	ErrIDKeyNoPrimaryKey = errors.New("IDKey doesn't have primary key")
+	// ErrClientNotFound is returned when the key cannot be found in the database
+	ErrClientNotFound = errors.New("Client not found in database")
+	// ErrClientNoPrimaryKey is returned when an Client is provided but it doesn't have a primary key set
+	ErrClientNoPrimaryKey = errors.New("Client doesn't have primary key")
 	// ErrTopicKeyNoPrimaryKey is returned when an TopicKey is provided but it doesn't have a primary key set
 	ErrTopicKeyNoPrimaryKey = errors.New("TopicKey doesn't have primary key")
 )
@@ -45,22 +48,28 @@ type Database interface {
 	Connection() *gorm.DB
 	Migrate() error
 
-	InsertIDKey(id, protectedkey []byte) error
+	InsertClient(name string, id, protectedkey []byte) error
 	InsertTopicKey(topic string, protectedKey []byte) error
-	GetIDKey(id []byte) (IDKey, error)
+	GetClientByID(id []byte) (Client, error)
+	GetClientByName(name string) (Client, error)
 	GetTopicKey(topic string) (TopicKey, error)
-	DeleteIDKey(id []byte) error
+	DeleteClientByID(id []byte) error
+	DeleteClientByName(name string) error
 	DeleteTopicKey(topic string) error
-	CountIDKeys() (int, error)
+	CountClients() (int, error)
 	CountTopicKeys() (int, error)
-	GetAllIDKeys() ([]IDKey, error)
+	GetAllClients() ([]Client, error)
 	GetAllTopics() ([]TopicKey, error)
-	LinkIDTopic(idKey IDKey, topicKey TopicKey) error
-	UnlinkIDTopic(idKey IDKey, topicKey TopicKey) error
-	CountTopicsForID(id []byte) (int, error)
-	GetTopicsForID(id []byte, offset int, count int) ([]TopicKey, error)
-	CountIDsForTopic(topic string) (int, error)
-	GetIdsforTopic(topic string, offset int, count int) ([]IDKey, error)
+	LinkClientTopic(client Client, topicKey TopicKey) error
+	UnlinkClientTopic(client Client, topicKey TopicKey) error
+	CountTopicsForClientByID(id []byte) (int, error)
+	CountTopicsForClientByName(name string) (int, error)
+	GetTopicsForClientByID(id []byte, offset int, count int) ([]TopicKey, error)
+	GetTopicsForClientByName(name string, offset int, count int) ([]TopicKey, error)
+	CountClientsForTopic(topic string) (int, error)
+	GetClientsForTopic(topic string, offset int, count int) ([]Client, error)
+	GetClientsRange(offset, limit int) ([]Client, error)
+	GetTopicsRange(offset, limit int) ([]TopicKey, error)
 }
 
 type gormDB struct {
@@ -108,7 +117,7 @@ func (gdb *gormDB) Migrate() error {
 	}
 
 	result := gdb.Connection().AutoMigrate(
-		IDKey{},
+		Client{},
 		TopicKey{},
 	)
 	if result.Error != nil {
@@ -120,26 +129,26 @@ func (gdb *gormDB) Migrate() error {
 		// Postgres require to add relations manually as AutoMigrate won't do it.
 		// see: https://github.com/jinzhu/gorm/issues/450
 
-		// Add foreign key on idKey id
-		exists, err := gdb.pgCheckConstraint("idkeys_topickeys_idkey_fk", "idkeys_topickeys")
+		// Add foreign key on client id
+		exists, err := gdb.pgCheckConstraint("clients_topickeys_client_fk", "clients_topickeys")
 		if err != nil {
 			return err
 		}
 
 		if !exists {
-			if err := gdb.Connection().Exec("ALTER TABLE idkeys_topickeys ADD CONSTRAINT idkeys_topickeys_idkey_fk FOREIGN KEY(id_key_id) REFERENCES id_keys (id) ON DELETE CASCADE;").Error; err != nil {
+			if err := gdb.Connection().Exec("ALTER TABLE clients_topickeys ADD CONSTRAINT clients_topickeys_client_fk FOREIGN KEY(client_id) REFERENCES clients (id) ON DELETE CASCADE;").Error; err != nil {
 				return err
 			}
 		}
 
 		// Add foreign key on topic id
-		exists, err = gdb.pgCheckConstraint("idkeys_topickeys_idkey_fk", "idkeys_topickeys")
+		exists, err = gdb.pgCheckConstraint("clients_topickeys_client_fk", "clients_topickeys")
 		if err != nil {
 			return err
 		}
 
 		if !exists {
-			if err := gdb.Connection().Exec("ALTER TABLE idkeys_topickeys ADD CONSTRAINT idkeys_topickeys_idkey_fk FOREIGN KEY(id_key_id) REFERENCES id_keys (id) ON DELETE CASCADE;").Error; err != nil {
+			if err := gdb.Connection().Exec("ALTER TABLE clients_topickeys ADD CONSTRAINT clients_topickeys_client_fk FOREIGN KEY(client_id) REFERENCES clients (id) ON DELETE CASCADE;").Error; err != nil {
 				return err
 			}
 		}
@@ -175,20 +184,35 @@ func (gdb *gormDB) Close() error {
 	return gdb.db.Close()
 }
 
-func (gdb *gormDB) InsertIDKey(id, protectedkey []byte) error {
-	var idkey IDKey
+func (gdb *gormDB) InsertClient(name string, id, protectedkey []byte) error {
+	var client Client
 
-	gdb.db.Where(&IDKey{E4ID: id}).First(&idkey)
-	if gdb.db.NewRecord(idkey) {
-		idkey = IDKey{E4ID: id, Key: protectedkey}
+	// we will actually allow empty names if necessary. If the alias
+	// is unknown to the C2, then we can insert it as is and use the ID
+	// based functions.
+	// If the name is known, we must have H(name)==ID. Enforce this here:
+	if name != "" {
+		idtest := e4.HashIDAlias(name)
+		if bytes.Equal(id, idtest) == false {
+			return errors.New("H(Name) != E4ID, refusing to create or update client.")
+		}
+	} else {
+		if len(id) != e4.IDLen {
+			return fmt.Errorf("ID Length invalid: got %d, expected %d", len(id), e4.IDLen)
+		}
+	}
 
-		if result := gdb.db.Create(&idkey); result.Error != nil {
+	gdb.db.Where(&Client{E4ID: id}).First(&client)
+	if gdb.db.NewRecord(client) {
+		client = Client{Name: name, E4ID: id, Key: protectedkey}
+
+		if result := gdb.db.Create(&client); result.Error != nil {
 			return result.Error
 		}
 	} else {
-		idkey.Key = protectedkey
+		client.Key = protectedkey
 
-		if result := gdb.db.Model(&idkey).Updates(idkey); result.Error != nil {
+		if result := gdb.db.Model(&client).Updates(client); result.Error != nil {
 			return result.Error
 		}
 	}
@@ -215,20 +239,25 @@ func (gdb *gormDB) InsertTopicKey(topic string, protectedKey []byte) error {
 	return nil
 }
 
-func (gdb *gormDB) GetIDKey(id []byte) (IDKey, error) {
-	var idkey IDKey
+func (gdb *gormDB) GetClientByID(id []byte) (Client, error) {
+	var client Client
 
-	result := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey)
+	result := gdb.db.Where(&Client{E4ID: id}).First(&client)
 
 	if result.Error != nil {
-		return IDKey{}, result.Error
+		return Client{}, result.Error
 	}
 
-	if !bytes.Equal(id, idkey.E4ID) {
-		return IDKey{}, errors.New("Internal error: struct not populated but GORM indicated success")
+	if !bytes.Equal(id, client.E4ID) {
+		return Client{}, errors.New("Internal error: struct not populated but GORM indicated success")
 	}
 
-	return idkey, nil
+	return client, nil
+}
+
+func (gdb *gormDB) GetClientByName(name string) (Client, error) {
+	id := e4.HashIDAlias(name)
+	return gdb.GetClientByID(id)
 }
 
 func (gdb *gormDB) GetTopicKey(topic string) (TopicKey, error) {
@@ -246,24 +275,24 @@ func (gdb *gormDB) GetTopicKey(topic string) (TopicKey, error) {
 	return topickey, nil
 }
 
-func (gdb *gormDB) DeleteIDKey(id []byte) error {
-	var idkey IDKey
+func (gdb *gormDB) DeleteClientByID(id []byte) error {
+	var client Client
 
-	if result := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey); result.Error != nil {
+	if result := gdb.db.Where(&Client{E4ID: id}).First(&client); result.Error != nil {
 		return result.Error
 	}
 
 	// safety check:
-	if !bytes.Equal(idkey.E4ID, id) {
+	if !bytes.Equal(client.E4ID, id) {
 		return errors.New("Single record not populated correctly; preventing whole DB delete")
 	}
 
 	tx := gdb.db.Begin()
-	if result := tx.Model(&idkey).Association("TopicKeys").Clear(); result.Error != nil {
+	if result := tx.Model(&client).Association("TopicKeys").Clear(); result.Error != nil {
 		tx.Rollback()
 		return result.Error
 	}
-	if result := tx.Delete(&idkey); result.Error != nil {
+	if result := tx.Delete(&client); result.Error != nil {
 		tx.Rollback()
 		return result.Error
 	}
@@ -271,6 +300,11 @@ func (gdb *gormDB) DeleteIDKey(id []byte) error {
 		return err
 	}
 	return nil
+}
+
+func (gdb *gormDB) DeleteClientByName(name string) error {
+	id := e4.HashIDAlias(name)
+	return gdb.DeleteClientByID(id)
 }
 
 func (gdb *gormDB) DeleteTopicKey(topic string) error {
@@ -284,7 +318,7 @@ func (gdb *gormDB) DeleteTopicKey(topic string) error {
 	}
 
 	tx := gdb.db.Begin()
-	if result := tx.Model(&topicKey).Association("IDKeys").Clear(); result.Error != nil {
+	if result := tx.Model(&topicKey).Association("Clients").Clear(); result.Error != nil {
 		tx.Rollback()
 		return result.Error
 	}
@@ -299,10 +333,10 @@ func (gdb *gormDB) DeleteTopicKey(topic string) error {
 	return nil
 }
 
-func (gdb *gormDB) CountIDKeys() (int, error) {
-	var idkey IDKey
+func (gdb *gormDB) CountClients() (int, error) {
+	var client Client
 	var count int
-	if result := gdb.db.Model(&idkey).Count(&count); result.Error != nil {
+	if result := gdb.db.Model(&client).Count(&count); result.Error != nil {
 		return 0, result.Error
 	}
 	return count, nil
@@ -317,18 +351,46 @@ func (gdb *gormDB) CountTopicKeys() (int, error) {
 	return count, nil
 }
 
-func (gdb *gormDB) GetAllIDKeys() ([]IDKey, error) {
-	var idkeys []IDKey
-	if result := gdb.db.Find(&idkeys); result.Error != nil {
+func (gdb *gormDB) GetAllClients() ([]Client, error) {
+	var clients []Client
+	if result := gdb.db.Limit(QUERY_LIMIT).Find(&clients); result.Error != nil {
 		return nil, result.Error
 	}
 
-	return idkeys, nil
+	return clients, nil
 }
 
 func (gdb *gormDB) GetAllTopics() ([]TopicKey, error) {
 	var topickeys []TopicKey
-	if result := gdb.db.Find(&topickeys); result.Error != nil {
+	if result := gdb.db.Limit(QUERY_LIMIT).Find(&topickeys); result.Error != nil {
+		return nil, result.Error
+	}
+
+	return topickeys, nil
+}
+
+func (gdb *gormDB) GetClientsRange(offset, count int) ([]Client, error) {
+	var clients []Client
+
+	if count > QUERY_LIMIT {
+		count = QUERY_LIMIT
+	}
+
+	if result := gdb.db.Offset(offset).Limit(count).Find(&clients); result.Error != nil {
+		return nil, result.Error
+	}
+
+	return clients, nil
+}
+
+func (gdb *gormDB) GetTopicsRange(offset, count int) ([]TopicKey, error) {
+	var topickeys []TopicKey
+
+	if count > QUERY_LIMIT {
+		count = QUERY_LIMIT
+	}
+
+	if result := gdb.db.Offset(offset).Limit(count).Find(&topickeys); result.Error != nil {
 		return nil, result.Error
 	}
 
@@ -339,9 +401,9 @@ func (gdb *gormDB) GetAllTopics() ([]TopicKey, error) {
 
 // This function links a topic and an id/key. The link is created in both
 // directions (IDkey to Topics, Topic to IDkeys).
-func (gdb *gormDB) LinkIDTopic(idKey IDKey, topicKey TopicKey) error {
-	if gdb.db.NewRecord(idKey) {
-		return ErrIDKeyNoPrimaryKey
+func (gdb *gormDB) LinkClientTopic(client Client, topicKey TopicKey) error {
+	if gdb.db.NewRecord(client) {
+		return ErrClientNoPrimaryKey
 	}
 
 	if gdb.db.NewRecord(topicKey) {
@@ -349,7 +411,7 @@ func (gdb *gormDB) LinkIDTopic(idKey IDKey, topicKey TopicKey) error {
 	}
 
 	tx := gdb.db.Begin()
-	if err := tx.Model(&idKey).Association("TopicKeys").Append(&topicKey).Error; err != nil {
+	if err := tx.Model(&client).Association("TopicKeys").Append(&topicKey).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -362,9 +424,9 @@ func (gdb *gormDB) LinkIDTopic(idKey IDKey, topicKey TopicKey) error {
 
 // This function removes the relationship between a Topic and an ID, but
 // does not delete the Topic or the ID.
-func (gdb *gormDB) UnlinkIDTopic(idKey IDKey, topicKey TopicKey) error {
-	if gdb.db.NewRecord(idKey) {
-		return ErrIDKeyNoPrimaryKey
+func (gdb *gormDB) UnlinkClientTopic(client Client, topicKey TopicKey) error {
+	if gdb.db.NewRecord(client) {
+		return ErrClientNoPrimaryKey
 	}
 
 	if gdb.db.NewRecord(topicKey) {
@@ -372,11 +434,11 @@ func (gdb *gormDB) UnlinkIDTopic(idKey IDKey, topicKey TopicKey) error {
 	}
 
 	tx := gdb.db.Begin()
-	if err := tx.Model(&idKey).Association("TopicKeys").Delete(&topicKey).Error; err != nil {
+	if err := tx.Model(&client).Association("TopicKeys").Delete(&topicKey).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
-	if err := tx.Where(&IDKey{ID: idKey.ID}).First(&idKey).Error; err != nil {
+	if err := tx.Where(&Client{ID: client.ID}).First(&client).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			tx.Rollback()
 			return errors.New("ID/Client appears to have been deleted, this is just an unlink")
@@ -396,58 +458,68 @@ func (gdb *gormDB) UnlinkIDTopic(idKey IDKey, topicKey TopicKey) error {
 	return nil
 }
 
-func (gdb *gormDB) GetTopicsForID(id []byte, offset int, count int) ([]TopicKey, error) {
+func (gdb *gormDB) GetTopicsForClientByID(id []byte, offset int, count int) ([]TopicKey, error) {
 
-	var idkey IDKey
+	var client Client
 	var topickeys []TopicKey
 
-	if err := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
+	if err := gdb.db.Where(&Client{E4ID: id}).First(&client).Error; err != nil {
 		return nil, err
 	}
 
-	if err := gdb.db.Model(&idkey).Offset(offset).Limit(count).Related(&topickeys, "TopicKeys").Error; err != nil {
+	if err := gdb.db.Model(&client).Offset(offset).Limit(count).Related(&topickeys, "TopicKeys").Error; err != nil {
 		return nil, err
 	}
 
 	return topickeys, nil
 }
 
-func (gdb *gormDB) CountIDsForTopic(topic string) (int, error) {
+func (gdb *gormDB) GetTopicsForClientByName(name string, offset int, count int) ([]TopicKey, error) {
+	id := e4.HashIDAlias(name)
+	return gdb.GetTopicsForClientByID(id, offset, count)
+}
+
+func (gdb *gormDB) CountClientsForTopic(topic string) (int, error) {
 	var topickey TopicKey
 
 	if err := gdb.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
 		return 0, err
 	}
 
-	count := gdb.db.Model(&topickey).Association("IDKeys").Count()
+	count := gdb.db.Model(&topickey).Association("Clients").Count()
 	return count, nil
 }
 
-func (gdb *gormDB) CountTopicsForID(id []byte) (int, error) {
+func (gdb *gormDB) CountTopicsForClientByID(id []byte) (int, error) {
 
-	var idkey IDKey
+	var client Client
 
-	if err := gdb.db.Where(&IDKey{E4ID: id}).First(&idkey).Error; err != nil {
+	if err := gdb.db.Where(&Client{E4ID: id}).First(&client).Error; err != nil {
 		return 0, err
 	}
 
-	count := gdb.db.Model(&idkey).Association("TopicKeys").Count()
+	count := gdb.db.Model(&client).Association("TopicKeys").Count()
 
 	return count, nil
 }
 
-func (gdb *gormDB) GetIdsforTopic(topic string, offset int, count int) ([]IDKey, error) {
+func (gdb *gormDB) CountTopicsForClientByName(name string) (int, error) {
+	id := e4.HashIDAlias(name)
+	return gdb.CountTopicsForClientByID(id)
+}
+
+func (gdb *gormDB) GetClientsForTopic(topic string, offset int, count int) ([]Client, error) {
 
 	var topickey TopicKey
-	var idkeys []IDKey
+	var clients []Client
 
 	if err := gdb.db.Where(&TopicKey{Topic: topic}).First(&topickey).Error; err != nil {
 		return nil, err
 	}
 
-	if err := gdb.db.Model(&topickey).Offset(offset).Limit(count).Related(&idkeys, "IDKeys").Error; err != nil {
+	if err := gdb.db.Model(&topickey).Offset(offset).Limit(count).Related(&clients, "Clients").Error; err != nil {
 		return nil, err
 	}
 
-	return idkeys, nil
+	return clients, nil
 }

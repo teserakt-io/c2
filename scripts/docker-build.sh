@@ -16,6 +16,8 @@ fi
 if [ -z "$SSH_AUTH_SOCK" ]; then
     echo "SSH_AUTH_SOCK is required to run the docker build"
     exit 1
+else
+    echo "Using SSH_AUTH_SOCK=$SSH_AUTH_SOCK"
 fi
 
 E4_VERSION="${BUILDVERSION}"

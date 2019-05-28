@@ -32,7 +32,7 @@ func TestHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 
 	const TESTIDS = 4
 	const TESTTOPICS = 4
-	var testids [TESTIDS]e4test.TestIDKey
+	var testids [TESTIDS]e4test.TestClient
 	var testtopics [TESTTOPICS]e4test.TestTopicKey
 	var err error
 
@@ -66,8 +66,8 @@ func TestHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 
 	for i := 0; i < TESTIDS; i++ {
 		// Create a new client on the C2
-		url = fmt.Sprintf("%s/e4/client/%s/key/%s", host,
-			testids[i].GetHexID(), testids[i].GetHexKey())
+		url = fmt.Sprintf("%s/e4/client/name/%s/key/%s", host,
+			testids[i].GetName(), testids[i].GetHexKey())
 		if _, err = testHTTPReq("Create Client", httpClient, "POST", url, "", 200); err != nil {
 			errc <- &e4test.TestResult{
 				Name:     "Create Client",
@@ -80,7 +80,7 @@ func TestHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 	}
 	errc <- &e4test.TestResult{Name: "Create Client", Result: true, Critical: false, Error: nil}
 	/*
-		url := fmt.Sprintf("%s/e4/client/%s", host, testids[0].GetHexID())
+		url := fmt.Sprintf("%s/e4/client/name/%s", host, testids[0].GetName())
 		if _, err = testHTTPReq("Reset Topic/New Key", httpClient, "PATCH", url, "", 200); err != nil {
 			errc <- err
 			return
@@ -104,8 +104,8 @@ func TestHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 	errc <- &e4test.TestResult{Name: "Create Topic", Result: true, Critical: false, Error: nil}
 
 	// Add the topic to the client.
-	url = fmt.Sprintf("%s/e4/client/%s/topic/%s", host,
-		testids[0].GetHexID(), testtopics[0].TopicName)
+	url = fmt.Sprintf("%s/e4/client/name/%s/topic/%s", host,
+		testids[0].GetName(), testtopics[0].TopicName)
 	if _, err = testHTTPReq("Add Topic to Client", httpClient, "PUT", url, "", 200); err != nil {
 		errc <- &e4test.TestResult{
 			Name:     "Add Topic to Client",
@@ -118,8 +118,8 @@ func TestHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 	errc <- &e4test.TestResult{Name: "Add Topic to Client", Result: true, Critical: false, Error: nil}
 
 	// Check the M2M link returns the topic we added
-	url = fmt.Sprintf("%s/e4/client/%s/topics/0/10", host,
-		testids[0].GetHexID())
+	url = fmt.Sprintf("%s/e4/client/name/%s/topics/0/10", host,
+		testids[0].GetName())
 	if resp, err = testHTTPReq("M2M Find Added Topic", httpClient, "GET", url, "", 200); err != nil {
 		errc <- &e4test.TestResult{
 			Name:     "M2M Find Added Topic",
@@ -152,8 +152,8 @@ func TestHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 	errc <- &e4test.TestResult{Name: "M2M Find Added Topic", Result: true, Critical: false, Error: nil}
 
 	// Remove the topic from the client (but not the C2)
-	url = fmt.Sprintf("%s/e4/client/%s/topic/%s", host,
-		testids[0].GetHexID(), testtopics[0].TopicName)
+	url = fmt.Sprintf("%s/e4/client/name/%s/topic/%s", host,
+		testids[0].GetName(), testtopics[0].TopicName)
 	if _, err = testHTTPReq("Remove Topic from Client", httpClient, "DELETE", url, "", 200); err != nil {
 		errc <- &e4test.TestResult{
 			Name:     "Remove Topic from Client",
@@ -166,8 +166,8 @@ func TestHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 	errc <- &e4test.TestResult{Name: "Remove Topic from Client", Result: true, Critical: false, Error: nil}
 
 	// Check Topic appears to have been removed from the client
-	url = fmt.Sprintf("%s/e4/client/%s/topics/0/10", host,
-		testids[0].GetHexID())
+	url = fmt.Sprintf("%s/e4/client/name/%s/topics/0/10", host,
+		testids[0].GetName())
 	if resp, err = testHTTPReq("Test M2M Doesn't Show Removed Topic", httpClient, "GET", url, "", 200); err != nil {
 		errc <- &e4test.TestResult{
 			Name:     "Test M2M Doesn't Show Removed Topic",
@@ -228,7 +228,7 @@ func TestHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 	errc <- &e4test.TestResult{Name: "Check double remove fails", Result: true, Critical: false, Error: nil}
 
 	// Get topics list
-	url = fmt.Sprintf("%s/e4/topic", host)
+	url = fmt.Sprintf("%s/e4/topics/all", host)
 	if resp, err = testHTTPReq("Test Fetch Topics", httpClient, "GET", url, "", 200); err != nil {
 		errc <- &e4test.TestResult{
 			Name:     "Test Fetch Topics",
@@ -280,7 +280,7 @@ func TestHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 	errc <- &e4test.TestResult{Name: "Test Fetch Topics", Result: true, Critical: false, Error: nil}
 
 	// Get client list
-	url = fmt.Sprintf("%s/e4/client", host)
+	url = fmt.Sprintf("%s/e4/clients/all", host)
 	if resp, err = testHTTPReq("Test Fetch Client", httpClient, "GET", url, "", 200); err != nil {
 		errc <- &e4test.TestResult{
 			Name:     "Test Fetch Client",
@@ -314,7 +314,7 @@ func TestHTTPApi(errc chan *e4test.TestResult, httpClient http.Client, host stri
 		found := false
 		testid := testids[i]
 		for j := 0; j < len(decodedIDs1); j++ {
-			if decodedIDs1[j] == testid.GetHexID() {
+			if decodedIDs1[j] == testid.GetName() {
 				found = true
 				break
 			}
