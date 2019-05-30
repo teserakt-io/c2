@@ -176,7 +176,7 @@ func (s *httpServer) handleNewClient(w http.ResponseWriter, r *http.Request) {
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
@@ -260,7 +260,7 @@ func (s *httpServer) handleNewTopicClientByName(w http.ResponseWriter, r *http.R
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
@@ -308,7 +308,7 @@ func (s *httpServer) handleRemoveTopicClientByName(w http.ResponseWriter, r *htt
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
@@ -403,7 +403,7 @@ func (s *httpServer) handleNewClientKey(w http.ResponseWriter, r *http.Request) 
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
@@ -512,7 +512,7 @@ func (s *httpServer) handleGetClientTopicsByName(w http.ResponseWriter, r *http.
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
+		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
