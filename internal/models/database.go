@@ -21,7 +21,8 @@ import (
 	e4 "gitlab.com/teserakt/e4common"
 )
 
-const QUERY_LIMIT = 100
+// QueryLimit defines the maximum number of records returned
+const QueryLimit = 100
 
 var (
 	// ErrUnsupportedDialect is returned when creating a new database with a Config having an unsupported dialect
@@ -194,7 +195,7 @@ func (gdb *gormDB) InsertClient(name string, id, protectedkey []byte) error {
 	if name != "" {
 		idtest := e4.HashIDAlias(name)
 		if bytes.Equal(id, idtest) == false {
-			return errors.New("H(Name) != E4ID, refusing to create or update client.")
+			return errors.New("H(Name) != E4ID, refusing to create or update client")
 		}
 	} else {
 		if len(id) != e4.IDLen {
@@ -353,7 +354,7 @@ func (gdb *gormDB) CountTopicKeys() (int, error) {
 
 func (gdb *gormDB) GetAllClients() ([]Client, error) {
 	var clients []Client
-	if result := gdb.db.Limit(QUERY_LIMIT).Find(&clients); result.Error != nil {
+	if result := gdb.db.Limit(QueryLimit).Find(&clients); result.Error != nil {
 		return nil, result.Error
 	}
 
@@ -362,7 +363,7 @@ func (gdb *gormDB) GetAllClients() ([]Client, error) {
 
 func (gdb *gormDB) GetAllTopics() ([]TopicKey, error) {
 	var topickeys []TopicKey
-	if result := gdb.db.Limit(QUERY_LIMIT).Find(&topickeys); result.Error != nil {
+	if result := gdb.db.Limit(QueryLimit).Find(&topickeys); result.Error != nil {
 		return nil, result.Error
 	}
 
@@ -372,8 +373,8 @@ func (gdb *gormDB) GetAllTopics() ([]TopicKey, error) {
 func (gdb *gormDB) GetClientsRange(offset, count int) ([]Client, error) {
 	var clients []Client
 
-	if count > QUERY_LIMIT {
-		count = QUERY_LIMIT
+	if count > QueryLimit {
+		count = QueryLimit
 	}
 
 	if result := gdb.db.Offset(offset).Limit(count).Find(&clients); result.Error != nil {
@@ -386,8 +387,8 @@ func (gdb *gormDB) GetClientsRange(offset, count int) ([]Client, error) {
 func (gdb *gormDB) GetTopicsRange(offset, count int) ([]TopicKey, error) {
 	var topickeys []TopicKey
 
-	if count > QUERY_LIMIT {
-		count = QUERY_LIMIT
+	if count > QueryLimit {
+		count = QueryLimit
 	}
 
 	if result := gdb.db.Offset(offset).Limit(count).Find(&topickeys); result.Error != nil {
@@ -522,4 +523,9 @@ func (gdb *gormDB) GetClientsForTopic(topic string, offset int, count int) ([]Cl
 	}
 
 	return clients, nil
+}
+
+// IsErrRecordNotFound indicate whenever the err is a gorm.RecordNotFound error
+func IsErrRecordNotFound(err error) bool {
+	return gorm.IsRecordNotFoundError(err)
 }

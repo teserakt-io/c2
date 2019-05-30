@@ -28,16 +28,18 @@ type httpServer struct {
 	e4Service services.E4
 	logger    log.Logger
 	cfg       config.ServerCfg
+	isProd    bool
 }
 
 var _ HTTPServer = &httpServer{}
 
 // NewHTTPServer creates a new http server for C2
-func NewHTTPServer(scfg config.ServerCfg, e4Service services.E4, logger log.Logger) HTTPServer {
+func NewHTTPServer(scfg config.ServerCfg, isProd bool, e4Service services.E4, logger log.Logger) HTTPServer {
 	return &httpServer{
 		e4Service: e4Service,
 		logger:    logger,
 		cfg:       scfg,
+		isProd:    isProd,
 	}
 }
 
@@ -64,13 +66,13 @@ func (s *httpServer) ListenAndServe() error {
 	route := mux.NewRouter()
 	route.Use(corsMiddleware)
 	route.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNoContent)
+		s.newResponse(w).JSON(http.StatusNoContent, nil)
 		return
 	})
 
 	route.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		resp := Response{w}
-		resp.Text(http.StatusNotFound, "Nothing here")
+		s.newResponse(w).JSON(http.StatusNotFound, "Nothing here")
+		return
 	})
 
 	// Clients can *ONLY* be created by name. All other APIs allow client
@@ -172,507 +174,587 @@ func decodeAndValidateKey(keystr string) ([]byte, error) {
 
 func (s *httpServer) handleNewClient(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid name: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
 	key, err := decodeAndValidateKey(params["key"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid key: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid key: %s", err))
 		return
 	}
 
 	if err := s.e4Service.NewClient(name, nil, key); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("newClient failed: %s", err))
+		s.logger.Log("msg", "NewClient error", "errror", err)
+		resp.Error(err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleRemoveClientByID(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	id, err := decodeAndValidateID(params["id"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
 	if err := s.e4Service.RemoveClientByID(id); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("removeClient failed: %s", err))
+		s.logger.Log("msg", "RemoveClientByID error", "errror", err)
+		resp.Error(err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleRemoveClientByName(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid Name: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid Name: %s", err))
 		return
 	}
 
 	if err := s.e4Service.RemoveClientByName(name); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("removeClient failed: %s", err))
+		s.logger.Log("msg", "RemoveClientByName error", "errror", err)
+		resp.Error(err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleNewTopicClientByID(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	id, err := decodeAndValidateID(params["id"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid topic: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
 	if err := s.e4Service.NewTopicClient("", id, topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("newTopicClient failed: %s", err))
+		s.logger.Log("msg", "NewTopicClient error", "errror", err)
+		resp.Error(err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleNewTopicClientByName(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid name: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid topic: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
 	if err := s.e4Service.NewTopicClient(name, nil, topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("newTopicClient failed: %s", err))
+		s.logger.Log("msg", "NewTopicClient error", "errror", err)
+		resp.Error(err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleRemoveTopicClientByID(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	id, err := decodeAndValidateID(params["id"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid topic: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
 	if err := s.e4Service.RemoveTopicClientByID(id, topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("remoteTopicClient failed: %s", err))
+		s.logger.Log("msg", "RemoveTopicClientByID error", "errror", err)
+		resp.Error(err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleRemoveTopicClientByName(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid name: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid topic: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
 	if err := s.e4Service.RemoveTopicClientByName(name, topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("remoteTopicClient failed: %s", err))
+		s.logger.Log("msg", "RemoveTopicClientByName error", "error", err)
+		resp.Error(err)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleResetClientByID(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	id, err := decodeAndValidateID(params["id"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
 	if err := s.e4Service.ResetClientByID(id); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("resetClient failed: %s", err))
+		s.logger.Log("msg", "ResetClientByID error", "error", err)
+		resp.Error(err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleResetClientByName(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid name: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
 	if err := s.e4Service.ResetClientByName(name); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("resetClient failed: %s", err))
+		s.logger.Log("msg", "ResetClientByName error", "error", err)
+		resp.Error(err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleNewTopic(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid topic: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
 	if err := s.e4Service.NewTopic(topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("newTopic failed: %s", err))
+		s.logger.Log("msg", "NewTopic error", "error", err)
+		resp.Error(err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid topic: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
 	if err := s.e4Service.RemoveTopic(topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("removeTopic failed: %s", err))
+		resp.JSON(http.StatusInternalServerError, fmt.Sprintf("removeTopic failed: %s", err))
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleNewClientKey(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid name: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
 	if err := s.e4Service.NewClientKey(name, nil); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("newClientKey failed: %s", err))
+		resp.JSON(http.StatusInternalServerError, fmt.Sprintf("newClientKey failed: %s", err))
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleGetClients(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	resp := s.newResponse(w)
+
 	ids, err := s.e4Service.GetAllClientsAsNames()
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		s.logger.Log("msg", "GetAllClientsAsNames error", "error", err)
+		resp.Error(err)
+		return
 	}
 
-	json.NewEncoder(w).Encode(&ids)
+	resp.JSON(http.StatusOK, &ids)
 }
 
 func (s *httpServer) handleGetTopics(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	resp := s.newResponse(w)
+
 	topics, err := s.e4Service.GetAllTopics()
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		s.logger.Log("msg", "GetAllTopics error", "error", err)
+		resp.Error(err)
+		return
 	}
 
-	json.NewEncoder(w).Encode(&topics)
+	resp.JSON(http.StatusOK, &topics)
 }
 
 func (s *httpServer) handleGetClientTopicCountByID(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	id, err := decodeAndValidateID(params["id"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
 	count, err := s.e4Service.CountTopicsForClientByID(id)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		s.logger.Log("msg", "CountTopicsForClientByID error", "error", err)
+		resp.Error(err)
+		return
 	}
 
-	json.NewEncoder(w).Encode(&count)
+	resp.JSON(http.StatusOK, &count)
 }
 
 func (s *httpServer) handleGetClientTopicCountByName(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid name: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
 	count, err := s.e4Service.CountTopicsForClientByName(name)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		s.logger.Log("msg", "CountTopicsForClientByName error", "error", err)
+		resp.Error(err)
+		return
 	}
 
-	json.NewEncoder(w).Encode(&count)
+	resp.JSON(http.StatusOK, &count)
 }
 
 func (s *httpServer) handleGetClientTopicsByID(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	id, err := decodeAndValidateID(params["id"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid ID: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
 	offset, err := strconv.ParseUint(params["offset"], 10, 64)
 	if err != nil {
-		resp.Text(http.StatusNotFound, "invalid offset")
+		resp.JSON(http.StatusBadRequest, "invalid offset")
 		return
 	}
 	count, err := strconv.ParseUint(params["count"], 10, 64)
 	if err != nil {
-		resp.Text(http.StatusNotFound, "invalid count")
+		resp.JSON(http.StatusBadRequest, "invalid count")
 		return
 	}
 
 	topics, err := s.e4Service.GetTopicsForClientByID(id, int(offset), int(count))
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		s.logger.Log("msg", "GetTopicsForClientByID error", "error", err)
+		resp.Error(err)
+		return
 	}
 
-	json.NewEncoder(w).Encode(&topics)
+	resp.JSON(http.StatusOK, &topics)
 }
 
 func (s *httpServer) handleGetClientTopicsByName(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid name: %s", err))
+		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
 	offset, err := strconv.ParseUint(params["offset"], 10, 64)
 	if err != nil {
-		resp.Text(http.StatusNotFound, "invalid offset")
+		resp.JSON(http.StatusBadRequest, "invalid offset")
 		return
 	}
 	count, err := strconv.ParseUint(params["count"], 10, 64)
 	if err != nil {
-		resp.Text(http.StatusNotFound, "invalid count")
+		resp.JSON(http.StatusBadRequest, "invalid count")
 		return
 	}
 
 	topics, err := s.e4Service.GetTopicsForClientByName(name, int(offset), int(count))
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		s.logger.Log("msg", "GetTopicsForClientByName error", "error", err)
+		resp.Error(err)
+		return
 	}
 
-	json.NewEncoder(w).Encode(&topics)
+	resp.JSON(http.StatusOK, &topics)
 }
 
 func (s *httpServer) handleGetTopicClientCount(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	resp := s.newResponse(w)
 	params := mux.Vars(r)
 
-	count, err := s.e4Service.CountClientsForTopic(params["topic"])
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+	topic := params["topic"]
+	if err := e4.IsValidTopic(topic); err != nil {
+		resp.JSON(http.StatusBadRequest, "invalid topic")
+		return
 	}
 
-	json.NewEncoder(w).Encode(&count)
+	count, err := s.e4Service.CountClientsForTopic(topic)
+	if err != nil {
+		s.logger.Log("msg", "GetClientsByNameForTopic error", "error", err)
+		resp.Error(err)
+		return
+	}
 
+	resp.JSON(http.StatusOK, &count)
 }
 
 func (s *httpServer) handleGetTopicClients(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	resp := s.newResponse(w)
 	params := mux.Vars(r)
-	resp := Response{w}
-	topic := params["topic"]
 
+	topic := params["topic"]
+	if err := e4.IsValidTopic(topic); err != nil {
+		resp.JSON(http.StatusBadRequest, "invalid topic")
+		return
+	}
 	offset, err := strconv.ParseUint(params["offset"], 10, 64)
 	if err != nil {
-		resp.Text(http.StatusNotFound, "invalid offset")
+		resp.JSON(http.StatusBadRequest, "invalid offset")
 		return
 	}
 	count, err := strconv.ParseUint(params["count"], 10, 64)
 	if err != nil {
-		resp.Text(http.StatusNotFound, "invalid count")
+		resp.JSON(http.StatusBadRequest, "invalid count")
 		return
 	}
 
 	clients, err := s.e4Service.GetClientsByNameForTopic(topic, int(offset), int(count))
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		s.logger.Log("msg", "GetClientsByNameForTopic error", "error", err)
+		resp.Error(err)
+		return
 	}
 
-	json.NewEncoder(w).Encode(&clients)
+	resp.JSON(http.StatusOK, &clients)
 }
 
 func (s *httpServer) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	topic := params["topic"]
 	message := params["message"]
 
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("invalid topic: %s", err))
+		resp.JSON(http.StatusBadRequest, "invalid topic")
 		return
 	}
 
 	if err := s.e4Service.SendMessage(topic, message); err != nil {
-		resp.Text(http.StatusNotFound, fmt.Sprintf("message not sent: %s", err))
+		s.logger.Log("msg", "SendMessage error", "error", err)
+		resp.Error(err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	resp.JSON(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleGetTopicCount(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Content-Type", "application/json")
+	resp := s.newResponse(w)
 
 	count, err := s.e4Service.CountTopics()
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		s.logger.Log("msg", "CountTopics error", "error", err)
+		resp.Error(err)
+		return
 	}
 
-	json.NewEncoder(w).Encode(&count)
+	resp.JSON(http.StatusOK, &count)
 }
 
 func (s *httpServer) handleGetTopicsPaginated(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	offset, err := strconv.ParseUint(params["offset"], 10, 64)
 	if err != nil {
-		resp.Text(http.StatusNotFound, "invalid offset")
+		resp.JSON(http.StatusBadRequest, "invalid offset")
 		return
 	}
 	count, err := strconv.ParseUint(params["count"], 10, 64)
 	if err != nil {
-		resp.Text(http.StatusNotFound, "invalid count")
+		resp.JSON(http.StatusBadRequest, "invalid count")
 		return
 	}
 
 	topics, err := s.e4Service.GetTopicsRange(int(offset), int(count))
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		s.logger.Log("msg", "GetTopicsRange error", "error", err)
+		resp.Error(err)
+		return
 	}
-	json.NewEncoder(w).Encode(&topics)
 
+	resp.JSON(http.StatusOK, &topics)
 }
 
 func (s *httpServer) handleGetClientsCount(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	resp := s.newResponse(w)
 
 	count, err := s.e4Service.CountClients()
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		s.logger.Log("msg", "CountClients error", "error", err)
+		resp.Error(err)
+		return
 	}
 
-	json.NewEncoder(w).Encode(&count)
+	resp.JSON(http.StatusOK, &count)
 }
 
 func (s *httpServer) handleGetClientsPaginated(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	resp := Response{w}
+	resp := s.newResponse(w)
 
 	offset, err := strconv.ParseUint(params["offset"], 10, 64)
 	if err != nil {
-		resp.Text(http.StatusNotFound, "invalid offset")
+		resp.JSON(http.StatusBadRequest, "invalid offset")
 		return
 	}
 	count, err := strconv.ParseUint(params["count"], 10, 64)
 	if err != nil {
-		resp.Text(http.StatusNotFound, "invalid count")
+		resp.JSON(http.StatusBadRequest, "invalid count")
 		return
 	}
 
 	clients, err := s.e4Service.GetClientsAsNamesRange(int(offset), int(count))
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		s.logger.Log("msg", "GetClientsAsNamesRange error", "error", err)
+		resp.Error(err)
+		return
 	}
-	json.NewEncoder(w).Encode(&clients)
 
+	resp.JSON(http.StatusOK, &clients)
 }
 
-// Response is a helper struct to create an http response
-type Response struct {
+func (s *httpServer) newResponse(w http.ResponseWriter) *response {
+	return &response{
+		ResponseWriter: w,
+		isProd:         s.isProd,
+	}
+}
+
+// response is a helper struct to create an http response
+type response struct {
 	http.ResponseWriter
+	isProd bool
 }
 
 // Text is a helper to write raw text as an HTTP response
-func (r *Response) Text(code int, body string) {
+func (r *response) Text(code int, body string) {
 	r.Header().Set("Content-Type", "text/plain")
 	r.WriteHeader(code)
 	io.WriteString(r, fmt.Sprintf("%s\n", body))
+}
+
+// JSON encodes given data into json and write it to the response
+func (r *response) JSON(code int, data interface{}) {
+	r.Header().Set("Content-Type", "application/json")
+	r.WriteHeader(code)
+
+	if data != nil {
+		json.NewEncoder(r).Encode(data)
+	}
+}
+
+// Error set the proper response status code given an error
+func (r *response) Error(err error) {
+	r.Header().Set("Content-Type", "application/json")
+
+	var message string
+	switch {
+	case services.IsErrRecordNotFound(err):
+		r.WriteHeader(http.StatusNotFound)
+		message = "record not found"
+	default:
+		r.WriteHeader(http.StatusInternalServerError)
+		message = "an error occured, check the logs for details."
+	}
+
+	if !r.isProd {
+		message = err.Error()
+	}
+
+	json.NewEncoder(r).Encode(struct {
+		Error string `json:"error"`
+	}{
+		Error: message,
+	})
 }

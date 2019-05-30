@@ -103,6 +103,7 @@ func (c ESCfg) Validate() error {
 	return nil
 }
 
+// Validate checks KafkaCfg and returns an error if anything is invalid
 func (c KafkaCfg) Validate() error {
 	return nil
 }

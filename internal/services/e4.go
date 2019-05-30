@@ -124,15 +124,14 @@ func validateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
 				return nil, fmt.Errorf("Inconsistent Name Alias and E4ID")
 			}
 			return id, nil
-		} else {
-			return e4.HashIDAlias(name), nil
 		}
-	} else {
-		if len(id) != e4.IDLen {
-			return nil, fmt.Errorf("Incorrect ID Length")
-		}
-		return id, nil
+		return e4.HashIDAlias(name), nil
 	}
+
+	if len(id) != e4.IDLen {
+		return nil, fmt.Errorf("Incorrect ID Length")
+	}
+	return id, nil
 }
 
 func (s *e4impl) NewClient(name string, id, key []byte) error {
@@ -595,4 +594,9 @@ func (s *e4impl) sendCommandToClient(command commands.Command, client models.Cli
 	}
 
 	return s.pubSubClient.Publish(payload, client.Topic(), protocols.QoSExactlyOnce)
+}
+
+// IsErrRecordNotFound indiquate whenever error is a RecordNotFound error
+func IsErrRecordNotFound(err error) bool {
+	return models.IsErrRecordNotFound(err)
 }
