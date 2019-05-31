@@ -730,9 +730,10 @@ func (r *response) JSON(code int, data interface{}) {
 	r.Header().Set("Content-Type", "application/json")
 	r.WriteHeader(code)
 
-	if data != nil {
-		json.NewEncoder(r).Encode(data)
+	if data == nil {
+		data = []bool{} // Default response is an empty json array when no data is returned
 	}
+	json.NewEncoder(r).Encode(data)
 }
 
 // Error set the proper response status code given an error
