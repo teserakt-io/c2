@@ -208,6 +208,21 @@ func (mr *MockDatabaseMockRecorder) GetAllTopics() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTopics", reflect.TypeOf((*MockDatabase)(nil).GetAllTopics))
 }
 
+// GetAllTopicsUnsafe mocks base method
+func (m *MockDatabase) GetAllTopicsUnsafe() ([]TopicKey, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllTopicsUnsafe")
+	ret0, _ := ret[0].([]TopicKey)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllTopicsUnsafe indicates an expected call of GetAllTopicsUnsafe
+func (mr *MockDatabaseMockRecorder) GetAllTopicsUnsafe() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTopicsUnsafe", reflect.TypeOf((*MockDatabase)(nil).GetAllTopicsUnsafe))
+}
+
 // GetClientByID mocks base method
 func (m *MockDatabase) GetClientByID(arg0 []byte) (Client, error) {
 	m.ctrl.T.Helper()

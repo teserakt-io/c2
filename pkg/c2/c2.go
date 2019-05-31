@@ -185,7 +185,10 @@ func (c *C2) ListenAndServe() error {
 	}
 
 	// subscribe to topics in the DB if not already done
-	topics, err := c.e4Service.GetAllTopics()
+	// TODO: this will fetch *everything* from the database
+	// perhaps we should do something more reasonable here
+	// such as use the pagination APIs.
+	topics, err := c.e4Service.GetAllTopicsUnsafe()
 	if err != nil {
 		c.logger.Log("msg", "Failed to fetch all existing topics", "error", err)
 

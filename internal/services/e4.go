@@ -57,6 +57,7 @@ type E4 interface {
 	RemoveTopic(topic string) error
 	GetTopicsRange(offset, count int) ([]string, error)
 	GetAllTopics() ([]string, error)
+	GetAllTopicsUnsafe() ([]string, error)
 	CountTopics() (int, error)
 
 	// Linking, removing topic-client mappings:
@@ -433,6 +434,21 @@ func (s *e4impl) NewClientKey(name string, id []byte) error {
 }
 
 func (s *e4impl) GetAllTopics() ([]string, error) {
+	topicKeys, err := s.db.GetAllTopics()
+	if err != nil {
+		return nil, err
+	}
+
+	var topics []string
+	for _, topickey := range topicKeys {
+		topics = append(topics, topickey.Topic)
+	}
+	return topics, nil
+}
+
+// GetAllTopicsUnsafe returns *all* topics and should not be used
+// from *ANY* API endpoint. This is for internal use only.
+func (s *e4impl) GetAllTopicsUnsafe() ([]string, error) {
 	topicKeys, err := s.db.GetAllTopics()
 	if err != nil {
 		return nil, err

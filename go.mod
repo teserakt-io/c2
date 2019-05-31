@@ -28,7 +28,7 @@ require (
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/spf13/viper v1.3.1
-	gitlab.com/teserakt/e4common v0.0.0-20190519210613-8c19eb1dd5f3
+	gitlab.com/teserakt/e4common v0.0.0-20190531141929-25e1141f633f
 	gitlab.com/teserakt/test-common v0.0.0-20190527102116-5f61713e38eb
 	go.opencensus.io v0.19.0
 	golang.org/x/crypto v0.0.0-20190506204251-e1dfcc566284 // indirect

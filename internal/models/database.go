@@ -61,6 +61,7 @@ type Database interface {
 	CountTopicKeys() (int, error)
 	GetAllClients() ([]Client, error)
 	GetAllTopics() ([]TopicKey, error)
+	GetAllTopicsUnsafe() ([]TopicKey, error)
 	LinkClientTopic(client Client, topicKey TopicKey) error
 	UnlinkClientTopic(client Client, topicKey TopicKey) error
 	CountTopicsForClientByID(id []byte) (int, error)
@@ -364,6 +365,15 @@ func (gdb *gormDB) GetAllClients() ([]Client, error) {
 func (gdb *gormDB) GetAllTopics() ([]TopicKey, error) {
 	var topickeys []TopicKey
 	if result := gdb.db.Limit(QueryLimit).Find(&topickeys); result.Error != nil {
+		return nil, result.Error
+	}
+
+	return topickeys, nil
+}
+
+func (gdb *gormDB) GetAllTopicsUnsafe() ([]TopicKey, error) {
+	var topickeys []TopicKey
+	if result := gdb.db.Find(&topickeys); result.Error != nil {
 		return nil, result.Error
 	}
 
