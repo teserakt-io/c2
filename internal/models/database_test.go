@@ -664,7 +664,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 	})
 
-	t.Run("Migrate on already migrated DB doesn't fail", func(t *testing.T) {
+	t.Run("Migrate on already migrated DB succeeds", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
