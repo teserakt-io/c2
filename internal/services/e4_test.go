@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"math/rand"
@@ -92,6 +93,51 @@ func TestE4(t *testing.T) {
 	e4Key := newKey(t)
 
 	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, logger, e4Key)
+
+	t.Run("Validation works successfully", func(t *testing.T) {
+
+		names := []string{"test1", "testtest2", "e4test3", "test4", "test5"}
+
+		// test names return the correct hashes:
+		for _, name := range names {
+			id, err := validateE4NameOrIDPair(name, nil)
+			if err != nil {
+				t.Errorf("Expected no error, got %v", err)
+			}
+
+			if bytes.Equal(id, e4.HashIDAlias(name)) == false {
+				t.Errorf("Did not return correctly hashed name")
+			}
+		}
+
+		for _, name := range names {
+			submittedid := e4.HashIDAlias(name)
+			id, err := validateE4NameOrIDPair(name, submittedid)
+			if err != nil {
+				t.Errorf("Expected no error, got %v", err)
+			}
+
+			if bytes.Equal(id, submittedid) == false {
+				t.Errorf("Did not return correctly hashed name")
+			}
+		}
+
+		for _, name := range names {
+			submittedid := e4.HashIDAlias(name)
+			submittedid[0] ^= 0x01
+			_, err := validateE4NameOrIDPair(name, submittedid)
+			if err == nil {
+				t.Errorf("Expected an error, received a non-error result")
+			}
+			submittedid = e4.HashIDAlias(name)
+			shorterid := submittedid[0 : e4.IDLen-2]
+			_, err = validateE4NameOrIDPair(name, shorterid)
+			if err == nil {
+				t.Errorf("Expected an error, received a non-error result")
+			}
+		}
+
+	})
 
 	t.Run("NewClient encrypt key and save properly", func(t *testing.T) {
 		client, clearKey := createTestClient(t, e4Key)

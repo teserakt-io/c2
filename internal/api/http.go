@@ -403,7 +403,8 @@ func (s *httpServer) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.e4Service.RemoveTopic(topic); err != nil {
-		resp.JSON(http.StatusInternalServerError, fmt.Sprintf("removeTopic failed: %s", err))
+		s.logger.Log("msg", "removeTopic error", "error", err)
+		resp.Error(err)
 		return
 	}
 
