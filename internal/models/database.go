@@ -479,6 +479,7 @@ func (gdb *gormDB) GetTopicsForClientByID(id []byte, offset int, count int) ([]T
 	}
 
 	if err := gdb.db.Model(&client).Offset(offset).Limit(count).Related(&topickeys, "TopicKeys").Error; err != nil {
+
 		return nil, err
 	}
 
