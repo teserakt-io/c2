@@ -139,11 +139,14 @@ func TestE4(t *testing.T) {
 
 	})
 
-	t.Run("NewClient encrypt key and save properly", func(t *testing.T) {
+	t.Run("NewClient encrypt key and save properly with name only", func(t *testing.T) {
 		client, clearKey := createTestClient(t, e4Key)
 
-		mockDB.EXPECT().InsertClient(client.Name, client.E4ID, client.Key)
+		mockDB.EXPECT().InsertClient(client.Name, client.E4ID, client.Key).Times(2)
 
+		if err := service.NewClient(client.Name, nil, clearKey); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
 		if err := service.NewClient(client.Name, client.E4ID, clearKey); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -336,7 +339,7 @@ func TestE4(t *testing.T) {
 			}),
 		)
 
-		if err := service.NewClientKey(client.Name, client.E4ID); err != nil {
+		if err := service.NewClientKey(client.Name, []byte{}); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})

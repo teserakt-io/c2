@@ -419,12 +419,12 @@ func (s *e4impl) NewClientKey(name string, id []byte) error {
 		return err
 	}
 
-	err = s.db.InsertClient(name, id, protectedkey)
+	err = s.db.InsertClient(name, newID, protectedkey)
 	if err != nil {
 		logger.Log("msg", "insertClient failed", "error", err)
 		return err
 	}
-	logger.Log("msg", "succeeded", "id", e4.PrettyID(id))
+	logger.Log("msg", "succeeded", "id", e4.PrettyID(newID))
 
 	return nil
 }
