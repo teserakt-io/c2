@@ -49,29 +49,34 @@ type Database interface {
 	Connection() *gorm.DB
 	Migrate() error
 
+	// Client Only Manipulation
 	InsertClient(name string, id, protectedkey []byte) error
-	InsertTopicKey(topic string, protectedKey []byte) error
 	GetClientByID(id []byte) (Client, error)
-	GetClientByName(name string) (Client, error)
-	GetTopicKey(topic string) (TopicKey, error)
 	DeleteClientByID(id []byte) error
-	DeleteClientByName(name string) error
-	DeleteTopicKey(topic string) error
 	CountClients() (int, error)
-	CountTopicKeys() (int, error)
 	GetAllClients() ([]Client, error)
+	GetClientsRange(offset, limit int) ([]Client, error)
+
+	// Individual Topic Manipulaton
+	InsertTopicKey(topic string, protectedKey []byte) error
+	GetTopicKey(topic string) (TopicKey, error)
+	DeleteTopicKey(topic string) error
+	CountTopicKeys() (int, error)
 	GetAllTopics() ([]TopicKey, error)
 	GetAllTopicsUnsafe() ([]TopicKey, error)
+	GetTopicsRange(offset, limit int) ([]TopicKey, error)
+
+	// Linking, removing topic-client mappings:
 	LinkClientTopic(client Client, topicKey TopicKey) error
 	UnlinkClientTopic(client Client, topicKey TopicKey) error
+
+	// > Counting topics per client, or clients per topic.
 	CountTopicsForClientByID(id []byte) (int, error)
-	CountTopicsForClientByName(name string) (int, error)
-	GetTopicsForClientByID(id []byte, offset int, count int) ([]TopicKey, error)
-	GetTopicsForClientByName(name string, offset int, count int) ([]TopicKey, error)
 	CountClientsForTopic(topic string) (int, error)
+
+	// > Retrieving clients per topic or topics per client
+	GetTopicsForClientByID(id []byte, offset int, count int) ([]TopicKey, error)
 	GetClientsForTopic(topic string, offset int, count int) ([]Client, error)
-	GetClientsRange(offset, limit int) ([]Client, error)
-	GetTopicsRange(offset, limit int) ([]TopicKey, error)
 }
 
 type gormDB struct {
@@ -257,11 +262,6 @@ func (gdb *gormDB) GetClientByID(id []byte) (Client, error) {
 	return client, nil
 }
 
-func (gdb *gormDB) GetClientByName(name string) (Client, error) {
-	id := e4.HashIDAlias(name)
-	return gdb.GetClientByID(id)
-}
-
 func (gdb *gormDB) GetTopicKey(topic string) (TopicKey, error) {
 	var topickey TopicKey
 
@@ -302,11 +302,6 @@ func (gdb *gormDB) DeleteClientByID(id []byte) error {
 		return err
 	}
 	return nil
-}
-
-func (gdb *gormDB) DeleteClientByName(name string) error {
-	id := e4.HashIDAlias(name)
-	return gdb.DeleteClientByID(id)
 }
 
 func (gdb *gormDB) DeleteTopicKey(topic string) error {
@@ -485,11 +480,6 @@ func (gdb *gormDB) GetTopicsForClientByID(id []byte, offset int, count int) ([]T
 	return topickeys, nil
 }
 
-func (gdb *gormDB) GetTopicsForClientByName(name string, offset int, count int) ([]TopicKey, error) {
-	id := e4.HashIDAlias(name)
-	return gdb.GetTopicsForClientByID(id, offset, count)
-}
-
 func (gdb *gormDB) CountClientsForTopic(topic string) (int, error) {
 	var topickey TopicKey
 
@@ -512,11 +502,6 @@ func (gdb *gormDB) CountTopicsForClientByID(id []byte) (int, error) {
 	count := gdb.db.Model(&client).Association("TopicKeys").Count()
 
 	return count, nil
-}
-
-func (gdb *gormDB) CountTopicsForClientByName(name string) (int, error) {
-	id := e4.HashIDAlias(name)
-	return gdb.CountTopicsForClientByID(id)
 }
 
 func (gdb *gormDB) GetClientsForTopic(topic string, offset int, count int) ([]Client, error) {

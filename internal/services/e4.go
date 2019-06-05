@@ -138,9 +138,7 @@ func validateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
 func (s *e4impl) NewClient(name string, id, key []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClient")
 
-	var newid []byte
-
-	newid, err := validateE4NameOrIDPair(name, id)
+	newID, err := validateE4NameOrIDPair(name, id)
 	if err != nil {
 		logger.Log("msg", "Inconsistent E4 ID/Alias, refusing insert")
 		return err
@@ -152,12 +150,12 @@ func (s *e4impl) NewClient(name string, id, key []byte) error {
 		return err
 	}
 
-	if err := s.db.InsertClient(name, newid, protectedkey); err != nil {
+	if err := s.db.InsertClient(name, newID, protectedkey); err != nil {
 		logger.Log("msg", "insertClient failed", "error", err)
 		return err
 	}
 
-	logger.Log("msg", "succeeded", "client", e4.PrettyID(newid))
+	logger.Log("msg", "succeeded", "client", e4.PrettyID(newID))
 
 	return nil
 }
@@ -186,25 +184,16 @@ func (s *e4impl) NewTopicClient(name string, id []byte, topic string) error {
 		logger.Log("msg", "invalid ntc command received")
 	}
 
-	// A name or an ID can be passed to this function as well.
-	// We will first attempt a lookup by name. If this fails,
-	// we will pass the ID to the database first.
-	// Callers
-	var client models.Client
-	var clientname string
-
-	client, err := s.db.GetClientByName(name)
+	newID, err := validateE4NameOrIDPair(name, id)
 	if err != nil {
-		// we failed to retrieve the client by name. Now we try ID:
+		logger.Log("msg", "Inconsistent E4 ID/Alias, refusing ntc")
+		return err
+	}
 
-		client, err = s.db.GetClientByID(id)
-		if err != nil {
-			logger.Log("msg", "failed to retrieve client", "error", err)
-			return err
-		}
-		clientname = fmt.Sprintf("id = %s", e4.PrettyID(id))
-	} else {
-		clientname = fmt.Sprintf("name = %s", name)
+	client, err := s.db.GetClientByID(newID)
+	if err != nil {
+		logger.Log("msg", "failed to retrieve client", "id", newID, "error", err)
+		return err
 	}
 
 	topicKey, err := s.db.GetTopicKey(topic)
@@ -237,7 +226,12 @@ func (s *e4impl) NewTopicClient(name string, id []byte, topic string) error {
 		return err
 	}
 
-	logger.Log("msg", "succeeded", "client", clientname, "topic", topic, "topichash", topicKey.Hash())
+	logger.Log(
+		"msg", "succeeded",
+		"clientID", client.E4ID, "clientName", client.Name,
+		"topic", topic, "topichash", topicKey.Hash(),
+	)
+
 	return nil
 }
 
@@ -360,6 +354,7 @@ func (s *e4impl) RemoveTopic(topic string) error {
 	return nil
 }
 
+// SendMessage allows to publish an E4 protected message on the given topic
 func (s *e4impl) SendMessage(topic, msg string) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "sendMessage")
 
@@ -390,16 +385,17 @@ func (s *e4impl) SendMessage(topic, msg string) error {
 	return nil
 }
 
+// NewClientKey will generate a new client key, send it to the client, and update the database.
 func (s *e4impl) NewClientKey(name string, id []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClientKey")
 
-	newid, err := validateE4NameOrIDPair(name, id)
+	newID, err := validateE4NameOrIDPair(name, id)
 	if err != nil {
 		logger.Log("msg", "Unable to validate name/id pair")
 		return err
 	}
 
-	client, err := s.db.GetClientByID(newid)
+	client, err := s.db.GetClientByID(newID)
 	if err != nil {
 		logger.Log("msg", "failed to retrieve client", "error", err)
 		return err
@@ -433,13 +429,14 @@ func (s *e4impl) NewClientKey(name string, id []byte) error {
 	return nil
 }
 
+// GetAllTopics will returns up to models.QueryLimit topics
 func (s *e4impl) GetAllTopics() ([]string, error) {
 	topicKeys, err := s.db.GetAllTopics()
 	if err != nil {
 		return nil, err
 	}
 
-	var topics []string
+	topics := []string{}
 	for _, topickey := range topicKeys {
 		topics = append(topics, topickey.Topic)
 	}
@@ -449,25 +446,26 @@ func (s *e4impl) GetAllTopics() ([]string, error) {
 // GetAllTopicsUnsafe returns *all* topics and should not be used
 // from *ANY* API endpoint. This is for internal use only.
 func (s *e4impl) GetAllTopicsUnsafe() ([]string, error) {
-	topicKeys, err := s.db.GetAllTopics()
+	topicKeys, err := s.db.GetAllTopicsUnsafe()
 	if err != nil {
 		return nil, err
 	}
 
-	var topics []string
+	topics := []string{}
 	for _, topickey := range topicKeys {
 		topics = append(topics, topickey.Topic)
 	}
 	return topics, nil
 }
 
+// GetAllClientsAsHexIDs returns up to models.QueryLimit client IDs, as hexadecimal string
 func (s *e4impl) GetAllClientsAsHexIDs() ([]string, error) {
 	clients, err := s.db.GetAllClients()
 	if err != nil {
 		return nil, err
 	}
 
-	var hexids []string
+	hexids := []string{}
 	for _, client := range clients {
 		hexids = append(hexids, hex.EncodeToString(client.E4ID))
 	}
@@ -475,13 +473,14 @@ func (s *e4impl) GetAllClientsAsHexIDs() ([]string, error) {
 	return hexids, nil
 }
 
+// GetAllClientsAsNames will retrieve up to models.QueryLimit client names.
 func (s *e4impl) GetAllClientsAsNames() ([]string, error) {
 	clients, err := s.db.GetAllClients()
 	if err != nil {
 		return nil, err
 	}
 
-	var names []string
+	names := []string{}
 	for _, client := range clients {
 		names = append(names, client.Name)
 	}
@@ -489,13 +488,15 @@ func (s *e4impl) GetAllClientsAsNames() ([]string, error) {
 	return names, nil
 }
 
+// GetClientsAsHexIDsRange allow to retrieve up to `count` clients IDs, as hex encoded string, starting from `offset`.
+// The total count can be retrieved from CountClients()
 func (s *e4impl) GetClientsAsHexIDsRange(offset, count int) ([]string, error) {
 	clients, err := s.db.GetClientsRange(offset, count)
 	if err != nil {
 		return nil, err
 	}
 
-	var hexids []string
+	hexids := []string{}
 	for _, client := range clients {
 		hexids = append(hexids, hex.EncodeToString(client.E4ID))
 	}
@@ -509,7 +510,7 @@ func (s *e4impl) GetClientsAsNamesRange(offset, count int) ([]string, error) {
 		return nil, err
 	}
 
-	var names []string
+	names := []string{}
 	for _, client := range clients {
 		names = append(names, client.Name)
 	}
@@ -523,7 +524,7 @@ func (s *e4impl) GetTopicsRange(offset, count int) ([]string, error) {
 		return nil, err
 	}
 
-	var topicnames []string
+	topicnames := []string{}
 	for _, topic := range topics {
 		topicnames = append(topicnames, topic.Topic)
 	}
@@ -544,7 +545,8 @@ func (s *e4impl) CountTopicsForClientByID(id []byte) (int, error) {
 }
 
 func (s *e4impl) CountTopicsForClientByName(name string) (int, error) {
-	return s.db.CountTopicsForClientByName(name)
+	id := e4.HashIDAlias(name)
+	return s.CountTopicsForClientByID(id)
 }
 
 func (s *e4impl) GetTopicsForClientByID(id []byte, offset, count int) ([]string, error) {
@@ -553,7 +555,7 @@ func (s *e4impl) GetTopicsForClientByID(id []byte, offset, count int) ([]string,
 		return nil, err
 	}
 
-	var topics []string
+	topics := []string{}
 	for _, topicKey := range topicKeys {
 		topics = append(topics, topicKey.Topic)
 	}
@@ -576,7 +578,7 @@ func (s *e4impl) GetClientsByNameForTopic(topic string, offset, count int) ([]st
 		return nil, err
 	}
 
-	var names []string
+	names := []string{}
 	for _, client := range clients {
 		names = append(names, client.Name)
 	}
@@ -584,13 +586,16 @@ func (s *e4impl) GetClientsByNameForTopic(topic string, offset, count int) ([]st
 	return names, nil
 }
 
+// GetClientsByIDForTopic returns a batch of client E4IDs which are subscribed to given topic
+// The total count can be retrieved with CountClientsForTopic(), and offset / count must be provided
+// to retrieve subset of client E4IDs
 func (s *e4impl) GetClientsByIDForTopic(topic string, offset, count int) ([]string, error) {
 	clients, err := s.db.GetClientsForTopic(topic, offset, count)
 	if err != nil {
 		return nil, err
 	}
 
-	var ids []string
+	ids := []string{}
 	for _, client := range clients {
 		ids = append(ids, hex.EncodeToString(client.E4ID))
 	}

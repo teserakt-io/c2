@@ -115,16 +115,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		client, err := db.GetClientByName(expectedClient.Name)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
-		if reflect.DeepEqual(client, expectedClient) == false {
-			t.Errorf("Expected client to be %#v, got %#v", expectedClient, client)
-		}
-
-		client, err = db.GetClientByID(expectedClient.E4ID)
+		client, err := db.GetClientByID(expectedClient.E4ID)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -155,10 +146,6 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		defer tearDown()
 
 		_, err := db.GetClientByID([]byte("unknown"))
-		if err != gorm.ErrRecordNotFound {
-			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
-		}
-		_, err = db.GetClientByName("unknown")
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
@@ -239,22 +226,6 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
-
-		err = db.InsertClient(expectedClient.Name, expectedClient.E4ID, expectedClient.Key)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
-		err = db.DeleteClientByName(expectedClient.Name)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
-		_, err = db.GetClientByName(expectedClient.Name)
-		if err != gorm.ErrRecordNotFound {
-			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
-		}
-
 	})
 
 	t.Run("Delete unknown Client return record not found", func(t *testing.T) {
@@ -262,10 +233,6 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		defer tearDown()
 
 		err := db.DeleteClientByID([]byte("unknown"))
-		if err != gorm.ErrRecordNotFound {
-			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
-		}
-		err = db.DeleteClientByName("unknown")
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
@@ -344,7 +311,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 				t.Errorf("Expected count to be %d, got %d", len(clients)-i, c)
 			}
 
-			err = db.DeleteClientByName(name)
+			err = db.DeleteClientByID(e4.HashIDAlias(name))
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
 			}
@@ -501,23 +468,8 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		if count != 1 {
 			t.Errorf("Expected count to be 1, got %d", count)
 		}
-		count, err = db.CountTopicsForClientByName(client.Name)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-		if count != 1 {
-			t.Errorf("Expected count to be 1, got %d", count)
-		}
 
 		topics, err := db.GetTopicsForClientByID(client.E4ID, 0, 10)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
-		if reflect.DeepEqual(topics, []TopicKey{topic}) == false {
-			t.Errorf("Expected topics to be %#v, got %#v", []TopicKey{topic}, topics)
-		}
-		topics, err = db.GetTopicsForClientByName(client.Name, 0, 10)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -655,10 +607,6 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		defer tearDown()
 
 		_, err := db.CountTopicsForClientByID([]byte("unknown"))
-		if err != gorm.ErrRecordNotFound {
-			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
-		}
-		_, err = db.CountTopicsForClientByName("unknown")
 		if err != gorm.ErrRecordNotFound {
 			t.Errorf("Expected error to be %v, got %v", gorm.ErrRecordNotFound, err)
 		}
