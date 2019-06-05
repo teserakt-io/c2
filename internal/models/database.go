@@ -355,7 +355,7 @@ func (gdb *gormDB) CountTopicKeys() (int, error) {
 
 func (gdb *gormDB) GetAllClients() ([]Client, error) {
 	var clients []Client
-	if result := gdb.db.Limit(QueryLimit).Find(&clients); result.Error != nil {
+	if result := gdb.db.Order("name").Limit(QueryLimit).Find(&clients); result.Error != nil {
 		return nil, result.Error
 	}
 
@@ -364,7 +364,7 @@ func (gdb *gormDB) GetAllClients() ([]Client, error) {
 
 func (gdb *gormDB) GetAllTopics() ([]TopicKey, error) {
 	var topickeys []TopicKey
-	if result := gdb.db.Limit(QueryLimit).Find(&topickeys); result.Error != nil {
+	if result := gdb.db.Order("topic").Limit(QueryLimit).Find(&topickeys); result.Error != nil {
 		return nil, result.Error
 	}
 
@@ -387,7 +387,7 @@ func (gdb *gormDB) GetClientsRange(offset, count int) ([]Client, error) {
 		count = QueryLimit
 	}
 
-	if result := gdb.db.Offset(offset).Limit(count).Find(&clients); result.Error != nil {
+	if result := gdb.db.Order("name").Offset(offset).Limit(count).Find(&clients); result.Error != nil {
 		return nil, result.Error
 	}
 
@@ -401,7 +401,7 @@ func (gdb *gormDB) GetTopicsRange(offset, count int) ([]TopicKey, error) {
 		count = QueryLimit
 	}
 
-	if result := gdb.db.Offset(offset).Limit(count).Find(&topickeys); result.Error != nil {
+	if result := gdb.db.Order("topic").Offset(offset).Limit(count).Find(&topickeys); result.Error != nil {
 		return nil, result.Error
 	}
 
@@ -478,7 +478,7 @@ func (gdb *gormDB) GetTopicsForClientByID(id []byte, offset int, count int) ([]T
 		return nil, err
 	}
 
-	if err := gdb.db.Model(&client).Offset(offset).Limit(count).Related(&topickeys, "TopicKeys").Error; err != nil {
+	if err := gdb.db.Model(&client).Order("topic").Offset(offset).Limit(count).Related(&topickeys, "TopicKeys").Error; err != nil {
 
 		return nil, err
 	}
@@ -529,7 +529,7 @@ func (gdb *gormDB) GetClientsForTopic(topic string, offset int, count int) ([]Cl
 		return nil, err
 	}
 
-	if err := gdb.db.Model(&topickey).Offset(offset).Limit(count).Related(&clients, "Clients").Error; err != nil {
+	if err := gdb.db.Model(&topickey).Order("name").Offset(offset).Limit(count).Related(&clients, "Clients").Error; err != nil {
 		return nil, err
 	}
 

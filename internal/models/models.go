@@ -8,7 +8,7 @@ import (
 type Client struct {
 	ID        int         `gorm:"primary_key:true"`
 	E4ID      []byte      `gorm:"unique;NOT NULL"`
-	Name      string      `gorm:"unique;NOT NULL" sql:"size:256"`
+	Name      string      `gorm:"unique_index;NOT NULL" sql:"size:256"`
 	Key       []byte      `gorm:"NOT NULL"`
 	TopicKeys []*TopicKey `gorm:"many2many:clients_topickeys;"`
 }
@@ -16,7 +16,7 @@ type Client struct {
 // TopicKey represents
 type TopicKey struct {
 	ID      int       `gorm:"primary_key:true"`
-	Topic   string    `gorm:"unique;NOT NULL"`
+	Topic   string    `gorm:"unique_index;NOT NULL"`
 	Key     []byte    `gorm:"NOT NULL"`
 	Clients []*Client `gorm:"many2many:clients_topickeys;"`
 }
