@@ -518,6 +518,18 @@ func TestE4(t *testing.T) {
 		}
 	})
 
+	t.Run("GetTopicsForClientByID returns an empty slice when no results", func(t *testing.T) {
+		mockDB.EXPECT().GetTopicsForClientByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
+		topics, err := service.GetTopicsForClientByID(e4.HashIDAlias("client"), 1, 2)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if topics == nil {
+			t.Errorf("Expected topics to be an empty slice, got nil")
+		}
+	})
+
 	t.Run("GetTopicsForClientByName returns topics for a given client name", func(t *testing.T) {
 		client, _ := createTestClient(t, e4Key)
 		expectedOffset := 1
@@ -587,6 +599,18 @@ func TestE4(t *testing.T) {
 		}
 	})
 
+	t.Run("GetClientsByNameForTopic returns an empty slice when no results", func(t *testing.T) {
+		mockDB.EXPECT().GetClientsForTopic(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
+		clients, err := service.GetClientsByNameForTopic("topic", 1, 2)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if clients == nil {
+			t.Errorf("Expected clients to be an empty slice, got nil")
+		}
+	})
+
 	t.Run("GetClientsByIDForTopic returns client IDs as hex encoded string for a given topic", func(t *testing.T) {
 		topicKey, _ := createTestTopicKey(t, e4Key)
 		expectedOffset := 1
@@ -615,6 +639,18 @@ func TestE4(t *testing.T) {
 		}
 	})
 
+	t.Run("GetClientsByIDForTopic returns an empty slice when no results", func(t *testing.T) {
+		mockDB.EXPECT().GetClientsForTopic(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
+		clients, err := service.GetClientsByIDForTopic("topic", 1, 2)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if clients == nil {
+			t.Errorf("Expected clients to be an empty slice, got nil")
+		}
+	})
+
 	t.Run("GetAllClientsAsNames returns client names", func(t *testing.T) {
 		i1, _ := createTestClient(t, e4Key)
 		i2, _ := createTestClient(t, e4Key)
@@ -636,6 +672,18 @@ func TestE4(t *testing.T) {
 
 		if reflect.DeepEqual(names, expectedNames) == false {
 			t.Errorf("Expected names to be %#v, got %#v", expectedNames, names)
+		}
+	})
+
+	t.Run("GetClientsAsHexIDsRange returns an empty slice when no results", func(t *testing.T) {
+		mockDB.EXPECT().GetAllClients().Return(nil, nil)
+		clients, err := service.GetAllClientsAsNames()
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if clients == nil {
+			t.Errorf("Expected clients to be an empty slice, got nil")
 		}
 	})
 
@@ -666,6 +714,18 @@ func TestE4(t *testing.T) {
 		}
 	})
 
+	t.Run("GetClientsAsHexIDsRange returns an empty slice when no results", func(t *testing.T) {
+		mockDB.EXPECT().GetClientsRange(gomock.Any(), gomock.Any()).Return(nil, nil)
+		clients, err := service.GetClientsAsHexIDsRange(1, 2)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if clients == nil {
+			t.Errorf("Expected clients to be an empty slice, got nil")
+		}
+	})
+
 	t.Run("GetClientsAsNamesRange returns clients names from offset and count", func(t *testing.T) {
 		i1, _ := createTestClient(t, e4Key)
 		i2, _ := createTestClient(t, e4Key)
@@ -693,6 +753,18 @@ func TestE4(t *testing.T) {
 		}
 	})
 
+	t.Run("GetClientsAsNamesRange returns an empty slice when no results", func(t *testing.T) {
+		mockDB.EXPECT().GetClientsRange(gomock.Any(), gomock.Any()).Return(nil, nil)
+		clients, err := service.GetClientsAsNamesRange(1, 2)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if clients == nil {
+			t.Errorf("Expected clients to be an empty slice, got nil")
+		}
+	})
+
 	t.Run("GetTopicsRange returns topics from offset and count", func(t *testing.T) {
 		t1, _ := createTestTopicKey(t, e4Key)
 		t2, _ := createTestTopicKey(t, e4Key)
@@ -717,6 +789,18 @@ func TestE4(t *testing.T) {
 
 		if reflect.DeepEqual(topics, expectedTopics) == false {
 			t.Errorf("Expected topics to be %#v, got %#v", expectedTopics, topics)
+		}
+	})
+
+	t.Run("GetTopicsRange returns an empty slice when no results", func(t *testing.T) {
+		mockDB.EXPECT().GetTopicsRange(gomock.Any(), gomock.Any()).Return(nil, nil)
+		topics, err := service.GetTopicsRange(1, 2)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if topics == nil {
+			t.Errorf("Expected topics to be an empty slice, got nil")
 		}
 	})
 
