@@ -393,13 +393,13 @@ func (s *e4impl) SendMessage(topic, msg string) error {
 func (s *e4impl) NewClientKey(name string, id []byte) error {
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClientKey")
 
-	newid, err := validateE4NameOrIDPair(name, id)
+	newID, err := validateE4NameOrIDPair(name, id)
 	if err != nil {
 		logger.Log("msg", "Unable to validate name/id pair")
 		return err
 	}
 
-	client, err := s.db.GetClientByID(newid)
+	client, err := s.db.GetClientByID(newID)
 	if err != nil {
 		logger.Log("msg", "failed to retrieve client", "error", err)
 		return err
@@ -423,12 +423,12 @@ func (s *e4impl) NewClientKey(name string, id []byte) error {
 		return err
 	}
 
-	err = s.db.InsertClient(name, id, protectedkey)
+	err = s.db.InsertClient(name, newID, protectedkey)
 	if err != nil {
 		logger.Log("msg", "insertClient failed", "error", err)
 		return err
 	}
-	logger.Log("msg", "succeeded", "id", e4.PrettyID(id))
+	logger.Log("msg", "succeeded", "id", e4.PrettyID(newID))
 
 	return nil
 }

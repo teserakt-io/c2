@@ -54,5 +54,6 @@ func (m *esMessageMonitor) OnMessage(msg LoggedMessage) {
 		m.logger.Log("msg", "failed to send LoggedMessage to elasticSearch", "error", err, "loggedMessage", msg)
 		return
 	}
-	m.logger.Log("msg", "successfully logged message to elasticsearch", "index", index)
+	// This log produce lots of entries when enabled over a busy broker. Enable with care :)
+	//m.logger.Log("msg", "successfully logged message to elasticsearch", "index", index)
 }
