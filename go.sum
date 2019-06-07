@@ -200,6 +200,8 @@ gitlab.com/teserakt/serverlib v0.0.0-20190606164004-23c934dde696 h1:KWpPV7iI0P50
 gitlab.com/teserakt/serverlib v0.0.0-20190606164004-23c934dde696/go.mod h1:9BihT0UsuYvIZbHYg+HC0vA48/etx5YzefuNzcVx7zc=
 gitlab.com/teserakt/serverlib v0.0.0-20190606172737-0241c0deaa71 h1:G5FL5ryzPdKCXE1eEgdxYwjttDDfQDnNQMZnF7SoJBI=
 gitlab.com/teserakt/serverlib v0.0.0-20190606172737-0241c0deaa71/go.mod h1:9BihT0UsuYvIZbHYg+HC0vA48/etx5YzefuNzcVx7zc=
+gitlab.com/teserakt/serverlib v0.0.0-20190607072605-7935ce34472f h1:4jkbNcES5AJFNpVi/GpgpgI4YrAo58Or6rG4jBeeNsc=
+gitlab.com/teserakt/serverlib v0.0.0-20190607072605-7935ce34472f/go.mod h1:9BihT0UsuYvIZbHYg+HC0vA48/etx5YzefuNzcVx7zc=
 gitlab.com/teserakt/test-common v0.0.0-20190527102116-5f61713e38eb h1:szeU9lfO7szJ/qZlkLwsU3RF0ULXfIgDTDwYa2nSZGM=
 gitlab.com/teserakt/test-common v0.0.0-20190527102116-5f61713e38eb/go.mod h1:kFFenUI7PwTSWwaWL2FZb53Csh+iPvz7X1XyANCi5s8=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=

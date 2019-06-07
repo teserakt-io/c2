@@ -24,7 +24,7 @@ require (
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/pkg/errors v0.8.1 // indirect
 	gitlab.com/teserakt/e4common v0.0.0-20190531141929-25e1141f633f
-	gitlab.com/teserakt/serverlib v0.0.0-20190606172737-0241c0deaa71
+	gitlab.com/teserakt/serverlib v0.0.0-20190607072605-7935ce34472f
 	gitlab.com/teserakt/test-common v0.0.0-20190527102116-5f61713e38eb
 	go.opencensus.io v0.19.0
 	golang.org/x/crypto v0.0.0-20190506204251-e1dfcc566284 // indirect
