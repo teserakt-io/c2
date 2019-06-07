@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"testing"
+
+	slibcfg "gitlab.com/teserakt/serverlib/config"
 )
 
 func TestDBCfg(t *testing.T) {
@@ -13,7 +15,7 @@ func TestDBCfg(t *testing.T) {
 		expectedPassword := "password"
 
 		cfg := DBCfg{
-			Type:     DBTypePostgres,
+			Type:     slibcfg.DBTypePostgres,
 			Database: expectedDatabase,
 			Host:     expectedHost,
 			Username: expectedUsername,
@@ -26,7 +28,7 @@ func TestDBCfg(t *testing.T) {
 			expectedDatabase,
 			expectedUsername,
 			expectedPassword,
-			PostgresSSLModeFull,
+			slibcfg.PostgresSSLModeFull,
 		)
 
 		cnxStr, err := cfg.ConnectionString()
@@ -44,7 +46,7 @@ func TestDBCfg(t *testing.T) {
 		expectedFile := "some/db/file"
 
 		cfg := DBCfg{
-			Type: DBTypeSQLite,
+			Type: slibcfg.DBTypeSQLite,
 			File: expectedFile,
 		}
 
@@ -61,7 +63,7 @@ func TestDBCfg(t *testing.T) {
 
 	t.Run("ConnectionString returns an error on unsupported DB type", func(t *testing.T) {
 		cfg := DBCfg{
-			Type: DBType("unknow"),
+			Type: slibcfg.DBType("unknow"),
 		}
 
 		_, err := cfg.ConnectionString()
@@ -71,22 +73,4 @@ func TestDBCfg(t *testing.T) {
 		}
 	})
 
-}
-
-func TestSecureConnectionType(t *testing.T) {
-	t.Run("SslMode returns the expected SSLMode from given SecureConnectionType", func(t *testing.T) {
-
-		testData := map[DBSecureConnectionType]string{
-			DBSecureConnectionEnabled:        PostgresSSLModeFull,
-			DBSecureConnectionSelfSigned:     PostgresSSLModeRequire,
-			DBSecureConnectionInsecure:       PostgresSSLModeDisable,
-			DBSecureConnectionType("random"): PostgresSSLModeFull,
-		}
-
-		for secureCnxType, expectedSSLMode := range testData {
-			if expectedSSLMode != secureCnxType.SSLMode() {
-				t.Errorf("Expected SSLMode to be %s, got %s", expectedSSLMode, secureCnxType.SSLMode())
-			}
-		}
-	})
 }

@@ -8,7 +8,8 @@ import (
 
 	"gitlab.com/teserakt/c2/internal/config"
 	"gitlab.com/teserakt/c2/pkg/c2"
-	e4 "gitlab.com/teserakt/e4common"
+	slibcfg "gitlab.com/teserakt/serverlib/config"
+	slibpath "gitlab.com/teserakt/serverlib/path"
 )
 
 // variables set at build time
@@ -43,21 +44,32 @@ func main() {
 	defer logger.Log("msg", "goodbye")
 
 	// set up config resolver
-	configResolver := e4.NewAppPathResolver()
-	configLoader := config.NewViperLoader("config", configResolver)
+	configResolver, err := slibpath.NewAppPathResolver(os.Args[0])
+	if err != nil {
+		logger.Log("msg", "failed to create configuration resolver", "error", err)
+		exitCode = 1
+		return
+	}
+	configLoader := slibcfg.NewViperLoader("config", configResolver)
 
 	logger.Log("msg", "load configuration and command args")
 
-	cfg, err := configLoader.Load()
-	if err != nil {
-		logger.Log("error", err)
+	cfg := config.New()
+	if err := configLoader.Load(cfg.ViperCfgFields()); err != nil {
+		logger.Log("msg", "configuration loading failed", "error", err)
 		exitCode = 1
 		return
 	}
 
-	c2instance, err := c2.New(logger, cfg)
+	if err := cfg.Validate(); err != nil {
+		logger.Log("msg", "configuration validation failed", "error", err)
+		exitCode = 1
+		return
+	}
+
+	c2instance, err := c2.New(logger, *cfg)
 	if err != nil {
-		logger.Log("error", err)
+		logger.Log("msg", "failed to create C2", "error", err)
 		exitCode = 1
 		return
 	}

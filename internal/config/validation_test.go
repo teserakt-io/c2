@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"testing"
+
+	slibcfg "gitlab.com/teserakt/serverlib/config"
+)
 
 func TestServerCfgValidation(t *testing.T) {
 	t.Run("Validate properly checks configuration and return errors", func(t *testing.T) {
@@ -40,18 +44,18 @@ func TestDBCfgValidation(t *testing.T) {
 		testData := map[DBCfg]error{
 			DBCfg{}:                        ErrNoPassphrase,
 			DBCfg{Passphrase: "something"}: ErrUnsupportedDBType,
-			DBCfg{Passphrase: "something", Type: DBType("something")}:                                                                                                                             ErrUnsupportedDBType,
-			DBCfg{Passphrase: "something", Type: DBTypePostgres}:                                                                                                                                  ErrNoAddr,
-			DBCfg{Passphrase: "something", Type: DBTypePostgres, Host: "host"}:                                                                                                                    ErrNoDatabase,
-			DBCfg{Passphrase: "something", Type: DBTypePostgres, Host: "host", Database: "foo"}:                                                                                                   ErrNoUsername,
-			DBCfg{Passphrase: "something", Type: DBTypePostgres, Host: "host", Database: "foo", Username: "bar"}:                                                                                  ErrNoPassword,
-			DBCfg{Passphrase: "something", Type: DBTypePostgres, Host: "host", Database: "foo", Username: "bar", Password: "pwd"}:                                                                 ErrNoSchema,
-			DBCfg{Passphrase: "something", Type: DBTypePostgres, Host: "host", Database: "foo", Username: "bar", Password: "pwd", Schema: "foo"}:                                                  ErrInvalidSecureConnection,
-			DBCfg{Passphrase: "something", Type: DBTypePostgres, Host: "host", Database: "foo", Username: "bar", Password: "pwd", Schema: "foo", SecureConnection: DBSecureConnectionType("foo")}: ErrInvalidSecureConnection,
-			DBCfg{Passphrase: "something", Type: DBTypePostgres, Host: "host", Database: "foo", Username: "bar", Password: "pwd", Schema: "foo", SecureConnection: DBSecureConnectionInsecure}:    nil,
+			DBCfg{Passphrase: "something", Type: slibcfg.DBType("something")}:                                                                                                                                     ErrUnsupportedDBType,
+			DBCfg{Passphrase: "something", Type: slibcfg.DBTypePostgres}:                                                                                                                                          ErrNoAddr,
+			DBCfg{Passphrase: "something", Type: slibcfg.DBTypePostgres, Host: "host"}:                                                                                                                            ErrNoDatabase,
+			DBCfg{Passphrase: "something", Type: slibcfg.DBTypePostgres, Host: "host", Database: "foo"}:                                                                                                           ErrNoUsername,
+			DBCfg{Passphrase: "something", Type: slibcfg.DBTypePostgres, Host: "host", Database: "foo", Username: "bar"}:                                                                                          ErrNoPassword,
+			DBCfg{Passphrase: "something", Type: slibcfg.DBTypePostgres, Host: "host", Database: "foo", Username: "bar", Password: "pwd"}:                                                                         ErrNoSchema,
+			DBCfg{Passphrase: "something", Type: slibcfg.DBTypePostgres, Host: "host", Database: "foo", Username: "bar", Password: "pwd", Schema: "foo"}:                                                          ErrInvalidSecureConnection,
+			DBCfg{Passphrase: "something", Type: slibcfg.DBTypePostgres, Host: "host", Database: "foo", Username: "bar", Password: "pwd", Schema: "foo", SecureConnection: slibcfg.DBSecureConnectionType("foo")}: ErrInvalidSecureConnection,
+			DBCfg{Passphrase: "something", Type: slibcfg.DBTypePostgres, Host: "host", Database: "foo", Username: "bar", Password: "pwd", Schema: "foo", SecureConnection: slibcfg.DBSecureConnectionInsecure}:    nil,
 
-			DBCfg{Passphrase: "something", Type: DBTypeSQLite}:                       ErrNoDBFile,
-			DBCfg{Passphrase: "something", Type: DBTypeSQLite, File: "path/to/file"}: nil,
+			DBCfg{Passphrase: "something", Type: slibcfg.DBTypeSQLite}:                       ErrNoDBFile,
+			DBCfg{Passphrase: "something", Type: slibcfg.DBTypeSQLite, File: "path/to/file"}: nil,
 		}
 
 		for cfg, expectedErr := range testData {

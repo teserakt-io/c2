@@ -79,11 +79,11 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	// compatibility for packages that do not understand go-kit logger:
 	stdloglogger := stdlog.New(log.NewStdlibAdapter(logger), "", 0)
 
-	switch cfg.DB.SecureConnection {
-	case config.DBSecureConnectionInsecure:
+	switch {
+	case cfg.DB.SecureConnection.IsInsecure():
 		logger.Log("msg", "Unencrypted database connection.")
 		fmt.Fprintf(os.Stderr, "WARNING: Unencrypted database connection. We do not recommend this setup.\n")
-	case config.DBSecureConnectionSelfSigned:
+	case cfg.DB.SecureConnection.IsSelfSigned():
 		logger.Log("msg", "Self signed certificate used. We do not recommend this setup.")
 		fmt.Fprintf(os.Stderr, "WARNING: Self-signed connection to database. We do not recommend this setup.\n")
 	}
