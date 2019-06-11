@@ -579,6 +579,7 @@ func (s *e4impl) GetClientsByNameForTopic(topic string, offset, count int) ([]st
 	}
 
 	names := []string{}
+
 	for _, client := range clients {
 		names = append(names, client.Name)
 	}

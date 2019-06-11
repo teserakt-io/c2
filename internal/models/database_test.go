@@ -11,6 +11,7 @@ import (
 
 	"gitlab.com/teserakt/c2/internal/config"
 	e4 "gitlab.com/teserakt/e4common"
+	slibcfg "gitlab.com/teserakt/serverlib/config"
 )
 
 // setupFunc defines a database setup function,
@@ -28,7 +29,7 @@ func TestDBSQLite(t *testing.T) {
 			Type:             DBDialectSQLite,
 			File:             f.Name(),
 			Passphrase:       "testpass",
-			SecureConnection: config.DBSecureConnectionEnabled,
+			SecureConnection: slibcfg.DBSecureConnectionEnabled,
 			Logging:          false,
 		}
 
@@ -62,9 +63,9 @@ func TestDBPostgres(t *testing.T) {
 
 	setup := func(t *testing.T) (Database, func()) {
 		dbCfg := config.DBCfg{
-			Type:             DBDialectPostgres,
+			Type:             slibcfg.DBTypePostgres,
 			Passphrase:       "testpass",
-			SecureConnection: config.DBSecureConnectionInsecure,
+			SecureConnection: slibcfg.DBSecureConnectionInsecure,
 			Host:             "127.0.0.1",
 			Database:         "e4",
 			Username:         "e4_c2_test",

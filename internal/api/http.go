@@ -66,12 +66,12 @@ func (s *httpServer) ListenAndServe() error {
 	route := mux.NewRouter()
 	route.Use(corsMiddleware)
 	route.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.newResponse(w).JSON(http.StatusNoContent, nil)
+		s.newResponse(w).Success(http.StatusNoContent, nil)
 		return
 	})
 
 	route.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		s.newResponse(w).JSON(http.StatusNotFound, "Nothing here")
+		s.newResponse(w).Text(http.StatusNotFound, "E4 C2 Server")
 		return
 	})
 
@@ -178,13 +178,13 @@ func (s *httpServer) handleNewClient(w http.ResponseWriter, r *http.Request) {
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
 	key, err := decodeAndValidateKey(params["key"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid key: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid key: %s", err))
 		return
 	}
 
@@ -194,7 +194,7 @@ func (s *httpServer) handleNewClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleRemoveClientByID(w http.ResponseWriter, r *http.Request) {
@@ -203,7 +203,7 @@ func (s *httpServer) handleRemoveClientByID(w http.ResponseWriter, r *http.Reque
 
 	id, err := decodeAndValidateID(params["id"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
@@ -213,7 +213,7 @@ func (s *httpServer) handleRemoveClientByID(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleRemoveClientByName(w http.ResponseWriter, r *http.Request) {
@@ -222,7 +222,7 @@ func (s *httpServer) handleRemoveClientByName(w http.ResponseWriter, r *http.Req
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid Name: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid Name: %s", err))
 		return
 	}
 
@@ -232,7 +232,7 @@ func (s *httpServer) handleRemoveClientByName(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleNewTopicClientByID(w http.ResponseWriter, r *http.Request) {
@@ -241,13 +241,13 @@ func (s *httpServer) handleNewTopicClientByID(w http.ResponseWriter, r *http.Req
 
 	id, err := decodeAndValidateID(params["id"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
@@ -257,7 +257,7 @@ func (s *httpServer) handleNewTopicClientByID(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleNewTopicClientByName(w http.ResponseWriter, r *http.Request) {
@@ -266,13 +266,13 @@ func (s *httpServer) handleNewTopicClientByName(w http.ResponseWriter, r *http.R
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
@@ -282,7 +282,7 @@ func (s *httpServer) handleNewTopicClientByName(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleRemoveTopicClientByID(w http.ResponseWriter, r *http.Request) {
@@ -291,13 +291,13 @@ func (s *httpServer) handleRemoveTopicClientByID(w http.ResponseWriter, r *http.
 
 	id, err := decodeAndValidateID(params["id"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
@@ -307,7 +307,7 @@ func (s *httpServer) handleRemoveTopicClientByID(w http.ResponseWriter, r *http.
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleRemoveTopicClientByName(w http.ResponseWriter, r *http.Request) {
@@ -316,13 +316,13 @@ func (s *httpServer) handleRemoveTopicClientByName(w http.ResponseWriter, r *htt
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
@@ -332,7 +332,7 @@ func (s *httpServer) handleRemoveTopicClientByName(w http.ResponseWriter, r *htt
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleResetClientByID(w http.ResponseWriter, r *http.Request) {
@@ -341,7 +341,7 @@ func (s *httpServer) handleResetClientByID(w http.ResponseWriter, r *http.Reques
 
 	id, err := decodeAndValidateID(params["id"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
@@ -351,7 +351,7 @@ func (s *httpServer) handleResetClientByID(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleResetClientByName(w http.ResponseWriter, r *http.Request) {
@@ -360,7 +360,7 @@ func (s *httpServer) handleResetClientByName(w http.ResponseWriter, r *http.Requ
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
@@ -370,7 +370,7 @@ func (s *httpServer) handleResetClientByName(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleNewTopic(w http.ResponseWriter, r *http.Request) {
@@ -379,7 +379,7 @@ func (s *httpServer) handleNewTopic(w http.ResponseWriter, r *http.Request) {
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
@@ -389,7 +389,7 @@ func (s *httpServer) handleNewTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
@@ -398,7 +398,7 @@ func (s *httpServer) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", err))
 		return
 	}
 
@@ -408,7 +408,7 @@ func (s *httpServer) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleNewClientKey(w http.ResponseWriter, r *http.Request) {
@@ -417,16 +417,16 @@ func (s *httpServer) handleNewClientKey(w http.ResponseWriter, r *http.Request) 
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
 	if err := s.e4Service.NewClientKey(name, nil); err != nil {
-		resp.JSON(http.StatusInternalServerError, fmt.Sprintf("newClientKey failed: %s", err))
+		resp.Success(http.StatusInternalServerError, fmt.Sprintf("newClientKey failed: %s", err))
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleGetClients(w http.ResponseWriter, r *http.Request) {
@@ -439,7 +439,7 @@ func (s *httpServer) handleGetClients(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp.JSON(http.StatusOK, &ids)
+	resp.Success(http.StatusOK, &ids)
 }
 
 func (s *httpServer) handleGetTopics(w http.ResponseWriter, r *http.Request) {
@@ -452,7 +452,7 @@ func (s *httpServer) handleGetTopics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp.JSON(http.StatusOK, &topics)
+	resp.Success(http.StatusOK, topics)
 }
 
 func (s *httpServer) handleGetClientTopicCountByID(w http.ResponseWriter, r *http.Request) {
@@ -461,7 +461,7 @@ func (s *httpServer) handleGetClientTopicCountByID(w http.ResponseWriter, r *htt
 
 	id, err := decodeAndValidateID(params["id"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
@@ -472,7 +472,7 @@ func (s *httpServer) handleGetClientTopicCountByID(w http.ResponseWriter, r *htt
 		return
 	}
 
-	resp.JSON(http.StatusOK, &count)
+	resp.Success(http.StatusOK, count)
 }
 
 func (s *httpServer) handleGetClientTopicCountByName(w http.ResponseWriter, r *http.Request) {
@@ -481,7 +481,7 @@ func (s *httpServer) handleGetClientTopicCountByName(w http.ResponseWriter, r *h
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
@@ -491,8 +491,7 @@ func (s *httpServer) handleGetClientTopicCountByName(w http.ResponseWriter, r *h
 		resp.Error(err)
 		return
 	}
-
-	resp.JSON(http.StatusOK, &count)
+	resp.Success(http.StatusOK, count)
 }
 
 func (s *httpServer) handleGetClientTopicsByID(w http.ResponseWriter, r *http.Request) {
@@ -501,18 +500,18 @@ func (s *httpServer) handleGetClientTopicsByID(w http.ResponseWriter, r *http.Re
 
 	id, err := decodeAndValidateID(params["id"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid ID: %s", err))
 		return
 	}
 
 	offset, err := strconv.ParseUint(params["offset"], 10, 64)
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid offset")
+		resp.Success(http.StatusBadRequest, "invalid offset")
 		return
 	}
 	count, err := strconv.ParseUint(params["count"], 10, 64)
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid count")
+		resp.Success(http.StatusBadRequest, "invalid count")
 		return
 	}
 
@@ -523,7 +522,7 @@ func (s *httpServer) handleGetClientTopicsByID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	resp.JSON(http.StatusOK, &topics)
+	resp.Success(http.StatusOK, topics)
 }
 
 func (s *httpServer) handleGetClientTopicsByName(w http.ResponseWriter, r *http.Request) {
@@ -533,18 +532,18 @@ func (s *httpServer) handleGetClientTopicsByName(w http.ResponseWriter, r *http.
 
 	name, err := decodeAndValidateName(params["name"])
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
+		resp.Success(http.StatusBadRequest, fmt.Sprintf("invalid name: %s", err))
 		return
 	}
 
 	offset, err := strconv.ParseUint(params["offset"], 10, 64)
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid offset")
+		resp.Success(http.StatusBadRequest, "invalid offset")
 		return
 	}
 	count, err := strconv.ParseUint(params["count"], 10, 64)
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid count")
+		resp.Success(http.StatusBadRequest, "invalid count")
 		return
 	}
 
@@ -555,7 +554,7 @@ func (s *httpServer) handleGetClientTopicsByName(w http.ResponseWriter, r *http.
 		return
 	}
 
-	resp.JSON(http.StatusOK, &topics)
+	resp.Success(http.StatusOK, topics)
 }
 
 func (s *httpServer) handleGetTopicClientCount(w http.ResponseWriter, r *http.Request) {
@@ -564,7 +563,7 @@ func (s *httpServer) handleGetTopicClientCount(w http.ResponseWriter, r *http.Re
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid topic")
+		resp.Success(http.StatusBadRequest, "invalid topic")
 		return
 	}
 
@@ -575,7 +574,7 @@ func (s *httpServer) handleGetTopicClientCount(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	resp.JSON(http.StatusOK, &count)
+	resp.Success(http.StatusOK, count)
 }
 
 func (s *httpServer) handleGetTopicClients(w http.ResponseWriter, r *http.Request) {
@@ -584,17 +583,17 @@ func (s *httpServer) handleGetTopicClients(w http.ResponseWriter, r *http.Reques
 
 	topic := params["topic"]
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid topic")
+		resp.Success(http.StatusBadRequest, "invalid topic")
 		return
 	}
 	offset, err := strconv.ParseUint(params["offset"], 10, 64)
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid offset")
+		resp.Success(http.StatusBadRequest, "invalid offset")
 		return
 	}
 	count, err := strconv.ParseUint(params["count"], 10, 64)
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid count")
+		resp.Success(http.StatusBadRequest, "invalid count")
 		return
 	}
 
@@ -604,8 +603,7 @@ func (s *httpServer) handleGetTopicClients(w http.ResponseWriter, r *http.Reques
 		resp.Error(err)
 		return
 	}
-
-	resp.JSON(http.StatusOK, &clients)
+	resp.Success(http.StatusOK, clients)
 }
 
 func (s *httpServer) handleSendMessage(w http.ResponseWriter, r *http.Request) {
@@ -616,7 +614,7 @@ func (s *httpServer) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 	message := params["message"]
 
 	if err := e4.IsValidTopic(topic); err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid topic")
+		resp.Success(http.StatusBadRequest, "invalid topic")
 		return
 	}
 
@@ -626,7 +624,7 @@ func (s *httpServer) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp.JSON(http.StatusOK, nil)
+	resp.Success(http.StatusOK, nil)
 }
 
 func (s *httpServer) handleGetTopicCount(w http.ResponseWriter, r *http.Request) {
@@ -639,7 +637,7 @@ func (s *httpServer) handleGetTopicCount(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	resp.JSON(http.StatusOK, &count)
+	resp.Success(http.StatusOK, count)
 }
 
 func (s *httpServer) handleGetTopicsPaginated(w http.ResponseWriter, r *http.Request) {
@@ -648,12 +646,12 @@ func (s *httpServer) handleGetTopicsPaginated(w http.ResponseWriter, r *http.Req
 
 	offset, err := strconv.ParseUint(params["offset"], 10, 64)
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid offset")
+		resp.Success(http.StatusBadRequest, "invalid offset")
 		return
 	}
 	count, err := strconv.ParseUint(params["count"], 10, 64)
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid count")
+		resp.Success(http.StatusBadRequest, "invalid count")
 		return
 	}
 
@@ -664,7 +662,7 @@ func (s *httpServer) handleGetTopicsPaginated(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	resp.JSON(http.StatusOK, &topics)
+	resp.Success(http.StatusOK, topics)
 }
 
 func (s *httpServer) handleGetClientsCount(w http.ResponseWriter, r *http.Request) {
@@ -677,7 +675,7 @@ func (s *httpServer) handleGetClientsCount(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	resp.JSON(http.StatusOK, &count)
+	resp.Success(http.StatusOK, count)
 }
 
 func (s *httpServer) handleGetClientsPaginated(w http.ResponseWriter, r *http.Request) {
@@ -686,12 +684,12 @@ func (s *httpServer) handleGetClientsPaginated(w http.ResponseWriter, r *http.Re
 
 	offset, err := strconv.ParseUint(params["offset"], 10, 64)
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid offset")
+		resp.Success(http.StatusBadRequest, "invalid offset")
 		return
 	}
 	count, err := strconv.ParseUint(params["count"], 10, 64)
 	if err != nil {
-		resp.JSON(http.StatusBadRequest, "invalid count")
+		resp.Success(http.StatusBadRequest, "invalid count")
 		return
 	}
 
@@ -702,7 +700,7 @@ func (s *httpServer) handleGetClientsPaginated(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	resp.JSON(http.StatusOK, &clients)
+	resp.Success(http.StatusOK, clients)
 }
 
 func (s *httpServer) newResponse(w http.ResponseWriter) *response {
@@ -719,21 +717,24 @@ type response struct {
 }
 
 // Text is a helper to write raw text as an HTTP response
+// this should not be used except in special circumstances
 func (r *response) Text(code int, body string) {
 	r.Header().Set("Content-Type", "text/plain")
 	r.WriteHeader(code)
 	io.WriteString(r, fmt.Sprintf("%s\n", body))
 }
 
-// JSON encodes given data into json and write it to the response
-func (r *response) JSON(code int, data interface{}) {
+// Success returns a http success status code as specified by code
+// and the json-encoded value of data, if specified.
+// if nil data is specified, the response body is empty.
+// this makes more sense than writing null, or [], to the body.
+func (r *response) Success(code int, data interface{}) {
 	r.Header().Set("Content-Type", "application/json")
 	r.WriteHeader(code)
 
-	if data == nil {
-		data = []bool{} // Default response is an empty json array when no data is returned
+	if data != nil {
+		json.NewEncoder(r).Encode(data)
 	}
-	json.NewEncoder(r).Encode(data)
 }
 
 // Error set the proper response status code given an error

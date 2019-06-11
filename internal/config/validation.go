@@ -3,6 +3,8 @@ package config
 import (
 	"errors"
 	"fmt"
+
+	libconfig "gitlab.com/teserakt/serverlib/config"
 )
 
 var (
@@ -115,9 +117,9 @@ func (c DBCfg) Validate() error {
 	}
 
 	switch c.Type {
-	case DBTypePostgres:
+	case libconfig.DBTypePostgres:
 		return c.validatePostgres()
-	case DBTypeSQLite:
+	case libconfig.DBTypeSQLite:
 		return c.validateSQLite()
 	default:
 		return ErrUnsupportedDBType
@@ -145,9 +147,9 @@ func (c DBCfg) validatePostgres() error {
 		return ErrNoSchema
 	}
 
-	if c.SecureConnection != DBSecureConnectionEnabled &&
-		c.SecureConnection != DBSecureConnectionSelfSigned &&
-		c.SecureConnection != DBSecureConnectionInsecure {
+	if c.SecureConnection != libconfig.DBSecureConnectionEnabled &&
+		c.SecureConnection != libconfig.DBSecureConnectionSelfSigned &&
+		c.SecureConnection != libconfig.DBSecureConnectionInsecure {
 		return ErrInvalidSecureConnection
 	}
 
