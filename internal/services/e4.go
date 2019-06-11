@@ -439,7 +439,7 @@ func (s *e4impl) GetAllTopics() ([]string, error) {
 		return nil, err
 	}
 
-	var topics []string
+	topics := []string{}
 	for _, topickey := range topicKeys {
 		topics = append(topics, topickey.Topic)
 	}
@@ -454,7 +454,7 @@ func (s *e4impl) GetAllTopicsUnsafe() ([]string, error) {
 		return nil, err
 	}
 
-	var topics []string
+	topics := []string{}
 	for _, topickey := range topicKeys {
 		topics = append(topics, topickey.Topic)
 	}
@@ -467,7 +467,7 @@ func (s *e4impl) GetAllClientsAsHexIDs() ([]string, error) {
 		return nil, err
 	}
 
-	var hexids []string
+	hexids := []string{}
 	for _, client := range clients {
 		hexids = append(hexids, hex.EncodeToString(client.E4ID))
 	}
@@ -481,7 +481,7 @@ func (s *e4impl) GetAllClientsAsNames() ([]string, error) {
 		return nil, err
 	}
 
-	var names []string
+	names := []string{}
 	for _, client := range clients {
 		names = append(names, client.Name)
 	}
@@ -495,7 +495,7 @@ func (s *e4impl) GetClientsAsHexIDsRange(offset, count int) ([]string, error) {
 		return nil, err
 	}
 
-	var hexids []string
+	hexids := []string{}
 	for _, client := range clients {
 		hexids = append(hexids, hex.EncodeToString(client.E4ID))
 	}
@@ -509,7 +509,7 @@ func (s *e4impl) GetClientsAsNamesRange(offset, count int) ([]string, error) {
 		return nil, err
 	}
 
-	var names []string
+	names := []string{}
 	for _, client := range clients {
 		names = append(names, client.Name)
 	}
@@ -523,7 +523,7 @@ func (s *e4impl) GetTopicsRange(offset, count int) ([]string, error) {
 		return nil, err
 	}
 
-	var topicnames []string
+	topicnames := []string{}
 	for _, topic := range topics {
 		topicnames = append(topicnames, topic.Topic)
 	}
@@ -553,7 +553,7 @@ func (s *e4impl) GetTopicsForClientByID(id []byte, offset, count int) ([]string,
 		return nil, err
 	}
 
-	var topics []string
+	topics := []string{}
 	for _, topicKey := range topicKeys {
 		topics = append(topics, topicKey.Topic)
 	}
@@ -576,7 +576,8 @@ func (s *e4impl) GetClientsByNameForTopic(topic string, offset, count int) ([]st
 		return nil, err
 	}
 
-	var names []string
+	names := []string{}
+
 	for _, client := range clients {
 		names = append(names, client.Name)
 	}
@@ -590,7 +591,7 @@ func (s *e4impl) GetClientsByIDForTopic(topic string, offset, count int) ([]stri
 		return nil, err
 	}
 
-	var ids []string
+	ids := []string{}
 	for _, client := range clients {
 		ids = append(ids, hex.EncodeToString(client.E4ID))
 	}

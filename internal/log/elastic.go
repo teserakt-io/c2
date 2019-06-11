@@ -29,6 +29,9 @@ func WithElasticSearch(logger log.Logger, esClient *elastic.Client, index string
 // Log starts a goroutine responsible of publishing the logged keyvals to elasticsearch.
 // It then calls the wrapped logger if provided.
 func (l *elasticLogger) Log(keyvals ...interface{}) error {
+	// this goroutine send the logged values to elasticsearch.
+	// done in the background to not slow down the application execution.
+	// on elasticsearch failure, the error will be only logged on the wrapped logger.
 	go func() {
 		buf := bytes.NewBuffer(nil)
 		jsonLogger := log.NewJSONLogger(buf)

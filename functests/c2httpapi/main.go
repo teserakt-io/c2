@@ -46,13 +46,16 @@ func main() {
 	}
 
 	DBNAME := fmt.Sprintf("E4C2_DB_FILE=%s", e4test.GetRandomDBName())
-	BROKER := "E4C2_MQTT_BROKER=tcp://mqtt.teserakt.io:1883"
+	BROKER := "E4C2_MQTT_BROKER=tcp://127.0.0.1:1883"
+	ESENABLE := "E4C2_ES_ENABLE=false"
 
 	fmt.Fprintf(os.Stderr, "Database set to %s\n", DBNAME)
 	fmt.Fprintf(os.Stderr, "Broker set to %s\n", BROKER)
+
 	env := []string{"E4C2_DB_TYPE=sqlite3"}
 	env = append(env, DBNAME)
 	env = append(env, BROKER)
+	env = append(env, ESENABLE)
 
 	go e4test.RunDaemon(errc, stopc, waitdrunc, c2binary, []string{}, env, func() bool {
 		return e4test.CheckC2Online(timeoutSeconds*time.Second, 5555, 8888, "127.0.0.1")

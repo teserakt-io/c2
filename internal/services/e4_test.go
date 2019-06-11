@@ -139,11 +139,14 @@ func TestE4(t *testing.T) {
 
 	})
 
-	t.Run("NewClient encrypt key and save properly", func(t *testing.T) {
+	t.Run("NewClient encrypt key and save properly with name only", func(t *testing.T) {
 		client, clearKey := createTestClient(t, e4Key)
 
-		mockDB.EXPECT().InsertClient(client.Name, client.E4ID, client.Key)
+		mockDB.EXPECT().InsertClient(client.Name, client.E4ID, client.Key).Times(2)
 
+		if err := service.NewClient(client.Name, nil, clearKey); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
 		if err := service.NewClient(client.Name, client.E4ID, clearKey); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -261,7 +264,43 @@ func TestE4(t *testing.T) {
 		}
 	})
 
-	t.Run("GetAllTopicIds returns all topics", func(t *testing.T) {
+	t.Run("NewClientKey generates a new key, send it to the client and update the DB", func(t *testing.T) {
+		client, clearClientKey := createTestClient(t, e4Key)
+
+		mockCommand := commands.NewMockCommand(mockCtrl)
+		commandPayload := []byte("command-payload")
+
+		var protectedNewKey []byte
+
+		gomock.InOrder(
+			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
+			mockCommandFactory.EXPECT().CreateSetIDKeyCommand(gomock.Any()).Do(func(newKey []byte) {
+				if len(newKey) != e4.KeyLen {
+					t.Errorf("Expected newKey to be %d bytes, got %d", e4.KeyLen, len(newKey))
+				}
+
+				var err error
+				protectedNewKey, err = e4.Encrypt(e4Key, nil, newKey)
+				if err != nil {
+					t.Fatalf("Expected no error, got %v", err)
+				}
+
+			}).Return(mockCommand, nil),
+			mockCommand.EXPECT().Protect(clearClientKey).Return(commandPayload, nil),
+			mockPubSubClient.EXPECT().Publish(commandPayload, client.Topic(), protocols.QoSExactlyOnce),
+			mockDB.EXPECT().InsertClient(client.Name, client.E4ID, gomock.Any()).Do(func(name string, id, key []byte) {
+				if reflect.DeepEqual(key, protectedNewKey) == false {
+					t.Errorf("Expected protected new key to be %#v, got %#v", protectedNewKey, key)
+				}
+			}),
+		)
+
+		if err := service.NewClientKey(client.Name, []byte{}); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("GetAllTopics returns all topics", func(t *testing.T) {
 		t1, _ := createTestTopicKey(t, e4Key)
 		t2, _ := createTestTopicKey(t, e4Key)
 		t3, _ := createTestTopicKey(t, e4Key)
