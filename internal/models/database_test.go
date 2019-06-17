@@ -69,7 +69,7 @@ func TestDBPostgres(t *testing.T) {
 			Host:             "127.0.0.1",
 			Database:         "e4",
 			Username:         "e4_c2_test",
-			Password:         "teserakt4",
+			Password:         "teserakte4",
 			Schema:           "e4_c2_test_unit",
 			Logging:          true,
 		}
