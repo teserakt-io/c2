@@ -60,7 +60,7 @@ func (cfg *Config) ViperCfgFields() []slibcfg.ViperCfgField {
 		{&cfg.DB.Username, "db-username", slibcfg.ViperString, "", "E4C2_DB_USERNAME"},
 		{&cfg.DB.Password, "db-password", slibcfg.ViperString, "", "E4C2_DB_PASSWORD"},
 		{&cfg.DB.Passphrase, "db-encryption-passphrase", slibcfg.ViperString, "", "E4C2_DB_ENCRYPTION_PASSPHRASE"},
-		{&cfg.DB.SecureConnection, "db-secure-connection", slibcfg.ViperDBSecureConnection, "enable", "E4C2_DB_SECURE_CONNECTION"},
+		{&cfg.DB.SecureConnection, "db-secure-connection", slibcfg.ViperDBSecureConnection, slibcfg.DBSecureConnectionEnabled, "E4C2_DB_SECURE_CONNECTION"},
 
 		{&cfg.ES.Enable, "es-enable", slibcfg.ViperBool, false, "E4C2_ES_ENABLE"},
 		{&cfg.ES.URLs, "es-urls", slibcfg.ViperStringSlice, "", "E4C2_ES_URLS"},

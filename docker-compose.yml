@@ -96,7 +96,7 @@ services:
     image: postgres:alpine
     environment:
       # Must be same as in configs/config.yaml#db-password
-      - POSTGRES_PASSWORD=teserakt4
+      - POSTGRES_PASSWORD=teserakte4
       # Must be same as configs/config.yaml#db-username
       - POSTGRES_USER=e4_c2_test
       # Must be same as configs/config.yaml#db-database
