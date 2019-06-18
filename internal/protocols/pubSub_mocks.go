@@ -5,6 +5,7 @@
 package protocols
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -61,57 +62,57 @@ func (mr *MockPubSubClientMockRecorder) Disconnect() *gomock.Call {
 }
 
 // Publish mocks base method
-func (m *MockPubSubClient) Publish(arg0 []byte, arg1 string, arg2 byte) error {
+func (m *MockPubSubClient) Publish(arg0 context.Context, arg1 []byte, arg2 string, arg3 byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Publish", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "Publish", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Publish indicates an expected call of Publish
-func (mr *MockPubSubClientMockRecorder) Publish(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockPubSubClientMockRecorder) Publish(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockPubSubClient)(nil).Publish), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockPubSubClient)(nil).Publish), arg0, arg1, arg2, arg3)
 }
 
 // SubscribeToTopic mocks base method
-func (m *MockPubSubClient) SubscribeToTopic(arg0 string) error {
+func (m *MockPubSubClient) SubscribeToTopic(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeToTopic", arg0)
+	ret := m.ctrl.Call(m, "SubscribeToTopic", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SubscribeToTopic indicates an expected call of SubscribeToTopic
-func (mr *MockPubSubClientMockRecorder) SubscribeToTopic(arg0 interface{}) *gomock.Call {
+func (mr *MockPubSubClientMockRecorder) SubscribeToTopic(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeToTopic", reflect.TypeOf((*MockPubSubClient)(nil).SubscribeToTopic), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeToTopic", reflect.TypeOf((*MockPubSubClient)(nil).SubscribeToTopic), arg0, arg1)
 }
 
 // SubscribeToTopics mocks base method
-func (m *MockPubSubClient) SubscribeToTopics(arg0 []string) error {
+func (m *MockPubSubClient) SubscribeToTopics(arg0 context.Context, arg1 []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeToTopics", arg0)
+	ret := m.ctrl.Call(m, "SubscribeToTopics", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SubscribeToTopics indicates an expected call of SubscribeToTopics
-func (mr *MockPubSubClientMockRecorder) SubscribeToTopics(arg0 interface{}) *gomock.Call {
+func (mr *MockPubSubClientMockRecorder) SubscribeToTopics(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeToTopics", reflect.TypeOf((*MockPubSubClient)(nil).SubscribeToTopics), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeToTopics", reflect.TypeOf((*MockPubSubClient)(nil).SubscribeToTopics), arg0, arg1)
 }
 
 // UnsubscribeFromTopic mocks base method
-func (m *MockPubSubClient) UnsubscribeFromTopic(arg0 string) error {
+func (m *MockPubSubClient) UnsubscribeFromTopic(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnsubscribeFromTopic", arg0)
+	ret := m.ctrl.Call(m, "UnsubscribeFromTopic", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UnsubscribeFromTopic indicates an expected call of UnsubscribeFromTopic
-func (mr *MockPubSubClientMockRecorder) UnsubscribeFromTopic(arg0 interface{}) *gomock.Call {
+func (mr *MockPubSubClientMockRecorder) UnsubscribeFromTopic(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnsubscribeFromTopic", reflect.TypeOf((*MockPubSubClient)(nil).UnsubscribeFromTopic), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnsubscribeFromTopic", reflect.TypeOf((*MockPubSubClient)(nil).UnsubscribeFromTopic), arg0, arg1)
 }

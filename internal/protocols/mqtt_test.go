@@ -1,6 +1,7 @@
 package protocols
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -92,7 +93,10 @@ func TestMQTTPubSubClient(t *testing.T) {
 	t.Run("SubscribeToTopics does nothing when monitoring isn't enabled", func(t *testing.T) {
 		mockMonitor.EXPECT().Enabled().Return(false)
 
-		err := pubSubClient.SubscribeToTopics([]string{"topic1", "topic2"})
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		err := pubSubClient.SubscribeToTopics(ctx, []string{"topic1", "topic2"})
 		if err != nil {
 			t.Errorf("Expected error to be nil, got %v", err)
 		}
@@ -100,8 +104,10 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 	t.Run("SubscribeToTopics does nothing when no topics are provided", func(t *testing.T) {
 		mockMonitor.EXPECT().Enabled().Return(true)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-		err := pubSubClient.SubscribeToTopics([]string{})
+		err := pubSubClient.SubscribeToTopics(ctx, []string{})
 		if err != nil {
 			t.Errorf("Expected error to be nil, got %v", err)
 		}
@@ -114,6 +120,9 @@ func TestMQTTPubSubClient(t *testing.T) {
 			"topic2": byte(config.QoSSub),
 		}
 
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		mockMonitor.EXPECT().Enabled().Return(true)
 
 		mockToken := NewMockMQTTToken(mockCtrl)
@@ -122,7 +131,7 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().SubscribeMultiple(expectedFilter, gomock.Any()).Return(mockToken)
 
-		err := pubSubClient.SubscribeToTopics(expectedTopics)
+		err := pubSubClient.SubscribeToTopics(ctx, expectedTopics)
 		if err != nil {
 			t.Errorf("Expected error to be nil, got %v", err)
 		}
@@ -135,6 +144,9 @@ func TestMQTTPubSubClient(t *testing.T) {
 			"topic2": byte(config.QoSSub),
 		}
 
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		mockMonitor.EXPECT().Enabled().Return(true)
 
 		mockToken := NewMockMQTTToken(mockCtrl)
@@ -142,7 +154,7 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().SubscribeMultiple(expectedFilter, gomock.Any()).Return(mockToken)
 
-		err := pubSubClient.SubscribeToTopics(expectedTopics)
+		err := pubSubClient.SubscribeToTopics(ctx, expectedTopics)
 		if err != ErrMQTTTimeout {
 			t.Errorf("Expected error to be %v, got %v", ErrMQTTTimeout, err)
 		}
@@ -155,6 +167,9 @@ func TestMQTTPubSubClient(t *testing.T) {
 			"topic2": byte(config.QoSSub),
 		}
 
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		mockMonitor.EXPECT().Enabled().Return(true)
 
 		mockToken := NewMockMQTTToken(mockCtrl)
@@ -165,24 +180,30 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().SubscribeMultiple(expectedFilter, gomock.Any()).Return(mockToken)
 
-		err := pubSubClient.SubscribeToTopics(expectedTopics)
+		err := pubSubClient.SubscribeToTopics(ctx, expectedTopics)
 		if err != expectedError {
 			t.Errorf("Expected error to be %v, got %v", expectedError, err)
 		}
 	})
 
 	t.Run("SubscribeToTopic don't do anything when monitoring isn't enabled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedTopic := "topic1"
 
 		mockMonitor.EXPECT().Enabled().Return(false)
 
-		err := pubSubClient.SubscribeToTopic(expectedTopic)
+		err := pubSubClient.SubscribeToTopic(ctx, expectedTopic)
 		if err != nil {
 			t.Errorf("Expected error to be nil, got %v", err)
 		}
 	})
 
 	t.Run("SubscribeToTopic properly call subscribe", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedTopic := "topic1"
 
 		mockMonitor.EXPECT().Enabled().Return(true)
@@ -193,13 +214,16 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Subscribe(expectedTopic, byte(config.QoSSub), gomock.Any()).Return(mockToken)
 
-		err := pubSubClient.SubscribeToTopic(expectedTopic)
+		err := pubSubClient.SubscribeToTopic(ctx, expectedTopic)
 		if err != nil {
 			t.Errorf("Expected error to be nil, got %v", err)
 		}
 	})
 
 	t.Run("SubscribeToTopic properly handle broker timeout", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedTopic := "topic1"
 
 		mockMonitor.EXPECT().Enabled().Return(true)
@@ -209,13 +233,16 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Subscribe(expectedTopic, byte(config.QoSSub), gomock.Any()).Return(mockToken)
 
-		err := pubSubClient.SubscribeToTopic(expectedTopic)
+		err := pubSubClient.SubscribeToTopic(ctx, expectedTopic)
 		if err != ErrMQTTTimeout {
 			t.Errorf("Expected error to be %v, got %v", ErrMQTTTimeout, err)
 		}
 	})
 
 	t.Run("SubscribeToTopic properly handle token error", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedTopic := "topic1"
 
 		mockMonitor.EXPECT().Enabled().Return(true)
@@ -228,24 +255,30 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Subscribe(expectedTopic, byte(config.QoSSub), gomock.Any()).Return(mockToken)
 
-		err := pubSubClient.SubscribeToTopic(expectedTopic)
+		err := pubSubClient.SubscribeToTopic(ctx, expectedTopic)
 		if err != expectedError {
 			t.Errorf("Expected error to be %v, got %v", expectedError, err)
 		}
 	})
 
 	t.Run("UnsubscribeFromTopic does nothing when monitoring isn't enabled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedTopic := "topic1"
 
 		mockMonitor.EXPECT().Enabled().Return(false)
 
-		err := pubSubClient.UnsubscribeFromTopic(expectedTopic)
+		err := pubSubClient.UnsubscribeFromTopic(ctx, expectedTopic)
 		if err != nil {
 			t.Errorf("Expected error to be nil, got %v", err)
 		}
 	})
 
 	t.Run("UnsubscribeFromTopic properly unsubscribe from broker", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedTopic := "topic1"
 
 		mockMonitor.EXPECT().Enabled().Return(true)
@@ -256,13 +289,16 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Unsubscribe(expectedTopic).Return(mockToken)
 
-		err := pubSubClient.UnsubscribeFromTopic(expectedTopic)
+		err := pubSubClient.UnsubscribeFromTopic(ctx, expectedTopic)
 		if err != nil {
 			t.Errorf("Expected error to be nil, got %v", err)
 		}
 	})
 
 	t.Run("UnsubscribeFromTopic properly handle broker timeout", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedTopic := "topic1"
 
 		mockMonitor.EXPECT().Enabled().Return(true)
@@ -272,13 +308,16 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Unsubscribe(expectedTopic).Return(mockToken)
 
-		err := pubSubClient.UnsubscribeFromTopic(expectedTopic)
+		err := pubSubClient.UnsubscribeFromTopic(ctx, expectedTopic)
 		if err != ErrMQTTTimeout {
 			t.Errorf("Expected error to be %v, got %v", ErrMQTTTimeout, err)
 		}
 	})
 
 	t.Run("UnsubscribeFromTopic properly handle token error", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedTopic := "topic1"
 
 		mockMonitor.EXPECT().Enabled().Return(true)
@@ -291,13 +330,16 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Unsubscribe(expectedTopic).Return(mockToken)
 
-		err := pubSubClient.UnsubscribeFromTopic(expectedTopic)
+		err := pubSubClient.UnsubscribeFromTopic(ctx, expectedTopic)
 		if err != expectedError {
 			t.Errorf("Expected error to be %v, got %v", expectedError, err)
 		}
 	})
 
 	t.Run("Publish properly send message to broker", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedPayload := []byte("payload")
 		expectedTopic := "topic1"
 		expectedQos := QoSExactlyOnce
@@ -308,13 +350,16 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Publish(expectedTopic, expectedQos, true, string(expectedPayload)).Return(mockToken)
 
-		err := pubSubClient.Publish(expectedPayload, expectedTopic, expectedQos)
+		err := pubSubClient.Publish(ctx, expectedPayload, expectedTopic, expectedQos)
 		if err != nil {
 			t.Errorf("Expected error to be nil, got %v", err)
 		}
 	})
 
 	t.Run("Publish properly handles broker timeout", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedPayload := []byte("payload")
 		expectedTopic := "topic1"
 		expectedQos := QoSExactlyOnce
@@ -324,13 +369,16 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Publish(expectedTopic, expectedQos, true, string(expectedPayload)).Return(mockToken)
 
-		err := pubSubClient.Publish(expectedPayload, expectedTopic, expectedQos)
+		err := pubSubClient.Publish(ctx, expectedPayload, expectedTopic, expectedQos)
 		if err != ErrMQTTTimeout {
 			t.Errorf("Expected error to be %v, got %v", ErrMQTTTimeout, err)
 		}
 	})
 
 	t.Run("Publish properly handles token error", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedPayload := []byte("payload")
 		expectedTopic := "topic1"
 		expectedQos := QoSExactlyOnce
@@ -343,7 +391,7 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Publish(expectedTopic, expectedQos, true, string(expectedPayload)).Return(mockToken)
 
-		err := pubSubClient.Publish(expectedPayload, expectedTopic, expectedQos)
+		err := pubSubClient.Publish(ctx, expectedPayload, expectedTopic, expectedQos)
 		if err != expectedError {
 			t.Errorf("Expected error to be %v, got %v", expectedError, err)
 		}

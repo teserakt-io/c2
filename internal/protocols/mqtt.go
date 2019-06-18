@@ -3,6 +3,7 @@ package protocols
 //go:generate mockgen -destination=mqtt_mocks.go -package protocols -self_package gitlab.com/teserakt/c2/internal/protocols gitlab.com/teserakt/c2/internal/protocols MQTTClient,MQTTMessage,MQTTToken
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -11,6 +12,7 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-kit/kit/log"
+	"go.opencensus.io/trace"
 
 	"gitlab.com/teserakt/c2/internal/analytics"
 	"gitlab.com/teserakt/c2/internal/config"
@@ -104,7 +106,10 @@ func (c *mqttPubSubClient) Disconnect() error {
 	return nil
 }
 
-func (c *mqttPubSubClient) SubscribeToTopics(topics []string) error {
+func (c *mqttPubSubClient) SubscribeToTopics(ctx context.Context, topics []string) error {
+	ctx, span := trace.StartSpan(ctx, "mqtt.SubscribeToTopics")
+	defer span.End()
+
 	if !c.monitor.Enabled() {
 		c.logger.Log("msg", "monitoring is not enabled, skipping topics subscription")
 		return nil
@@ -122,7 +127,7 @@ func (c *mqttPubSubClient) SubscribeToTopics(topics []string) error {
 	}
 
 	token := c.mqtt.SubscribeMultiple(filters, func(mqttClient mqtt.Client, m mqtt.Message) {
-		c.logMessage(m)
+		c.logMessage(ctx, m)
 	})
 	if !token.WaitTimeout(c.waitTimeout) {
 		c.logger.Log("msg", "subscribe-multiple failed", "topics", len(topics), "error", ErrMQTTTimeout)
@@ -138,7 +143,10 @@ func (c *mqttPubSubClient) SubscribeToTopics(topics []string) error {
 	return nil
 }
 
-func (c *mqttPubSubClient) SubscribeToTopic(topic string) error {
+func (c *mqttPubSubClient) SubscribeToTopic(ctx context.Context, topic string) error {
+	ctx, span := trace.StartSpan(ctx, "mqtt.SubscribeToTopic")
+	defer span.End()
+
 	// Only index message if monitoring enabled, i.e. if esClient is defined
 	if !c.monitor.Enabled() {
 		c.logger.Log("msg", "monitoring is not enabled, skipping topic subscription")
@@ -148,7 +156,7 @@ func (c *mqttPubSubClient) SubscribeToTopic(topic string) error {
 	logger := log.With(c.logger, "protocol", "mqtt")
 
 	token := c.mqtt.Subscribe(topic, byte(c.config.QoSSub), func(mqttClient mqtt.Client, message mqtt.Message) {
-		c.logMessage(message)
+		c.logMessage(ctx, message)
 	})
 	if !token.WaitTimeout(c.waitTimeout) {
 		logger.Log("msg", "subscribe failed", "topic", topic, "error", ErrMQTTTimeout)
@@ -165,7 +173,10 @@ func (c *mqttPubSubClient) SubscribeToTopic(topic string) error {
 	return nil
 }
 
-func (c *mqttPubSubClient) UnsubscribeFromTopic(topic string) error {
+func (c *mqttPubSubClient) UnsubscribeFromTopic(ctx context.Context, topic string) error {
+	ctx, span := trace.StartSpan(ctx, "mqtt.UnsubscribeFromTopic")
+	defer span.End()
+
 	// Only index message if monitoring enabled, i.e. if esClient is defined
 	if !c.monitor.Enabled() {
 		return nil
@@ -188,7 +199,10 @@ func (c *mqttPubSubClient) UnsubscribeFromTopic(topic string) error {
 	return nil
 }
 
-func (c *mqttPubSubClient) Publish(payload []byte, topic string, qos byte) error {
+func (c *mqttPubSubClient) Publish(ctx context.Context, payload []byte, topic string, qos byte) error {
+	ctx, span := trace.StartSpan(ctx, "mqtt.Publish")
+	defer span.End()
+
 	logger := log.With(c.logger, "protocol", "mqtt")
 
 	payloadStr := string(payload)
@@ -208,7 +222,10 @@ func (c *mqttPubSubClient) Publish(payload []byte, topic string, qos byte) error
 	return nil
 }
 
-func (c *mqttPubSubClient) logMessage(m MQTTMessage) {
+func (c *mqttPubSubClient) logMessage(ctx context.Context, m MQTTMessage) {
+	ctx, span := trace.StartSpan(ctx, "mqtt.onMessage")
+	defer span.End()
+
 	msg := analytics.LoggedMessage{
 		Timestamp:       time.Now(),
 		Duplicate:       m.Duplicate(),
@@ -242,5 +259,5 @@ func (c *mqttPubSubClient) logMessage(m MQTTMessage) {
 		}
 	}
 
-	c.monitor.OnMessage(msg)
+	c.monitor.OnMessage(ctx, msg)
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -21,6 +22,9 @@ func main() {
 	exitCode := 0
 	defer os.Exit(exitCode)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// show banner
 	if len(gitTag) == 0 {
 		fmt.Printf("E4: C2 back-end - version %s-%s\n", buildDate, gitCommit)
@@ -28,6 +32,7 @@ func main() {
 		fmt.Printf("E4: C2 back-end - version %s (%s-%s)\n", gitTag, buildDate, gitCommit)
 	}
 	fmt.Println("Copyright (c) Teserakt AG, 2018-2019")
+
 	// init logger
 	logFileName := fmt.Sprintf("/var/log/e4_c2.log")
 	logFile, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
@@ -78,10 +83,9 @@ func main() {
 	c2instance.EnableGRPCEndpoint()
 	c2instance.EnableHTTPEndpoint()
 
-	if err := c2instance.ListenAndServe(); err != nil {
-		if _, ok := err.(*c2.C2Signal); ok {
-			logger.Log("msg", err)
-			logger.Log("msg", "Done")
+	if err := c2instance.ListenAndServe(ctx); err != nil {
+		if _, ok := err.(c2.SignalError); ok {
+			logger.Log("msg", "graceful shutdown", "signal", err)
 			exitCode = 0
 			return
 		}

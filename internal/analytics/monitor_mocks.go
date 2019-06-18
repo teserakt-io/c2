@@ -5,6 +5,7 @@
 package analytics
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -47,13 +48,13 @@ func (mr *MockMessageMonitorMockRecorder) Enabled() *gomock.Call {
 }
 
 // OnMessage mocks base method
-func (m *MockMessageMonitor) OnMessage(arg0 LoggedMessage) {
+func (m *MockMessageMonitor) OnMessage(arg0 context.Context, arg1 LoggedMessage) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnMessage", arg0)
+	m.ctrl.Call(m, "OnMessage", arg0, arg1)
 }
 
 // OnMessage indicates an expected call of OnMessage
-func (mr *MockMessageMonitorMockRecorder) OnMessage(arg0 interface{}) *gomock.Call {
+func (mr *MockMessageMonitorMockRecorder) OnMessage(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnMessage", reflect.TypeOf((*MockMessageMonitor)(nil).OnMessage), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnMessage", reflect.TypeOf((*MockMessageMonitor)(nil).OnMessage), arg0, arg1)
 }

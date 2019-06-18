@@ -1,11 +1,13 @@
 package api
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -21,7 +23,7 @@ import (
 
 // HTTPServer defines methods available on a C2 HTTP server
 type HTTPServer interface {
-	ListenAndServe() error
+	ListenAndServe(ctx context.Context) error
 }
 
 type httpServer struct {
@@ -43,7 +45,7 @@ func NewHTTPServer(scfg config.ServerCfg, isProd bool, e4Service services.E4, lo
 	}
 }
 
-func (s *httpServer) ListenAndServe() error {
+func (s *httpServer) ListenAndServe(ctx context.Context) error {
 	s.logger.Log("addr", s.cfg.Addr)
 
 	tlsCert, err := tls.LoadX509KeyPair(s.cfg.Cert, s.cfg.Key)
@@ -121,7 +123,15 @@ func (s *httpServer) ListenAndServe() error {
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
 	}
 
-	return apiServer.ListenAndServeTLS(s.cfg.Cert, s.cfg.Key)
+	var lc net.ListenConfig
+	lis, err := lc.Listen(ctx, "tcp", s.cfg.Addr)
+	if err != nil {
+		s.logger.Log("msg", "failed to listen", "error", err)
+
+		return err
+	}
+
+	return apiServer.ServeTLS(lis, s.cfg.Cert, s.cfg.Key)
 }
 
 // CORS middleware
@@ -173,6 +183,7 @@ func decodeAndValidateKey(keystr string) ([]byte, error) {
 }
 
 func (s *httpServer) handleNewClient(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -188,7 +199,7 @@ func (s *httpServer) handleNewClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.e4Service.NewClient(name, nil, key); err != nil {
+	if err := s.e4Service.NewClient(ctx, name, nil, key); err != nil {
 		s.logger.Log("msg", "NewClient error", "errror", err)
 		resp.Error(err)
 		return
@@ -198,6 +209,7 @@ func (s *httpServer) handleNewClient(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) handleRemoveClientByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -207,7 +219,7 @@ func (s *httpServer) handleRemoveClientByID(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := s.e4Service.RemoveClientByID(id); err != nil {
+	if err := s.e4Service.RemoveClientByID(ctx, id); err != nil {
 		s.logger.Log("msg", "RemoveClientByID error", "errror", err)
 		resp.Error(err)
 		return
@@ -217,6 +229,7 @@ func (s *httpServer) handleRemoveClientByID(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *httpServer) handleRemoveClientByName(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -226,7 +239,7 @@ func (s *httpServer) handleRemoveClientByName(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := s.e4Service.RemoveClientByName(name); err != nil {
+	if err := s.e4Service.RemoveClientByName(ctx, name); err != nil {
 		s.logger.Log("msg", "RemoveClientByName error", "errror", err)
 		resp.Error(err)
 		return
@@ -236,6 +249,7 @@ func (s *httpServer) handleRemoveClientByName(w http.ResponseWriter, r *http.Req
 }
 
 func (s *httpServer) handleNewTopicClientByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -251,7 +265,7 @@ func (s *httpServer) handleNewTopicClientByID(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := s.e4Service.NewTopicClient("", id, topic); err != nil {
+	if err := s.e4Service.NewTopicClient(ctx, "", id, topic); err != nil {
 		s.logger.Log("msg", "NewTopicClient error", "errror", err)
 		resp.Error(err)
 		return
@@ -261,6 +275,7 @@ func (s *httpServer) handleNewTopicClientByID(w http.ResponseWriter, r *http.Req
 }
 
 func (s *httpServer) handleNewTopicClientByName(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -276,7 +291,7 @@ func (s *httpServer) handleNewTopicClientByName(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err := s.e4Service.NewTopicClient(name, nil, topic); err != nil {
+	if err := s.e4Service.NewTopicClient(ctx, name, nil, topic); err != nil {
 		s.logger.Log("msg", "NewTopicClient error", "errror", err)
 		resp.Error(err)
 		return
@@ -286,6 +301,7 @@ func (s *httpServer) handleNewTopicClientByName(w http.ResponseWriter, r *http.R
 }
 
 func (s *httpServer) handleRemoveTopicClientByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -301,7 +317,7 @@ func (s *httpServer) handleRemoveTopicClientByID(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if err := s.e4Service.RemoveTopicClientByID(id, topic); err != nil {
+	if err := s.e4Service.RemoveTopicClientByID(ctx, id, topic); err != nil {
 		s.logger.Log("msg", "RemoveTopicClientByID error", "errror", err)
 		resp.Error(err)
 		return
@@ -311,6 +327,7 @@ func (s *httpServer) handleRemoveTopicClientByID(w http.ResponseWriter, r *http.
 }
 
 func (s *httpServer) handleRemoveTopicClientByName(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -326,7 +343,7 @@ func (s *httpServer) handleRemoveTopicClientByName(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err := s.e4Service.RemoveTopicClientByName(name, topic); err != nil {
+	if err := s.e4Service.RemoveTopicClientByName(ctx, name, topic); err != nil {
 		s.logger.Log("msg", "RemoveTopicClientByName error", "error", err)
 		resp.Error(err)
 		return
@@ -336,6 +353,7 @@ func (s *httpServer) handleRemoveTopicClientByName(w http.ResponseWriter, r *htt
 }
 
 func (s *httpServer) handleResetClientByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -345,7 +363,7 @@ func (s *httpServer) handleResetClientByID(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := s.e4Service.ResetClientByID(id); err != nil {
+	if err := s.e4Service.ResetClientByID(ctx, id); err != nil {
 		s.logger.Log("msg", "ResetClientByID error", "error", err)
 		resp.Error(err)
 		return
@@ -355,6 +373,7 @@ func (s *httpServer) handleResetClientByID(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *httpServer) handleResetClientByName(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -364,7 +383,7 @@ func (s *httpServer) handleResetClientByName(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := s.e4Service.ResetClientByName(name); err != nil {
+	if err := s.e4Service.ResetClientByName(ctx, name); err != nil {
 		s.logger.Log("msg", "ResetClientByName error", "error", err)
 		resp.Error(err)
 		return
@@ -374,6 +393,7 @@ func (s *httpServer) handleResetClientByName(w http.ResponseWriter, r *http.Requ
 }
 
 func (s *httpServer) handleNewTopic(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -383,7 +403,7 @@ func (s *httpServer) handleNewTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.e4Service.NewTopic(topic); err != nil {
+	if err := s.e4Service.NewTopic(ctx, topic); err != nil {
 		s.logger.Log("msg", "NewTopic error", "error", err)
 		resp.Error(err)
 		return
@@ -393,6 +413,7 @@ func (s *httpServer) handleNewTopic(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -402,7 +423,7 @@ func (s *httpServer) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.e4Service.RemoveTopic(topic); err != nil {
+	if err := s.e4Service.RemoveTopic(ctx, topic); err != nil {
 		s.logger.Log("msg", "removeTopic error", "error", err)
 		resp.Error(err)
 		return
@@ -412,6 +433,7 @@ func (s *httpServer) handleRemoveTopic(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) handleNewClientKey(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -421,7 +443,7 @@ func (s *httpServer) handleNewClientKey(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := s.e4Service.NewClientKey(name, nil); err != nil {
+	if err := s.e4Service.NewClientKey(ctx, name, nil); err != nil {
 		resp.Success(http.StatusInternalServerError, fmt.Sprintf("newClientKey failed: %s", err))
 		return
 	}
@@ -430,9 +452,10 @@ func (s *httpServer) handleNewClientKey(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *httpServer) handleGetClients(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	resp := s.newResponse(w)
 
-	ids, err := s.e4Service.GetAllClientsAsNames()
+	ids, err := s.e4Service.GetAllClientsAsNames(ctx)
 	if err != nil {
 		s.logger.Log("msg", "GetAllClientsAsNames error", "error", err)
 		resp.Error(err)
@@ -443,9 +466,10 @@ func (s *httpServer) handleGetClients(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) handleGetTopics(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	resp := s.newResponse(w)
 
-	topics, err := s.e4Service.GetAllTopics()
+	topics, err := s.e4Service.GetAllTopics(ctx)
 	if err != nil {
 		s.logger.Log("msg", "GetAllTopics error", "error", err)
 		resp.Error(err)
@@ -456,6 +480,7 @@ func (s *httpServer) handleGetTopics(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) handleGetClientTopicCountByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -465,7 +490,7 @@ func (s *httpServer) handleGetClientTopicCountByID(w http.ResponseWriter, r *htt
 		return
 	}
 
-	count, err := s.e4Service.CountTopicsForClientByID(id)
+	count, err := s.e4Service.CountTopicsForClientByID(ctx, id)
 	if err != nil {
 		s.logger.Log("msg", "CountTopicsForClientByID error", "error", err)
 		resp.Error(err)
@@ -476,6 +501,7 @@ func (s *httpServer) handleGetClientTopicCountByID(w http.ResponseWriter, r *htt
 }
 
 func (s *httpServer) handleGetClientTopicCountByName(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -485,7 +511,7 @@ func (s *httpServer) handleGetClientTopicCountByName(w http.ResponseWriter, r *h
 		return
 	}
 
-	count, err := s.e4Service.CountTopicsForClientByName(name)
+	count, err := s.e4Service.CountTopicsForClientByName(ctx, name)
 	if err != nil {
 		s.logger.Log("msg", "CountTopicsForClientByName error", "error", err)
 		resp.Error(err)
@@ -495,6 +521,7 @@ func (s *httpServer) handleGetClientTopicCountByName(w http.ResponseWriter, r *h
 }
 
 func (s *httpServer) handleGetClientTopicsByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -515,7 +542,7 @@ func (s *httpServer) handleGetClientTopicsByID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	topics, err := s.e4Service.GetTopicsForClientByID(id, int(offset), int(count))
+	topics, err := s.e4Service.GetTopicsForClientByID(ctx, id, int(offset), int(count))
 	if err != nil {
 		s.logger.Log("msg", "GetTopicsForClientByID error", "error", err)
 		resp.Error(err)
@@ -526,6 +553,7 @@ func (s *httpServer) handleGetClientTopicsByID(w http.ResponseWriter, r *http.Re
 }
 
 func (s *httpServer) handleGetClientTopicsByName(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
@@ -547,7 +575,7 @@ func (s *httpServer) handleGetClientTopicsByName(w http.ResponseWriter, r *http.
 		return
 	}
 
-	topics, err := s.e4Service.GetTopicsForClientByName(name, int(offset), int(count))
+	topics, err := s.e4Service.GetTopicsForClientByName(ctx, name, int(offset), int(count))
 	if err != nil {
 		s.logger.Log("msg", "GetTopicsForClientByName error", "error", err)
 		resp.Error(err)
@@ -558,6 +586,7 @@ func (s *httpServer) handleGetClientTopicsByName(w http.ResponseWriter, r *http.
 }
 
 func (s *httpServer) handleGetTopicClientCount(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	resp := s.newResponse(w)
 	params := mux.Vars(r)
 
@@ -567,7 +596,7 @@ func (s *httpServer) handleGetTopicClientCount(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	count, err := s.e4Service.CountClientsForTopic(topic)
+	count, err := s.e4Service.CountClientsForTopic(ctx, topic)
 	if err != nil {
 		s.logger.Log("msg", "GetClientsByNameForTopic error", "error", err)
 		resp.Error(err)
@@ -578,6 +607,7 @@ func (s *httpServer) handleGetTopicClientCount(w http.ResponseWriter, r *http.Re
 }
 
 func (s *httpServer) handleGetTopicClients(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	resp := s.newResponse(w)
 	params := mux.Vars(r)
 
@@ -597,7 +627,7 @@ func (s *httpServer) handleGetTopicClients(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	clients, err := s.e4Service.GetClientsByNameForTopic(topic, int(offset), int(count))
+	clients, err := s.e4Service.GetClientsByNameForTopic(ctx, topic, int(offset), int(count))
 	if err != nil {
 		s.logger.Log("msg", "GetClientsByNameForTopic error", "error", err)
 		resp.Error(err)
@@ -607,6 +637,7 @@ func (s *httpServer) handleGetTopicClients(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *httpServer) handleSendMessage(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -618,7 +649,7 @@ func (s *httpServer) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.e4Service.SendMessage(topic, message); err != nil {
+	if err := s.e4Service.SendMessage(ctx, topic, message); err != nil {
 		s.logger.Log("msg", "SendMessage error", "error", err)
 		resp.Error(err)
 		return
@@ -628,9 +659,10 @@ func (s *httpServer) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) handleGetTopicCount(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	resp := s.newResponse(w)
 
-	count, err := s.e4Service.CountTopics()
+	count, err := s.e4Service.CountTopics(ctx)
 	if err != nil {
 		s.logger.Log("msg", "CountTopics error", "error", err)
 		resp.Error(err)
@@ -641,6 +673,7 @@ func (s *httpServer) handleGetTopicCount(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *httpServer) handleGetTopicsPaginated(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -655,7 +688,7 @@ func (s *httpServer) handleGetTopicsPaginated(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	topics, err := s.e4Service.GetTopicsRange(int(offset), int(count))
+	topics, err := s.e4Service.GetTopicsRange(ctx, int(offset), int(count))
 	if err != nil {
 		s.logger.Log("msg", "GetTopicsRange error", "error", err)
 		resp.Error(err)
@@ -666,9 +699,10 @@ func (s *httpServer) handleGetTopicsPaginated(w http.ResponseWriter, r *http.Req
 }
 
 func (s *httpServer) handleGetClientsCount(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	resp := s.newResponse(w)
 
-	count, err := s.e4Service.CountClients()
+	count, err := s.e4Service.CountClients(ctx)
 	if err != nil {
 		s.logger.Log("msg", "CountClients error", "error", err)
 		resp.Error(err)
@@ -679,6 +713,7 @@ func (s *httpServer) handleGetClientsCount(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *httpServer) handleGetClientsPaginated(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	params := mux.Vars(r)
 	resp := s.newResponse(w)
 
@@ -693,7 +728,7 @@ func (s *httpServer) handleGetClientsPaginated(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	clients, err := s.e4Service.GetClientsAsNamesRange(int(offset), int(count))
+	clients, err := s.e4Service.GetClientsAsNamesRange(ctx, int(offset), int(count))
 	if err != nil {
 		s.logger.Log("msg", "GetClientsAsNamesRange error", "error", err)
 		resp.Error(err)

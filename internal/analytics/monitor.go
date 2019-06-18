@@ -13,7 +13,7 @@ import (
 
 // MessageMonitor defines an interface able to monitor C2 messages
 type MessageMonitor interface {
-	OnMessage(msg LoggedMessage)
+	OnMessage(ctx context.Context, msg LoggedMessage)
 	Enabled() bool
 }
 
@@ -40,7 +40,7 @@ func (m *esMessageMonitor) Enabled() bool {
 	return m.enabled
 }
 
-func (m *esMessageMonitor) OnMessage(msg LoggedMessage) {
+func (m *esMessageMonitor) OnMessage(ctx context.Context, msg LoggedMessage) {
 	if !m.enabled {
 		m.logger.Log("msg", "message monitoring is not enabled, skipping logging.")
 		return
@@ -49,7 +49,7 @@ func (m *esMessageMonitor) OnMessage(msg LoggedMessage) {
 	index := fmt.Sprintf("%s-%s", m.esIndexName, time.Now().Format("2006.01.02"))
 	_, err := m.esClient.Index().Index(index).Type("message").
 		BodyJson(msg).
-		Do(context.Background())
+		Do(ctx)
 	if err != nil {
 		m.logger.Log("msg", "failed to send LoggedMessage to elasticSearch", "error", err, "loggedMessage", msg)
 		return

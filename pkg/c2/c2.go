@@ -1,6 +1,7 @@
 package c2
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	stdlog "log"
@@ -22,9 +23,14 @@ import (
 	e4 "gitlab.com/teserakt/e4common"
 )
 
+// C2 Errors
+var (
+	ErrSubscribeExisting = errors.New("Failed to subscribe to existing topics")
+)
+
 // APIEndpoint defines an interface that all C2 api endpoints must implement
 type APIEndpoint interface {
-	ListenAndServe() error
+	ListenAndServe(ctx context.Context) error
 }
 
 // C2 ...
@@ -38,15 +44,13 @@ type C2 struct {
 	endpoints []APIEndpoint
 }
 
-type C2Signal struct {
+// SignalError type system signals to an error
+// Used to determine the proper exit code
+type SignalError struct {
 	text string
 }
 
-func c2SignalOnErrorChannel(text string) *C2Signal {
-	return &C2Signal{text}
-}
-
-func (e *C2Signal) Error() string {
+func (e SignalError) Error() string {
 	return e.text
 }
 
@@ -179,44 +183,69 @@ func (c *C2) EnableGRPCEndpoint() {
 }
 
 // ListenAndServe will start C2
-func (c *C2) ListenAndServe() error {
+func (c *C2) ListenAndServe(ctx context.Context) error {
 	if len(c.endpoints) == 0 {
 		return errors.New("no configured endpoints to serve C2")
 	}
 
-	// subscribe to topics in the DB if not already done
-	// TODO: this will fetch *everything* from the database
-	// perhaps we should do something more reasonable here
-	// such as use the pagination APIs.
-	topics, err := c.e4Service.GetAllTopicsUnsafe()
-	if err != nil {
-		c.logger.Log("msg", "Failed to fetch all existing topics", "error", err)
-
-		return fmt.Errorf("Failed to fetch all existing topics: %v", err)
-	}
-
-	if err := c.pubSubClient.SubscribeToTopics(topics); err != nil {
-		c.logger.Log("msg", "Subscribing to all existing topics failed", "error", err)
-
-		return fmt.Errorf("Subscribing to all existing topics failed: %v", err)
-	}
-
 	// create critical error channel
 	errc := make(chan error)
+
+	if c.cfg.ES.IsMessageLoggingEnabled() {
+		go func() {
+			topicCount, err := c.e4Service.CountTopics(ctx)
+			if err != nil {
+				c.logger.Log("msg", "Failed to count topics", "error", err)
+				errc <- ErrSubscribeExisting
+				return
+			}
+
+			offset := 0
+			batchSize := 100
+			for offset < topicCount {
+				topics, err := c.e4Service.GetTopicsRange(ctx, offset, batchSize)
+				if err != nil {
+					c.logger.Log("msg", "Failed to get topic batch", "error", err, "offset", offset, "batchSize", batchSize)
+					errc <- ErrSubscribeExisting
+					return
+				}
+
+				if err := c.pubSubClient.SubscribeToTopics(ctx, topics); err != nil {
+					c.logger.Log("msg", "Subscribing to all existing topics failed", "error", err)
+					errc <- ErrSubscribeExisting
+					return
+				}
+
+				offset += batchSize
+			}
+
+			c.logger.Log("msg", "subscribed to all topics", "count", topicCount)
+		}()
+	} else {
+		c.logger.Log("msg", "message monitoring is not enabled, skipping global subscription")
+	}
+
 	go func() {
 		var sigc = make(chan os.Signal, 1)
 		signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 
-		// errc <- fmt.Errorf("%v", <-sigc)
-		sigerrtxt := fmt.Sprintf("%v", <-sigc)
-		errc <- c2SignalOnErrorChannel(sigerrtxt)
+		select {
+		case errc <- SignalError{fmt.Sprintf("%v", <-sigc)}:
+		case <-ctx.Done():
+			return
+		}
 	}()
 
 	for _, endpoint := range c.endpoints {
 		go func(endpoint APIEndpoint) {
-			errc <- endpoint.ListenAndServe()
+			errc <- endpoint.ListenAndServe(ctx)
 		}(endpoint)
 	}
 
-	return <-errc
+	select {
+	case err := <-errc:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }

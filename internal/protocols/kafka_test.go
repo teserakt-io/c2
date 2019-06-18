@@ -1,6 +1,7 @@
 package protocols
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -118,6 +119,9 @@ func TestKafkaPubSubClient(t *testing.T) {
 			t.Fatalf("failed to connect client")
 		}
 
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedTopic1 := "topic1"
 		expectedTopic2 := "topic2"
 		expectedTopic3 := "topic3"
@@ -127,11 +131,11 @@ func TestKafkaPubSubClient(t *testing.T) {
 		expectedMessage3 := []byte("message_3")
 		expectedMessage4 := []byte("message_4")
 
-		if err := kafkaClient.SubscribeToTopic(expectedTopic1); err != nil {
+		if err := kafkaClient.SubscribeToTopic(ctx, expectedTopic1); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		if err := kafkaClient.SubscribeToTopics([]string{expectedTopic2, expectedTopic3}); err != nil {
+		if err := kafkaClient.SubscribeToTopics(ctx, []string{expectedTopic2, expectedTopic3}); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
@@ -156,21 +160,21 @@ func TestKafkaPubSubClient(t *testing.T) {
 			IsUTF8:  true,
 		}
 
-		mockMonitor.EXPECT().OnMessage(expectedLoggedMessage1)
-		mockMonitor.EXPECT().OnMessage(expectedLoggedMessage2)
-		mockMonitor.EXPECT().OnMessage(expectedLoggedMessage3)
-		mockMonitor.EXPECT().OnMessage(expectedLoggedMessage4)
+		mockMonitor.EXPECT().OnMessage(ctx, expectedLoggedMessage1)
+		mockMonitor.EXPECT().OnMessage(ctx, expectedLoggedMessage2)
+		mockMonitor.EXPECT().OnMessage(ctx, expectedLoggedMessage3)
+		mockMonitor.EXPECT().OnMessage(ctx, expectedLoggedMessage4)
 
-		if err := kafkaClient.Publish(expectedMessage1, expectedTopic1, byte(0)); err != nil {
+		if err := kafkaClient.Publish(ctx, expectedMessage1, expectedTopic1, byte(0)); err != nil {
 			t.Errorf("failed to publish, expected no error, got %v", err)
 		}
-		if err := kafkaClient.Publish(expectedMessage2, expectedTopic2, byte(0)); err != nil {
+		if err := kafkaClient.Publish(ctx, expectedMessage2, expectedTopic2, byte(0)); err != nil {
 			t.Errorf("failed to publish, expected no error, got %v", err)
 		}
-		if err := kafkaClient.Publish(expectedMessage3, expectedTopic3, byte(0)); err != nil {
+		if err := kafkaClient.Publish(ctx, expectedMessage3, expectedTopic3, byte(0)); err != nil {
 			t.Errorf("failed to publish, expected no error, got %v", err)
 		}
-		if err := kafkaClient.Publish(expectedMessage4, expectedTopic3, byte(0)); err != nil {
+		if err := kafkaClient.Publish(ctx, expectedMessage4, expectedTopic3, byte(0)); err != nil {
 			t.Errorf("failed to publish, expected no error, got %v", err)
 		}
 
@@ -184,8 +188,11 @@ func TestKafkaPubSubClient(t *testing.T) {
 			t.Fatalf("failed to connect client")
 		}
 
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedTopic := "e4/topicWithSlash"
-		if err := kafkaClient.SubscribeToTopic(expectedTopic); err != nil {
+		if err := kafkaClient.SubscribeToTopic(ctx, expectedTopic); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
@@ -196,9 +203,9 @@ func TestKafkaPubSubClient(t *testing.T) {
 			Payload: expectedMessage,
 			IsUTF8:  true,
 		}
-		mockMonitor.EXPECT().OnMessage(expectedLoggedMessage)
+		mockMonitor.EXPECT().OnMessage(ctx, expectedLoggedMessage)
 
-		if err := kafkaClient.Publish(expectedMessage, expectedTopic, byte(0)); err != nil {
+		if err := kafkaClient.Publish(ctx, expectedMessage, expectedTopic, byte(0)); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
@@ -212,9 +219,12 @@ func TestKafkaPubSubClient(t *testing.T) {
 			t.Fatalf("failed to connect client")
 		}
 
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		expectedTopic := "e4/topic1"
 
-		if err := kafkaClient.SubscribeToTopic(expectedTopic); err != nil {
+		if err := kafkaClient.SubscribeToTopic(ctx, expectedTopic); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
@@ -222,7 +232,7 @@ func TestKafkaPubSubClient(t *testing.T) {
 			t.Errorf("Expected topic to be in subscription list, got %#v", kafkaClient.subscribedTopics)
 		}
 
-		if err := kafkaClient.UnsubscribeFromTopic(expectedTopic); err != nil {
+		if err := kafkaClient.UnsubscribeFromTopic(ctx, expectedTopic); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 

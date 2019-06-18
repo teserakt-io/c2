@@ -2,10 +2,12 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"fmt"
 
 	"github.com/go-kit/kit/log"
+	"go.opencensus.io/trace"
 
 	"gitlab.com/teserakt/c2/internal/commands"
 	"gitlab.com/teserakt/c2/internal/models"
@@ -40,44 +42,44 @@ import (
 type E4 interface {
 
 	// Client Only Manipulation
-	NewClient(name string, id, key []byte) error
-	NewClientKey(name string, id []byte) error
-	RemoveClientByID(id []byte) error
-	RemoveClientByName(name string) error
-	ResetClientByID(id []byte) error
-	ResetClientByName(name string) error
-	GetAllClientsAsHexIDs() ([]string, error)
-	GetAllClientsAsNames() ([]string, error)
-	GetClientsAsHexIDsRange(offset, count int) ([]string, error)
-	GetClientsAsNamesRange(offset, count int) ([]string, error)
-	CountClients() (int, error)
+	NewClient(ctx context.Context, name string, id, key []byte) error
+	NewClientKey(ctx context.Context, name string, id []byte) error
+	RemoveClientByID(ctx context.Context, id []byte) error
+	RemoveClientByName(ctx context.Context, name string) error
+	ResetClientByID(ctx context.Context, id []byte) error
+	ResetClientByName(ctx context.Context, name string) error
+	GetAllClientsAsHexIDs(ctx context.Context) ([]string, error)
+	GetAllClientsAsNames(ctx context.Context) ([]string, error)
+	GetClientsAsHexIDsRange(ctx context.Context, offset, count int) ([]string, error)
+	GetClientsAsNamesRange(ctx context.Context, offset, count int) ([]string, error)
+	CountClients(ctx context.Context) (int, error)
 
 	// Individual Topic Manipulaton
-	NewTopic(topic string) error
-	RemoveTopic(topic string) error
-	GetTopicsRange(offset, count int) ([]string, error)
-	GetAllTopics() ([]string, error)
-	GetAllTopicsUnsafe() ([]string, error)
-	CountTopics() (int, error)
+	NewTopic(ctx context.Context, topic string) error
+	RemoveTopic(ctx context.Context, topic string) error
+	GetTopicsRange(ctx context.Context, offset, count int) ([]string, error)
+	GetAllTopics(ctx context.Context) ([]string, error)
+	GetAllTopicsUnsafe(ctx context.Context) ([]string, error)
+	CountTopics(ctx context.Context) (int, error)
 
 	// Linking, removing topic-client mappings:
-	NewTopicClient(name string, id []byte, topic string) error
-	RemoveTopicClientByID(id []byte, topic string) error
-	RemoveTopicClientByName(name string, topic string) error
+	NewTopicClient(ctx context.Context, name string, id []byte, topic string) error
+	RemoveTopicClientByID(ctx context.Context, id []byte, topic string) error
+	RemoveTopicClientByName(ctx context.Context, name string, topic string) error
 
 	// > Counting topics per client, or clients per topic.
-	CountTopicsForClientByID(id []byte) (int, error)
-	CountTopicsForClientByName(name string) (int, error)
-	CountClientsForTopic(topic string) (int, error)
+	CountTopicsForClientByID(ctx context.Context, id []byte) (int, error)
+	CountTopicsForClientByName(ctx context.Context, name string) (int, error)
+	CountClientsForTopic(ctx context.Context, topic string) (int, error)
 
 	// > Retrieving clients per topic or topics per client
-	GetTopicsForClientByID(id []byte, offset, count int) ([]string, error)
-	GetTopicsForClientByName(name string, offset, count int) ([]string, error)
-	GetClientsByNameForTopic(topic string, offset, count int) ([]string, error)
-	GetClientsByIDForTopic(topic string, offset, count int) ([]string, error)
+	GetTopicsForClientByID(ctx context.Context, id []byte, offset, count int) ([]string, error)
+	GetTopicsForClientByName(ctx context.Context, name string, offset, count int) ([]string, error)
+	GetClientsByNameForTopic(ctx context.Context, topic string, offset, count int) ([]string, error)
+	GetClientsByIDForTopic(ctx context.Context, topic string, offset, count int) ([]string, error)
 
 	// Communications
-	SendMessage(topic, msg string) error
+	SendMessage(ctx context.Context, topic, msg string) error
 }
 
 type e4impl struct {
@@ -135,7 +137,10 @@ func validateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
 	return id, nil
 }
 
-func (s *e4impl) NewClient(name string, id, key []byte) error {
+func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) error {
+	ctx, span := trace.StartSpan(ctx, "e4.NewClient")
+	defer span.End()
+
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClient")
 
 	newID, err := validateE4NameOrIDPair(name, id)
@@ -160,7 +165,10 @@ func (s *e4impl) NewClient(name string, id, key []byte) error {
 	return nil
 }
 
-func (s *e4impl) RemoveClientByID(id []byte) error {
+func (s *e4impl) RemoveClientByID(ctx context.Context, id []byte) error {
+	ctx, span := trace.StartSpan(ctx, "e4.RemoveClientByID")
+	defer span.End()
+
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeClient")
 
 	err := s.db.DeleteClientByID(id)
@@ -172,12 +180,18 @@ func (s *e4impl) RemoveClientByID(id []byte) error {
 	return nil
 }
 
-func (s *e4impl) RemoveClientByName(name string) error {
+func (s *e4impl) RemoveClientByName(ctx context.Context, name string) error {
+	ctx, span := trace.StartSpan(ctx, "e4.RemoveClientByName")
+	defer span.End()
+
 	id := e4.HashIDAlias(name)
-	return s.RemoveClientByID(id)
+	return s.RemoveClientByID(ctx, id)
 }
 
-func (s *e4impl) NewTopicClient(name string, id []byte, topic string) error {
+func (s *e4impl) NewTopicClient(ctx context.Context, name string, id []byte, topic string) error {
+	ctx, span := trace.StartSpan(ctx, "e4.NewTopicClient")
+	defer span.End()
+
 	logger := log.With(s.logger, "protocol", "e4", "command", "newTopicClient")
 
 	if name != "" && len(id) == 0 {
@@ -214,7 +228,7 @@ func (s *e4impl) NewTopicClient(name string, id []byte, topic string) error {
 		return err
 	}
 
-	err = s.sendCommandToClient(command, client)
+	err = s.sendCommandToClient(ctx, command, client)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
@@ -235,7 +249,10 @@ func (s *e4impl) NewTopicClient(name string, id []byte, topic string) error {
 	return nil
 }
 
-func (s *e4impl) RemoveTopicClientByID(id []byte, topic string) error {
+func (s *e4impl) RemoveTopicClientByID(ctx context.Context, id []byte, topic string) error {
+	ctx, span := trace.StartSpan(ctx, "e4.RemoveTopicClientByID")
+	defer span.End()
+
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopicClient")
 
 	client, err := s.db.GetClientByID(id)
@@ -256,7 +273,7 @@ func (s *e4impl) RemoveTopicClientByID(id []byte, topic string) error {
 		return err
 	}
 
-	err = s.sendCommandToClient(command, client)
+	err = s.sendCommandToClient(ctx, command, client)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
@@ -273,12 +290,18 @@ func (s *e4impl) RemoveTopicClientByID(id []byte, topic string) error {
 	return nil
 }
 
-func (s *e4impl) RemoveTopicClientByName(name string, topic string) error {
+func (s *e4impl) RemoveTopicClientByName(ctx context.Context, name string, topic string) error {
+	ctx, span := trace.StartSpan(ctx, "e4.RemoveTopicClientByName")
+	defer span.End()
+
 	id := e4.HashIDAlias(name)
-	return s.RemoveTopicClientByID(id, topic)
+	return s.RemoveTopicClientByID(ctx, id, topic)
 }
 
-func (s *e4impl) ResetClientByID(id []byte) error {
+func (s *e4impl) ResetClientByID(ctx context.Context, id []byte) error {
+	ctx, span := trace.StartSpan(ctx, "e4.ResetClientByID")
+	defer span.End()
+
 	logger := log.With(s.logger, "protocol", "e4", "command", "resetClient")
 
 	client, err := s.db.GetClientByID(id)
@@ -293,7 +316,7 @@ func (s *e4impl) ResetClientByID(id []byte) error {
 		return err
 	}
 
-	err = s.sendCommandToClient(command, client)
+	err = s.sendCommandToClient(ctx, command, client)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
@@ -304,12 +327,18 @@ func (s *e4impl) ResetClientByID(id []byte) error {
 	return nil
 }
 
-func (s *e4impl) ResetClientByName(name string) error {
+func (s *e4impl) ResetClientByName(ctx context.Context, name string) error {
+	ctx, span := trace.StartSpan(ctx, "e4.ResetClientByName")
+	defer span.End()
+
 	id := e4.HashIDAlias(name)
-	return s.ResetClientByID(id)
+	return s.ResetClientByID(ctx, id)
 }
 
-func (s *e4impl) NewTopic(topic string) error {
+func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
+	ctx, span := trace.StartSpan(ctx, "e4.NewTopic")
+	defer span.End()
+
 	logger := log.With(s.logger, "protocol", "e4", "command", "newTopic")
 
 	key := e4.RandomKey()
@@ -325,7 +354,7 @@ func (s *e4impl) NewTopic(topic string) error {
 	}
 	logger.Log("msg", "insertTopicKey succeeded", "topic", topic)
 
-	err = s.pubSubClient.SubscribeToTopic(topic) // Monitoring
+	err = s.pubSubClient.SubscribeToTopic(ctx, topic) // Monitoring
 	if err != nil {
 		logger.Log("msg", "subscribeToTopic failed", "topic", topic, "error", err)
 		return err
@@ -335,10 +364,13 @@ func (s *e4impl) NewTopic(topic string) error {
 	return nil
 }
 
-func (s *e4impl) RemoveTopic(topic string) error {
+func (s *e4impl) RemoveTopic(ctx context.Context, topic string) error {
+	ctx, span := trace.StartSpan(ctx, "e4.RemoveTopic")
+	defer span.End()
+
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopic")
 
-	err := s.pubSubClient.UnsubscribeFromTopic(topic) // Monitoring
+	err := s.pubSubClient.UnsubscribeFromTopic(ctx, topic) // Monitoring
 	if err != nil {
 		logger.Log("msg", "unsubscribeFromTopic failed", "error", err)
 	} else {
@@ -355,7 +387,10 @@ func (s *e4impl) RemoveTopic(topic string) error {
 }
 
 // SendMessage allows to publish an E4 protected message on the given topic
-func (s *e4impl) SendMessage(topic, msg string) error {
+func (s *e4impl) SendMessage(ctx context.Context, topic, msg string) error {
+	ctx, span := trace.StartSpan(ctx, "e4.SendMessage")
+	defer span.End()
+
 	logger := log.With(s.logger, "protocol", "e4", "command", "sendMessage")
 
 	topicKey, err := s.db.GetTopicKey(topic)
@@ -375,7 +410,7 @@ func (s *e4impl) SendMessage(topic, msg string) error {
 		logger.Log("msg", "Protect failed", "error", err)
 		return err
 	}
-	err = s.pubSubClient.Publish(payload, topic, protocols.QoSAtMostOnce)
+	err = s.pubSubClient.Publish(ctx, payload, topic, protocols.QoSAtMostOnce)
 	if err != nil {
 		logger.Log("msg", "publish failed", "error", err)
 		return err
@@ -386,7 +421,10 @@ func (s *e4impl) SendMessage(topic, msg string) error {
 }
 
 // NewClientKey will generate a new client key, send it to the client, and update the database.
-func (s *e4impl) NewClientKey(name string, id []byte) error {
+func (s *e4impl) NewClientKey(ctx context.Context, name string, id []byte) error {
+	ctx, span := trace.StartSpan(ctx, "e4.NewClientKey")
+	defer span.End()
+
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClientKey")
 
 	newID, err := validateE4NameOrIDPair(name, id)
@@ -408,7 +446,7 @@ func (s *e4impl) NewClientKey(name string, id []byte) error {
 		return err
 	}
 
-	err = s.sendCommandToClient(command, client)
+	err = s.sendCommandToClient(ctx, command, client)
 	if err != nil {
 		logger.Log("msg", "sendCommandToClient failed", "error", err)
 		return err
@@ -430,7 +468,10 @@ func (s *e4impl) NewClientKey(name string, id []byte) error {
 }
 
 // GetAllTopics will returns up to models.QueryLimit topics
-func (s *e4impl) GetAllTopics() ([]string, error) {
+func (s *e4impl) GetAllTopics(ctx context.Context) ([]string, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.GetAllTopics")
+	defer span.End()
+
 	topicKeys, err := s.db.GetAllTopics()
 	if err != nil {
 		return nil, err
@@ -445,7 +486,10 @@ func (s *e4impl) GetAllTopics() ([]string, error) {
 
 // GetAllTopicsUnsafe returns *all* topics and should not be used
 // from *ANY* API endpoint. This is for internal use only.
-func (s *e4impl) GetAllTopicsUnsafe() ([]string, error) {
+func (s *e4impl) GetAllTopicsUnsafe(ctx context.Context) ([]string, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.GetAllTopicsUnsafe")
+	defer span.End()
+
 	topicKeys, err := s.db.GetAllTopicsUnsafe()
 	if err != nil {
 		return nil, err
@@ -459,7 +503,10 @@ func (s *e4impl) GetAllTopicsUnsafe() ([]string, error) {
 }
 
 // GetAllClientsAsHexIDs returns up to models.QueryLimit client IDs, as hexadecimal string
-func (s *e4impl) GetAllClientsAsHexIDs() ([]string, error) {
+func (s *e4impl) GetAllClientsAsHexIDs(ctx context.Context) ([]string, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.GetAllClientsAsHexIDs")
+	defer span.End()
+
 	clients, err := s.db.GetAllClients()
 	if err != nil {
 		return nil, err
@@ -474,7 +521,10 @@ func (s *e4impl) GetAllClientsAsHexIDs() ([]string, error) {
 }
 
 // GetAllClientsAsNames will retrieve up to models.QueryLimit client names.
-func (s *e4impl) GetAllClientsAsNames() ([]string, error) {
+func (s *e4impl) GetAllClientsAsNames(ctx context.Context) ([]string, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.GetAllClientsAsNames")
+	defer span.End()
+
 	clients, err := s.db.GetAllClients()
 	if err != nil {
 		return nil, err
@@ -490,7 +540,10 @@ func (s *e4impl) GetAllClientsAsNames() ([]string, error) {
 
 // GetClientsAsHexIDsRange allow to retrieve up to `count` clients IDs, as hex encoded string, starting from `offset`.
 // The total count can be retrieved from CountClients()
-func (s *e4impl) GetClientsAsHexIDsRange(offset, count int) ([]string, error) {
+func (s *e4impl) GetClientsAsHexIDsRange(ctx context.Context, offset, count int) ([]string, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.GetClientsAsHexIDsRange")
+	defer span.End()
+
 	clients, err := s.db.GetClientsRange(offset, count)
 	if err != nil {
 		return nil, err
@@ -504,7 +557,10 @@ func (s *e4impl) GetClientsAsHexIDsRange(offset, count int) ([]string, error) {
 	return hexids, nil
 }
 
-func (s *e4impl) GetClientsAsNamesRange(offset, count int) ([]string, error) {
+func (s *e4impl) GetClientsAsNamesRange(ctx context.Context, offset, count int) ([]string, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.GetClientsAsNamesRange")
+	defer span.End()
+
 	clients, err := s.db.GetClientsRange(offset, count)
 	if err != nil {
 		return nil, err
@@ -518,7 +574,10 @@ func (s *e4impl) GetClientsAsNamesRange(offset, count int) ([]string, error) {
 	return names, nil
 }
 
-func (s *e4impl) GetTopicsRange(offset, count int) ([]string, error) {
+func (s *e4impl) GetTopicsRange(ctx context.Context, offset, count int) ([]string, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.GetTopicsRange")
+	defer span.End()
+
 	topics, err := s.db.GetTopicsRange(offset, count)
 	if err != nil {
 		return nil, err
@@ -532,24 +591,39 @@ func (s *e4impl) GetTopicsRange(offset, count int) ([]string, error) {
 	return topicnames, nil
 }
 
-func (s *e4impl) CountClients() (int, error) {
+func (s *e4impl) CountClients(ctx context.Context) (int, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.CountClients")
+	defer span.End()
+
 	return s.db.CountClients()
 }
 
-func (s *e4impl) CountTopics() (int, error) {
+func (s *e4impl) CountTopics(ctx context.Context) (int, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.CountTopics")
+	defer span.End()
+
 	return s.db.CountTopicKeys()
 }
 
-func (s *e4impl) CountTopicsForClientByID(id []byte) (int, error) {
+func (s *e4impl) CountTopicsForClientByID(ctx context.Context, id []byte) (int, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.CountTopicsForClientByID")
+	defer span.End()
+
 	return s.db.CountTopicsForClientByID(id)
 }
 
-func (s *e4impl) CountTopicsForClientByName(name string) (int, error) {
+func (s *e4impl) CountTopicsForClientByName(ctx context.Context, name string) (int, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.CountTopicsForClientByName")
+	defer span.End()
+
 	id := e4.HashIDAlias(name)
-	return s.CountTopicsForClientByID(id)
+	return s.CountTopicsForClientByID(ctx, id)
 }
 
-func (s *e4impl) GetTopicsForClientByID(id []byte, offset, count int) ([]string, error) {
+func (s *e4impl) GetTopicsForClientByID(ctx context.Context, id []byte, offset, count int) ([]string, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.GetTopicsForClientByID")
+	defer span.End()
+
 	topicKeys, err := s.db.GetTopicsForClientByID(id, offset, count)
 	if err != nil {
 		return nil, err
@@ -563,16 +637,25 @@ func (s *e4impl) GetTopicsForClientByID(id []byte, offset, count int) ([]string,
 	return topics, nil
 }
 
-func (s *e4impl) GetTopicsForClientByName(name string, offset, count int) ([]string, error) {
+func (s *e4impl) GetTopicsForClientByName(ctx context.Context, name string, offset, count int) ([]string, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.GetTopicsForClientByName")
+	defer span.End()
+
 	id := e4.HashIDAlias(name)
-	return s.GetTopicsForClientByID(id, offset, count)
+	return s.GetTopicsForClientByID(ctx, id, offset, count)
 }
 
-func (s *e4impl) CountClientsForTopic(topic string) (int, error) {
+func (s *e4impl) CountClientsForTopic(ctx context.Context, topic string) (int, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.CountClientsForTopic")
+	defer span.End()
+
 	return s.db.CountClientsForTopic(topic)
 }
 
-func (s *e4impl) GetClientsByNameForTopic(topic string, offset, count int) ([]string, error) {
+func (s *e4impl) GetClientsByNameForTopic(ctx context.Context, topic string, offset, count int) ([]string, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.GetClientsByNameForTopic")
+	defer span.End()
+
 	clients, err := s.db.GetClientsForTopic(topic, offset, count)
 	if err != nil {
 		return nil, err
@@ -590,7 +673,10 @@ func (s *e4impl) GetClientsByNameForTopic(topic string, offset, count int) ([]st
 // GetClientsByIDForTopic returns a batch of client E4IDs which are subscribed to given topic
 // The total count can be retrieved with CountClientsForTopic(), and offset / count must be provided
 // to retrieve subset of client E4IDs
-func (s *e4impl) GetClientsByIDForTopic(topic string, offset, count int) ([]string, error) {
+func (s *e4impl) GetClientsByIDForTopic(ctx context.Context, topic string, offset, count int) ([]string, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.GetClientsByIDForTopic")
+	defer span.End()
+
 	clients, err := s.db.GetClientsForTopic(topic, offset, count)
 	if err != nil {
 		return nil, err
@@ -604,7 +690,10 @@ func (s *e4impl) GetClientsByIDForTopic(topic string, offset, count int) ([]stri
 	return ids, nil
 }
 
-func (s *e4impl) sendCommandToClient(command commands.Command, client models.Client) error {
+func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Command, client models.Client) error {
+	ctx, span := trace.StartSpan(ctx, "e4.sendCommandToClient")
+	defer span.End()
+
 	clearKey, err := client.DecryptKey(s.keyenckey)
 	if err != nil {
 		return fmt.Errorf("failed to decrypt client: %v", err)
@@ -615,7 +704,7 @@ func (s *e4impl) sendCommandToClient(command commands.Command, client models.Cli
 		return fmt.Errorf("failed to protected command: %v", err)
 	}
 
-	return s.pubSubClient.Publish(payload, client.Topic(), protocols.QoSExactlyOnce)
+	return s.pubSubClient.Publish(ctx, payload, client.Topic(), protocols.QoSExactlyOnce)
 }
 
 // IsErrRecordNotFound indiquate whenever error is a RecordNotFound error

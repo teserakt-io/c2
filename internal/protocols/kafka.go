@@ -1,6 +1,7 @@
 package protocols
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/go-kit/kit/log"
+	"go.opencensus.io/trace"
 
 	"gitlab.com/teserakt/c2/internal/analytics"
 	"gitlab.com/teserakt/c2/internal/config"
@@ -98,9 +100,12 @@ func (c *kafkaPubSubClient) Disconnect() error {
 	return nil
 }
 
-func (c *kafkaPubSubClient) SubscribeToTopics(topics []string) error {
+func (c *kafkaPubSubClient) SubscribeToTopics(ctx context.Context, topics []string) error {
+	ctx, span := trace.StartSpan(ctx, "kafka.SubscribeToTopics")
+	defer span.End()
+
 	for _, topic := range topics {
-		if err := c.SubscribeToTopic(topic); err != nil {
+		if err := c.SubscribeToTopic(ctx, topic); err != nil {
 			return err
 		}
 	}
@@ -108,7 +113,10 @@ func (c *kafkaPubSubClient) SubscribeToTopics(topics []string) error {
 	return nil
 }
 
-func (c *kafkaPubSubClient) SubscribeToTopic(rawTopic string) error {
+func (c *kafkaPubSubClient) SubscribeToTopic(ctx context.Context, rawTopic string) error {
+	ctx, span := trace.StartSpan(ctx, "kafka.SubscribeToTopic")
+	defer span.End()
+
 	topic := filterTopicName(rawTopic)
 
 	partitionConsumer, err := c.consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
@@ -120,14 +128,17 @@ func (c *kafkaPubSubClient) SubscribeToTopic(rawTopic string) error {
 	stopChan := make(chan bool)
 	c.subscribedTopics[rawTopic] = stopChan
 
-	go c.watchForMessages(partitionConsumer, stopChan)
+	go c.watchForMessages(ctx, partitionConsumer, stopChan)
 
 	c.logger.Log("msg", "successfully subscribed to topic", "topic", rawTopic)
 
 	return nil
 }
 
-func (c *kafkaPubSubClient) UnsubscribeFromTopic(rawTopic string) error {
+func (c *kafkaPubSubClient) UnsubscribeFromTopic(ctx context.Context, rawTopic string) error {
+	ctx, span := trace.StartSpan(ctx, "kafka.UnsubscribeFromTopic")
+	defer span.End()
+
 	stopChan, exists := c.subscribedTopics[rawTopic]
 	if !exists {
 		c.logger.Log("msg", "cannot unsubscribe to a non subscribed topic", "topic", rawTopic)
@@ -143,7 +154,10 @@ func (c *kafkaPubSubClient) UnsubscribeFromTopic(rawTopic string) error {
 	return nil
 }
 
-func (c *kafkaPubSubClient) Publish(payload []byte, rawTopic string, qos byte) error {
+func (c *kafkaPubSubClient) Publish(ctx context.Context, payload []byte, rawTopic string, qos byte) error {
+	ctx, span := trace.StartSpan(ctx, "kafka.Publish")
+	defer span.End()
+
 	topic := filterTopicName(rawTopic)
 
 	partition, offset, err := c.producer.SendMessage(&sarama.ProducerMessage{
@@ -161,12 +175,14 @@ func (c *kafkaPubSubClient) Publish(payload []byte, rawTopic string, qos byte) e
 	return nil
 }
 
-func (c *kafkaPubSubClient) watchForMessages(partitionConsumer sarama.PartitionConsumer, stopChan <-chan bool) {
+func (c *kafkaPubSubClient) watchForMessages(ctx context.Context, partitionConsumer sarama.PartitionConsumer, stopChan <-chan bool) {
 	for {
 		select {
 		case err := <-partitionConsumer.Errors():
 			c.logger.Log("msg", "partitionConsumer error", "error", err)
 		case msg := <-partitionConsumer.Messages():
+			ctx, span := trace.StartSpan(ctx, "kafka.onMessage")
+
 			c.logger.Log("msg", "received kafka message", "data", msg)
 			loggedMsg := analytics.LoggedMessage{
 				Duplicate:       false,
@@ -201,7 +217,9 @@ func (c *kafkaPubSubClient) watchForMessages(partitionConsumer sarama.PartitionC
 				}
 			}
 
-			c.monitor.OnMessage(loggedMsg)
+			c.monitor.OnMessage(ctx, loggedMsg)
+			span.End()
+
 		case <-stopChan:
 			c.logger.Log("msg", "stopping watching for messages by stop channel")
 			if err := partitionConsumer.Close(); err != nil {
@@ -209,6 +227,9 @@ func (c *kafkaPubSubClient) watchForMessages(partitionConsumer sarama.PartitionC
 				return
 			}
 
+			return
+		case <-ctx.Done():
+			c.logger.Log("msg", "stopping watching for messages by context", "error", ctx.Err())
 			return
 		}
 	}
