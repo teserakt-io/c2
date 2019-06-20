@@ -40,8 +40,7 @@ unittest:
   script:
     - ./scripts/unittests.sh
 
-# TODO: check why this hang (see https://gitlab.com/Teserakt/c2/issues/1)
-# functest:
-#   stage: test
-#   script:
-#     - ./scripts/test.sh
+functest:
+  stage: test
+  script:
+    - ./scripts/test.sh

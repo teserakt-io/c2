@@ -1,7 +1,8 @@
 #!/bin/sh
 
+set -e
+
 $PWD/scripts/build.sh
-$PWD/scripts/unittests.sh
 
 GIT_COMMIT=$(git rev-list -1 HEAD)
 NOW=$(date "+%Y%m%d")
@@ -11,8 +12,6 @@ FUNCPATH=`pwd`/functests
 GOOS=`uname -s | tr '[:upper:]' '[:lower:]'`
 GOARCH=amd64
 
-GOOS=$GOOS GOARCH=$GOARCH go build -o test/bin/c2httpapi -race -ldflags "-X main.gitCommit=$GIT_COMMIT -X main.buildDate=$NOW" $FUNCPATH/c2httpapi/main.go
-GOOS=$GOOS GOARCH=$GOARCH go build -o test/bin/c2grpcapi -race -ldflags "-X main.gitCommit=$GIT_COMMIT -X main.buildDate=$NOW" $FUNCPATH/c2grpcapi/main.go
+GOOS=$GOOS GOARCH=$GOARCH go build -o test/bin/c2test -race -ldflags "-X main.gitCommit=$GIT_COMMIT -X main.buildDate=$NOW" $FUNCPATH/c2/main.go
 
-./test/bin/c2httpapi
-./test/bin/c2grpcapi
+./test/bin/c2test
