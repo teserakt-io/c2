@@ -13,30 +13,25 @@ import (
 var gitCommit string
 var buildDate string
 
-func runTest(errorChan chan<- error, logChan chan<- []byte, testFunc func()) {
-	server := c2test.NewServer()
+func runTest(errorChan chan<- error, testFunc func()) {
+	mqttEndpoint := os.Getenv("C2TEST_MQTT")
+	if len(mqttEndpoint) == 0 {
+		mqttEndpoint = "127.0.0.1:1883"
+	}
+
+	server := c2test.NewServer(mqttEndpoint)
 	if err := server.Start(); err != nil {
 		errorChan <- fmt.Errorf("failed to start server: %v", err)
 		return
 	}
+	defer server.Stop()
 
 	fmt.Fprintln(os.Stderr, "C2 is online, launching tests...")
 
 	s := time.Now()
 	testFunc()
-	fmt.Fprintf(os.Stderr, "Finished grpc test suite (took %s)\n", time.Now().Sub(s))
+	fmt.Fprintf(os.Stderr, "Finished test suite (took %s)\n", time.Now().Sub(s))
 
-	if err := server.Stop(); err != nil {
-		errorChan <- fmt.Errorf("failed to stop server: %v", err)
-	}
-
-	serverOut, err := server.Output()
-	if err != nil {
-		errorChan <- fmt.Errorf("failed to retrieve server output: %v", err)
-		return
-	}
-
-	logChan <- serverOut
 	errorChan <- nil
 }
 
@@ -50,15 +45,13 @@ func main() {
 	}()
 
 	var grpcTotalCount, grpcFailureCount, httpTotalCount, httpFailureCount int
-	serverLogs := bytes.NewBuffer(nil)
 
-	grpcServerOutputChan := make(chan []byte)
 	grpcResChan := make(chan c2test.TestResult)
-	grpcErrChan := make(chan error)
+	grpcErrChan := make(chan error, 1)
 
 	// Start a server and launch GRPC test suite
 	go func() {
-		runTest(grpcErrChan, grpcServerOutputChan, func() {
+		runTest(grpcErrChan, func() {
 			grpcClient, close, err := c2test.NewTestingGRPCClient("configs/c2-cert.pem", "127.0.0.1:5555")
 			if err != nil {
 				grpcErrChan <- fmt.Errorf("failed to create grpc client: %v", err)
@@ -80,25 +73,22 @@ func main() {
 				grpcFailureCount++
 			}
 			result.Print(grpcResults)
-		case out := <-grpcServerOutputChan:
-			fmt.Fprintf(serverLogs, "\n\nGRPC Test Server Output:\n\n%s\n", string(out))
 		case err := <-grpcErrChan:
 			if err != nil {
 				exitCode = 1
-				fmt.Fprintf(os.Stderr, "GRPC tests error: %v", err)
+				fmt.Fprintf(os.Stderr, "GRPC tests error: %v\n", err)
 				return
 			}
 			done = true
 		}
 	}
 
-	httpServerOutputChan := make(chan []byte)
 	httpResChan := make(chan c2test.TestResult)
-	httpErrChan := make(chan error)
+	httpErrChan := make(chan error, 1)
 
 	// Start a server and launch HTTP test suite
 	go func() {
-		runTest(httpErrChan, httpServerOutputChan, func() {
+		runTest(httpErrChan, func() {
 			httpClient := c2test.NewTestingHTTPClient()
 			c2test.HTTPApi(httpResChan, httpClient, "https://127.0.0.1:8888")
 		})
@@ -115,12 +105,10 @@ func main() {
 				httpFailureCount++
 			}
 			result.Print(httpResults)
-		case out := <-httpServerOutputChan:
-			fmt.Fprintf(serverLogs, "\n\nHTTP Test Server Output:\n\n%s\n", string(out))
 		case err := <-httpErrChan:
 			if err != nil {
 				exitCode = 1
-				fmt.Fprintf(os.Stderr, "HTTP tests error: %v", err)
+				fmt.Fprintf(os.Stderr, "HTTP tests error: %v\n", err)
 				return
 			}
 			done = true
@@ -128,7 +116,6 @@ func main() {
 	}
 
 	// Print results / Set exit code on failures
-	fmt.Fprintf(os.Stderr, "\n%s", string(serverLogs.Bytes()))
 	fmt.Fprintf(os.Stderr, "\nGRPC Test Results:\n%s\n", grpcResults)
 	fmt.Fprintf(os.Stderr, "HTTP Test Results:\n%s\n", httpResults)
 

@@ -41,7 +41,11 @@ To set up a development environment for C2:
 
 ```bash
 cp configs/config.yaml.example configs/config.yaml
-openssl req -nodes -newkey rsa:2048 -keyout configs/c2-key.pem -x509 -sha256 -days 365 -out configs/c2-cert.pem -subj "/CN=localhost" -addext "subjectAltName = 'IP:127.0.0.1'"
+# OpenSSL >= 1.1.1 only
+#o penssl req -nodes -newkey rsa:2048 -keyout configs/c2-key.pem -x509 -sha256 -days 365 -out configs/c2-cert.pem -subj "/CN=localhost" -addext "subjectAltName = 'IP:127.0.0.1'"
+# Previous OpenSSL versions
+openssl req  -nodes -newkey rsa:2048 -keyout configs/c2-key.pem -x509 -sha256 -days 365 -out configs/c2-cert.pem  -subj "/CN=localhost" -extensions san -config <(echo "[req]"; echo distinguished_name=req; echo "[san]"; echo subjectAltName=IP:127.0.0.1)
+```
 
 The default configuration should work out of the box.
 

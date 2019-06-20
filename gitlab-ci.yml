@@ -42,5 +42,18 @@ unittest:
 
 functest:
   stage: test
+  services:
+    - name: erlio/docker-vernemq:latest
+      alias: mqtt
+  variables:
+    DOCKER_VERNEMQ_ALLOW_ANONYMOUS: "on"
   script:
+    # TODO: do we want to allow starting a C2 with no config file, but only envs ?
+    # Until then, we use sample one to get the loader happy, and override what we need in envs after.
+    - cp configs/config.yaml.example configs/config.yaml
+    # The runner probably run as root, thus it can write the logs to the hardcoded file...
+    # We link it back to stdout as we want to see them in the build logs
+    - ln -s /dev/stdout /var/log/e4_c2.log
+    - openssl req  -nodes -newkey rsa:2048 -keyout configs/c2-key.pem -x509 -sha256 -days 365 -out configs/c2-cert.pem  -subj "/CN=localhost" -extensions san -config <(echo "[req]"; echo distinguished_name=req; echo "[san]"; echo subjectAltName=IP:127.0.0.1)
+    - export C2TEST_MQTT="mqtt:1883"
     - ./scripts/test.sh
