@@ -3,8 +3,7 @@
 image: golang:1.12
 
 stages:
-  - test
-  - build
+  - all
   - build-docker
 
 before_script:
@@ -22,14 +21,29 @@ before_script:
   # Force use of ssh urls instead of https for gitlab.com. Has to be done before any go get...
   - git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/"
 
-build:
-  stage: build
+all:
+  stage: all
   cache:
     paths:
       - .cache
+  services:
+    - name: erlio/docker-vernemq:latest
+      alias: mqtt
+  variables:
+    DOCKER_VERNEMQ_ALLOW_ANONYMOUS: "on"
   script:
     - export GOPATH="$CI_PROJECT_DIR/.cache"
     - export PATH="${PATH}:${GOPATH}/bin"
+    - ./scripts/unittests.sh
+    # TODO: do we want to allow starting a C2 with no config file, but only envs ?
+    # Until then, we use sample one to get the loader happy, and override what we need in envs after.
+    - cp configs/config.yaml.example configs/config.yaml
+    # The runner probably run as root, thus it can write the logs to the hardcoded file...
+    # We link it back to stdout as we want to see them in the build logs
+    - ln -s /dev/stdout /var/log/e4_c2.log
+    - openssl req  -nodes -newkey rsa:2048 -keyout configs/c2-key.pem -x509 -sha256 -days 365 -out configs/c2-cert.pem  -subj "/CN=localhost" -extensions san -config <(echo "[req]"; echo distinguished_name=req; echo "[san]"; echo subjectAltName=IP:127.0.0.1)
+    - export C2TEST_MQTT="mqtt:1883"
+    - ./scripts/test.sh
     - ./scripts/build.sh
   artifacts:
     paths:
@@ -44,42 +58,9 @@ build-docker:
   services:
     - docker:dind
   dependencies:
-    - build
+    - all
   script:
     - ./scripts/docker-build.sh
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker push registry.gitlab.com/teserakt/c2:${CI_COMMIT_REF_NAME//\//_}
     - docker push registry.gitlab.com/teserakt/c2:${CI_COMMIT_SHORT_SHA}
-
-unittest:
-  stage: test
-  cache:
-    paths:
-      - .cache
-  script:
-    - export GOPATH="$CI_PROJECT_DIR/.cache"
-    - export PATH="${PATH}:${GOPATH}/bin"
-    - ./scripts/unittests.sh
-
-functest:
-  stage: test
-  cache:
-    paths:
-      - .cache
-  services:
-    - name: erlio/docker-vernemq:latest
-      alias: mqtt
-  variables:
-    DOCKER_VERNEMQ_ALLOW_ANONYMOUS: "on"
-  script:
-    - export GOPATH="$CI_PROJECT_DIR/.cache"
-    - export PATH="${PATH}:${GOPATH}/bin"
-    # TODO: do we want to allow starting a C2 with no config file, but only envs ?
-    # Until then, we use sample one to get the loader happy, and override what we need in envs after.
-    - cp configs/config.yaml.example configs/config.yaml
-    # The runner probably run as root, thus it can write the logs to the hardcoded file...
-    # We link it back to stdout as we want to see them in the build logs
-    - ln -s /dev/stdout /var/log/e4_c2.log
-    - openssl req  -nodes -newkey rsa:2048 -keyout configs/c2-key.pem -x509 -sha256 -days 365 -out configs/c2-cert.pem  -subj "/CN=localhost" -extensions san -config <(echo "[req]"; echo distinguished_name=req; echo "[san]"; echo subjectAltName=IP:127.0.0.1)
-    - export C2TEST_MQTT="mqtt:1883"
-    - ./scripts/test.sh
