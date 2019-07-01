@@ -200,7 +200,7 @@ func (s *httpServer) handleNewClient(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.e4Service.NewClient(ctx, name, nil, key); err != nil {
-		s.logger.Log("msg", "NewClient error", "errror", err)
+		s.logger.Log("msg", "NewClient error", "error", err)
 		resp.Error(err)
 		return
 	}
@@ -220,7 +220,7 @@ func (s *httpServer) handleRemoveClientByID(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := s.e4Service.RemoveClientByID(ctx, id); err != nil {
-		s.logger.Log("msg", "RemoveClientByID error", "errror", err)
+		s.logger.Log("msg", "RemoveClientByID error", "error", err)
 		resp.Error(err)
 		return
 	}
@@ -240,7 +240,7 @@ func (s *httpServer) handleRemoveClientByName(w http.ResponseWriter, r *http.Req
 	}
 
 	if err := s.e4Service.RemoveClientByName(ctx, name); err != nil {
-		s.logger.Log("msg", "RemoveClientByName error", "errror", err)
+		s.logger.Log("msg", "RemoveClientByName error", "error", err)
 		resp.Error(err)
 		return
 	}
@@ -266,7 +266,7 @@ func (s *httpServer) handleNewTopicClientByID(w http.ResponseWriter, r *http.Req
 	}
 
 	if err := s.e4Service.NewTopicClient(ctx, "", id, topic); err != nil {
-		s.logger.Log("msg", "NewTopicClient error", "errror", err)
+		s.logger.Log("msg", "NewTopicClient error", "error", err)
 		resp.Error(err)
 		return
 	}
@@ -292,7 +292,7 @@ func (s *httpServer) handleNewTopicClientByName(w http.ResponseWriter, r *http.R
 	}
 
 	if err := s.e4Service.NewTopicClient(ctx, name, nil, topic); err != nil {
-		s.logger.Log("msg", "NewTopicClient error", "errror", err)
+		s.logger.Log("msg", "NewTopicClient error", "error", err)
 		resp.Error(err)
 		return
 	}
@@ -318,7 +318,7 @@ func (s *httpServer) handleRemoveTopicClientByID(w http.ResponseWriter, r *http.
 	}
 
 	if err := s.e4Service.RemoveTopicClientByID(ctx, id, topic); err != nil {
-		s.logger.Log("msg", "RemoveTopicClientByID error", "errror", err)
+		s.logger.Log("msg", "RemoveTopicClientByID error", "error", err)
 		resp.Error(err)
 		return
 	}

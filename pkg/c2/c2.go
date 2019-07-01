@@ -16,11 +16,11 @@ import (
 	"gitlab.com/teserakt/c2/internal/api"
 	"gitlab.com/teserakt/c2/internal/commands"
 	"gitlab.com/teserakt/c2/internal/config"
-	c2log "gitlab.com/teserakt/c2/internal/log"
 	"gitlab.com/teserakt/c2/internal/models"
 	"gitlab.com/teserakt/c2/internal/protocols"
 	"gitlab.com/teserakt/c2/internal/services"
 	e4 "gitlab.com/teserakt/e4common"
+	sliblog "gitlab.com/teserakt/serverlib/log"
 )
 
 // C2 Errors
@@ -71,7 +71,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 
 	if cfg.ES.IsC2LoggingEnabled() {
 		// extend logger to forward log to ES
-		esLogger, err := c2log.WithElasticSearch(logger, esClient, cfg.ES.C2LogsIndexName)
+		esLogger, err := sliblog.WithElasticSearch(logger, esClient, cfg.ES.C2LogsIndexName)
 		logger = log.With(esLogger)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create ES logger: %v", err)
