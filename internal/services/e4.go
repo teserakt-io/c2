@@ -145,7 +145,7 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 
 	newID, err := validateE4NameOrIDPair(name, id)
 	if err != nil {
-		logger.Log("msg", "Inconsistent E4 ID/Alias, refusing insert")
+		logger.Log("msg", "Inconsistent E4 ID/Alias, refusing insert", "name", name, "id", id, "error", err)
 		return err
 	}
 

@@ -7,10 +7,10 @@ import (
 	"os"
 	"path"
 
+	"gitlab.com/teserakt/c2/pkg/pb"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-
-	e4 "gitlab.com/teserakt/e4common"
 )
 
 // NewTestingHTTPClient Create a new http client for testing
@@ -38,7 +38,7 @@ func NewTestingHTTPClient() *http.Client {
 }
 
 // NewTestingGRPCClient returns a new GRPC client to use for testing
-func NewTestingGRPCClient(relativeCertPath string, serverAddr string) (e4.C2Client, func() error, error) {
+func NewTestingGRPCClient(relativeCertPath string, serverAddr string) (pb.C2Client, func() error, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get current working directory: %v", err)
@@ -55,5 +55,5 @@ func NewTestingGRPCClient(relativeCertPath string, serverAddr string) (e4.C2Clie
 		return nil, nil, fmt.Errorf("failed to connect to gRPC server: %v", err)
 	}
 
-	return e4.NewC2Client(conn), conn.Close, nil
+	return pb.NewC2Client(conn), conn.Close, nil
 }

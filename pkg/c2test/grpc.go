@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	e4 "gitlab.com/teserakt/e4common"
+	"gitlab.com/teserakt/c2/pkg/pb"
 )
 
 // GRPCApi tests the GRPC api of the C2
-func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
+func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Client) {
 	const TESTCLIENTCOUNT = 4
 	const TESTTOPICCOUNT = 4
 	var testClients [TESTCLIENTCOUNT]TestClient
@@ -46,12 +46,13 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 	}
 
 	for i := 0; i < TESTCLIENTCOUNT; i++ {
-		result, err := grpcC2SendCommand(grpcClient, e4.C2Request_NEW_CLIENT,
-			testClients[i].ID, testClients[i].Name, testClients[i].Key, "", "", 0, 0)
-		bresult, ok := result.(bool)
-		// must check bresult last, it won't be boolean unless the type assertion
-		// succeeds.
-		if err != nil || !ok || !bresult {
+		_, err := grpcClient.NewClient(ctx, &pb.NewClientRequest{
+			Id:   testClients[i].ID,
+			Name: testClients[i].Name,
+			Key:  testClients[i].Key,
+		})
+
+		if err != nil {
 			resChan <- TestResult{
 				Name:     "Create Clients",
 				Result:   false,
@@ -64,15 +65,11 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 	resChan <- TestResult{Name: "Create Clients", Result: true, Critical: false, Error: nil}
 
 	for i := 0; i < TESTTOPICCOUNT; i++ {
-		result, err := grpcC2SendCommand(grpcClient, e4.C2Request_NEW_TOPIC,
-			nil, "", nil, testTopics[i].TopicName, "", 0, 0)
-		bresult, ok := result.(bool)
-		// must check bresult last, it won't be boolean unless the type assertion
-		// succeeds.
-		if err != nil || !ok || !bresult {
-			if err == nil {
-				err = errors.New("Type mismatch")
-			}
+		_, err := grpcClient.NewTopic(ctx, &pb.NewTopicRequest{
+			Topic: testTopics[i].TopicName,
+		})
+
+		if err != nil {
 			resChan <- TestResult{
 				Name:     "Create Topics",
 				Result:   false,
@@ -85,13 +82,11 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 	resChan <- TestResult{Name: "Create Topics", Result: true, Critical: false, Error: nil}
 
 	// *** Add the topic to the client.
-	result, err := grpcC2SendCommand(grpcClient, e4.C2Request_NEW_TOPIC_CLIENT,
-		nil, testClients[0].Name, nil, testTopics[0].TopicName, "", 0, 0)
-	bresult, ok := result.(bool)
-	if err != nil || !ok || !bresult {
-		if err == nil {
-			err = errors.New("Type mismatch")
-		}
+	_, err = grpcClient.NewTopicClient(ctx, &pb.NewTopicClientRequest{
+		Name:  testClients[0].Name,
+		Topic: testTopics[0].TopicName,
+	})
+	if err != nil {
 		resChan <- TestResult{
 			Name:     "Add Topic to Client",
 			Result:   false,
@@ -103,13 +98,11 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 	resChan <- TestResult{Name: "Add Topic to Client", Result: true, Critical: false, Error: nil}
 
 	// *** Check the M2M link returns the topic we added
-	result, err = grpcC2SendCommand(grpcClient, e4.C2Request_GET_CLIENT_TOPICS,
-		nil, testClients[0].Name, nil, "", "", 0, 10)
-	clientTopics, ok := result.([]string)
-	if err != nil || !ok {
-		if err == nil {
-			err = errors.New("Type mismatch")
-		}
+	resp, err := grpcClient.GetTopicsForClient(ctx, &pb.GetTopicsForClientRequest{
+		Name:  testClients[0].Name,
+		Count: 10,
+	})
+	if err != nil {
 		resChan <- TestResult{
 			Name:     "M2M Find Added Topic",
 			Result:   false,
@@ -118,6 +111,8 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 		}
 		return
 	}
+
+	clientTopics := resp.Topics
 	if len(clientTopics) != 1 || clientTopics[0] != testTopics[0].TopicName {
 		resChan <- TestResult{
 			Name:     "M2M Find Added Topic",
@@ -131,13 +126,11 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 	resChan <- TestResult{Name: "M2M Find Added Topic", Result: true, Critical: false, Error: nil}
 
 	// *** Remove the topic from the client (but not the C2)
-	result, err = grpcC2SendCommand(grpcClient, e4.C2Request_REMOVE_TOPIC_CLIENT,
-		nil, testClients[0].Name, nil, testTopics[0].TopicName, "", 0, 10)
-	bresult, ok = result.(bool)
-	if err != nil || !ok || !bresult {
-		if err == nil {
-			err = errors.New("Type mismatch")
-		}
+	_, err = grpcClient.RemoveTopicClient(ctx, &pb.RemoveTopicClientRequest{
+		Name:  testClients[0].Name,
+		Topic: testTopics[0].TopicName,
+	})
+	if err != nil {
 		resChan <- TestResult{
 			Name:     "Remove Topic from Client",
 			Result:   false,
@@ -150,13 +143,10 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 	resChan <- TestResult{Name: "Remove Topic from Client", Result: true, Critical: false, Error: nil}
 
 	// *** Check Topic appears to have been removed from the client
-	result, err = grpcC2SendCommand(grpcClient, e4.C2Request_GET_CLIENT_TOPICS,
-		nil, testClients[0].Name, nil, "", "", 0, 10)
-	clientTopics, ok = result.([]string)
-	if err != nil || !ok {
-		if err == nil {
-			err = errors.New("Type mismatch")
-		}
+	resp, err = grpcClient.GetTopicsForClient(ctx, &pb.GetTopicsForClientRequest{
+		Name: testClients[0].Name,
+	})
+	if err != nil {
 		resChan <- TestResult{
 			Name:     "Test M2M Doesn't Show Removed Topic",
 			Result:   false,
@@ -165,6 +155,8 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 		}
 		return
 	}
+
+	clientTopics = resp.Topics
 	if len(clientTopics) != 0 {
 		resChan <- TestResult{
 			Name:     "Test M2M Doesn't Show Removed Topic",
@@ -177,13 +169,10 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 	resChan <- TestResult{Name: "Test M2M Doesn't Show Removed Topic", Result: true, Critical: false, Error: nil}
 
 	// *** Delete topic
-	result, err = grpcC2SendCommand(grpcClient, e4.C2Request_REMOVE_TOPIC,
-		nil, "", nil, testTopics[0].TopicName, "", 0, 10)
-	bresult, ok = result.(bool)
-	if err != nil || !ok || !bresult {
-		if err == nil {
-			err = errors.New("Type mismatch")
-		}
+	_, err = grpcClient.RemoveTopic(ctx, &pb.RemoveTopicRequest{
+		Topic: testTopics[0].TopicName,
+	})
+	if err != nil {
 		resChan <- TestResult{
 			Name:     "Remove topic from C2",
 			Result:   false,
@@ -196,13 +185,11 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 	resChan <- TestResult{Name: "Remove topic from C2", Result: true, Critical: false, Error: nil}
 
 	// *** Check double remove of topic fails
-	_, err = grpcC2SendCommand(grpcClient, e4.C2Request_REMOVE_TOPIC,
-		nil, "", nil, testTopics[0].TopicName, "", 0, 10)
+	_, err = grpcClient.RemoveTopic(ctx, &pb.RemoveTopicRequest{
+		Topic: testTopics[0].TopicName,
+	})
 	//bresult, ok = result.(bool)
 	if err == nil {
-		if err == nil {
-			err = errors.New("Type mismatch")
-		}
 		resChan <- TestResult{
 			Name:     "Check double remove fails",
 			Result:   false,
@@ -215,13 +202,10 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 	resChan <- TestResult{Name: "Check double remove fails", Result: true, Critical: false, Error: nil}
 
 	// *** Get topics list
-	result, err = grpcC2SendCommand(grpcClient, e4.C2Request_GET_TOPICS,
-		nil, testClients[0].Name, nil, "", "", 0, 10)
-	clientTopics, ok = result.([]string)
-	if err != nil || !ok {
-		if err == nil {
-			err = errors.New("Type mismatch")
-		}
+	getTopicsResp, err := grpcClient.GetTopics(ctx, &pb.GetTopicsRequest{
+		Count: 10,
+	})
+	if err != nil {
 		resChan <- TestResult{
 			Name:     "Test Fetch Topics",
 			Result:   false,
@@ -230,7 +214,9 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 		}
 		return
 	}
-	if len(clientTopics) == 0 || len(clientTopics) != TESTTOPICCOUNT-1 {
+
+	clientTopics = getTopicsResp.Topics
+	if len(clientTopics) != TESTTOPICCOUNT-1 {
 		resChan <- TestResult{
 			Name:     "Test Fetch Topics",
 			Result:   false,
@@ -261,10 +247,8 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 	resChan <- TestResult{Name: "Test Fetch Topics", Result: true, Critical: false, Error: nil}
 
 	// *** Get client list
-	result, err = grpcC2SendCommand(grpcClient, e4.C2Request_GET_CLIENTS,
-		nil, "", nil, "", "", 0, 10)
-	clientClients, ok := result.([]string)
-	if err != nil || !ok {
+	getClientsResp, err := grpcClient.GetClients(ctx, &pb.GetClientsRequest{Count: 10})
+	if err != nil {
 		if err == nil {
 			err = errors.New("Type mismatch")
 		}
@@ -276,20 +260,22 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 		}
 		return
 	}
-	if len(clientClients) == 0 || len(clientClients) != TESTCLIENTCOUNT {
+
+	clientNames := getClientsResp.Names
+	if len(clientNames) != TESTCLIENTCOUNT {
 		resChan <- TestResult{
 			Name:     "Test Fetch Clients",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test Fetch Clients: Incorrect number of returned clients, returned body is %s", clientClients),
+			Error:    fmt.Errorf("Test Fetch Clients: Incorrect number of returned clients, returned body is %s", clientNames),
 		}
 		return
 	}
 	for i := 0; i < TESTCLIENTCOUNT; i++ {
 		found := false
 		testclient := testClients[i]
-		for j := 0; j < len(clientClients); j++ {
-			if clientClients[j] == testclient.Name {
+		for j := 0; j < len(clientNames); j++ {
+			if clientNames[j] == testclient.Name {
 				found = true
 				break
 			}
@@ -299,63 +285,11 @@ func GRPCApi(resChan chan<- TestResult, grpcClient e4.C2Client) {
 				Name:     "Test Fetch Client",
 				Result:   false,
 				Critical: true,
-				Error:    fmt.Errorf("Test Fetch Client: Client s%s not found, clients are %s", testclient, clientClients),
+				Error:    fmt.Errorf("Test Fetch Client: Client s%s not found, clients are %s", testclient, clientNames),
 			}
 			return
 		}
 	}
 
 	resChan <- TestResult{Name: "Test Fetch Client", Result: true, Critical: false, Error: nil}
-}
-
-func grpcC2SendCommand(client e4.C2Client, commandcode e4.C2Request_Command, id []byte, name string, key []byte, topic, msg string, offset uint64, count uint64) (interface{}, error) {
-
-	req := &e4.C2Request{
-		Command: commandcode,
-		Id:      id,
-		Name:    name,
-		Key:     key,
-		Topic:   topic,
-		Msg:     msg,
-		Offset:  offset,
-		Count:   count,
-	}
-
-	resp, err := client.C2Command(context.Background(), req)
-	if err != nil {
-		return nil, err
-	}
-	if !resp.Success {
-		return nil, errors.New(resp.Err)
-	}
-
-	switch commandcode {
-	case e4.C2Request_NEW_CLIENT:
-		return true, nil
-	case e4.C2Request_REMOVE_CLIENT:
-		return true, nil
-	case e4.C2Request_NEW_TOPIC:
-		return true, nil
-	case e4.C2Request_REMOVE_TOPIC:
-		return true, nil
-	case e4.C2Request_NEW_TOPIC_CLIENT:
-		return true, nil
-	case e4.C2Request_REMOVE_TOPIC_CLIENT:
-		return true, nil
-	case e4.C2Request_GET_CLIENTS:
-		return resp.Names, nil
-	case e4.C2Request_GET_TOPICS:
-		return resp.Topics, nil
-	case e4.C2Request_GET_CLIENT_TOPICS:
-		return resp.Topics, nil
-	case e4.C2Request_GET_CLIENT_TOPIC_COUNT:
-		return resp.Count, nil
-	case e4.C2Request_GET_TOPIC_CLIENTS:
-		return resp.Topics, nil
-	case e4.C2Request_GET_TOPIC_CLIENT_COUNT:
-		return resp.Count, nil
-
-	default:
-		return nil, errors.New("No handler for that request type")
-	}
 }

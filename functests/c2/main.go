@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -44,6 +45,9 @@ func main() {
 		os.Exit(exitCode)
 	}()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	var grpcTotalCount, grpcFailureCount, httpTotalCount, httpFailureCount int
 
 	grpcResChan := make(chan c2test.TestResult)
@@ -58,7 +62,7 @@ func main() {
 				return
 			}
 			defer close()
-			c2test.GRPCApi(grpcResChan, grpcClient)
+			c2test.GRPCApi(ctx, grpcResChan, grpcClient)
 		})
 	}()
 

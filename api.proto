@@ -1,0 +1,107 @@
+syntax = "proto3";
+package pb;
+
+service C2 {
+  rpc NewClient(NewClientRequest) returns (NewClientResponse) {}
+  rpc RemoveClient(RemoveClientRequest) returns (RemoveClientResponse) {}
+  rpc ResetClient(ResetClientRequest) returns (ResetClientResponse) {}
+  rpc NewClientKey(NewClientKeyRequest) returns (NewClientKeyResponse) {}
+
+  rpc NewTopic(NewTopicRequest) returns (NewTopicResponse) {}
+  rpc RemoveTopic(RemoveTopicRequest) returns (RemoveTopicResponse) {}
+
+  rpc NewTopicClient(NewTopicClientRequest) returns (NewTopicClientResponse) {}
+  rpc RemoveTopicClient(RemoveTopicClientRequest)
+      returns (RemoveTopicClientResponse) {}
+
+  rpc CountTopicsForClient(CountTopicsForClientRequest)
+      returns (CountTopicsForClientResponse) {}
+  rpc GetTopicsForClient(GetTopicsForClientRequest)
+      returns (GetTopicsForClientResponse) {}
+
+  rpc CountClientsForTopic(CountClientsForTopicRequest)
+      returns (CountClientsForTopicResponse) {}
+  rpc GetClientsForTopic(GetClientsForTopicRequest)
+      returns (GetClientsForTopicResponse) {}
+
+  rpc GetClients(GetClientsRequest) returns (GetClientsResponse) {}
+  rpc GetTopics(GetTopicsRequest) returns (GetTopicsResponse) {}
+
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {}
+}
+
+message NewClientRequest {
+  string name = 1;
+  bytes id = 2;
+  bytes key = 3;
+}
+message NewClientResponse {}
+
+message RemoveClientRequest { string name = 1; }
+message RemoveClientResponse {}
+
+message NewTopicClientRequest {
+  string name = 1;
+  bytes id = 2;
+  string topic = 3;
+}
+message NewTopicClientResponse {}
+
+message RemoveTopicClientRequest {
+  string name = 1;
+  string topic = 2;
+}
+message RemoveTopicClientResponse {}
+
+message ResetClientRequest { string name = 1; }
+message ResetClientResponse {}
+
+message NewTopicRequest { string topic = 1; }
+message NewTopicResponse {}
+
+message RemoveTopicRequest { string topic = 1; }
+message RemoveTopicResponse {}
+
+message NewClientKeyRequest {
+  string name = 1;
+  bytes id = 2;
+}
+message NewClientKeyResponse {}
+
+message CountTopicsForClientRequest { string name = 1; }
+message CountTopicsForClientResponse { int64 count = 1; }
+
+message GetTopicsForClientRequest {
+  string name = 1;
+  int64 offset = 2;
+  int64 count = 3;
+}
+message GetTopicsForClientResponse { repeated string topics = 1; }
+
+message CountClientsForTopicRequest { string topic = 1; }
+message CountClientsForTopicResponse { int64 count = 1; }
+
+message GetClientsForTopicRequest {
+  string topic = 1;
+  int64 offset = 2;
+  int64 count = 3;
+}
+message GetClientsForTopicResponse { repeated string names = 1; }
+
+message GetClientsRequest {
+  int64 offset = 1;
+  int64 count = 2;
+}
+message GetClientsResponse { repeated string names = 1; }
+
+message GetTopicsRequest {
+  int64 offset = 1;
+  int64 count = 2;
+}
+message GetTopicsResponse { repeated string topics = 1; }
+
+message SendMessageRequest {
+  string topic = 1;
+  string message = 2;
+}
+message SendMessageResponse {}
