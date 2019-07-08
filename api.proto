@@ -6,14 +6,12 @@ import "protoc-gen-swagger/options/annotations.proto";
 
 option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
   host : "127.0.0.1:8888"
-  info : {title : "c2-api";
-}
-;
-schemes : HTTPS;
-consumes : "application/json";
-produces : "application/json";
-}
-;
+  info : {title : "c2-api";};
+
+  schemes : HTTPS;
+  consumes : "application/json";
+  produces : "application/json";
+};
 
 service C2 {
   // Create a new client
@@ -64,37 +62,32 @@ service C2 {
     };
   }
   // Remove a topic / client association
-  rpc RemoveTopicClient(RemoveTopicClientRequest)
-      returns (RemoveTopicClientResponse) {
+  rpc RemoveTopicClient(RemoveTopicClientRequest) returns (RemoveTopicClientResponse) {
     option (google.api.http) = {
       delete : "/e4/client/topic"
       body : "*"
     };
   }
   // Count the number of topics for a client
-  rpc CountTopicsForClient(CountTopicsForClientRequest)
-      returns (CountTopicsForClientResponse) {
+  rpc CountTopicsForClient(CountTopicsForClientRequest) returns (CountTopicsForClientResponse) {
     option (google.api.http) = {
       get : "/e4/client/topic/count"
     };
   }
   // Retrieve paginated topics for a client
-  rpc GetTopicsForClient(GetTopicsForClientRequest)
-      returns (GetTopicsForClientResponse) {
+  rpc GetTopicsForClient(GetTopicsForClientRequest) returns (GetTopicsForClientResponse) {
     option (google.api.http) = {
       get : "/e4/client/topics"
     };
   }
   // Count the number of clients for a topic
-  rpc CountClientsForTopic(CountClientsForTopicRequest)
-      returns (CountClientsForTopicResponse) {
+  rpc CountClientsForTopic(CountClientsForTopicRequest) returns (CountClientsForTopicResponse) {
     option (google.api.http) = {
       get : "/e4/topic/{topic}/clients/count"
     };
   }
   // Retrieve paginated clients for a topic
-  rpc GetClientsForTopic(GetClientsForTopicRequest)
-      returns (GetClientsForTopicResponse) {
+  rpc GetClientsForTopic(GetClientsForTopicRequest) returns (GetClientsForTopicResponse) {
     option (google.api.http) = {
       get : "/e4/topic/{topic}/clients"
     };
@@ -144,7 +137,9 @@ message NewClientRequest {
 }
 message NewClientResponse {}
 
-message RemoveClientRequest { Client client = 1; }
+message RemoveClientRequest {
+  Client client = 1;
+}
 message RemoveClientResponse {}
 
 message NewTopicClientRequest {
@@ -159,55 +154,83 @@ message RemoveTopicClientRequest {
 }
 message RemoveTopicClientResponse {}
 
-message ResetClientRequest { Client client = 1; }
+message ResetClientRequest {
+  Client client = 1;
+}
 message ResetClientResponse {}
 
-message NewTopicRequest { string topic = 1; }
+message NewTopicRequest {
+  string topic = 1;
+}
 message NewTopicResponse {}
 
-message RemoveTopicRequest { string topic = 1; }
+message RemoveTopicRequest {
+  string topic = 1;
+}
 message RemoveTopicResponse {}
 
-message NewClientKeyRequest { Client client = 1; }
+message NewClientKeyRequest {
+  Client client = 1;
+}
 message NewClientKeyResponse {}
 
-message CountTopicsForClientRequest { Client client = 1; }
-message CountTopicsForClientResponse { int64 count = 1; }
+message CountTopicsForClientRequest {
+  Client client = 1;
+}
+message CountTopicsForClientResponse {
+  int64 count = 1;
+}
 
 message GetTopicsForClientRequest {
   Client client = 1;
   int64 offset = 2;
   int64 count = 3;
 }
-message GetTopicsForClientResponse { repeated string topics = 1; }
+message GetTopicsForClientResponse {
+  repeated string topics = 1;
+}
 
-message CountClientsForTopicRequest { string topic = 1; }
-message CountClientsForTopicResponse { int64 count = 1; }
+message CountClientsForTopicRequest {
+  string topic = 1;
+}
+message CountClientsForTopicResponse {
+  int64 count = 1;
+}
 
 message GetClientsForTopicRequest {
   string topic = 1;
   int64 offset = 2;
   int64 count = 3;
 }
-message GetClientsForTopicResponse { repeated Client clients = 1; }
+message GetClientsForTopicResponse {
+  repeated Client clients = 1;
+}
 
 message CountClientsRequest {}
-message CountClientsResponse { int64 count = 1; }
+message CountClientsResponse {
+  int64 count = 1;
+}
 
 message GetClientsRequest {
   int64 offset = 1;
   int64 count = 2;
 }
-message GetClientsResponse { repeated Client clients = 1; }
+message GetClientsResponse {
+  repeated Client clients = 1;
+}
 
 message CountTopicsRequest {}
-message CountTopicsResponse { int64 count = 1; }
+message CountTopicsResponse {
+  int64 count = 1;
+}
 
 message GetTopicsRequest {
   int64 offset = 1;
   int64 count = 2;
 }
-message GetTopicsResponse { repeated string topics = 1; }
+message GetTopicsResponse {
+  repeated string topics = 1;
+}
 
 message SendMessageRequest {
   string topic = 1;
