@@ -3,15 +3,27 @@ package c2test
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"gitlab.com/teserakt/c2/pkg/pb"
 )
 
 func testHTTPReq(testname string, httpClient *http.Client,
-	verb string, url string, body string, responseCode int) (*http.Response, error) {
+	verb string, url string, bodyStruct interface{}, responseCode int) (*http.Response, error) {
 
-	//fmt.Fprintf(os.Stderr, "%s %s\n", verb, url)
-	req, err := http.NewRequest(verb, url, strings.NewReader(body))
+	var body []byte
+	var err error
+
+	if bodyStruct != nil {
+		body, err = json.Marshal(bodyStruct)
+		if err != nil {
+			return nil, fmt.Errorf("Test %s: %s", testname, err)
+		}
+	}
+
+	req, err := http.NewRequest(verb, url, strings.NewReader(string(body)))
 	if err != nil {
 		return nil, fmt.Errorf("Test %s: %s", testname, err)
 	}
@@ -20,7 +32,8 @@ func testHTTPReq(testname string, httpClient *http.Client,
 		return nil, fmt.Errorf("Test %s: %s", testname, err)
 	}
 	if resp.StatusCode != responseCode {
-		return nil, fmt.Errorf("Test %s: Request %s failed response code test, expected %d, received %d", testname, url, responseCode, resp.StatusCode)
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, fmt.Errorf("Test %s: Request %s failed response code test, expected %d, received %d (body: %s)", testname, url, responseCode, resp.StatusCode, body)
 	}
 
 	return resp, nil
@@ -66,9 +79,16 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 
 	for i := 0; i < TESTCLIENTS; i++ {
 		// Create a new client on the C2
-		url = fmt.Sprintf("%s/e4/client/name/%s/key/%s", host,
-			testClients[i].Name, testClients[i].GetHexKey())
-		if _, err = testHTTPReq("Create Client", httpClient, "POST", url, "", 200); err != nil {
+		url = fmt.Sprintf("%s/e4/client", host)
+
+		newClientBody := pb.NewClientRequest{
+			Client: &pb.Client{
+				Name: testClients[i].Name,
+			},
+			Key: testClients[i].Key,
+		}
+
+		if _, err = testHTTPReq("Create Client", httpClient, "POST", url, newClientBody, 200); err != nil {
 			resChan <- TestResult{
 				Name:     "Create Client",
 				Result:   false,
@@ -84,7 +104,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 		// Create a corresponding topics
 		url = fmt.Sprintf("%s/e4/topic/%s", host,
 			testtopics[i].TopicName)
-		if _, err = testHTTPReq("Create Topic", httpClient, "POST", url, "", 200); err != nil {
+		if _, err = testHTTPReq("Create Topic", httpClient, "POST", url, nil, 200); err != nil {
 			resChan <- TestResult{
 				Name:     "Create Topic",
 				Result:   false,
@@ -97,9 +117,15 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 	resChan <- TestResult{Name: "Create Topic", Result: true, Critical: false, Error: nil}
 
 	// Add the topic to the client.
-	url = fmt.Sprintf("%s/e4/client/name/%s/topic/%s", host,
-		testClients[0].Name, testtopics[0].TopicName)
-	if _, err = testHTTPReq("Add Topic to Client", httpClient, "PUT", url, "", 200); err != nil {
+	url = fmt.Sprintf("%s/e4/client/topic", host)
+	newTopicClientBody := &pb.NewTopicClientRequest{
+		Client: &pb.Client{
+			Name: testClients[0].Name,
+		},
+		Topic: testtopics[0].TopicName,
+	}
+
+	if _, err = testHTTPReq("Add Topic to Client", httpClient, "PUT", url, newTopicClientBody, 200); err != nil {
 		resChan <- TestResult{
 			Name:     "Add Topic to Client",
 			Result:   false,
@@ -111,9 +137,9 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 	resChan <- TestResult{Name: "Add Topic to Client", Result: true, Critical: false, Error: nil}
 
 	// Check the M2M link returns the topic we added
-	url = fmt.Sprintf("%s/e4/client/name/%s/topics/0/10", host,
+	url = fmt.Sprintf("%s/e4/client/topics?client.name=%s&offset=0&count=10", host,
 		testClients[0].Name)
-	if resp, err = testHTTPReq("M2M Find Added Topic", httpClient, "GET", url, "", 200); err != nil {
+	if resp, err = testHTTPReq("M2M Find Added Topic", httpClient, "GET", url, nil, 200); err != nil {
 		resChan <- TestResult{
 			Name:     "M2M Find Added Topic",
 			Result:   false,
@@ -122,8 +148,9 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 		}
 		return
 	}
-	var decodedtopics1 []string
-	err = json.NewDecoder(resp.Body).Decode(&decodedtopics1)
+
+	getTopicsForClientResponse := &pb.GetTopicsForClientResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&getTopicsForClientResponse)
 	if err != nil {
 		resChan <- TestResult{
 			Name:     "M2M Find Added Topic",
@@ -133,21 +160,27 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 		}
 		return
 	}
-	if len(decodedtopics1) != 1 || decodedtopics1[0] != testtopics[0].TopicName {
+	if len(getTopicsForClientResponse.Topics) != 1 || getTopicsForClientResponse.Topics[0] != testtopics[0].TopicName {
 		resChan <- TestResult{
 			Name:     "M2M Find Added Topic",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test M2M Find Added Topic: Incorrect topic returned, returned body is %s", decodedtopics1),
+			Error:    fmt.Errorf("Test M2M Find Added Topic: Incorrect topic returned, returned body is %s", getTopicsForClientResponse),
 		}
 		return
 	}
 	resChan <- TestResult{Name: "M2M Find Added Topic", Result: true, Critical: false, Error: nil}
 
 	// Remove the topic from the client (but not the C2)
-	url = fmt.Sprintf("%s/e4/client/name/%s/topic/%s", host,
-		testClients[0].Name, testtopics[0].TopicName)
-	if _, err = testHTTPReq("Remove Topic from Client", httpClient, "DELETE", url, "", 200); err != nil {
+	url = fmt.Sprintf("%s/e4/client/topic", host)
+	removeTopicClientBody := &pb.RemoveTopicClientRequest{
+		Client: &pb.Client{
+			Name: testClients[0].Name,
+		},
+		Topic: testtopics[0].TopicName,
+	}
+
+	if _, err = testHTTPReq("Remove Topic from Client", httpClient, "DELETE", url, removeTopicClientBody, 200); err != nil {
 		resChan <- TestResult{
 			Name:     "Remove Topic from Client",
 			Result:   false,
@@ -159,9 +192,9 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 	resChan <- TestResult{Name: "Remove Topic from Client", Result: true, Critical: false, Error: nil}
 
 	// Check Topic appears to have been removed from the client
-	url = fmt.Sprintf("%s/e4/client/name/%s/topics/0/10", host,
+	url = fmt.Sprintf("%s/e4/client/topics?client.name=%s&offset=0&count=10", host,
 		testClients[0].Name)
-	if resp, err = testHTTPReq("Test M2M Doesn't Show Removed Topic", httpClient, "GET", url, "", 200); err != nil {
+	if resp, err = testHTTPReq("Test M2M Doesn't Show Removed Topic", httpClient, "GET", url, nil, 200); err != nil {
 		resChan <- TestResult{
 			Name:     "Test M2M Doesn't Show Removed Topic",
 			Result:   false,
@@ -170,8 +203,9 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 		}
 		return
 	}
-	var decodedtopics2 []string
-	err = json.NewDecoder(resp.Body).Decode(&decodedtopics2)
+
+	getTopicsForClientResponse = &pb.GetTopicsForClientResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&getTopicsForClientResponse)
 	if err != nil {
 		resChan <- TestResult{
 			Name:     "Test M2M Doesn't Show Removed Topic",
@@ -181,12 +215,12 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 		}
 		return
 	}
-	if len(decodedtopics2) != 0 {
+	if len(getTopicsForClientResponse.Topics) != 0 {
 		resChan <- TestResult{
 			Name:     "Test M2M Doesn't Show Removed Topic",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test M2M Doesn't Show Removed Topic: Topics found, returned body is %s", decodedtopics2),
+			Error:    fmt.Errorf("Test M2M Doesn't Show Removed Topic: Topics found, returned body is %s", getTopicsForClientResponse),
 		}
 		return
 	}
@@ -195,7 +229,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 	// Delete topic
 	url = fmt.Sprintf("%s/e4/topic/%s", host,
 		testtopics[0].TopicName)
-	if _, err = testHTTPReq("Remove topic from C2", httpClient, "DELETE", url, "", 200); err != nil {
+	if _, err = testHTTPReq("Remove topic from C2", httpClient, "DELETE", url, nil, 200); err != nil {
 		resChan <- TestResult{
 			Name:     "Remove topic from C2",
 			Result:   false,
@@ -209,7 +243,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 	// Check double remove of topic fails
 	url = fmt.Sprintf("%s/e4/topic/%s", host,
 		testtopics[0].TopicName)
-	if _, err = testHTTPReq("Check double remove fails", httpClient, "DELETE", url, "", 404); err != nil {
+	if _, err = testHTTPReq("Check double remove fails", httpClient, "DELETE", url, nil, 404); err != nil {
 		resChan <- TestResult{
 			Name:     "Check double remove fails",
 			Result:   false,
@@ -221,8 +255,8 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 	resChan <- TestResult{Name: "Check double remove fails", Result: true, Critical: false, Error: nil}
 
 	// Get topics list
-	url = fmt.Sprintf("%s/e4/topics/all", host)
-	if resp, err = testHTTPReq("Test Fetch Topics", httpClient, "GET", url, "", 200); err != nil {
+	url = fmt.Sprintf("%s/e4/topics?offset=0&count=100", host)
+	if resp, err = testHTTPReq("Test Fetch Topics", httpClient, "GET", url, nil, 200); err != nil {
 		resChan <- TestResult{
 			Name:     "Test Fetch Topics",
 			Result:   false,
@@ -231,8 +265,9 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 		}
 		return
 	}
-	var decodedtopics3 []string
-	err = json.NewDecoder(resp.Body).Decode(&decodedtopics3)
+
+	getTopicsResponse := &pb.GetTopicsResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&getTopicsResponse)
 	if err != nil {
 		resChan <- TestResult{
 			Name:     "Test Fetch Topics",
@@ -242,20 +277,20 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 		}
 		return
 	}
-	if len(decodedtopics3) != TESTTOPICS-1 {
+	if len(getTopicsResponse.Topics) != TESTTOPICS-1 {
 		resChan <- TestResult{
 			Name:     "Test Fetch Topics",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test Fetch Topics: Incorrect number of returned topics. Expected %d, got %d.\n returned body is %#v", TESTTOPICS-1, len(decodedtopics3), decodedtopics3),
+			Error:    fmt.Errorf("Test Fetch Topics: Incorrect number of returned topics. Expected %d, got %d.\n returned body is %#v", TESTTOPICS-1, len(getTopicsResponse.Topics), getTopicsResponse),
 		}
 		return
 	}
 	for i := 1; i < TESTTOPICS; i++ {
 		found := false
 		testtopic := testtopics[i]
-		for j := 0; j < len(decodedtopics3); j++ {
-			if decodedtopics3[j] == testtopic.TopicName {
+		for j := 0; j < len(getTopicsResponse.Topics); j++ {
+			if getTopicsResponse.Topics[j] == testtopic.TopicName {
 				found = true
 				break
 			}
@@ -265,7 +300,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 				Name:     "Test Fetch Topics",
 				Result:   false,
 				Critical: true,
-				Error:    fmt.Errorf("Test Fetch Topics: Created topic %s not found, topics are %s", testtopic.TopicName, decodedtopics3),
+				Error:    fmt.Errorf("Test Fetch Topics: Created topic %s not found, topics are %s", testtopic.TopicName, getTopicsResponse),
 			}
 			return
 		}
@@ -273,8 +308,8 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 	resChan <- TestResult{Name: "Test Fetch Topics", Result: true, Critical: false, Error: nil}
 
 	// Get client list
-	url = fmt.Sprintf("%s/e4/clients/all", host)
-	if resp, err = testHTTPReq("Test Fetch Client", httpClient, "GET", url, "", 200); err != nil {
+	url = fmt.Sprintf("%s/e4/clients?offset=0&count=100", host)
+	if resp, err = testHTTPReq("Test Fetch Client", httpClient, "GET", url, nil, 200); err != nil {
 		resChan <- TestResult{
 			Name:     "Test Fetch Client",
 			Result:   false,
@@ -283,8 +318,9 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 		}
 		return
 	}
-	var decodedIDs1 []string
-	err = json.NewDecoder(resp.Body).Decode(&decodedIDs1)
+
+	getClientsResponse := &pb.GetClientsResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&getClientsResponse)
 	if err != nil {
 		resChan <- TestResult{
 			Name:     "Test Fetch Client",
@@ -294,20 +330,20 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 		}
 		return
 	}
-	if len(decodedIDs1) != TESTCLIENTS {
+	if len(getClientsResponse.Clients) != TESTCLIENTS {
 		resChan <- TestResult{
 			Name:     "Test Fetch Client",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test Fetch Client: Incorrect number of clients, returned body is %s", decodedIDs1),
+			Error:    fmt.Errorf("Test Fetch Client: Incorrect number of clients, returned body is %s", getClientsResponse),
 		}
 		return
 	}
 	for i := 0; i < TESTCLIENTS; i++ {
 		found := false
 		testid := testClients[i]
-		for j := 0; j < len(decodedIDs1); j++ {
-			if decodedIDs1[j] == testid.Name {
+		for j := 0; j < len(getClientsResponse.Clients); j++ {
+			if getClientsResponse.Clients[j].Name == testid.Name {
 				found = true
 				break
 			}
@@ -317,7 +353,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 				Name:     "Test Fetch Client",
 				Result:   false,
 				Critical: true,
-				Error:    fmt.Errorf("Test Fetch Client: Created client %s not found, clients are %s", testid, decodedtopics3),
+				Error:    fmt.Errorf("Test Fetch Client: Created client %s not found, clients are %s", testid, getTopicsResponse),
 			}
 			return
 		}

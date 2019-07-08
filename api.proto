@@ -1,59 +1,165 @@
 syntax = "proto3";
 package pb;
 
+import "google/api/annotations.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+  host : "127.0.0.1:8888"
+  info : {title : "c2-api";
+}
+;
+schemes : HTTPS;
+consumes : "application/json";
+produces : "application/json";
+}
+;
+
 service C2 {
-  rpc NewClient(NewClientRequest) returns (NewClientResponse) {}
-  rpc RemoveClient(RemoveClientRequest) returns (RemoveClientResponse) {}
-  rpc ResetClient(ResetClientRequest) returns (ResetClientResponse) {}
-  rpc NewClientKey(NewClientKeyRequest) returns (NewClientKeyResponse) {}
-
-  rpc NewTopic(NewTopicRequest) returns (NewTopicResponse) {}
-  rpc RemoveTopic(RemoveTopicRequest) returns (RemoveTopicResponse) {}
-
-  rpc NewTopicClient(NewTopicClientRequest) returns (NewTopicClientResponse) {}
+  // Create a new client
+  rpc NewClient(NewClientRequest) returns (NewClientResponse) {
+    option (google.api.http) = {
+      post : "/e4/client"
+      body : "*"
+    };
+  }
+  // Remove a client
+  rpc RemoveClient(RemoveClientRequest) returns (RemoveClientResponse) {
+    option (google.api.http) = {
+      delete : "/e4/client"
+      body : "*"
+    };
+  }
+  // Instruct the C2 server to send a reset command to the client
+  rpc ResetClient(ResetClientRequest) returns (ResetClientResponse) {
+    option (google.api.http) = {
+      put : "/e4/client"
+      body : "*"
+    };
+  }
+  // Generate a new key for the client
+  rpc NewClientKey(NewClientKeyRequest) returns (NewClientKeyResponse) {
+    option (google.api.http) = {
+      patch : "/e4/client"
+      body : "*"
+    };
+  }
+  // Create a new topic
+  rpc NewTopic(NewTopicRequest) returns (NewTopicResponse) {
+    option (google.api.http) = {
+      post : "/e4/topic/{topic}"
+    };
+  }
+  // Remove a topic
+  rpc RemoveTopic(RemoveTopicRequest) returns (RemoveTopicResponse) {
+    option (google.api.http) = {
+      delete : "/e4/topic/{topic}"
+    };
+  }
+  // Associate a topic with a client
+  rpc NewTopicClient(NewTopicClientRequest) returns (NewTopicClientResponse) {
+    option (google.api.http) = {
+      put : "/e4/client/topic"
+      body : "*"
+    };
+  }
+  // Remove a topic / client association
   rpc RemoveTopicClient(RemoveTopicClientRequest)
-      returns (RemoveTopicClientResponse) {}
-
+      returns (RemoveTopicClientResponse) {
+    option (google.api.http) = {
+      delete : "/e4/client/topic"
+      body : "*"
+    };
+  }
+  // Count the number of topics for a client
   rpc CountTopicsForClient(CountTopicsForClientRequest)
-      returns (CountTopicsForClientResponse) {}
+      returns (CountTopicsForClientResponse) {
+    option (google.api.http) = {
+      get : "/e4/client/topic/count"
+    };
+  }
+  // Retrieve paginated topics for a client
   rpc GetTopicsForClient(GetTopicsForClientRequest)
-      returns (GetTopicsForClientResponse) {}
-
+      returns (GetTopicsForClientResponse) {
+    option (google.api.http) = {
+      get : "/e4/client/topics"
+    };
+  }
+  // Count the number of clients for a topic
   rpc CountClientsForTopic(CountClientsForTopicRequest)
-      returns (CountClientsForTopicResponse) {}
+      returns (CountClientsForTopicResponse) {
+    option (google.api.http) = {
+      get : "/e4/topic/{topic}/clients/count"
+    };
+  }
+  // Retrieve paginated clients for a topic
   rpc GetClientsForTopic(GetClientsForTopicRequest)
-      returns (GetClientsForTopicResponse) {}
+      returns (GetClientsForTopicResponse) {
+    option (google.api.http) = {
+      get : "/e4/topic/{topic}/clients"
+    };
+  }
+  // Count the number of clients
+  rpc CountClients(CountClientsRequest) returns (CountClientsResponse) {
+    option (google.api.http) = {
+      get : "/e4/clients/count"
+    };
+  }
+  // Retrieve paginated clients
+  rpc GetClients(GetClientsRequest) returns (GetClientsResponse) {
+    option (google.api.http) = {
+      get : "/e4/clients"
+    };
+  }
 
-  rpc GetClients(GetClientsRequest) returns (GetClientsResponse) {}
-  rpc GetTopics(GetTopicsRequest) returns (GetTopicsResponse) {}
+  // Count the number of topics
+  rpc CountTopics(CountTopicsRequest) returns (CountTopicsResponse) {
+    option (google.api.http) = {
+      get : "/e4/topics/count"
+    };
+  }
+  // Retrieve paginated topics
+  rpc GetTopics(GetTopicsRequest) returns (GetTopicsResponse) {
+    option (google.api.http) = {
+      get : "/e4/topics"
+    };
+  }
+  // Send a message on a topic
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {
+    option (google.api.http) = {
+      post : "/e4/message"
+      body : "*"
+    };
+  }
+}
 
-  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {}
+message Client {
+  string name = 1;
+  bytes id = 2;
 }
 
 message NewClientRequest {
-  string name = 1;
-  bytes id = 2;
-  bytes key = 3;
+  Client client = 1;
+  bytes key = 2;
 }
 message NewClientResponse {}
 
-message RemoveClientRequest { string name = 1; }
+message RemoveClientRequest { Client client = 1; }
 message RemoveClientResponse {}
 
 message NewTopicClientRequest {
-  string name = 1;
-  bytes id = 2;
-  string topic = 3;
+  Client client = 1;
+  string topic = 2;
 }
 message NewTopicClientResponse {}
 
 message RemoveTopicClientRequest {
-  string name = 1;
+  Client client = 1;
   string topic = 2;
 }
 message RemoveTopicClientResponse {}
 
-message ResetClientRequest { string name = 1; }
+message ResetClientRequest { Client client = 1; }
 message ResetClientResponse {}
 
 message NewTopicRequest { string topic = 1; }
@@ -62,17 +168,14 @@ message NewTopicResponse {}
 message RemoveTopicRequest { string topic = 1; }
 message RemoveTopicResponse {}
 
-message NewClientKeyRequest {
-  string name = 1;
-  bytes id = 2;
-}
+message NewClientKeyRequest { Client client = 1; }
 message NewClientKeyResponse {}
 
-message CountTopicsForClientRequest { string name = 1; }
+message CountTopicsForClientRequest { Client client = 1; }
 message CountTopicsForClientResponse { int64 count = 1; }
 
 message GetTopicsForClientRequest {
-  string name = 1;
+  Client client = 1;
   int64 offset = 2;
   int64 count = 3;
 }
@@ -86,13 +189,19 @@ message GetClientsForTopicRequest {
   int64 offset = 2;
   int64 count = 3;
 }
-message GetClientsForTopicResponse { repeated string names = 1; }
+message GetClientsForTopicResponse { repeated Client clients = 1; }
+
+message CountClientsRequest {}
+message CountClientsResponse { int64 count = 1; }
 
 message GetClientsRequest {
   int64 offset = 1;
   int64 count = 2;
 }
-message GetClientsResponse { repeated string names = 1; }
+message GetClientsResponse { repeated Client clients = 1; }
+
+message CountTopicsRequest {}
+message CountTopicsResponse { int64 count = 1; }
 
 message GetTopicsRequest {
   int64 offset = 1;

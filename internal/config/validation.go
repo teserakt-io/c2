@@ -35,6 +35,8 @@ var (
 	ErrAtLeastOneURLRequired = errors.New("at least one url is required")
 	// ErrIndexNameRequired is returned when a index name is empty but required
 	ErrIndexNameRequired = errors.New("index name is required")
+	// ErrGRPCAddrRequired is returned when the http-grpc-host-port is empty but required
+	ErrGRPCAddrRequired = errors.New("http-grpc-host-port is required")
 )
 
 // Validate check Config and returns an error if anything is invalid
@@ -78,6 +80,19 @@ func (c ServerCfg) Validate() error {
 
 	if len(c.Key) == 0 {
 		return ErrNoKey
+	}
+
+	return nil
+}
+
+// Validate checks HTTPServerCfg and returns an error if anything is invalid
+func (c HTTPServerCfg) Validate() error {
+	if err := c.ServerCfg.Validate(); err != nil {
+		return err
+	}
+
+	if len(c.GRPCAddr) == 0 {
+		return ErrGRPCAddrRequired
 	}
 
 	return nil

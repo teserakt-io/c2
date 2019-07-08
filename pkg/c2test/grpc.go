@@ -47,9 +47,11 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 
 	for i := 0; i < TESTCLIENTCOUNT; i++ {
 		_, err := grpcClient.NewClient(ctx, &pb.NewClientRequest{
-			Id:   testClients[i].ID,
-			Name: testClients[i].Name,
-			Key:  testClients[i].Key,
+			Client: &pb.Client{
+				Id:   testClients[i].ID,
+				Name: testClients[i].Name,
+			},
+			Key: testClients[i].Key,
 		})
 
 		if err != nil {
@@ -83,8 +85,8 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 
 	// *** Add the topic to the client.
 	_, err = grpcClient.NewTopicClient(ctx, &pb.NewTopicClientRequest{
-		Name:  testClients[0].Name,
-		Topic: testTopics[0].TopicName,
+		Client: &pb.Client{Name: testClients[0].Name},
+		Topic:  testTopics[0].TopicName,
 	})
 	if err != nil {
 		resChan <- TestResult{
@@ -99,8 +101,8 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 
 	// *** Check the M2M link returns the topic we added
 	resp, err := grpcClient.GetTopicsForClient(ctx, &pb.GetTopicsForClientRequest{
-		Name:  testClients[0].Name,
-		Count: 10,
+		Client: &pb.Client{Name: testClients[0].Name},
+		Count:  10,
 	})
 	if err != nil {
 		resChan <- TestResult{
@@ -127,8 +129,8 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 
 	// *** Remove the topic from the client (but not the C2)
 	_, err = grpcClient.RemoveTopicClient(ctx, &pb.RemoveTopicClientRequest{
-		Name:  testClients[0].Name,
-		Topic: testTopics[0].TopicName,
+		Client: &pb.Client{Name: testClients[0].Name},
+		Topic:  testTopics[0].TopicName,
 	})
 	if err != nil {
 		resChan <- TestResult{
@@ -144,7 +146,7 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 
 	// *** Check Topic appears to have been removed from the client
 	resp, err = grpcClient.GetTopicsForClient(ctx, &pb.GetTopicsForClientRequest{
-		Name: testClients[0].Name,
+		Client: &pb.Client{Name: testClients[0].Name},
 	})
 	if err != nil {
 		resChan <- TestResult{
@@ -261,21 +263,21 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 		return
 	}
 
-	clientNames := getClientsResp.Names
-	if len(clientNames) != TESTCLIENTCOUNT {
+	clients := getClientsResp.Clients
+	if len(clients) != TESTCLIENTCOUNT {
 		resChan <- TestResult{
 			Name:     "Test Fetch Clients",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test Fetch Clients: Incorrect number of returned clients, returned body is %s", clientNames),
+			Error:    fmt.Errorf("Test Fetch Clients: Incorrect number of returned clients, returned body is %s", clients),
 		}
 		return
 	}
 	for i := 0; i < TESTCLIENTCOUNT; i++ {
 		found := false
 		testclient := testClients[i]
-		for j := 0; j < len(clientNames); j++ {
-			if clientNames[j] == testclient.Name {
+		for j := 0; j < len(clients); j++ {
+			if clients[j].Name == testclient.Name {
 				found = true
 				break
 			}
@@ -285,7 +287,7 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 				Name:     "Test Fetch Client",
 				Result:   false,
 				Critical: true,
-				Error:    fmt.Errorf("Test Fetch Client: Client s%s not found, clients are %s", testclient, clientNames),
+				Error:    fmt.Errorf("Test Fetch Client: Client s%s not found, clients are %s", testclient, clients),
 			}
 			return
 		}

@@ -85,16 +85,6 @@ func CheckC2Online(addr string, grpcPort int, httpPort int) bool {
 	return true
 }
 
-// GetHexID returns a hex-encoded Identifier
-func (t *TestClient) GetHexID() string {
-	return hex.EncodeToString(t.ID)
-}
-
-// GetHexKey returns a hex-encoded Key
-func (t *TestClient) GetHexKey() string {
-	return hex.EncodeToString(t.Key)
-}
-
 // NewTestClient generates a new TestClient
 func NewTestClient() (*TestClient, error) {
 	t := &TestClient{}
@@ -145,11 +135,6 @@ func NewTestTopic(topickeygen bool) (*TestTopic, error) {
 	}
 	t.TopicName = topic
 	return t, nil
-}
-
-// GetHexKey returns a hex-encoded Key
-func (t *TestTopic) GetHexKey() string {
-	return hex.EncodeToString(t.Key)
 }
 
 // GenerateName generates a random name beginning clientname-%s

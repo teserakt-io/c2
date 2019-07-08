@@ -7,6 +7,8 @@ import (
 	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
+	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/options"
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
 	math "math"
 )
@@ -22,10 +24,56 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type NewClientRequest struct {
+type Client struct {
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Id                   []byte   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	Key                  []byte   `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Client) Reset()         { *m = Client{} }
+func (m *Client) String() string { return proto.CompactTextString(m) }
+func (*Client) ProtoMessage()    {}
+func (*Client) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{0}
+}
+
+func (m *Client) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Client.Unmarshal(m, b)
+}
+func (m *Client) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Client.Marshal(b, m, deterministic)
+}
+func (m *Client) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Client.Merge(m, src)
+}
+func (m *Client) XXX_Size() int {
+	return xxx_messageInfo_Client.Size(m)
+}
+func (m *Client) XXX_DiscardUnknown() {
+	xxx_messageInfo_Client.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Client proto.InternalMessageInfo
+
+func (m *Client) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Client) GetId() []byte {
+	if m != nil {
+		return m.Id
+	}
+	return nil
+}
+
+type NewClientRequest struct {
+	Client               *Client  `protobuf:"bytes,1,opt,name=client,proto3" json:"client,omitempty"`
+	Key                  []byte   `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -35,7 +83,7 @@ func (m *NewClientRequest) Reset()         { *m = NewClientRequest{} }
 func (m *NewClientRequest) String() string { return proto.CompactTextString(m) }
 func (*NewClientRequest) ProtoMessage()    {}
 func (*NewClientRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{0}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{1}
 }
 
 func (m *NewClientRequest) XXX_Unmarshal(b []byte) error {
@@ -56,16 +104,9 @@ func (m *NewClientRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_NewClientRequest proto.InternalMessageInfo
 
-func (m *NewClientRequest) GetName() string {
+func (m *NewClientRequest) GetClient() *Client {
 	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *NewClientRequest) GetId() []byte {
-	if m != nil {
-		return m.Id
+		return m.Client
 	}
 	return nil
 }
@@ -87,7 +128,7 @@ func (m *NewClientResponse) Reset()         { *m = NewClientResponse{} }
 func (m *NewClientResponse) String() string { return proto.CompactTextString(m) }
 func (*NewClientResponse) ProtoMessage()    {}
 func (*NewClientResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{1}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{2}
 }
 
 func (m *NewClientResponse) XXX_Unmarshal(b []byte) error {
@@ -109,7 +150,7 @@ func (m *NewClientResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_NewClientResponse proto.InternalMessageInfo
 
 type RemoveClientRequest struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Client               *Client  `protobuf:"bytes,1,opt,name=client,proto3" json:"client,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -119,7 +160,7 @@ func (m *RemoveClientRequest) Reset()         { *m = RemoveClientRequest{} }
 func (m *RemoveClientRequest) String() string { return proto.CompactTextString(m) }
 func (*RemoveClientRequest) ProtoMessage()    {}
 func (*RemoveClientRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{2}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{3}
 }
 
 func (m *RemoveClientRequest) XXX_Unmarshal(b []byte) error {
@@ -140,11 +181,11 @@ func (m *RemoveClientRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RemoveClientRequest proto.InternalMessageInfo
 
-func (m *RemoveClientRequest) GetName() string {
+func (m *RemoveClientRequest) GetClient() *Client {
 	if m != nil {
-		return m.Name
+		return m.Client
 	}
-	return ""
+	return nil
 }
 
 type RemoveClientResponse struct {
@@ -157,7 +198,7 @@ func (m *RemoveClientResponse) Reset()         { *m = RemoveClientResponse{} }
 func (m *RemoveClientResponse) String() string { return proto.CompactTextString(m) }
 func (*RemoveClientResponse) ProtoMessage()    {}
 func (*RemoveClientResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{3}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{4}
 }
 
 func (m *RemoveClientResponse) XXX_Unmarshal(b []byte) error {
@@ -179,9 +220,8 @@ func (m *RemoveClientResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_RemoveClientResponse proto.InternalMessageInfo
 
 type NewTopicClientRequest struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Id                   []byte   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	Topic                string   `protobuf:"bytes,3,opt,name=topic,proto3" json:"topic,omitempty"`
+	Client               *Client  `protobuf:"bytes,1,opt,name=client,proto3" json:"client,omitempty"`
+	Topic                string   `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -191,7 +231,7 @@ func (m *NewTopicClientRequest) Reset()         { *m = NewTopicClientRequest{} }
 func (m *NewTopicClientRequest) String() string { return proto.CompactTextString(m) }
 func (*NewTopicClientRequest) ProtoMessage()    {}
 func (*NewTopicClientRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{4}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{5}
 }
 
 func (m *NewTopicClientRequest) XXX_Unmarshal(b []byte) error {
@@ -212,16 +252,9 @@ func (m *NewTopicClientRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_NewTopicClientRequest proto.InternalMessageInfo
 
-func (m *NewTopicClientRequest) GetName() string {
+func (m *NewTopicClientRequest) GetClient() *Client {
 	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *NewTopicClientRequest) GetId() []byte {
-	if m != nil {
-		return m.Id
+		return m.Client
 	}
 	return nil
 }
@@ -243,7 +276,7 @@ func (m *NewTopicClientResponse) Reset()         { *m = NewTopicClientResponse{}
 func (m *NewTopicClientResponse) String() string { return proto.CompactTextString(m) }
 func (*NewTopicClientResponse) ProtoMessage()    {}
 func (*NewTopicClientResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{5}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{6}
 }
 
 func (m *NewTopicClientResponse) XXX_Unmarshal(b []byte) error {
@@ -265,7 +298,7 @@ func (m *NewTopicClientResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_NewTopicClientResponse proto.InternalMessageInfo
 
 type RemoveTopicClientRequest struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Client               *Client  `protobuf:"bytes,1,opt,name=client,proto3" json:"client,omitempty"`
 	Topic                string   `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -276,7 +309,7 @@ func (m *RemoveTopicClientRequest) Reset()         { *m = RemoveTopicClientReque
 func (m *RemoveTopicClientRequest) String() string { return proto.CompactTextString(m) }
 func (*RemoveTopicClientRequest) ProtoMessage()    {}
 func (*RemoveTopicClientRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{6}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{7}
 }
 
 func (m *RemoveTopicClientRequest) XXX_Unmarshal(b []byte) error {
@@ -297,11 +330,11 @@ func (m *RemoveTopicClientRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RemoveTopicClientRequest proto.InternalMessageInfo
 
-func (m *RemoveTopicClientRequest) GetName() string {
+func (m *RemoveTopicClientRequest) GetClient() *Client {
 	if m != nil {
-		return m.Name
+		return m.Client
 	}
-	return ""
+	return nil
 }
 
 func (m *RemoveTopicClientRequest) GetTopic() string {
@@ -321,7 +354,7 @@ func (m *RemoveTopicClientResponse) Reset()         { *m = RemoveTopicClientResp
 func (m *RemoveTopicClientResponse) String() string { return proto.CompactTextString(m) }
 func (*RemoveTopicClientResponse) ProtoMessage()    {}
 func (*RemoveTopicClientResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{7}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{8}
 }
 
 func (m *RemoveTopicClientResponse) XXX_Unmarshal(b []byte) error {
@@ -343,7 +376,7 @@ func (m *RemoveTopicClientResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_RemoveTopicClientResponse proto.InternalMessageInfo
 
 type ResetClientRequest struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Client               *Client  `protobuf:"bytes,1,opt,name=client,proto3" json:"client,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -353,7 +386,7 @@ func (m *ResetClientRequest) Reset()         { *m = ResetClientRequest{} }
 func (m *ResetClientRequest) String() string { return proto.CompactTextString(m) }
 func (*ResetClientRequest) ProtoMessage()    {}
 func (*ResetClientRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{8}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{9}
 }
 
 func (m *ResetClientRequest) XXX_Unmarshal(b []byte) error {
@@ -374,11 +407,11 @@ func (m *ResetClientRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ResetClientRequest proto.InternalMessageInfo
 
-func (m *ResetClientRequest) GetName() string {
+func (m *ResetClientRequest) GetClient() *Client {
 	if m != nil {
-		return m.Name
+		return m.Client
 	}
-	return ""
+	return nil
 }
 
 type ResetClientResponse struct {
@@ -391,7 +424,7 @@ func (m *ResetClientResponse) Reset()         { *m = ResetClientResponse{} }
 func (m *ResetClientResponse) String() string { return proto.CompactTextString(m) }
 func (*ResetClientResponse) ProtoMessage()    {}
 func (*ResetClientResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{9}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{10}
 }
 
 func (m *ResetClientResponse) XXX_Unmarshal(b []byte) error {
@@ -423,7 +456,7 @@ func (m *NewTopicRequest) Reset()         { *m = NewTopicRequest{} }
 func (m *NewTopicRequest) String() string { return proto.CompactTextString(m) }
 func (*NewTopicRequest) ProtoMessage()    {}
 func (*NewTopicRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{10}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{11}
 }
 
 func (m *NewTopicRequest) XXX_Unmarshal(b []byte) error {
@@ -461,7 +494,7 @@ func (m *NewTopicResponse) Reset()         { *m = NewTopicResponse{} }
 func (m *NewTopicResponse) String() string { return proto.CompactTextString(m) }
 func (*NewTopicResponse) ProtoMessage()    {}
 func (*NewTopicResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{11}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{12}
 }
 
 func (m *NewTopicResponse) XXX_Unmarshal(b []byte) error {
@@ -493,7 +526,7 @@ func (m *RemoveTopicRequest) Reset()         { *m = RemoveTopicRequest{} }
 func (m *RemoveTopicRequest) String() string { return proto.CompactTextString(m) }
 func (*RemoveTopicRequest) ProtoMessage()    {}
 func (*RemoveTopicRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{12}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{13}
 }
 
 func (m *RemoveTopicRequest) XXX_Unmarshal(b []byte) error {
@@ -531,7 +564,7 @@ func (m *RemoveTopicResponse) Reset()         { *m = RemoveTopicResponse{} }
 func (m *RemoveTopicResponse) String() string { return proto.CompactTextString(m) }
 func (*RemoveTopicResponse) ProtoMessage()    {}
 func (*RemoveTopicResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{13}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{14}
 }
 
 func (m *RemoveTopicResponse) XXX_Unmarshal(b []byte) error {
@@ -553,8 +586,7 @@ func (m *RemoveTopicResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_RemoveTopicResponse proto.InternalMessageInfo
 
 type NewClientKeyRequest struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Id                   []byte   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Client               *Client  `protobuf:"bytes,1,opt,name=client,proto3" json:"client,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -564,7 +596,7 @@ func (m *NewClientKeyRequest) Reset()         { *m = NewClientKeyRequest{} }
 func (m *NewClientKeyRequest) String() string { return proto.CompactTextString(m) }
 func (*NewClientKeyRequest) ProtoMessage()    {}
 func (*NewClientKeyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{14}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{15}
 }
 
 func (m *NewClientKeyRequest) XXX_Unmarshal(b []byte) error {
@@ -585,16 +617,9 @@ func (m *NewClientKeyRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_NewClientKeyRequest proto.InternalMessageInfo
 
-func (m *NewClientKeyRequest) GetName() string {
+func (m *NewClientKeyRequest) GetClient() *Client {
 	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *NewClientKeyRequest) GetId() []byte {
-	if m != nil {
-		return m.Id
+		return m.Client
 	}
 	return nil
 }
@@ -609,7 +634,7 @@ func (m *NewClientKeyResponse) Reset()         { *m = NewClientKeyResponse{} }
 func (m *NewClientKeyResponse) String() string { return proto.CompactTextString(m) }
 func (*NewClientKeyResponse) ProtoMessage()    {}
 func (*NewClientKeyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{15}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{16}
 }
 
 func (m *NewClientKeyResponse) XXX_Unmarshal(b []byte) error {
@@ -631,7 +656,7 @@ func (m *NewClientKeyResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_NewClientKeyResponse proto.InternalMessageInfo
 
 type CountTopicsForClientRequest struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Client               *Client  `protobuf:"bytes,1,opt,name=client,proto3" json:"client,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -641,7 +666,7 @@ func (m *CountTopicsForClientRequest) Reset()         { *m = CountTopicsForClien
 func (m *CountTopicsForClientRequest) String() string { return proto.CompactTextString(m) }
 func (*CountTopicsForClientRequest) ProtoMessage()    {}
 func (*CountTopicsForClientRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{16}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{17}
 }
 
 func (m *CountTopicsForClientRequest) XXX_Unmarshal(b []byte) error {
@@ -662,11 +687,11 @@ func (m *CountTopicsForClientRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CountTopicsForClientRequest proto.InternalMessageInfo
 
-func (m *CountTopicsForClientRequest) GetName() string {
+func (m *CountTopicsForClientRequest) GetClient() *Client {
 	if m != nil {
-		return m.Name
+		return m.Client
 	}
-	return ""
+	return nil
 }
 
 type CountTopicsForClientResponse struct {
@@ -680,7 +705,7 @@ func (m *CountTopicsForClientResponse) Reset()         { *m = CountTopicsForClie
 func (m *CountTopicsForClientResponse) String() string { return proto.CompactTextString(m) }
 func (*CountTopicsForClientResponse) ProtoMessage()    {}
 func (*CountTopicsForClientResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{17}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{18}
 }
 
 func (m *CountTopicsForClientResponse) XXX_Unmarshal(b []byte) error {
@@ -709,7 +734,7 @@ func (m *CountTopicsForClientResponse) GetCount() int64 {
 }
 
 type GetTopicsForClientRequest struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Client               *Client  `protobuf:"bytes,1,opt,name=client,proto3" json:"client,omitempty"`
 	Offset               int64    `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
 	Count                int64    `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -721,7 +746,7 @@ func (m *GetTopicsForClientRequest) Reset()         { *m = GetTopicsForClientReq
 func (m *GetTopicsForClientRequest) String() string { return proto.CompactTextString(m) }
 func (*GetTopicsForClientRequest) ProtoMessage()    {}
 func (*GetTopicsForClientRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{18}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{19}
 }
 
 func (m *GetTopicsForClientRequest) XXX_Unmarshal(b []byte) error {
@@ -742,11 +767,11 @@ func (m *GetTopicsForClientRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetTopicsForClientRequest proto.InternalMessageInfo
 
-func (m *GetTopicsForClientRequest) GetName() string {
+func (m *GetTopicsForClientRequest) GetClient() *Client {
 	if m != nil {
-		return m.Name
+		return m.Client
 	}
-	return ""
+	return nil
 }
 
 func (m *GetTopicsForClientRequest) GetOffset() int64 {
@@ -774,7 +799,7 @@ func (m *GetTopicsForClientResponse) Reset()         { *m = GetTopicsForClientRe
 func (m *GetTopicsForClientResponse) String() string { return proto.CompactTextString(m) }
 func (*GetTopicsForClientResponse) ProtoMessage()    {}
 func (*GetTopicsForClientResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{19}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{20}
 }
 
 func (m *GetTopicsForClientResponse) XXX_Unmarshal(b []byte) error {
@@ -813,7 +838,7 @@ func (m *CountClientsForTopicRequest) Reset()         { *m = CountClientsForTopi
 func (m *CountClientsForTopicRequest) String() string { return proto.CompactTextString(m) }
 func (*CountClientsForTopicRequest) ProtoMessage()    {}
 func (*CountClientsForTopicRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{20}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{21}
 }
 
 func (m *CountClientsForTopicRequest) XXX_Unmarshal(b []byte) error {
@@ -852,7 +877,7 @@ func (m *CountClientsForTopicResponse) Reset()         { *m = CountClientsForTop
 func (m *CountClientsForTopicResponse) String() string { return proto.CompactTextString(m) }
 func (*CountClientsForTopicResponse) ProtoMessage()    {}
 func (*CountClientsForTopicResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{21}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{22}
 }
 
 func (m *CountClientsForTopicResponse) XXX_Unmarshal(b []byte) error {
@@ -893,7 +918,7 @@ func (m *GetClientsForTopicRequest) Reset()         { *m = GetClientsForTopicReq
 func (m *GetClientsForTopicRequest) String() string { return proto.CompactTextString(m) }
 func (*GetClientsForTopicRequest) ProtoMessage()    {}
 func (*GetClientsForTopicRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{22}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{23}
 }
 
 func (m *GetClientsForTopicRequest) XXX_Unmarshal(b []byte) error {
@@ -936,17 +961,17 @@ func (m *GetClientsForTopicRequest) GetCount() int64 {
 }
 
 type GetClientsForTopicResponse struct {
-	Names                []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Clients              []*Client `protobuf:"bytes,1,rep,name=clients,proto3" json:"clients,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
 }
 
 func (m *GetClientsForTopicResponse) Reset()         { *m = GetClientsForTopicResponse{} }
 func (m *GetClientsForTopicResponse) String() string { return proto.CompactTextString(m) }
 func (*GetClientsForTopicResponse) ProtoMessage()    {}
 func (*GetClientsForTopicResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{23}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{24}
 }
 
 func (m *GetClientsForTopicResponse) XXX_Unmarshal(b []byte) error {
@@ -967,11 +992,81 @@ func (m *GetClientsForTopicResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetClientsForTopicResponse proto.InternalMessageInfo
 
-func (m *GetClientsForTopicResponse) GetNames() []string {
+func (m *GetClientsForTopicResponse) GetClients() []*Client {
 	if m != nil {
-		return m.Names
+		return m.Clients
 	}
 	return nil
+}
+
+type CountClientsRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CountClientsRequest) Reset()         { *m = CountClientsRequest{} }
+func (m *CountClientsRequest) String() string { return proto.CompactTextString(m) }
+func (*CountClientsRequest) ProtoMessage()    {}
+func (*CountClientsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{25}
+}
+
+func (m *CountClientsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CountClientsRequest.Unmarshal(m, b)
+}
+func (m *CountClientsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CountClientsRequest.Marshal(b, m, deterministic)
+}
+func (m *CountClientsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CountClientsRequest.Merge(m, src)
+}
+func (m *CountClientsRequest) XXX_Size() int {
+	return xxx_messageInfo_CountClientsRequest.Size(m)
+}
+func (m *CountClientsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CountClientsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CountClientsRequest proto.InternalMessageInfo
+
+type CountClientsResponse struct {
+	Count                int64    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CountClientsResponse) Reset()         { *m = CountClientsResponse{} }
+func (m *CountClientsResponse) String() string { return proto.CompactTextString(m) }
+func (*CountClientsResponse) ProtoMessage()    {}
+func (*CountClientsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{26}
+}
+
+func (m *CountClientsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CountClientsResponse.Unmarshal(m, b)
+}
+func (m *CountClientsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CountClientsResponse.Marshal(b, m, deterministic)
+}
+func (m *CountClientsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CountClientsResponse.Merge(m, src)
+}
+func (m *CountClientsResponse) XXX_Size() int {
+	return xxx_messageInfo_CountClientsResponse.Size(m)
+}
+func (m *CountClientsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CountClientsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CountClientsResponse proto.InternalMessageInfo
+
+func (m *CountClientsResponse) GetCount() int64 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
 }
 
 type GetClientsRequest struct {
@@ -986,7 +1081,7 @@ func (m *GetClientsRequest) Reset()         { *m = GetClientsRequest{} }
 func (m *GetClientsRequest) String() string { return proto.CompactTextString(m) }
 func (*GetClientsRequest) ProtoMessage()    {}
 func (*GetClientsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{24}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{27}
 }
 
 func (m *GetClientsRequest) XXX_Unmarshal(b []byte) error {
@@ -1022,17 +1117,17 @@ func (m *GetClientsRequest) GetCount() int64 {
 }
 
 type GetClientsResponse struct {
-	Names                []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Clients              []*Client `protobuf:"bytes,1,rep,name=clients,proto3" json:"clients,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
 }
 
 func (m *GetClientsResponse) Reset()         { *m = GetClientsResponse{} }
 func (m *GetClientsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetClientsResponse) ProtoMessage()    {}
 func (*GetClientsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{25}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{28}
 }
 
 func (m *GetClientsResponse) XXX_Unmarshal(b []byte) error {
@@ -1053,11 +1148,81 @@ func (m *GetClientsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetClientsResponse proto.InternalMessageInfo
 
-func (m *GetClientsResponse) GetNames() []string {
+func (m *GetClientsResponse) GetClients() []*Client {
 	if m != nil {
-		return m.Names
+		return m.Clients
 	}
 	return nil
+}
+
+type CountTopicsRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CountTopicsRequest) Reset()         { *m = CountTopicsRequest{} }
+func (m *CountTopicsRequest) String() string { return proto.CompactTextString(m) }
+func (*CountTopicsRequest) ProtoMessage()    {}
+func (*CountTopicsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{29}
+}
+
+func (m *CountTopicsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CountTopicsRequest.Unmarshal(m, b)
+}
+func (m *CountTopicsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CountTopicsRequest.Marshal(b, m, deterministic)
+}
+func (m *CountTopicsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CountTopicsRequest.Merge(m, src)
+}
+func (m *CountTopicsRequest) XXX_Size() int {
+	return xxx_messageInfo_CountTopicsRequest.Size(m)
+}
+func (m *CountTopicsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CountTopicsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CountTopicsRequest proto.InternalMessageInfo
+
+type CountTopicsResponse struct {
+	Count                int64    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CountTopicsResponse) Reset()         { *m = CountTopicsResponse{} }
+func (m *CountTopicsResponse) String() string { return proto.CompactTextString(m) }
+func (*CountTopicsResponse) ProtoMessage()    {}
+func (*CountTopicsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{30}
+}
+
+func (m *CountTopicsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CountTopicsResponse.Unmarshal(m, b)
+}
+func (m *CountTopicsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CountTopicsResponse.Marshal(b, m, deterministic)
+}
+func (m *CountTopicsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CountTopicsResponse.Merge(m, src)
+}
+func (m *CountTopicsResponse) XXX_Size() int {
+	return xxx_messageInfo_CountTopicsResponse.Size(m)
+}
+func (m *CountTopicsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CountTopicsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CountTopicsResponse proto.InternalMessageInfo
+
+func (m *CountTopicsResponse) GetCount() int64 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
 }
 
 type GetTopicsRequest struct {
@@ -1072,7 +1237,7 @@ func (m *GetTopicsRequest) Reset()         { *m = GetTopicsRequest{} }
 func (m *GetTopicsRequest) String() string { return proto.CompactTextString(m) }
 func (*GetTopicsRequest) ProtoMessage()    {}
 func (*GetTopicsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{26}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{31}
 }
 
 func (m *GetTopicsRequest) XXX_Unmarshal(b []byte) error {
@@ -1118,7 +1283,7 @@ func (m *GetTopicsResponse) Reset()         { *m = GetTopicsResponse{} }
 func (m *GetTopicsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetTopicsResponse) ProtoMessage()    {}
 func (*GetTopicsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{27}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{32}
 }
 
 func (m *GetTopicsResponse) XXX_Unmarshal(b []byte) error {
@@ -1158,7 +1323,7 @@ func (m *SendMessageRequest) Reset()         { *m = SendMessageRequest{} }
 func (m *SendMessageRequest) String() string { return proto.CompactTextString(m) }
 func (*SendMessageRequest) ProtoMessage()    {}
 func (*SendMessageRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{28}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{33}
 }
 
 func (m *SendMessageRequest) XXX_Unmarshal(b []byte) error {
@@ -1203,7 +1368,7 @@ func (m *SendMessageResponse) Reset()         { *m = SendMessageResponse{} }
 func (m *SendMessageResponse) String() string { return proto.CompactTextString(m) }
 func (*SendMessageResponse) ProtoMessage()    {}
 func (*SendMessageResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{29}
+	return fileDescriptor_00212fb1f9d3bf1c, []int{34}
 }
 
 func (m *SendMessageResponse) XXX_Unmarshal(b []byte) error {
@@ -1225,6 +1390,7 @@ func (m *SendMessageResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_SendMessageResponse proto.InternalMessageInfo
 
 func init() {
+	proto.RegisterType((*Client)(nil), "pb.Client")
 	proto.RegisterType((*NewClientRequest)(nil), "pb.NewClientRequest")
 	proto.RegisterType((*NewClientResponse)(nil), "pb.NewClientResponse")
 	proto.RegisterType((*RemoveClientRequest)(nil), "pb.RemoveClientRequest")
@@ -1249,8 +1415,12 @@ func init() {
 	proto.RegisterType((*CountClientsForTopicResponse)(nil), "pb.CountClientsForTopicResponse")
 	proto.RegisterType((*GetClientsForTopicRequest)(nil), "pb.GetClientsForTopicRequest")
 	proto.RegisterType((*GetClientsForTopicResponse)(nil), "pb.GetClientsForTopicResponse")
+	proto.RegisterType((*CountClientsRequest)(nil), "pb.CountClientsRequest")
+	proto.RegisterType((*CountClientsResponse)(nil), "pb.CountClientsResponse")
 	proto.RegisterType((*GetClientsRequest)(nil), "pb.GetClientsRequest")
 	proto.RegisterType((*GetClientsResponse)(nil), "pb.GetClientsResponse")
+	proto.RegisterType((*CountTopicsRequest)(nil), "pb.CountTopicsRequest")
+	proto.RegisterType((*CountTopicsResponse)(nil), "pb.CountTopicsResponse")
 	proto.RegisterType((*GetTopicsRequest)(nil), "pb.GetTopicsRequest")
 	proto.RegisterType((*GetTopicsResponse)(nil), "pb.GetTopicsResponse")
 	proto.RegisterType((*SendMessageRequest)(nil), "pb.SendMessageRequest")
@@ -1260,50 +1430,70 @@ func init() {
 func init() { proto.RegisterFile("api.proto", fileDescriptor_00212fb1f9d3bf1c) }
 
 var fileDescriptor_00212fb1f9d3bf1c = []byte{
-	// 676 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x56, 0x5d, 0x6f, 0xd3, 0x30,
-	0x14, 0x5d, 0x12, 0x18, 0xcb, 0x65, 0x1a, 0xad, 0xdb, 0xa4, 0x69, 0x36, 0x46, 0x95, 0x17, 0xca,
-	0x90, 0x2a, 0xd1, 0x4d, 0x42, 0x4c, 0x42, 0x1a, 0xea, 0xc4, 0x87, 0x10, 0x93, 0x08, 0xf0, 0x84,
-	0x10, 0x6a, 0x57, 0x0f, 0x55, 0xd0, 0x26, 0x2c, 0x19, 0xd3, 0x7e, 0x23, 0x7f, 0x0a, 0xf9, 0xb3,
-	0x8e, 0xe3, 0xa4, 0x2b, 0x6f, 0xb5, 0xef, 0xbd, 0xe7, 0x1c, 0xdf, 0x6b, 0x9f, 0x14, 0xdc, 0x71,
-	0x3a, 0x1b, 0xa4, 0x97, 0x49, 0x9e, 0x20, 0x3b, 0x9d, 0x44, 0x6f, 0xa1, 0x71, 0x86, 0xaf, 0x47,
-	0xbf, 0x66, 0x78, 0x91, 0xc7, 0xf8, 0xf7, 0x15, 0xce, 0x72, 0x84, 0xe0, 0xce, 0x62, 0x3c, 0xc7,
-	0x81, 0xd5, 0xb3, 0xfa, 0x6e, 0x4c, 0x7f, 0xa3, 0x1d, 0xb0, 0x67, 0xd3, 0xc0, 0xee, 0x59, 0xfd,
-	0xed, 0xd8, 0x9e, 0x4d, 0x51, 0x03, 0x9c, 0x9f, 0xf8, 0x26, 0x70, 0xe8, 0x06, 0xf9, 0x19, 0xb5,
-	0xa0, 0xa9, 0x20, 0x65, 0x69, 0xb2, 0xc8, 0x70, 0xf4, 0x04, 0x5a, 0x31, 0x9e, 0x27, 0x7f, 0xf0,
-	0x4a, 0x86, 0xc8, 0x87, 0x76, 0x31, 0x95, 0x43, 0x7c, 0x04, 0xef, 0x0c, 0x5f, 0x7f, 0x4e, 0xd2,
-	0xd9, 0xf9, 0xfa, 0x32, 0xdb, 0x70, 0x37, 0x27, 0x95, 0x54, 0xa8, 0x1b, 0xb3, 0x45, 0x14, 0x80,
-	0xaf, 0x43, 0x72, 0xb2, 0x53, 0x08, 0x98, 0x88, 0x5b, 0xf2, 0x49, 0x7c, 0x5b, 0xc5, 0xdf, 0x85,
-	0xae, 0x01, 0x85, 0x53, 0xf4, 0x01, 0xc5, 0x38, 0xc3, 0xf9, 0xea, 0x8e, 0x78, 0xa4, 0x79, 0x4a,
-	0x26, 0x07, 0x78, 0x0c, 0x0f, 0x84, 0x7a, 0x51, 0x2d, 0x65, 0x58, 0xaa, 0x0c, 0x44, 0x67, 0xcb,
-	0x13, 0x79, 0xf1, 0x01, 0x61, 0x97, 0xd2, 0xea, 0xeb, 0x3d, 0x31, 0xbc, 0x22, 0xc4, 0x0b, 0x68,
-	0xc9, 0x41, 0xbf, 0xc7, 0x37, 0x6b, 0x8c, 0x83, 0xcc, 0xb8, 0x58, 0xca, 0x21, 0x9f, 0xc1, 0xee,
-	0x28, 0xb9, 0x5a, 0xe4, 0x94, 0x28, 0x7b, 0x9d, 0x5c, 0xae, 0x6e, 0xce, 0x11, 0xec, 0x99, 0x4b,
-	0x18, 0x24, 0x39, 0xd2, 0x39, 0x89, 0xd3, 0x22, 0x27, 0x66, 0x8b, 0xe8, 0x1b, 0x74, 0xdf, 0xe0,
-	0x35, 0x68, 0x90, 0x0f, 0x9b, 0xc9, 0xc5, 0x45, 0x86, 0x73, 0x7a, 0x0a, 0x27, 0xe6, 0xab, 0x25,
-	0xbc, 0xa3, 0xc2, 0x1f, 0x41, 0x68, 0x82, 0xe7, 0x92, 0x7c, 0xd8, 0xa4, 0x8d, 0xcd, 0x02, 0xab,
-	0xe7, 0xf4, 0xdd, 0x98, 0xaf, 0xa2, 0x43, 0x7e, 0x7a, 0x96, 0x4e, 0x0a, 0x6f, 0x31, 0x1c, 0x71,
-	0xfe, 0x52, 0x51, 0xed, 0xf9, 0xbf, 0xd3, 0xf3, 0xaf, 0x43, 0xb4, 0x66, 0x07, 0x86, 0xb4, 0x03,
-	0x35, 0xa2, 0x48, 0x57, 0x45, 0x03, 0xd8, 0x22, 0x7a, 0x05, 0xcd, 0x65, 0x8d, 0x10, 0xb3, 0xa4,
-	0xb5, 0xcc, 0xb4, 0xb6, 0x4a, 0x7b, 0x00, 0x48, 0x85, 0xa8, 0xa5, 0x3b, 0x81, 0x86, 0x1c, 0xd2,
-	0xff, 0xb1, 0x3d, 0xa5, 0x82, 0x05, 0xc2, 0x8a, 0xe9, 0x9e, 0x02, 0xfa, 0x84, 0x17, 0xd3, 0x0f,
-	0x38, 0xcb, 0xc6, 0x3f, 0x70, 0x7d, 0xaf, 0x03, 0xb8, 0x37, 0x67, 0x79, 0xdc, 0x50, 0xc4, 0x92,
-	0xbc, 0xc5, 0x02, 0x0a, 0x23, 0x1d, 0xfe, 0xdd, 0x02, 0x7b, 0x34, 0x44, 0xc7, 0xe0, 0xca, 0x77,
-	0x85, 0xda, 0x83, 0x74, 0x32, 0xd0, 0x4d, 0x3d, 0xf4, 0xb4, 0x5d, 0xfe, 0xf2, 0x36, 0xd0, 0x08,
-	0xb6, 0x55, 0xdf, 0x45, 0x1d, 0x92, 0x68, 0x30, 0xed, 0x30, 0x28, 0x07, 0x24, 0xc8, 0x09, 0xdc,
-	0x57, 0xac, 0x0a, 0xf9, 0x2c, 0x55, 0x77, 0xb9, 0xb0, 0x53, 0xda, 0x57, 0x65, 0xa8, 0xd6, 0xc0,
-	0x64, 0x18, 0x7c, 0x86, 0xc9, 0x30, 0xba, 0xc8, 0x06, 0x7a, 0x0e, 0x5b, 0xc2, 0xf1, 0x50, 0x8b,
-	0xe7, 0xa9, 0x57, 0x3c, 0x6c, 0x17, 0x37, 0x8b, 0xfa, 0xa5, 0xd5, 0x09, 0xfd, 0xba, 0x4f, 0x86,
-	0x9d, 0xd2, 0xbe, 0x44, 0x78, 0x07, 0x3b, 0xc5, 0x6f, 0x0a, 0xea, 0xaa, 0x5c, 0xc5, 0x3e, 0x84,
-	0xa6, 0x90, 0x84, 0x8a, 0xa1, 0x59, 0xfa, 0x7c, 0xa0, 0x3d, 0x8d, 0xba, 0x08, 0xf8, 0xb0, 0x22,
-	0x2a, 0x31, 0xbf, 0x42, 0xdb, 0x64, 0x97, 0xe8, 0x11, 0x29, 0xac, 0xf1, 0xde, 0xb0, 0x57, 0x9d,
-	0x20, 0xc1, 0xbf, 0xd0, 0xd7, 0xa7, 0x43, 0x53, 0x4d, 0x95, 0x6e, 0x1b, 0xee, 0x57, 0x85, 0x4b,
-	0x9a, 0x35, 0x37, 0x51, 0x34, 0x9b, 0x8d, 0x4c, 0xd1, 0x5c, 0x61, 0x44, 0x52, 0xb3, 0x0e, 0x2d,
-	0x34, 0x57, 0x00, 0xef, 0x57, 0x85, 0x25, 0xec, 0x4b, 0x80, 0x65, 0x1c, 0x79, 0xc5, 0x7c, 0x01,
-	0xe3, 0xeb, 0xdb, 0xb2, 0xfc, 0x18, 0x5c, 0xd9, 0x12, 0xf6, 0x90, 0x75, 0xab, 0x0a, 0x3d, 0x6d,
-	0x57, 0xbd, 0xc3, 0x8a, 0x45, 0xb0, 0x3b, 0x5c, 0x76, 0x1e, 0x76, 0x87, 0x0d, 0x5e, 0x12, 0x6d,
-	0x4c, 0x36, 0xe9, 0xff, 0xc2, 0xc3, 0x7f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x2b, 0x86, 0xf8, 0xd1,
-	0x24, 0x0a, 0x00, 0x00,
+	// 1000 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x57, 0x6d, 0x6f, 0xdb, 0x54,
+	0x14, 0x96, 0x13, 0xc8, 0x96, 0x93, 0xd0, 0x25, 0x27, 0x2f, 0x75, 0xdc, 0xd2, 0x75, 0x16, 0xd2,
+	0xaa, 0xac, 0x4d, 0xb6, 0xac, 0x12, 0x59, 0x3e, 0xd1, 0x75, 0x02, 0x24, 0x60, 0x0c, 0x33, 0xd0,
+	0x90, 0x90, 0x90, 0x9b, 0xde, 0x45, 0x86, 0xc6, 0x36, 0xb5, 0xb7, 0xaa, 0x42, 0x7c, 0xe9, 0x4f,
+	0x80, 0x9f, 0xc6, 0x5f, 0xe0, 0x57, 0xf0, 0x09, 0xf9, 0xdc, 0x6b, 0xe7, 0xde, 0x6b, 0x3b, 0x22,
+	0xc0, 0xa7, 0xd6, 0xe7, 0xde, 0xf3, 0x3c, 0xcf, 0x79, 0x7c, 0x7c, 0x8e, 0x02, 0x75, 0x37, 0xf4,
+	0x46, 0xe1, 0x65, 0x10, 0x07, 0x58, 0x09, 0xcf, 0xac, 0xdd, 0x45, 0x10, 0x2c, 0x2e, 0xd8, 0xd8,
+	0x0d, 0xbd, 0xb1, 0xeb, 0xfb, 0x41, 0xec, 0xc6, 0x5e, 0xe0, 0x47, 0xfc, 0x86, 0x75, 0x48, 0x7f,
+	0xe6, 0x47, 0x0b, 0xe6, 0x1f, 0x45, 0x57, 0xee, 0x62, 0xc1, 0x2e, 0xc7, 0x41, 0x48, 0x37, 0xf2,
+	0xb7, 0xed, 0x43, 0xa8, 0x9d, 0x5e, 0x78, 0xcc, 0x8f, 0x11, 0xe1, 0x1d, 0xdf, 0x5d, 0x32, 0xd3,
+	0xd8, 0x37, 0x0e, 0xea, 0x0e, 0xfd, 0x8f, 0x5b, 0x50, 0xf1, 0xce, 0xcd, 0xca, 0xbe, 0x71, 0xd0,
+	0x74, 0x2a, 0xde, 0xb9, 0xfd, 0x29, 0xb4, 0x9e, 0xb3, 0x2b, 0x9e, 0xe0, 0xb0, 0x9f, 0xdf, 0xb0,
+	0x28, 0x46, 0x1b, 0x6a, 0x73, 0x0a, 0x50, 0x66, 0x63, 0x02, 0xa3, 0xf0, 0x6c, 0x24, 0xae, 0x88,
+	0x13, 0x6c, 0x41, 0xf5, 0x27, 0x76, 0x2d, 0x80, 0x92, 0x7f, 0xed, 0x0e, 0xb4, 0x25, 0xa4, 0x28,
+	0x0c, 0xfc, 0x88, 0xd9, 0x4f, 0xa0, 0xe3, 0xb0, 0x65, 0xf0, 0x96, 0x6d, 0xcc, 0x60, 0xf7, 0xa1,
+	0xab, 0xa6, 0x0a, 0xc8, 0xaf, 0xa0, 0xf7, 0x9c, 0x5d, 0xbd, 0x0c, 0x42, 0x6f, 0xbe, 0xb9, 0xec,
+	0x2e, 0xbc, 0x1b, 0x27, 0x99, 0x24, 0xbc, 0xee, 0xf0, 0x07, 0xdb, 0x84, 0xbe, 0x0e, 0x29, 0xc8,
+	0x5e, 0x82, 0xc9, 0x45, 0xfc, 0xaf, 0x7c, 0x3b, 0x30, 0x28, 0x40, 0x15, 0x94, 0x53, 0x40, 0x87,
+	0x45, 0x2c, 0xde, 0xdc, 0xb1, 0x5e, 0x62, 0xb6, 0x94, 0x29, 0x00, 0xef, 0xc3, 0x9d, 0xb4, 0xba,
+	0x14, 0x2d, 0x93, 0x65, 0xc8, 0xb2, 0x90, 0x7a, 0x41, 0x5c, 0x14, 0xc9, 0xc3, 0x44, 0x4d, 0x26,
+	0x75, 0x7d, 0x7e, 0x2f, 0x7d, 0xd9, 0x2a, 0xc4, 0x13, 0xe8, 0x64, 0x8d, 0xf1, 0x19, 0xbb, 0xde,
+	0xb0, 0x07, 0xd4, 0x54, 0x01, 0x79, 0x02, 0x3b, 0xa7, 0xc1, 0x1b, 0x3f, 0x26, 0xa2, 0xe8, 0xe3,
+	0xe0, 0x72, 0x73, 0xb3, 0x8e, 0x61, 0xb7, 0x18, 0x82, 0x53, 0x24, 0x25, 0xce, 0x93, 0x73, 0x82,
+	0xa8, 0x3a, 0xfc, 0xc1, 0x5e, 0xc2, 0xe0, 0x13, 0xf6, 0x1f, 0x68, 0xb1, 0x0f, 0xb5, 0xe0, 0xf5,
+	0xeb, 0x88, 0xc5, 0xd4, 0x11, 0x55, 0x47, 0x3c, 0xad, 0xe8, 0xaa, 0x32, 0xdd, 0x31, 0x58, 0x45,
+	0x74, 0x42, 0x62, 0x1f, 0x6a, 0x64, 0x7c, 0x64, 0x1a, 0xfb, 0xd5, 0x83, 0xba, 0x23, 0x9e, 0xec,
+	0xc7, 0xc2, 0x1d, 0x7e, 0x3d, 0x49, 0xfc, 0x07, 0x2f, 0x2f, 0xf5, 0x23, 0x97, 0xb4, 0xd6, 0x8f,
+	0x1f, 0xc8, 0x8f, 0x4d, 0x88, 0x36, 0x74, 0xe0, 0x29, 0x39, 0x50, 0x26, 0xea, 0x03, 0xb8, 0xc5,
+	0x7d, 0xe5, 0x16, 0xa8, 0x96, 0xa7, 0x47, 0x49, 0x5f, 0xca, 0xa5, 0x09, 0x79, 0xf6, 0x21, 0x74,
+	0xd5, 0xf0, 0xda, 0x4a, 0x4f, 0xa0, 0xbd, 0x12, 0x92, 0x56, 0xb8, 0xaa, 0xc5, 0x28, 0xae, 0xa5,
+	0x22, 0x43, 0xcc, 0x00, 0x65, 0x88, 0x8d, 0x6a, 0xe8, 0x02, 0x4a, 0xed, 0x9a, 0x96, 0xf0, 0x40,
+	0x54, 0x96, 0x46, 0xd7, 0x56, 0xf0, 0x11, 0xb4, 0xb2, 0x66, 0xfa, 0x77, 0x05, 0x3c, 0x20, 0x0f,
+	0x34, 0xb2, 0xb2, 0x2e, 0x7c, 0x06, 0xf8, 0x35, 0xf3, 0xcf, 0xbf, 0x60, 0x51, 0xe4, 0x2e, 0xd8,
+	0xfa, 0x9e, 0x30, 0xe1, 0xd6, 0x92, 0xdf, 0x13, 0x83, 0x32, 0x7d, 0x4c, 0xde, 0x9d, 0x82, 0xc2,
+	0x49, 0x27, 0x7f, 0x35, 0xa1, 0x72, 0x3a, 0xc1, 0x2f, 0xa1, 0x9e, 0xcd, 0x07, 0xec, 0x26, 0xbe,
+	0xe9, 0xcb, 0xcc, 0xea, 0x69, 0x51, 0x31, 0x41, 0x7a, 0x37, 0x7f, 0xfc, 0xf9, 0x7b, 0xe5, 0x8e,
+	0x0d, 0x63, 0x76, 0x3c, 0xe6, 0x26, 0xcf, 0x8c, 0x21, 0xbe, 0x82, 0xa6, 0xbc, 0x74, 0x70, 0x3b,
+	0xc9, 0x2e, 0xd8, 0x60, 0x96, 0x99, 0x3f, 0x50, 0x91, 0x87, 0x1a, 0xf2, 0x37, 0xd0, 0x90, 0x86,
+	0x33, 0xf6, 0x79, 0xbe, 0x3e, 0xe7, 0xad, 0xed, 0x5c, 0x5c, 0x85, 0xb5, 0xf2, 0x82, 0xe5, 0x09,
+	0xc9, 0x05, 0x17, 0x8c, 0x5b, 0x2e, 0xb8, 0x70, 0x98, 0x0a, 0xe4, 0x89, 0x86, 0xfc, 0x02, 0x6e,
+	0xa7, 0xdb, 0x00, 0x3b, 0x22, 0x59, 0xfe, 0xbc, 0xad, 0xae, 0x1a, 0x14, 0x68, 0x03, 0x42, 0xeb,
+	0xd8, 0xed, 0x04, 0x8d, 0xde, 0xee, 0xf8, 0x17, 0xfa, 0xf3, 0x2b, 0x7e, 0x97, 0x58, 0x90, 0xed,
+	0x87, 0xd4, 0x02, 0x7d, 0xb9, 0x58, 0xdb, 0xb9, 0xb8, 0x0a, 0x3d, 0x2c, 0x80, 0x3e, 0x87, 0x2d,
+	0x75, 0x83, 0xe3, 0x40, 0x56, 0xa7, 0x7a, 0x6c, 0x15, 0x1d, 0x09, 0x8e, 0x1d, 0xe2, 0xe8, 0x59,
+	0xad, 0x95, 0x19, 0x9c, 0x2a, 0xb1, 0x64, 0x09, 0xed, 0xdc, 0xde, 0xc6, 0x5d, 0x4d, 0xae, 0xca,
+	0xf5, 0x7e, 0xc9, 0xa9, 0x4a, 0x37, 0x2c, 0xa4, 0xbb, 0x16, 0x03, 0x4a, 0x9b, 0xff, 0x78, 0x97,
+	0x06, 0x44, 0xf9, 0xfe, 0xb3, 0xf6, 0xcb, 0x2f, 0x08, 0xde, 0x3d, 0xe2, 0x35, 0xb1, 0xaf, 0xf3,
+	0x8e, 0xe9, 0x4b, 0x47, 0x9f, 0x46, 0x95, 0x4e, 0x4c, 0xc5, 0x94, 0xee, 0x3f, 0x6b, 0xaf, 0xec,
+	0x58, 0x7d, 0x7f, 0xd8, 0xd6, 0x49, 0x23, 0xbc, 0x31, 0xd4, 0x61, 0x9c, 0x4e, 0x7a, 0xa9, 0xd6,
+	0xe2, 0x25, 0x23, 0xd5, 0x5a, 0xb2, 0x24, 0xec, 0xfb, 0x44, 0x7b, 0x0f, 0xef, 0xe6, 0xda, 0x46,
+	0x88, 0x88, 0x44, 0xd1, 0x6f, 0xe5, 0xf9, 0x9c, 0x29, 0x48, 0x8b, 0x2e, 0xe1, 0xdf, 0x2b, 0x3b,
+	0x16, 0xec, 0xf7, 0x88, 0x7d, 0x07, 0x07, 0xa5, 0xec, 0xf8, 0x3d, 0x34, 0xe5, 0x02, 0xf8, 0x37,
+	0x5c, 0xb0, 0xb1, 0xf8, 0x37, 0x5c, 0xb4, 0xb3, 0x8a, 0xac, 0x4d, 0xab, 0x7a, 0x01, 0xb0, 0x92,
+	0x87, 0x3d, 0x55, 0x6e, 0x8a, 0xdc, 0xd7, 0xc3, 0x02, 0xb7, 0x43, 0xb8, 0xef, 0x61, 0x43, 0xc2,
+	0xc5, 0x57, 0xd0, 0x90, 0x9a, 0x8b, 0x7f, 0xc7, 0xf9, 0xe5, 0x64, 0x6d, 0xe7, 0xe2, 0x02, 0xd4,
+	0x24, 0x50, 0xc4, 0x56, 0x66, 0x49, 0xaa, 0xf5, 0x73, 0xa8, 0x67, 0xfd, 0xc3, 0xe7, 0xb9, 0xbe,
+	0xb1, 0xac, 0x9e, 0x16, 0x15, 0x98, 0x48, 0x98, 0x4d, 0x84, 0x15, 0x26, 0x7e, 0x0b, 0x0d, 0x69,
+	0x77, 0x70, 0x9d, 0xf9, 0x95, 0xc4, 0x75, 0x16, 0x2c, 0x19, 0xbb, 0x4f, 0x98, 0x2d, 0x9b, 0x8a,
+	0x17, 0x0b, 0x69, 0x66, 0x0c, 0x9f, 0x3e, 0xfb, 0xed, 0xe4, 0x04, 0x6f, 0x43, 0x6d, 0x3e, 0x39,
+	0x72, 0x43, 0xcf, 0xda, 0x7a, 0x34, 0xf9, 0x70, 0xf4, 0x70, 0xf4, 0x70, 0xf4, 0x68, 0x36, 0x9d,
+	0x4e, 0xa7, 0x43, 0xa3, 0x32, 0x69, 0xb9, 0x61, 0x78, 0xe1, 0xcd, 0xe9, 0x77, 0xd9, 0xf8, 0xc7,
+	0x28, 0xf0, 0x67, 0xb9, 0xc8, 0x59, 0x8d, 0x7e, 0xae, 0x3d, 0xfe, 0x3b, 0x00, 0x00, 0xff, 0xff,
+	0xfe, 0x23, 0x83, 0xd2, 0x0b, 0x0e, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1318,20 +1508,39 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type C2Client interface {
+	// Create a new client
 	NewClient(ctx context.Context, in *NewClientRequest, opts ...grpc.CallOption) (*NewClientResponse, error)
+	// Remove a client
 	RemoveClient(ctx context.Context, in *RemoveClientRequest, opts ...grpc.CallOption) (*RemoveClientResponse, error)
+	// Instruct the C2 server to send a reset command to the client
 	ResetClient(ctx context.Context, in *ResetClientRequest, opts ...grpc.CallOption) (*ResetClientResponse, error)
+	// Generate a new key for the client
 	NewClientKey(ctx context.Context, in *NewClientKeyRequest, opts ...grpc.CallOption) (*NewClientKeyResponse, error)
+	// Create a new topic
 	NewTopic(ctx context.Context, in *NewTopicRequest, opts ...grpc.CallOption) (*NewTopicResponse, error)
+	// Remove a topic
 	RemoveTopic(ctx context.Context, in *RemoveTopicRequest, opts ...grpc.CallOption) (*RemoveTopicResponse, error)
+	// Associate a topic with a client
 	NewTopicClient(ctx context.Context, in *NewTopicClientRequest, opts ...grpc.CallOption) (*NewTopicClientResponse, error)
+	// Remove a topic / client association
 	RemoveTopicClient(ctx context.Context, in *RemoveTopicClientRequest, opts ...grpc.CallOption) (*RemoveTopicClientResponse, error)
+	// Count the number of topics for a client
 	CountTopicsForClient(ctx context.Context, in *CountTopicsForClientRequest, opts ...grpc.CallOption) (*CountTopicsForClientResponse, error)
+	// Retrieve paginated topics for a client
 	GetTopicsForClient(ctx context.Context, in *GetTopicsForClientRequest, opts ...grpc.CallOption) (*GetTopicsForClientResponse, error)
+	// Count the number of clients for a topic
 	CountClientsForTopic(ctx context.Context, in *CountClientsForTopicRequest, opts ...grpc.CallOption) (*CountClientsForTopicResponse, error)
+	// Retrieve paginated clients for a topic
 	GetClientsForTopic(ctx context.Context, in *GetClientsForTopicRequest, opts ...grpc.CallOption) (*GetClientsForTopicResponse, error)
+	// Count the number of clients
+	CountClients(ctx context.Context, in *CountClientsRequest, opts ...grpc.CallOption) (*CountClientsResponse, error)
+	// Retrieve paginated clients
 	GetClients(ctx context.Context, in *GetClientsRequest, opts ...grpc.CallOption) (*GetClientsResponse, error)
+	// Count the number of topics
+	CountTopics(ctx context.Context, in *CountTopicsRequest, opts ...grpc.CallOption) (*CountTopicsResponse, error)
+	// Retrieve paginated topics
 	GetTopics(ctx context.Context, in *GetTopicsRequest, opts ...grpc.CallOption) (*GetTopicsResponse, error)
+	// Send a message on a topic
 	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
 }
 
@@ -1451,9 +1660,27 @@ func (c *c2Client) GetClientsForTopic(ctx context.Context, in *GetClientsForTopi
 	return out, nil
 }
 
+func (c *c2Client) CountClients(ctx context.Context, in *CountClientsRequest, opts ...grpc.CallOption) (*CountClientsResponse, error) {
+	out := new(CountClientsResponse)
+	err := c.cc.Invoke(ctx, "/pb.C2/CountClients", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *c2Client) GetClients(ctx context.Context, in *GetClientsRequest, opts ...grpc.CallOption) (*GetClientsResponse, error) {
 	out := new(GetClientsResponse)
 	err := c.cc.Invoke(ctx, "/pb.C2/GetClients", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *c2Client) CountTopics(ctx context.Context, in *CountTopicsRequest, opts ...grpc.CallOption) (*CountTopicsResponse, error) {
+	out := new(CountTopicsResponse)
+	err := c.cc.Invoke(ctx, "/pb.C2/CountTopics", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1480,20 +1707,39 @@ func (c *c2Client) SendMessage(ctx context.Context, in *SendMessageRequest, opts
 
 // C2Server is the server API for C2 service.
 type C2Server interface {
+	// Create a new client
 	NewClient(context.Context, *NewClientRequest) (*NewClientResponse, error)
+	// Remove a client
 	RemoveClient(context.Context, *RemoveClientRequest) (*RemoveClientResponse, error)
+	// Instruct the C2 server to send a reset command to the client
 	ResetClient(context.Context, *ResetClientRequest) (*ResetClientResponse, error)
+	// Generate a new key for the client
 	NewClientKey(context.Context, *NewClientKeyRequest) (*NewClientKeyResponse, error)
+	// Create a new topic
 	NewTopic(context.Context, *NewTopicRequest) (*NewTopicResponse, error)
+	// Remove a topic
 	RemoveTopic(context.Context, *RemoveTopicRequest) (*RemoveTopicResponse, error)
+	// Associate a topic with a client
 	NewTopicClient(context.Context, *NewTopicClientRequest) (*NewTopicClientResponse, error)
+	// Remove a topic / client association
 	RemoveTopicClient(context.Context, *RemoveTopicClientRequest) (*RemoveTopicClientResponse, error)
+	// Count the number of topics for a client
 	CountTopicsForClient(context.Context, *CountTopicsForClientRequest) (*CountTopicsForClientResponse, error)
+	// Retrieve paginated topics for a client
 	GetTopicsForClient(context.Context, *GetTopicsForClientRequest) (*GetTopicsForClientResponse, error)
+	// Count the number of clients for a topic
 	CountClientsForTopic(context.Context, *CountClientsForTopicRequest) (*CountClientsForTopicResponse, error)
+	// Retrieve paginated clients for a topic
 	GetClientsForTopic(context.Context, *GetClientsForTopicRequest) (*GetClientsForTopicResponse, error)
+	// Count the number of clients
+	CountClients(context.Context, *CountClientsRequest) (*CountClientsResponse, error)
+	// Retrieve paginated clients
 	GetClients(context.Context, *GetClientsRequest) (*GetClientsResponse, error)
+	// Count the number of topics
+	CountTopics(context.Context, *CountTopicsRequest) (*CountTopicsResponse, error)
+	// Retrieve paginated topics
 	GetTopics(context.Context, *GetTopicsRequest) (*GetTopicsResponse, error)
+	// Send a message on a topic
 	SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error)
 }
 
@@ -1717,6 +1963,24 @@ func _C2_GetClientsForTopic_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _C2_CountClients_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CountClientsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).CountClients(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.C2/CountClients",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).CountClients(ctx, req.(*CountClientsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _C2_GetClients_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetClientsRequest)
 	if err := dec(in); err != nil {
@@ -1731,6 +1995,24 @@ func _C2_GetClients_Handler(srv interface{}, ctx context.Context, dec func(inter
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(C2Server).GetClients(ctx, req.(*GetClientsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _C2_CountTopics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CountTopicsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).CountTopics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.C2/CountTopics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).CountTopics(ctx, req.(*CountTopicsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1824,8 +2106,16 @@ var _C2_serviceDesc = grpc.ServiceDesc{
 			Handler:    _C2_GetClientsForTopic_Handler,
 		},
 		{
+			MethodName: "CountClients",
+			Handler:    _C2_CountClients_Handler,
+		},
+		{
 			MethodName: "GetClients",
 			Handler:    _C2_GetClients_Handler,
+		},
+		{
+			MethodName: "CountTopics",
+			Handler:    _C2_CountTopics_Handler,
 		},
 		{
 			MethodName: "GetTopics",
