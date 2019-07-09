@@ -339,12 +339,14 @@ func validateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
 // grpcError will convert the given error to a GRPC error with appropriate code
 func grpcError(err error) error {
 	var code codes.Code
-	switch {
-	case services.IsErrRecordNotFound(err):
+	switch err.(type) {
+	case services.ErrClientNotFound, services.ErrTopicNotFound:
 		code = codes.NotFound
+	case services.ErrValidation:
+		code = codes.InvalidArgument
 	default:
 		code = codes.Internal
 	}
 
-	return grpc.Errorf(code, "%v", err)
+	return grpc.Errorf(code, "%s", err.Error())
 }
