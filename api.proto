@@ -128,7 +128,6 @@ service C2 {
 
 message Client {
   string name = 1;
-  bytes id = 2;
 }
 
 message NewClientRequest {
