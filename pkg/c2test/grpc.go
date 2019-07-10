@@ -48,7 +48,6 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 	for i := 0; i < TESTCLIENTCOUNT; i++ {
 		_, err := grpcClient.NewClient(ctx, &pb.NewClientRequest{
 			Client: &pb.Client{
-				Id:   testClients[i].ID,
 				Name: testClients[i].Name,
 			},
 			Key: testClients[i].Key,

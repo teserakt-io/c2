@@ -187,13 +187,6 @@
             "in": "query",
             "required": false,
             "type": "string"
-          },
-          {
-            "name": "client.id",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "byte"
           }
         ],
         "tags": [
@@ -219,13 +212,6 @@
             "in": "query",
             "required": false,
             "type": "string"
-          },
-          {
-            "name": "client.id",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "byte"
           },
           {
             "name": "offset",
@@ -493,10 +479,6 @@
       "properties": {
         "name": {
           "type": "string"
-        },
-        "id": {
-          "type": "string",
-          "format": "byte"
         }
       }
     },

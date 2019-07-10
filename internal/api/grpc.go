@@ -96,7 +96,7 @@ func (s *grpcServer) NewClient(ctx context.Context, req *pb.NewClientRequest) (*
 		return nil, ErrClientNameRequired
 	}
 
-	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
+	id, err := validateE4NameOrIDPair(req.Client.Name, nil)
 	if err != nil {
 		return nil, grpcError(err)
 	}
@@ -114,7 +114,7 @@ func (s *grpcServer) RemoveClient(ctx context.Context, req *pb.RemoveClientReque
 		return nil, ErrClientRequired
 	}
 
-	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
+	id, err := validateE4NameOrIDPair(req.Client.Name, nil)
 	if err != nil {
 		return nil, grpcError(err)
 	}
@@ -132,7 +132,7 @@ func (s *grpcServer) ResetClient(ctx context.Context, req *pb.ResetClientRequest
 		return nil, ErrClientRequired
 	}
 
-	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
+	id, err := validateE4NameOrIDPair(req.Client.Name, nil)
 	if err != nil {
 		return nil, grpcError(err)
 	}
@@ -150,7 +150,7 @@ func (s *grpcServer) NewClientKey(ctx context.Context, req *pb.NewClientKeyReque
 		return nil, ErrClientRequired
 	}
 
-	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
+	id, err := validateE4NameOrIDPair(req.Client.Name, nil)
 	if err != nil {
 		return nil, grpcError(err)
 	}
@@ -186,7 +186,7 @@ func (s *grpcServer) NewTopicClient(ctx context.Context, req *pb.NewTopicClientR
 		return nil, ErrClientRequired
 	}
 
-	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
+	id, err := validateE4NameOrIDPair(req.Client.Name, nil)
 	if err != nil {
 		return nil, grpcError(err)
 	}
@@ -204,7 +204,7 @@ func (s *grpcServer) RemoveTopicClient(ctx context.Context, req *pb.RemoveTopicC
 		return nil, ErrClientRequired
 	}
 
-	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
+	id, err := validateE4NameOrIDPair(req.Client.Name, nil)
 	if err != nil {
 		return nil, grpcError(err)
 	}
@@ -222,7 +222,7 @@ func (s *grpcServer) CountTopicsForClient(ctx context.Context, req *pb.CountTopi
 		return nil, ErrClientRequired
 	}
 
-	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
+	id, err := validateE4NameOrIDPair(req.Client.Name, nil)
 	if err != nil {
 		return nil, grpcError(err)
 	}
@@ -240,7 +240,7 @@ func (s *grpcServer) GetTopicsForClient(ctx context.Context, req *pb.GetTopicsFo
 		return nil, ErrClientRequired
 	}
 
-	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
+	id, err := validateE4NameOrIDPair(req.Client.Name, nil)
 	if err != nil {
 		return nil, grpcError(err)
 	}
@@ -270,7 +270,7 @@ func (s *grpcServer) GetClientsForTopic(ctx context.Context, req *pb.GetClientsF
 
 	pbClients := make([]*pb.Client, 0, len(clients))
 	for _, client := range clients {
-		pbClients = append(pbClients, &pb.Client{Id: client.ID, Name: client.Name})
+		pbClients = append(pbClients, &pb.Client{Name: client.Name})
 	}
 
 	return &pb.GetClientsForTopicResponse{Clients: pbClients}, nil
@@ -284,7 +284,7 @@ func (s *grpcServer) GetClients(ctx context.Context, req *pb.GetClientsRequest) 
 
 	pbClients := make([]*pb.Client, 0, len(clients))
 	for _, client := range clients {
-		pbClients = append(pbClients, &pb.Client{Id: client.ID, Name: client.Name})
+		pbClients = append(pbClients, &pb.Client{Name: client.Name})
 	}
 
 	return &pb.GetClientsResponse{Clients: pbClients}, nil
