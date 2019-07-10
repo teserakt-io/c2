@@ -12,7 +12,7 @@ type Config struct {
 	Monitor bool
 
 	GRPC ServerCfg
-	HTTP ServerCfg
+	HTTP HTTPServerCfg
 
 	MQTT  MQTTCfg
 	Kafka KafkaCfg
@@ -37,6 +37,7 @@ func (cfg *Config) ViperCfgFields() []slibcfg.ViperCfgField {
 		{&cfg.GRPC.Key, "grpc-key", slibcfg.ViperRelativePath, "", "E4C2_GRPC_KEY"},
 
 		{&cfg.HTTP.Addr, "http-host-port", slibcfg.ViperString, "0.0.0.0:8888", "E4C2_HTTP_HOST_PORT"},
+		{&cfg.HTTP.GRPCAddr, "http-grpc-host-port", slibcfg.ViperString, "127.0.0.1:5555", "E4C2_HTTP_GRPC_HOST_PORT"},
 		{&cfg.HTTP.Cert, "http-cert", slibcfg.ViperRelativePath, "", "E4C2_HTTP_CERT"},
 		{&cfg.HTTP.Key, "http-key", slibcfg.ViperRelativePath, "", "E4C2_HTTP_KEY"},
 
@@ -76,6 +77,12 @@ type ServerCfg struct {
 	Addr string
 	Key  string
 	Cert string
+}
+
+// HTTPServerCfg extends the ServerCfg for the HTTP
+type HTTPServerCfg struct {
+	ServerCfg
+	GRPCAddr string
 }
 
 // MQTTCfg holds configuration for MQTT

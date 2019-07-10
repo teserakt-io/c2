@@ -1,0 +1,680 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "c2-api",
+    "version": "version not set"
+  },
+  "host": "127.0.0.1:8888",
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/e4/client": {
+      "delete": {
+        "summary": "Remove a client",
+        "operationId": "RemoveClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbRemoveClientResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbRemoveClientRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      },
+      "post": {
+        "summary": "Create a new client",
+        "operationId": "NewClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbNewClientResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbNewClientRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      },
+      "put": {
+        "summary": "Instruct the C2 server to send a reset command to the client",
+        "operationId": "ResetClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbResetClientResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbResetClientRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      },
+      "patch": {
+        "summary": "Generate a new key for the client",
+        "operationId": "NewClientKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbNewClientKeyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbNewClientKeyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/client/topic": {
+      "delete": {
+        "summary": "Remove a topic / client association",
+        "operationId": "RemoveTopicClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbRemoveTopicClientResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbRemoveTopicClientRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      },
+      "put": {
+        "summary": "Associate a topic with a client",
+        "operationId": "NewTopicClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbNewTopicClientResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbNewTopicClientRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/client/topic/count": {
+      "get": {
+        "summary": "Count the number of topics for a client",
+        "operationId": "CountTopicsForClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCountTopicsForClientResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "client.name",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "client.id",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/client/topics": {
+      "get": {
+        "summary": "Retrieve paginated topics for a client",
+        "operationId": "GetTopicsForClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbGetTopicsForClientResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "client.name",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "client.id",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/clients": {
+      "get": {
+        "summary": "Retrieve paginated clients",
+        "operationId": "GetClients",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbGetClientsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/clients/count": {
+      "get": {
+        "summary": "Count the number of clients",
+        "operationId": "CountClients",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCountClientsResponse"
+            }
+          }
+        },
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/message": {
+      "post": {
+        "summary": "Send a message on a topic",
+        "operationId": "SendMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbSendMessageResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbSendMessageRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/topic/{topic}": {
+      "delete": {
+        "summary": "Remove a topic",
+        "operationId": "RemoveTopic",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbRemoveTopicResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "topic",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      },
+      "post": {
+        "summary": "Create a new topic",
+        "operationId": "NewTopic",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbNewTopicResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "topic",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/topic/{topic}/clients": {
+      "get": {
+        "summary": "Retrieve paginated clients for a topic",
+        "operationId": "GetClientsForTopic",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbGetClientsForTopicResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "topic",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/topic/{topic}/clients/count": {
+      "get": {
+        "summary": "Count the number of clients for a topic",
+        "operationId": "CountClientsForTopic",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCountClientsForTopicResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "topic",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/topics": {
+      "get": {
+        "summary": "Retrieve paginated topics",
+        "operationId": "GetTopics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbGetTopicsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/topics/count": {
+      "get": {
+        "summary": "Count the number of topics",
+        "operationId": "CountTopics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCountTopicsResponse"
+            }
+          }
+        },
+        "tags": [
+          "C2"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "pbClient": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "pbCountClientsForTopicResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbCountClientsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbCountTopicsForClientResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbCountTopicsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbGetClientsForTopicResponse": {
+      "type": "object",
+      "properties": {
+        "clients": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbClient"
+          }
+        }
+      }
+    },
+    "pbGetClientsResponse": {
+      "type": "object",
+      "properties": {
+        "clients": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbClient"
+          }
+        }
+      }
+    },
+    "pbGetTopicsForClientResponse": {
+      "type": "object",
+      "properties": {
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pbGetTopicsResponse": {
+      "type": "object",
+      "properties": {
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pbNewClientKeyRequest": {
+      "type": "object",
+      "properties": {
+        "client": {
+          "$ref": "#/definitions/pbClient"
+        }
+      }
+    },
+    "pbNewClientKeyResponse": {
+      "type": "object"
+    },
+    "pbNewClientRequest": {
+      "type": "object",
+      "properties": {
+        "client": {
+          "$ref": "#/definitions/pbClient"
+        },
+        "key": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "pbNewClientResponse": {
+      "type": "object"
+    },
+    "pbNewTopicClientRequest": {
+      "type": "object",
+      "properties": {
+        "client": {
+          "$ref": "#/definitions/pbClient"
+        },
+        "topic": {
+          "type": "string"
+        }
+      }
+    },
+    "pbNewTopicClientResponse": {
+      "type": "object"
+    },
+    "pbNewTopicResponse": {
+      "type": "object"
+    },
+    "pbRemoveClientRequest": {
+      "type": "object",
+      "properties": {
+        "client": {
+          "$ref": "#/definitions/pbClient"
+        }
+      }
+    },
+    "pbRemoveClientResponse": {
+      "type": "object"
+    },
+    "pbRemoveTopicClientRequest": {
+      "type": "object",
+      "properties": {
+        "client": {
+          "$ref": "#/definitions/pbClient"
+        },
+        "topic": {
+          "type": "string"
+        }
+      }
+    },
+    "pbRemoveTopicClientResponse": {
+      "type": "object"
+    },
+    "pbRemoveTopicResponse": {
+      "type": "object"
+    },
+    "pbResetClientRequest": {
+      "type": "object",
+      "properties": {
+        "client": {
+          "$ref": "#/definitions/pbClient"
+        }
+      }
+    },
+    "pbResetClientResponse": {
+      "type": "object"
+    },
+    "pbSendMessageRequest": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "pbSendMessageResponse": {
+      "type": "object"
+    }
+  }
+}

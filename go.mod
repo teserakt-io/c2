@@ -12,8 +12,8 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang/mock v1.2.0
-	github.com/gorilla/context v1.1.1 // indirect
-	github.com/gorilla/mux v1.6.2
+	github.com/golang/protobuf v1.3.1
+	github.com/grpc-ecosystem/grpc-gateway v1.9.3
 	github.com/jinzhu/gorm v1.9.2
 	github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a // indirect
 	github.com/jinzhu/now v0.0.0-20181116074157-8ec929ed50c3 // indirect
@@ -28,5 +28,6 @@ require (
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
 	golang.org/x/sys v0.0.0-20190509141414-a5b02f93d862 // indirect
 	golang.org/x/text v0.3.2 // indirect
+	google.golang.org/genproto v0.0.0-20181219182458-5a97ab628bfb
 	google.golang.org/grpc v1.21.0
 )

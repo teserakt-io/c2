@@ -1,26 +1,31 @@
 package api
 
 import (
-	"bytes"
 	"context"
-	"errors"
 	"net"
+
+	"google.golang.org/grpc/codes"
 
 	"gitlab.com/teserakt/c2/internal/config"
 	"gitlab.com/teserakt/c2/internal/services"
-	e4 "gitlab.com/teserakt/e4common"
+	"gitlab.com/teserakt/c2/pkg/pb"
 
 	"github.com/go-kit/kit/log"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/stats/view"
-	"go.opencensus.io/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
+// Request parameters validation errors
+var (
+	ErrClientRequired     = grpc.Errorf(codes.InvalidArgument, "a client is required.")
+	ErrClientNameRequired = grpc.Errorf(codes.InvalidArgument, "a client name is required.")
+)
+
 // GRPCServer defines available endpoints on a GRPC server
 type GRPCServer interface {
-	e4.C2Server
+	pb.C2Server
 	ListenAndServe(ctx context.Context) error
 }
 
@@ -65,7 +70,7 @@ func (s *grpcServer) ListenAndServe(ctx context.Context) error {
 	}
 
 	srv := grpc.NewServer(grpc.Creds(creds), grpc.StatsHandler(&ocgrpc.ServerHandler{}))
-	e4.RegisterC2Server(srv, s)
+	pb.RegisterC2Server(srv, s)
 
 	s.logger.Log("msg", "Starting api grpc server", "addr", s.cfg.Addr)
 
@@ -82,300 +87,264 @@ func (s *grpcServer) ListenAndServe(ctx context.Context) error {
 	}
 }
 
-// C2Command processes a command received over gRPC by the CLI tool.
-func (s *grpcServer) C2Command(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	ctx, span := trace.StartSpan(ctx, e4.C2Request_Command_name[int32(in.Command)])
-	defer span.End()
-
-	s.logger.Log("msg", "received gRPC request", "request", e4.C2Request_Command_name[int32(in.Command)])
-
-	switch in.Command {
-	case e4.C2Request_NEW_CLIENT:
-		return s.gRPCnewClient(ctx, in)
-	case e4.C2Request_REMOVE_CLIENT:
-		return s.gRPCremoveClient(ctx, in)
-	case e4.C2Request_NEW_TOPIC_CLIENT:
-		return s.gRPCnewTopicClient(ctx, in)
-	case e4.C2Request_REMOVE_TOPIC_CLIENT:
-		return s.gRPCremoveTopicClient(ctx, in)
-	case e4.C2Request_RESET_CLIENT:
-		return s.gRPCresetClient(ctx, in)
-	case e4.C2Request_NEW_TOPIC:
-		return s.gRPCnewTopic(ctx, in)
-	case e4.C2Request_REMOVE_TOPIC:
-		return s.gRPCremoveTopic(ctx, in)
-	case e4.C2Request_NEW_CLIENT_KEY:
-		return s.gRPCnewClientKey(ctx, in)
-	case e4.C2Request_SEND_MESSAGE:
-		return s.gRPCsendMessage(ctx, in)
-	case e4.C2Request_GET_CLIENTS:
-		return s.gRPCgetClients(ctx, in)
-	case e4.C2Request_GET_TOPICS:
-		return s.gRPCgetTopics(ctx, in)
-	case e4.C2Request_GET_CLIENT_TOPIC_COUNT:
-		return s.gRPCgetClientTopicCount(ctx, in)
-	case e4.C2Request_GET_CLIENT_TOPICS:
-		return s.gRPCgetClientTopics(ctx, in)
-	case e4.C2Request_GET_TOPIC_CLIENT_COUNT:
-		return s.gRPCgetTopicClientCount(ctx, in)
-	case e4.C2Request_GET_TOPIC_CLIENTS:
-		return s.gRPCgetTopicClients(ctx, in)
+func (s *grpcServer) NewClient(ctx context.Context, req *pb.NewClientRequest) (*pb.NewClientResponse, error) {
+	if req.Client == nil {
+		return nil, ErrClientRequired
 	}
-	return &e4.C2Response{Success: false, Err: "unknown command"}, nil
+
+	if len(req.Client.Name) == 0 {
+		return nil, ErrClientNameRequired
+	}
+
+	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	err = s.e4Service.NewClient(ctx, req.Client.Name, id, req.Key)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.NewClientResponse{}, nil
 }
 
-func (s *grpcServer) gRPCnewClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, true, false, true, false, false)
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+func (s *grpcServer) RemoveClient(ctx context.Context, req *pb.RemoveClientRequest) (*pb.RemoveClientResponse, error) {
+	if req.Client == nil {
+		return nil, ErrClientRequired
 	}
 
-	err = s.e4Service.NewClient(ctx, in.Name, nil, in.Key)
+	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	return &e4.C2Response{Success: true, Err: ""}, nil
+	err = s.e4Service.RemoveClient(ctx, id)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.RemoveClientResponse{}, nil
 }
 
-func (s *grpcServer) gRPCremoveClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, true, false, false, false, false)
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+func (s *grpcServer) ResetClient(ctx context.Context, req *pb.ResetClientRequest) (*pb.ResetClientResponse, error) {
+	if req.Client == nil {
+		return nil, ErrClientRequired
 	}
 
-	err = s.e4Service.RemoveClientByName(ctx, in.Name)
+	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	return &e4.C2Response{Success: true, Err: ""}, nil
+	err = s.e4Service.ResetClient(ctx, id)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.ResetClientResponse{}, nil
 }
 
-func (s *grpcServer) gRPCnewTopicClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, true, false, false, true, false)
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+func (s *grpcServer) NewClientKey(ctx context.Context, req *pb.NewClientKeyRequest) (*pb.NewClientKeyResponse, error) {
+	if req.Client == nil {
+		return nil, ErrClientRequired
 	}
 
-	err = s.e4Service.NewTopicClient(ctx, in.Name, in.Id, in.Topic)
+	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	return &e4.C2Response{Success: true, Err: ""}, nil
+	err = s.e4Service.NewClientKey(ctx, id)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.NewClientKeyResponse{}, nil
 }
 
-func (s *grpcServer) gRPCremoveTopicClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, true, false, false, true, false)
+func (s *grpcServer) NewTopic(ctx context.Context, req *pb.NewTopicRequest) (*pb.NewTopicResponse, error) {
+	err := s.e4Service.NewTopic(ctx, req.Topic)
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	err = s.e4Service.RemoveTopicClientByName(ctx, in.Name, in.Topic)
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
-	}
-
-	return &e4.C2Response{Success: true, Err: ""}, nil
+	return &pb.NewTopicResponse{}, nil
 }
 
-func (s *grpcServer) gRPCresetClient(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, true, false, false, false, false)
+func (s *grpcServer) RemoveTopic(ctx context.Context, req *pb.RemoveTopicRequest) (*pb.RemoveTopicResponse, error) {
+	err := s.e4Service.RemoveTopic(ctx, req.Topic)
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
-	}
-	err = s.e4Service.ResetClientByName(ctx, in.Name)
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	return &e4.C2Response{Success: true, Err: ""}, nil
+	return &pb.RemoveTopicResponse{}, nil
 }
 
-func (s *grpcServer) gRPCnewTopic(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, false, false, false, true, false)
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+func (s *grpcServer) NewTopicClient(ctx context.Context, req *pb.NewTopicClientRequest) (*pb.NewTopicClientResponse, error) {
+	if req.Client == nil {
+		return nil, ErrClientRequired
 	}
 
-	err = s.e4Service.NewTopic(ctx, in.Topic)
+	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	return &e4.C2Response{Success: true, Err: ""}, nil
+	err = s.e4Service.NewTopicClient(ctx, id, req.Topic)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.NewTopicClientResponse{}, nil
 }
 
-func (s *grpcServer) gRPCremoveTopic(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, false, false, false, true, false)
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+func (s *grpcServer) RemoveTopicClient(ctx context.Context, req *pb.RemoveTopicClientRequest) (*pb.RemoveTopicClientResponse, error) {
+	if req.Client == nil {
+		return nil, ErrClientRequired
 	}
 
-	err = s.e4Service.RemoveTopic(ctx, in.Topic)
+	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	return &e4.C2Response{Success: true, Err: ""}, nil
+	err = s.e4Service.RemoveTopicClient(ctx, id, req.Topic)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.RemoveTopicClientResponse{}, nil
 }
 
-func (s *grpcServer) gRPCnewClientKey(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, true, false, false, false, false)
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+func (s *grpcServer) CountTopicsForClient(ctx context.Context, req *pb.CountTopicsForClientRequest) (*pb.CountTopicsForClientResponse, error) {
+	if req.Client == nil {
+		return nil, ErrClientRequired
 	}
 
-	err = s.e4Service.NewClientKey(ctx, in.Name, in.Id)
+	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	return &e4.C2Response{Success: true, Err: ""}, nil
+	count, err := s.e4Service.CountTopicsForClient(ctx, id)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.CountTopicsForClientResponse{Count: int64(count)}, nil
 }
 
-func (s *grpcServer) gRPCgetClients(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	names, err := s.e4Service.GetAllClientsAsNames(ctx)
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+func (s *grpcServer) GetTopicsForClient(ctx context.Context, req *pb.GetTopicsForClientRequest) (*pb.GetTopicsForClientResponse, error) {
+	if req.Client == nil {
+		return nil, ErrClientRequired
 	}
 
-	return &e4.C2Response{Success: true, Err: "", Names: names}, nil
+	id, err := validateE4NameOrIDPair(req.Client.Name, req.Client.Id)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	topics, err := s.e4Service.GetTopicsRangeByClient(ctx, id, int(req.Offset), int(req.Count))
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.GetTopicsForClientResponse{Topics: topics}, nil
 }
 
-func (s *grpcServer) gRPCgetTopics(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	topics, err := s.e4Service.GetAllTopics(ctx)
+func (s *grpcServer) CountClientsForTopic(ctx context.Context, req *pb.CountClientsForTopicRequest) (*pb.CountClientsForTopicResponse, error) {
+	count, err := s.e4Service.CountClientsForTopic(ctx, req.Topic)
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	return &e4.C2Response{Success: true, Err: "", Topics: topics}, nil
+	return &pb.CountClientsForTopicResponse{Count: int64(count)}, nil
 }
 
-func (s *grpcServer) gRPCgetClientTopicCount(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, true, false, false, false, false)
+func (s *grpcServer) GetClientsForTopic(ctx context.Context, req *pb.GetClientsForTopicRequest) (*pb.GetClientsForTopicResponse, error) {
+	clients, err := s.e4Service.GetClientsRangeByTopic(ctx, req.Topic, int(req.Offset), int(req.Count))
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	count, err := s.e4Service.CountTopicsForClientByName(ctx, in.Name)
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+	pbClients := make([]*pb.Client, 0, len(clients))
+	for _, client := range clients {
+		pbClients = append(pbClients, &pb.Client{Id: client.ID, Name: client.Name})
 	}
 
-	return &e4.C2Response{Success: true, Err: "", Count: uint64(count)}, nil
+	return &pb.GetClientsForTopicResponse{Clients: pbClients}, nil
 }
 
-func (s *grpcServer) gRPCgetClientTopics(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, true, false, false, false, false)
+func (s *grpcServer) GetClients(ctx context.Context, req *pb.GetClientsRequest) (*pb.GetClientsResponse, error) {
+	clients, err := s.e4Service.GetClientsRange(ctx, int(req.Offset), int(req.Count))
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	topics, err := s.e4Service.GetTopicsForClientByID(ctx, in.Id, int(in.Offset), int(in.Count))
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+	pbClients := make([]*pb.Client, 0, len(clients))
+	for _, client := range clients {
+		pbClients = append(pbClients, &pb.Client{Id: client.ID, Name: client.Name})
 	}
 
-	return &e4.C2Response{Success: true, Err: "", Topics: topics}, nil
+	return &pb.GetClientsResponse{Clients: pbClients}, nil
+}
+func (s *grpcServer) GetTopics(ctx context.Context, req *pb.GetTopicsRequest) (*pb.GetTopicsResponse, error) {
+	topics, err := s.e4Service.GetTopicsRange(ctx, int(req.Offset), int(req.Count))
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.GetTopicsResponse{Topics: topics}, nil
 }
 
-func (s *grpcServer) gRPCgetTopicClientCount(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, false, false, false, true, false)
+func (s *grpcServer) SendMessage(ctx context.Context, req *pb.SendMessageRequest) (*pb.SendMessageResponse, error) {
+	err := s.e4Service.SendMessage(ctx, req.Topic, req.Message)
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	count, err := s.e4Service.CountClientsForTopic(ctx, in.Topic)
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
-	}
-
-	return &e4.C2Response{Success: true, Err: "", Count: uint64(count)}, nil
+	return &pb.SendMessageResponse{}, nil
 }
 
-func (s *grpcServer) gRPCgetTopicClients(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, false, false, false, true, false)
+func (s *grpcServer) CountClients(ctx context.Context, req *pb.CountClientsRequest) (*pb.CountClientsResponse, error) {
+	count, err := s.e4Service.CountClients(ctx)
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	clients, err := s.e4Service.GetClientsByNameForTopic(ctx, in.Topic, int(in.Offset), int(in.Count))
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
-	}
-
-	return &e4.C2Response{Success: true, Err: "", Ids: clients}, nil
+	return &pb.CountClientsResponse{Count: int64(count)}, nil
 }
 
-func (s *grpcServer) gRPCsendMessage(ctx context.Context, in *e4.C2Request) (*e4.C2Response, error) {
-	err := checkRequest(ctx, in, false, false, false, true, false)
+func (s *grpcServer) CountTopics(ctx context.Context, req *pb.CountTopicsRequest) (*pb.CountTopicsResponse, error) {
+	count, err := s.e4Service.CountTopics(ctx)
 	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
+		return nil, grpcError(err)
 	}
 
-	err = s.e4Service.SendMessage(ctx, in.Topic, in.Msg)
-	if err != nil {
-		return &e4.C2Response{Success: false, Err: err.Error()}, nil
-	}
-
-	return &e4.C2Response{Success: true, Err: ""}, nil
+	return &pb.CountTopicsResponse{Count: int64(count)}, nil
 }
 
-// helper to check inputs' sanity
-func checkRequest(ctx context.Context, in *e4.C2Request, needName, needID, needKey, needTopic, needOffsetCount bool) error {
-	ctx, span := trace.StartSpan(ctx, "checkRequest")
-	defer span.End()
-
-	if needName {
-		if err := e4.IsValidName(in.Name); err != nil {
-			return err
-		}
-	} else {
-		if in.Name != "" {
-			return errors.New("unexpected name")
-		}
-	}
-	if needID {
-		if err := e4.IsValidID(in.Id); err != nil {
-			return err
-		}
-		if needName {
-			if !bytes.Equal(in.Id, e4.HashIDAlias(in.Name)) {
-				return errors.New("name and e4id are not consistent")
-			}
-		}
-	} else {
-		// we might send the ID along with the name; if ID is optional,
-		// don't worry if it is sent.
-		if needName == false && in.Id != nil {
-			return errors.New("unexpected id")
-		}
-	}
-	if needKey {
-		if err := e4.IsValidKey(in.Key); err != nil {
-			return err
-		}
-	} else {
-		if in.Key != nil {
-			return errors.New("unexpected key")
-		}
-	}
-	if needTopic {
-		if err := e4.IsValidTopic(in.Topic); err != nil {
-			return err
-		}
-	} else {
-		if in.Topic != "" {
-			return errors.New("unexpected topic")
-		}
-	}
-	if needOffsetCount {
-		if in.Count == 0 {
-			return errors.New("No data to return with zero count")
-		}
+// validateE4NamedOrIDPair wrap around services.ValidateE4NameOrIDPair but will
+// conver the error to a suitable GRPC error
+func validateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
+	id, err := services.ValidateE4NameOrIDPair(name, id)
+	if err != nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	return nil
+	return id, nil
+}
+
+// grpcError will convert the given error to a GRPC error with appropriate code
+func grpcError(err error) error {
+	var code codes.Code
+	switch {
+	case services.IsErrRecordNotFound(err):
+		code = codes.NotFound
+	default:
+		code = codes.Internal
+	}
+
+	return grpc.Errorf(code, "%v", err)
 }
