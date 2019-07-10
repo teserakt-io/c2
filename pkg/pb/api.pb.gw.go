@@ -762,7 +762,7 @@ var (
 
 	pattern_C2_RemoveTopicClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"e4", "client", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_CountTopicsForClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"e4", "client", "topic", "count"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_CountTopicsForClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"e4", "client", "topics", "count"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_C2_GetTopicsForClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"e4", "client", "topics"}, "", runtime.AssumeColonVerbOpt(true)))
 

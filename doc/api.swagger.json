@@ -169,31 +169,6 @@
         ]
       }
     },
-    "/e4/client/topic/count": {
-      "get": {
-        "summary": "Count the number of topics for a client",
-        "operationId": "CountTopicsForClient",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbCountTopicsForClientResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "client.name",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "C2"
-        ]
-      }
-    },
     "/e4/client/topics": {
       "get": {
         "summary": "Retrieve paginated topics for a client",
@@ -226,6 +201,31 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/client/topics/count": {
+      "get": {
+        "summary": "Count the number of topics for a client",
+        "operationId": "CountTopicsForClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCountTopicsForClientResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "client.name",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [

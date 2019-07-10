@@ -71,7 +71,7 @@ service C2 {
   // Count the number of topics for a client
   rpc CountTopicsForClient(CountTopicsForClientRequest) returns (CountTopicsForClientResponse) {
     option (google.api.http) = {
-      get : "/e4/client/topic/count"
+      get : "/e4/client/topics/count"
     };
   }
   // Retrieve paginated topics for a client
