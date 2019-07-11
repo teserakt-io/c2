@@ -11,6 +11,6 @@ GRPC_GATEWAY_SRC_PATH=$(find $GOPATH/pkg/mod/github.com/grpc-ecosystem/ -maxdept
 
 protoc -I ${DIR}/../ -I $GRPC_GATEWAY_SRC_PATH/third_party/googleapis/ -I $GRPC_GATEWAY_SRC_PATH/ \
     --go_out=plugins=grpc:${DIR}/../pkg/pb \
-    --grpc-gateway_out=logtostderr=true,allow_delete_body=true,allow_patch_feature=false:${DIR}/../pkg/pb \
+    --grpc-gateway_out=logtostderr=true,allow_patch_feature=false:${DIR}/../pkg/pb \
     --swagger_out=logtostderr=true,allow_delete_body=true:${DIR}/../doc/ \
     ${DIR}/../api.proto

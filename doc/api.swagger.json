@@ -15,7 +15,7 @@
     "application/json"
   ],
   "paths": {
-    "/e4/client": {
+    "/e4/client/{client.name}": {
       "delete": {
         "summary": "Remove a client",
         "operationId": "RemoveClient",
@@ -29,12 +29,10 @@
         },
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
+            "name": "client.name",
+            "in": "path",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/pbRemoveClientRequest"
-            }
+            "type": "string"
           }
         ],
         "tags": [
@@ -53,6 +51,12 @@
           }
         },
         "parameters": [
+          {
+            "name": "client.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
           {
             "name": "body",
             "in": "body",
@@ -79,12 +83,10 @@
         },
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
+            "name": "client.name",
+            "in": "path",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/pbResetClientRequest"
-            }
+            "type": "string"
           }
         ],
         "tags": [
@@ -104,6 +106,12 @@
         },
         "parameters": [
           {
+            "name": "client.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
             "name": "body",
             "in": "body",
             "required": true,
@@ -117,7 +125,7 @@
         ]
       }
     },
-    "/e4/client/topic": {
+    "/e4/client/{client.name}/topic/{topic}": {
       "delete": {
         "summary": "Remove a topic / client association",
         "operationId": "RemoveTopicClient",
@@ -131,12 +139,16 @@
         },
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
+            "name": "client.name",
+            "in": "path",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/pbRemoveTopicClientRequest"
-            }
+            "type": "string"
+          },
+          {
+            "name": "topic",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -156,12 +168,16 @@
         },
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
+            "name": "client.name",
+            "in": "path",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/pbNewTopicClientRequest"
-            }
+            "type": "string"
+          },
+          {
+            "name": "topic",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -169,7 +185,7 @@
         ]
       }
     },
-    "/e4/client/topics": {
+    "/e4/client/{client.name}/topics": {
       "get": {
         "summary": "Retrieve paginated topics for a client",
         "operationId": "GetTopicsForClient",
@@ -184,8 +200,8 @@
         "parameters": [
           {
             "name": "client.name",
-            "in": "query",
-            "required": false,
+            "in": "path",
+            "required": true,
             "type": "string"
           },
           {
@@ -208,7 +224,7 @@
         ]
       }
     },
-    "/e4/client/topics/count": {
+    "/e4/client/{client.name}/topics/count": {
       "get": {
         "summary": "Count the number of topics for a client",
         "operationId": "CountTopicsForClient",
@@ -223,8 +239,8 @@
         "parameters": [
           {
             "name": "client.name",
-            "in": "query",
-            "required": false,
+            "in": "path",
+            "required": true,
             "type": "string"
           }
         ],
@@ -588,58 +604,20 @@
     "pbNewClientResponse": {
       "type": "object"
     },
-    "pbNewTopicClientRequest": {
-      "type": "object",
-      "properties": {
-        "client": {
-          "$ref": "#/definitions/pbClient"
-        },
-        "topic": {
-          "type": "string"
-        }
-      }
-    },
     "pbNewTopicClientResponse": {
       "type": "object"
     },
     "pbNewTopicResponse": {
       "type": "object"
     },
-    "pbRemoveClientRequest": {
-      "type": "object",
-      "properties": {
-        "client": {
-          "$ref": "#/definitions/pbClient"
-        }
-      }
-    },
     "pbRemoveClientResponse": {
       "type": "object"
-    },
-    "pbRemoveTopicClientRequest": {
-      "type": "object",
-      "properties": {
-        "client": {
-          "$ref": "#/definitions/pbClient"
-        },
-        "topic": {
-          "type": "string"
-        }
-      }
     },
     "pbRemoveTopicClientResponse": {
       "type": "object"
     },
     "pbRemoveTopicResponse": {
       "type": "object"
-    },
-    "pbResetClientRequest": {
-      "type": "object",
-      "properties": {
-        "client": {
-          "$ref": "#/definitions/pbClient"
-        }
-      }
     },
     "pbResetClientResponse": {
       "type": "object"

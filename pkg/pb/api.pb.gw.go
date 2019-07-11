@@ -40,20 +40,59 @@ func request_C2_NewClient_0(ctx context.Context, marshaler runtime.Marshaler, cl
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["client.name"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "client.name")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "client.name", val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "client.name", err)
+	}
+
 	msg, err := client.NewClient(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
+var (
+	filter_C2_RemoveClient_0 = &utilities.DoubleArray{Encoding: map[string]int{"client": 0, "name": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
+)
+
 func request_C2_RemoveClient_0(ctx context.Context, marshaler runtime.Marshaler, client C2Client, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq RemoveClientRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["client.name"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "client.name")
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "client.name", val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "client.name", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_C2_RemoveClient_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -62,15 +101,36 @@ func request_C2_RemoveClient_0(ctx context.Context, marshaler runtime.Marshaler,
 
 }
 
+var (
+	filter_C2_ResetClient_0 = &utilities.DoubleArray{Encoding: map[string]int{"client": 0, "name": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
+)
+
 func request_C2_ResetClient_0(ctx context.Context, marshaler runtime.Marshaler, client C2Client, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ResetClientRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["client.name"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "client.name")
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "client.name", val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "client.name", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_C2_ResetClient_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -89,6 +149,24 @@ func request_C2_NewClientKey_0(ctx context.Context, marshaler runtime.Marshaler,
 	}
 	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["client.name"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "client.name")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "client.name", val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "client.name", err)
 	}
 
 	msg, err := client.NewClientKey(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -150,15 +228,47 @@ func request_C2_RemoveTopic_0(ctx context.Context, marshaler runtime.Marshaler, 
 
 }
 
+var (
+	filter_C2_NewTopicClient_0 = &utilities.DoubleArray{Encoding: map[string]int{"client": 0, "name": 1, "topic": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 1, 3, 4}}
+)
+
 func request_C2_NewTopicClient_0(ctx context.Context, marshaler runtime.Marshaler, client C2Client, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq NewTopicClientRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["client.name"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "client.name")
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "client.name", val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "client.name", err)
+	}
+
+	val, ok = pathParams["topic"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "topic")
+	}
+
+	protoReq.Topic, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "topic", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_C2_NewTopicClient_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -167,15 +277,47 @@ func request_C2_NewTopicClient_0(ctx context.Context, marshaler runtime.Marshale
 
 }
 
+var (
+	filter_C2_RemoveTopicClient_0 = &utilities.DoubleArray{Encoding: map[string]int{"client": 0, "name": 1, "topic": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 1, 3, 4}}
+)
+
 func request_C2_RemoveTopicClient_0(ctx context.Context, marshaler runtime.Marshaler, client C2Client, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq RemoveTopicClientRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["client.name"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "client.name")
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "client.name", val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "client.name", err)
+	}
+
+	val, ok = pathParams["topic"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "topic")
+	}
+
+	protoReq.Topic, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "topic", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_C2_RemoveTopicClient_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -185,12 +327,30 @@ func request_C2_RemoveTopicClient_0(ctx context.Context, marshaler runtime.Marsh
 }
 
 var (
-	filter_C2_CountTopicsForClient_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_C2_CountTopicsForClient_0 = &utilities.DoubleArray{Encoding: map[string]int{"client": 0, "name": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
 )
 
 func request_C2_CountTopicsForClient_0(ctx context.Context, marshaler runtime.Marshaler, client C2Client, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq CountTopicsForClientRequest
 	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["client.name"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "client.name")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "client.name", val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "client.name", err)
+	}
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -205,12 +365,30 @@ func request_C2_CountTopicsForClient_0(ctx context.Context, marshaler runtime.Ma
 }
 
 var (
-	filter_C2_GetTopicsForClient_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_C2_GetTopicsForClient_0 = &utilities.DoubleArray{Encoding: map[string]int{"client": 0, "name": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
 )
 
 func request_C2_GetTopicsForClient_0(ctx context.Context, marshaler runtime.Marshaler, client C2Client, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetTopicsForClientRequest
 	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["client.name"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "client.name")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "client.name", val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "client.name", err)
+	}
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -746,25 +924,25 @@ func RegisterC2HandlerClient(ctx context.Context, mux *runtime.ServeMux, client 
 }
 
 var (
-	pattern_C2_NewClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"e4", "client"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_NewClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"e4", "client", "client.name"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_RemoveClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"e4", "client"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_RemoveClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"e4", "client", "client.name"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_ResetClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"e4", "client"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_ResetClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"e4", "client", "client.name"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_NewClientKey_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"e4", "client"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_NewClientKey_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"e4", "client", "client.name"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_C2_NewTopic_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1}, []string{"e4", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_C2_RemoveTopic_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1}, []string{"e4", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_NewTopicClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"e4", "client", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_NewTopicClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 3}, []string{"e4", "client", "client.name", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_RemoveTopicClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"e4", "client", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_RemoveTopicClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 3}, []string{"e4", "client", "client.name", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_CountTopicsForClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"e4", "client", "topics", "count"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_CountTopicsForClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 2, 4}, []string{"e4", "client", "client.name", "topics", "count"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_GetTopicsForClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"e4", "client", "topics"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_GetTopicsForClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"e4", "client", "client.name", "topics"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_C2_CountClientsForTopic_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"e4", "topic", "clients", "count"}, "", runtime.AssumeColonVerbOpt(true)))
 

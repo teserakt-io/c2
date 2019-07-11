@@ -17,28 +17,26 @@ service C2 {
   // Create a new client
   rpc NewClient(NewClientRequest) returns (NewClientResponse) {
     option (google.api.http) = {
-      post : "/e4/client"
+      post : "/e4/client/{client.name}"
       body : "*"
     };
   }
   // Remove a client
   rpc RemoveClient(RemoveClientRequest) returns (RemoveClientResponse) {
     option (google.api.http) = {
-      delete : "/e4/client"
-      body : "*"
+      delete : "/e4/client/{client.name}"
     };
   }
   // Instruct the C2 server to send a reset command to the client
   rpc ResetClient(ResetClientRequest) returns (ResetClientResponse) {
     option (google.api.http) = {
-      put : "/e4/client"
-      body : "*"
+      put : "/e4/client/{client.name}"
     };
   }
   // Generate a new key for the client
   rpc NewClientKey(NewClientKeyRequest) returns (NewClientKeyResponse) {
     option (google.api.http) = {
-      patch : "/e4/client"
+      patch : "/e4/client/{client.name}"
       body : "*"
     };
   }
@@ -57,27 +55,25 @@ service C2 {
   // Associate a topic with a client
   rpc NewTopicClient(NewTopicClientRequest) returns (NewTopicClientResponse) {
     option (google.api.http) = {
-      put : "/e4/client/topic"
-      body : "*"
+      put : "/e4/client/{client.name}/topic/{topic}"
     };
   }
   // Remove a topic / client association
   rpc RemoveTopicClient(RemoveTopicClientRequest) returns (RemoveTopicClientResponse) {
     option (google.api.http) = {
-      delete : "/e4/client/topic"
-      body : "*"
+      delete : "/e4/client/{client.name}/topic/{topic}"
     };
   }
   // Count the number of topics for a client
   rpc CountTopicsForClient(CountTopicsForClientRequest) returns (CountTopicsForClientResponse) {
     option (google.api.http) = {
-      get : "/e4/client/topics/count"
+      get : "/e4/client/{client.name}/topics/count"
     };
   }
   // Retrieve paginated topics for a client
   rpc GetTopicsForClient(GetTopicsForClientRequest) returns (GetTopicsForClientResponse) {
     option (google.api.http) = {
-      get : "/e4/client/topics"
+      get : "/e4/client/{client.name}/topics"
     };
   }
   // Count the number of clients for a topic

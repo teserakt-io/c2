@@ -79,12 +79,9 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 
 	for i := 0; i < TESTCLIENTS; i++ {
 		// Create a new client on the C2
-		url = fmt.Sprintf("%s/e4/client", host)
+		url = fmt.Sprintf("%s/e4/client/%s", host, testClients[i].Name)
 
 		newClientBody := pb.NewClientRequest{
-			Client: &pb.Client{
-				Name: testClients[i].Name,
-			},
 			Key: testClients[i].Key,
 		}
 
@@ -117,15 +114,8 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 	resChan <- TestResult{Name: "Create Topic", Result: true, Critical: false, Error: nil}
 
 	// Add the topic to the client.
-	url = fmt.Sprintf("%s/e4/client/topic", host)
-	newTopicClientBody := &pb.NewTopicClientRequest{
-		Client: &pb.Client{
-			Name: testClients[0].Name,
-		},
-		Topic: testtopics[0].TopicName,
-	}
-
-	if _, err = testHTTPReq("Add Topic to Client", httpClient, "PUT", url, newTopicClientBody, 200); err != nil {
+	url = fmt.Sprintf("%s/e4/client/%s/topic/%s", host, testClients[0].Name, testtopics[0].TopicName)
+	if _, err = testHTTPReq("Add Topic to Client", httpClient, "PUT", url, nil, 200); err != nil {
 		resChan <- TestResult{
 			Name:     "Add Topic to Client",
 			Result:   false,
@@ -137,7 +127,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 	resChan <- TestResult{Name: "Add Topic to Client", Result: true, Critical: false, Error: nil}
 
 	// Check the M2M link returns the topic we added
-	url = fmt.Sprintf("%s/e4/client/topics?client.name=%s&offset=0&count=10", host,
+	url = fmt.Sprintf("%s/e4/client/%s/topics?offset=0&count=10", host,
 		testClients[0].Name)
 	if resp, err = testHTTPReq("M2M Find Added Topic", httpClient, "GET", url, nil, 200); err != nil {
 		resChan <- TestResult{
@@ -172,15 +162,8 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 	resChan <- TestResult{Name: "M2M Find Added Topic", Result: true, Critical: false, Error: nil}
 
 	// Remove the topic from the client (but not the C2)
-	url = fmt.Sprintf("%s/e4/client/topic", host)
-	removeTopicClientBody := &pb.RemoveTopicClientRequest{
-		Client: &pb.Client{
-			Name: testClients[0].Name,
-		},
-		Topic: testtopics[0].TopicName,
-	}
-
-	if _, err = testHTTPReq("Remove Topic from Client", httpClient, "DELETE", url, removeTopicClientBody, 200); err != nil {
+	url = fmt.Sprintf("%s/e4/client/%s/topic/%s", host, testClients[0].Name, testtopics[0].TopicName)
+	if _, err = testHTTPReq("Remove Topic from Client", httpClient, "DELETE", url, nil, 200); err != nil {
 		resChan <- TestResult{
 			Name:     "Remove Topic from Client",
 			Result:   false,
@@ -192,7 +175,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 	resChan <- TestResult{Name: "Remove Topic from Client", Result: true, Critical: false, Error: nil}
 
 	// Check Topic appears to have been removed from the client
-	url = fmt.Sprintf("%s/e4/client/topics?client.name=%s&offset=0&count=10", host,
+	url = fmt.Sprintf("%s/e4/client/%s/topics?offset=0&count=10", host,
 		testClients[0].Name)
 	if resp, err = testHTTPReq("Test M2M Doesn't Show Removed Topic", httpClient, "GET", url, nil, 200); err != nil {
 		resChan <- TestResult{
