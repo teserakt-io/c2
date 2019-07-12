@@ -12,6 +12,11 @@ import (
 )
 
 const (
+	// MaxPageSize defines the maximum number of clients to fetch per api query
+	MaxPageSize int64 = 100
+)
+
+const (
 	// EndpointFlag is the global flag name used to store the api endpoint url
 	EndpointFlag = "endpoint"
 	// CertFlag is the global flag name used to store the api certificate path

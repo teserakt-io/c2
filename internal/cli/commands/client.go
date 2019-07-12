@@ -17,16 +17,19 @@ func NewClientCommand(c2ClientFactory cli.APIClientFactory) Command {
 	clientListCommand := NewClientListCommand(c2ClientFactory)
 	clientCreateCommand := NewClientCreateCommand(c2ClientFactory)
 	clientRemoveCommand := NewClientRemoveCommand(c2ClientFactory)
+	clientListTopics := NewClientListTopicsCommand(c2ClientFactory)
 
 	cmd := &clientCommand{}
 	cobraCmd := &cobra.Command{
-		Use: "client",
+		Use:   "client",
+		Short: "group commands to interact with c2 clients",
 	}
 
 	cobraCmd.AddCommand(
 		clientListCommand.CobraCmd(),
 		clientCreateCommand.CobraCmd(),
 		clientRemoveCommand.CobraCmd(),
+		clientListTopics.CobraCmd(),
 	)
 
 	cmd.cobraCmd = cobraCmd

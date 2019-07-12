@@ -12,11 +12,6 @@ import (
 	"gitlab.com/teserakt/c2/pkg/pb"
 )
 
-const (
-	// MaxPageSize defines the maximum number of clients to fetch per api query
-	MaxPageSize int64 = 100
-)
-
 type clientListCommand struct {
 	cobraCmd        *cobra.Command
 	flags           clientListCommandFlags
@@ -43,7 +38,7 @@ func NewClientListCommand(c2ClientFactory cli.APIClientFactory) Command {
 		RunE:  listCmd.run,
 	}
 
-	cobraCmd.Flags().Int64Var(&listCmd.flags.Offset, "offset", 0, "The offset to start listing clients from.")
+	cobraCmd.Flags().Int64Var(&listCmd.flags.Offset, "offset", 0, "The offset to start listing clients from")
 	cobraCmd.Flags().Int64Var(&listCmd.flags.Count, "count", 0, "The maximum number of clients to return, values <= 0 means all")
 
 	listCmd.cobraCmd = cobraCmd
@@ -78,7 +73,7 @@ func (c *clientListCommand) run(cmd *cobra.Command, args []string) error {
 
 	currentOffset := c.flags.Offset
 	for totalCount > 0 {
-		count := int64(math.Min(float64(MaxPageSize), float64(totalCount)))
+		count := int64(math.Min(float64(cli.MaxPageSize), float64(totalCount)))
 		req := &pb.GetClientsRequest{
 			Count:  count,
 			Offset: currentOffset,
