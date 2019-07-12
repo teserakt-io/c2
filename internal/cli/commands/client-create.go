@@ -78,7 +78,7 @@ func (c *clientCreateCommand) run(cmd *cobra.Command, args []string) error {
 
 	c2Client, err := c.c2ClientFactory.NewClient(cmd)
 	if err != nil {
-		return fmt.Errorf("cannot create api client: %v", err)
+		return fmt.Errorf("cannot create c2 api client: %v", err)
 	}
 	defer c2Client.Close()
 
