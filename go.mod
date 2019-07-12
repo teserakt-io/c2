@@ -21,6 +21,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect
 	github.com/olivere/elastic v6.2.21+incompatible
 	github.com/pkg/errors v0.8.1 // indirect
+	github.com/spf13/cobra v0.0.5
 	gitlab.com/teserakt/e4common v0.0.0-20190531141929-25e1141f633f
 	gitlab.com/teserakt/serverlib v0.0.0-20190607072605-8fd4fe51
 	go.opencensus.io v0.19.0
