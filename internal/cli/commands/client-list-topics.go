@@ -27,7 +27,7 @@ type clientListTopicsCommandFlags struct {
 var _ Command = &clientListTopicsCommand{}
 
 // NewClientListTopicsCommand creates a new command allowing to
-// list existing clients
+// list existing topics for a given client
 func NewClientListTopicsCommand(c2ClientFactory cli.APIClientFactory) Command {
 	listTopicsCmd := &clientListTopicsCommand{
 		c2ClientFactory: c2ClientFactory,
@@ -35,13 +35,13 @@ func NewClientListTopicsCommand(c2ClientFactory cli.APIClientFactory) Command {
 
 	cobraCmd := &cobra.Command{
 		Use:   "list-topics",
-		Short: "List all topics for a client",
+		Short: "List topics for a client",
 		RunE:  listTopicsCmd.run,
 	}
 
 	cobraCmd.Flags().StringVar(&listTopicsCmd.flags.Name, "name", "", "The client name")
-	cobraCmd.Flags().Int64Var(&listTopicsCmd.flags.Offset, "offset", 0, "The offset to start listing clients from")
-	cobraCmd.Flags().Int64Var(&listTopicsCmd.flags.Count, "count", 0, "The maximum number of clients to return, values <= 0 means all")
+	cobraCmd.Flags().Int64Var(&listTopicsCmd.flags.Offset, "offset", 0, "The offset to start listing topics from")
+	cobraCmd.Flags().Int64Var(&listTopicsCmd.flags.Count, "count", 0, "The maximum number of topics to return, values <= 0 means all")
 
 	listTopicsCmd.cobraCmd = cobraCmd
 
@@ -91,7 +91,7 @@ func (c *clientListTopicsCommand) run(cmd *cobra.Command, args []string) error {
 
 		resp, err := c2Client.GetTopicsForClient(ctx, req)
 		if err != nil {
-			return fmt.Errorf("failed to fetch clients: %v", err)
+			return fmt.Errorf("failed to fetch topics for client: %v", err)
 		}
 
 		currentOffset += count

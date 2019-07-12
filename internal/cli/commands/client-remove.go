@@ -29,7 +29,7 @@ func NewClientRemoveCommand(c2ClientFactory cli.APIClientFactory) Command {
 
 	cobraCmd := &cobra.Command{
 		Use:   "remove",
-		Short: "Remove a new client",
+		Short: "Remove a client",
 		RunE:  removeCmd.run,
 	}
 

@@ -34,7 +34,7 @@ func NewClientListCommand(c2ClientFactory cli.APIClientFactory) Command {
 
 	cobraCmd := &cobra.Command{
 		Use:   "list",
-		Short: "List all clients",
+		Short: "List existing clients",
 		RunE:  listCmd.run,
 	}
 
