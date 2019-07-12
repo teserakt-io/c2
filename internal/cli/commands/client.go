@@ -15,6 +15,7 @@ var _ Command = &clientCommand{}
 // only exists to group all client related sub commands.
 func NewClientCommand(c2ClientFactory cli.APIClientFactory) Command {
 	clientListCommand := NewClientListCommand(c2ClientFactory)
+	clientCreateCommand := NewClientCreateCommand(c2ClientFactory)
 
 	cmd := &clientCommand{}
 	cobraCmd := &cobra.Command{
@@ -23,6 +24,7 @@ func NewClientCommand(c2ClientFactory cli.APIClientFactory) Command {
 
 	cobraCmd.AddCommand(
 		clientListCommand.CobraCmd(),
+		clientCreateCommand.CobraCmd(),
 	)
 
 	cmd.cobraCmd = cobraCmd

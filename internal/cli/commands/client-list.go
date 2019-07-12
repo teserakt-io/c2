@@ -6,11 +6,10 @@ import (
 	"math"
 	"time"
 
-	"gitlab.com/teserakt/c2/pkg/pb"
-
 	"github.com/spf13/cobra"
 
 	"gitlab.com/teserakt/c2/internal/cli"
+	"gitlab.com/teserakt/c2/pkg/pb"
 )
 
 const (
