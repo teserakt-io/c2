@@ -27,6 +27,8 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) Comman
 	rootCmd := &rootCommand{}
 
 	clientCommand := NewClientCommand(c2ClientFactory)
+	topicCommand := NewTopicCommand(c2ClientFactory)
+
 	completionCmd := NewCompletionCommand(rootCmd)
 
 	cobraCmd := &cobra.Command{
@@ -53,6 +55,7 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) Comman
 
 	cobraCmd.AddCommand(
 		clientCommand.CobraCmd(),
+		topicCommand.CobraCmd(),
 
 		// Autocompletion script generation command
 		completionCmd.CobraCmd(),
