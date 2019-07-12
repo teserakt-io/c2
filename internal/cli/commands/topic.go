@@ -16,6 +16,7 @@ var _ Command = &topicCommand{}
 func NewTopicCommand(c2ClientFactory cli.APIClientFactory) Command {
 
 	topicListCommand := NewTopicListCommand(c2ClientFactory)
+	topicCreateCommand := NewTopicCreateCommand(c2ClientFactory)
 
 	cmd := &topicCommand{}
 	cobraCmd := &cobra.Command{
@@ -25,6 +26,7 @@ func NewTopicCommand(c2ClientFactory cli.APIClientFactory) Command {
 
 	cobraCmd.AddCommand(
 		topicListCommand.CobraCmd(),
+		topicCreateCommand.CobraCmd(),
 	)
 
 	cmd.cobraCmd = cobraCmd
