@@ -5,13 +5,15 @@ import (
 	"os"
 	"strings"
 
+	"gitlab.com/teserakt/c2/internal/cli"
+
 	"github.com/spf13/cobra"
 )
 
 // CompletionCommand defines a custom Command to deal with auto completion
 type CompletionCommand struct {
 	cobraCmd *cobra.Command
-	rootCmd  Command
+	rootCmd  cli.Command
 	flags    completionCommandFlags
 }
 
@@ -19,10 +21,10 @@ type completionCommandFlags struct {
 	IsZsh bool
 }
 
-var _ Command = &CompletionCommand{}
+var _ cli.Command = &CompletionCommand{}
 
 // NewCompletionCommand returns the cobra command used to generate the autocompletion
-func NewCompletionCommand(rootCommand Command) *CompletionCommand {
+func NewCompletionCommand(rootCommand cli.Command) *CompletionCommand {
 
 	completionCmd := &CompletionCommand{
 		rootCmd: rootCommand,

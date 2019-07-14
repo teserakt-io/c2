@@ -1,4 +1,4 @@
-package commands
+package clients
 
 import (
 	"context"
@@ -12,24 +12,24 @@ import (
 	"gitlab.com/teserakt/c2/pkg/pb"
 )
 
-type clientListTopicsCommand struct {
+type listTopicsCommand struct {
 	cobraCmd        *cobra.Command
-	flags           clientListTopicsCommandFlags
+	flags           listTopicsCommandFlags
 	c2ClientFactory cli.APIClientFactory
 }
 
-type clientListTopicsCommandFlags struct {
+type listTopicsCommandFlags struct {
 	Name   string
 	Offset int64
 	Count  int64
 }
 
-var _ Command = &clientListTopicsCommand{}
+var _ cli.Command = &listTopicsCommand{}
 
-// NewClientListTopicsCommand creates a new command allowing to
+// NewListTopicsCommand creates a new command allowing to
 // list existing topics for a given client
-func NewClientListTopicsCommand(c2ClientFactory cli.APIClientFactory) Command {
-	listTopicsCmd := &clientListTopicsCommand{
+func NewListTopicsCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
+	listTopicsCmd := &listTopicsCommand{
 		c2ClientFactory: c2ClientFactory,
 	}
 
@@ -48,11 +48,11 @@ func NewClientListTopicsCommand(c2ClientFactory cli.APIClientFactory) Command {
 	return listTopicsCmd
 }
 
-func (c *clientListTopicsCommand) CobraCmd() *cobra.Command {
+func (c *listTopicsCommand) CobraCmd() *cobra.Command {
 	return c.cobraCmd
 }
 
-func (c *clientListTopicsCommand) run(cmd *cobra.Command, args []string) error {
+func (c *listTopicsCommand) run(cmd *cobra.Command, args []string) error {
 	if len(c.flags.Name) == 0 {
 		return fmt.Errorf("flag --name is required")
 	}

@@ -1,4 +1,4 @@
-package commands
+package clients
 
 import (
 	"context"
@@ -12,23 +12,23 @@ import (
 	"gitlab.com/teserakt/c2/pkg/pb"
 )
 
-type clientListCommand struct {
+type listCommand struct {
 	cobraCmd        *cobra.Command
-	flags           clientListCommandFlags
+	flags           listCommandFlags
 	c2ClientFactory cli.APIClientFactory
 }
 
-type clientListCommandFlags struct {
+type listCommandFlags struct {
 	Offset int64
 	Count  int64
 }
 
-var _ Command = &clientListCommand{}
+var _ cli.Command = &listCommand{}
 
-// NewClientListCommand creates a new command allowing to
+// NewListCommand creates a new command allowing to
 // list existing clients
-func NewClientListCommand(c2ClientFactory cli.APIClientFactory) Command {
-	listCmd := &clientListCommand{
+func NewListCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
+	listCmd := &listCommand{
 		c2ClientFactory: c2ClientFactory,
 	}
 
@@ -46,11 +46,11 @@ func NewClientListCommand(c2ClientFactory cli.APIClientFactory) Command {
 	return listCmd
 }
 
-func (c *clientListCommand) CobraCmd() *cobra.Command {
+func (c *listCommand) CobraCmd() *cobra.Command {
 	return c.cobraCmd
 }
 
-func (c *clientListCommand) run(cmd *cobra.Command, args []string) error {
+func (c *listCommand) run(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 

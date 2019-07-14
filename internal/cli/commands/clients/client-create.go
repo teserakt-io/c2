@@ -1,4 +1,4 @@
-package commands
+package clients
 
 import (
 	"context"
@@ -12,21 +12,23 @@ import (
 	e4 "gitlab.com/teserakt/e4common"
 )
 
-type clientCreateCommand struct {
+type createCommand struct {
 	cobraCmd        *cobra.Command
-	flags           clientCreateCommandFlags
+	flags           createCommandFlags
 	c2ClientFactory cli.APIClientFactory
 }
 
-type clientCreateCommandFlags struct {
+type createCommandFlags struct {
 	Name     string
 	Password string
 	Key      []byte
 }
 
-// NewClientCreateCommand returns a new command to create clients
-func NewClientCreateCommand(c2ClientFactory cli.APIClientFactory) Command {
-	createCmd := &clientCreateCommand{
+var _ cli.Command = &createCommand{}
+
+// NewCreateCommand returns a new command to create clients
+func NewCreateCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
+	createCmd := &createCommand{
 		c2ClientFactory: c2ClientFactory,
 	}
 
@@ -46,11 +48,11 @@ func NewClientCreateCommand(c2ClientFactory cli.APIClientFactory) Command {
 	return createCmd
 }
 
-func (c *clientCreateCommand) CobraCmd() *cobra.Command {
+func (c *createCommand) CobraCmd() *cobra.Command {
 	return c.cobraCmd
 }
 
-func (c *clientCreateCommand) run(cmd *cobra.Command, args []string) error {
+func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 	switch {
 	case len(c.flags.Name) == 0:
 		return fmt.Errorf("flag --name is required")

@@ -1,4 +1,4 @@
-package commands
+package topics
 
 import (
 	"context"
@@ -12,23 +12,23 @@ import (
 	"gitlab.com/teserakt/c2/pkg/pb"
 )
 
-type topicListCommand struct {
+type listCommand struct {
 	cobraCmd        *cobra.Command
-	flags           topicListCommandFlags
+	flags           listCommandFlags
 	c2ClientFactory cli.APIClientFactory
 }
 
-type topicListCommandFlags struct {
+type listCommandFlags struct {
 	Offset int64
 	Count  int64
 }
 
-var _ Command = &topicListCommand{}
+var _ cli.Command = &listCommand{}
 
-// NewTopicListCommand creates a new command allowing to
+// NewListCommand creates a new command allowing to
 // list existing topics
-func NewTopicListCommand(c2ClientFactory cli.APIClientFactory) Command {
-	listCmd := &topicListCommand{
+func NewListCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
+	listCmd := &listCommand{
 		c2ClientFactory: c2ClientFactory,
 	}
 
@@ -46,11 +46,11 @@ func NewTopicListCommand(c2ClientFactory cli.APIClientFactory) Command {
 	return listCmd
 }
 
-func (c *topicListCommand) CobraCmd() *cobra.Command {
+func (c *listCommand) CobraCmd() *cobra.Command {
 	return c.cobraCmd
 }
 
-func (c *topicListCommand) run(cmd *cobra.Command, args []string) error {
+func (c *listCommand) run(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 

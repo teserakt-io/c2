@@ -1,4 +1,4 @@
-package commands
+package topics
 
 import (
 	"context"
@@ -11,19 +11,19 @@ import (
 	"gitlab.com/teserakt/c2/pkg/pb"
 )
 
-type topicCreateCommand struct {
+type createCommand struct {
 	cobraCmd        *cobra.Command
-	flags           topicCreateCommandFlags
+	flags           createCommandFlags
 	c2ClientFactory cli.APIClientFactory
 }
 
-type topicCreateCommandFlags struct {
+type createCommandFlags struct {
 	Name string
 }
 
-// NewTopicCreateCommand returns a new command to create a new topic
-func NewTopicCreateCommand(c2ClientFactory cli.APIClientFactory) Command {
-	createCmd := &topicCreateCommand{
+// NewCreateCommand returns a new command to create a new topic
+func NewCreateCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
+	createCmd := &createCommand{
 		c2ClientFactory: c2ClientFactory,
 	}
 
@@ -40,11 +40,11 @@ func NewTopicCreateCommand(c2ClientFactory cli.APIClientFactory) Command {
 	return createCmd
 }
 
-func (c *topicCreateCommand) CobraCmd() *cobra.Command {
+func (c *createCommand) CobraCmd() *cobra.Command {
 	return c.cobraCmd
 }
 
-func (c *topicCreateCommand) run(cmd *cobra.Command, args []string) error {
+func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 	if len(c.flags.Name) == 0 {
 		return fmt.Errorf("flag --name is required")
 	}

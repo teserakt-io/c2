@@ -1,4 +1,4 @@
-package commands
+package clients
 
 import (
 	"context"
@@ -11,19 +11,21 @@ import (
 	"gitlab.com/teserakt/c2/pkg/pb"
 )
 
-type clientNewKeyCommand struct {
+type newKeyCommand struct {
 	cobraCmd        *cobra.Command
-	flags           clientNewKeyCommandFlags
+	flags           newKeyCommandFlags
 	c2ClientFactory cli.APIClientFactory
 }
 
-type clientNewKeyCommandFlags struct {
+type newKeyCommandFlags struct {
 	Name string
 }
 
-// NewClientNewKeyCommand returns a new command to regenerate a client key
-func NewClientNewKeyCommand(c2ClientFactory cli.APIClientFactory) Command {
-	resetCmd := &clientNewKeyCommand{
+var _ cli.Command = &newKeyCommand{}
+
+// NewNewKeyCommand returns a new command to regenerate a client key
+func NewNewKeyCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
+	resetCmd := &newKeyCommand{
 		c2ClientFactory: c2ClientFactory,
 	}
 
@@ -40,11 +42,11 @@ func NewClientNewKeyCommand(c2ClientFactory cli.APIClientFactory) Command {
 	return resetCmd
 }
 
-func (c *clientNewKeyCommand) CobraCmd() *cobra.Command {
+func (c *newKeyCommand) CobraCmd() *cobra.Command {
 	return c.cobraCmd
 }
 
-func (c *clientNewKeyCommand) run(cmd *cobra.Command, args []string) error {
+func (c *newKeyCommand) run(cmd *cobra.Command, args []string) error {
 	if len(c.flags.Name) == 0 {
 		return fmt.Errorf("flag --name is required")
 	}

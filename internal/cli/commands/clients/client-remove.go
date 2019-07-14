@@ -1,4 +1,4 @@
-package commands
+package clients
 
 import (
 	"context"
@@ -11,19 +11,21 @@ import (
 	"gitlab.com/teserakt/c2/pkg/pb"
 )
 
-type clientRemoveCommand struct {
+type removeCommand struct {
 	cobraCmd        *cobra.Command
-	flags           clientRemoveCommandFlags
+	flags           removeCommandFlags
 	c2ClientFactory cli.APIClientFactory
 }
 
-type clientRemoveCommandFlags struct {
+type removeCommandFlags struct {
 	Name string
 }
 
-// NewClientRemoveCommand returns a new command to remove clients
-func NewClientRemoveCommand(c2ClientFactory cli.APIClientFactory) Command {
-	removeCmd := &clientRemoveCommand{
+var _ cli.Command = &removeCommand{}
+
+// NewRemoveCommand returns a new command to remove clients
+func NewRemoveCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
+	removeCmd := &removeCommand{
 		c2ClientFactory: c2ClientFactory,
 	}
 
@@ -40,11 +42,11 @@ func NewClientRemoveCommand(c2ClientFactory cli.APIClientFactory) Command {
 	return removeCmd
 }
 
-func (c *clientRemoveCommand) CobraCmd() *cobra.Command {
+func (c *removeCommand) CobraCmd() *cobra.Command {
 	return c.cobraCmd
 }
 
-func (c *clientRemoveCommand) run(cmd *cobra.Command, args []string) error {
+func (c *removeCommand) run(cmd *cobra.Command, args []string) error {
 	if len(c.flags.Name) == 0 {
 		return fmt.Errorf("flag --name is required")
 

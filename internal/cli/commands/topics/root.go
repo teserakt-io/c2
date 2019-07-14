@@ -1,24 +1,25 @@
-package commands
+package topics
 
 import (
 	"github.com/spf13/cobra"
+
 	"gitlab.com/teserakt/c2/internal/cli"
 )
 
-type topicCommand struct {
+type rootCommand struct {
 	cobraCmd *cobra.Command
 }
 
-var _ Command = &topicCommand{}
+var _ cli.Command = &rootCommand{}
 
-// NewTopicCommand returns a new Client Command, which
+// NewRootCommand returns a new Client Command, which
 // only exists to group all client related sub commands.
-func NewTopicCommand(c2ClientFactory cli.APIClientFactory) Command {
+func NewRootCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 
-	topicListCommand := NewTopicListCommand(c2ClientFactory)
-	topicCreateCommand := NewTopicCreateCommand(c2ClientFactory)
+	topicListCommand := NewListCommand(c2ClientFactory)
+	topicCreateCommand := NewCreateCommand(c2ClientFactory)
 
-	cmd := &topicCommand{}
+	cmd := &rootCommand{}
 	cobraCmd := &cobra.Command{
 		Use:   "topic",
 		Short: "group commands to interact with c2 topics",
@@ -34,6 +35,6 @@ func NewTopicCommand(c2ClientFactory cli.APIClientFactory) Command {
 	return cmd
 }
 
-func (c *topicCommand) CobraCmd() *cobra.Command {
+func (c *rootCommand) CobraCmd() *cobra.Command {
 	return c.cobraCmd
 }

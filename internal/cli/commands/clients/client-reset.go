@@ -1,4 +1,4 @@
-package commands
+package clients
 
 import (
 	"context"
@@ -11,19 +11,21 @@ import (
 	"gitlab.com/teserakt/c2/pkg/pb"
 )
 
-type clientResetCommand struct {
+type resetCommand struct {
 	cobraCmd        *cobra.Command
-	flags           clientResetCommandFlags
+	flags           resetCommandFlags
 	c2ClientFactory cli.APIClientFactory
 }
 
-type clientResetCommandFlags struct {
+type resetCommandFlags struct {
 	Name string
 }
 
-// NewClientResetCommand returns a new command to reset a client
-func NewClientResetCommand(c2ClientFactory cli.APIClientFactory) Command {
-	resetCmd := &clientResetCommand{
+var _ cli.Command = &resetCommand{}
+
+// NewResetCommand returns a new command to reset a client
+func NewResetCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
+	resetCmd := &resetCommand{
 		c2ClientFactory: c2ClientFactory,
 	}
 
@@ -40,11 +42,11 @@ func NewClientResetCommand(c2ClientFactory cli.APIClientFactory) Command {
 	return resetCmd
 }
 
-func (c *clientResetCommand) CobraCmd() *cobra.Command {
+func (c *resetCommand) CobraCmd() *cobra.Command {
 	return c.cobraCmd
 }
 
-func (c *clientResetCommand) run(cmd *cobra.Command, args []string) error {
+func (c *resetCommand) run(cmd *cobra.Command, args []string) error {
 	if len(c.flags.Name) == 0 {
 		return fmt.Errorf("flag --name is required")
 	}
