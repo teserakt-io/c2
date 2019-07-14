@@ -39,9 +39,10 @@ func NewCreateCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 		RunE:  createCmd.run,
 	}
 
+	cobraCmd.Flags().SortFlags = false
 	cobraCmd.Flags().StringVar(&createCmd.flags.Name, "name", "", "The client name")
-	cobraCmd.Flags().StringVar(&createCmd.flags.Password, "password", "", "The client password")
 	cobraCmd.Flags().BytesHexVar(&createCmd.flags.Key, "key", nil, fmt.Sprintf("The client %d bytes hexadecimal key", e4.KeyLenHex))
+	cobraCmd.Flags().StringVar(&createCmd.flags.Password, "password", "", "The client password")
 
 	createCmd.cobraCmd = cobraCmd
 

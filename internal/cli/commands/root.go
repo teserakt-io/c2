@@ -1,11 +1,6 @@
 package commands
 
 import (
-	"bufio"
-	"fmt"
-	"os"
-	"strings"
-
 	"github.com/spf13/cobra"
 
 	"gitlab.com/teserakt/c2/internal/cli"
@@ -14,9 +9,8 @@ import (
 )
 
 type rootCommandFlags struct {
-	Endpoint    string
-	Cert        string
-	Interactive bool
+	Endpoint string
+	Cert     string
 }
 
 type rootCommand struct {
@@ -33,6 +27,7 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 	clientCommand := clients.NewRootCommand(c2ClientFactory)
 	topicCommand := topics.NewRootCommand(c2ClientFactory)
 
+	interactiveCmd := NewInteractiveCommand(rootCmd, version)
 	completionCmd := NewCompletionCommand(rootCmd)
 
 	cobraCmd := &cobra.Command{
@@ -41,10 +36,7 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 		Version:                version,
 		SilenceUsage:           true,
 		SilenceErrors:          true,
-		RunE:                   rootCmd.run,
 	}
-
-	cobraCmd.Flags().BoolVarP(&rootCmd.flags.Interactive, "interactive", "i", false, "enter c2cli interactive mode")
 
 	cobraCmd.PersistentFlags().StringVarP(
 		&rootCmd.flags.Endpoint,
@@ -64,6 +56,7 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 		clientCommand.CobraCmd(),
 		topicCommand.CobraCmd(),
 
+		interactiveCmd.CobraCmd(),
 		// Autocompletion script generation command
 		completionCmd.CobraCmd(),
 	)
@@ -77,35 +70,4 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 
 func (c *rootCommand) CobraCmd() *cobra.Command {
 	return c.cobraCmd
-}
-
-func (c *rootCommand) run(cmd *cobra.Command, args []string) error {
-	if !c.flags.Interactive {
-		return nil
-	}
-
-	fmt.Println("c2cli interactive console")
-	fmt.Println("enter 'bye' to quit")
-
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		fmt.Print("c2cli> ")
-		text, err := reader.ReadString('\n')
-		if err != nil {
-			fmt.Printf("error: %v\n", err)
-		}
-
-		// Remove \n from input
-		text = text[:len(text)-1]
-
-		if text == "bye" {
-			fmt.Println("goodbye")
-			return nil
-		}
-
-		c.cobraCmd.SetArgs(strings.Split(text, " "))
-		if err := c.cobraCmd.Execute(); err != nil {
-			fmt.Printf("error running command: %v\n", err)
-		}
-	}
 }
