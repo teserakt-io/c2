@@ -35,6 +35,7 @@ func NewResetCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 		RunE:  resetCmd.run,
 	}
 
+	cobraCmd.Flags().SortFlags = false
 	cobraCmd.Flags().StringVar(&resetCmd.flags.Name, "name", "", "The client name")
 
 	resetCmd.cobraCmd = cobraCmd

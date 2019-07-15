@@ -39,6 +39,7 @@ func NewListClientsCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 		RunE:  listClientsCmd.run,
 	}
 
+	cobraCmd.Flags().SortFlags = false
 	cobraCmd.Flags().StringVar(&listClientsCmd.flags.Name, "name", "", "The topic name")
 	cobraCmd.Flags().Int64Var(&listClientsCmd.flags.Offset, "offset", 0, "The offset to start listing clients from")
 	cobraCmd.Flags().Int64Var(&listClientsCmd.flags.Count, "count", 0, "The maximum number of clients to return, values <= 0 means all")

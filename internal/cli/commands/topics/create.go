@@ -33,6 +33,7 @@ func NewCreateCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 		RunE:  createCmd.run,
 	}
 
+	cobraCmd.Flags().SortFlags = false
 	cobraCmd.Flags().StringVar(&createCmd.flags.Name, "name", "", "The topic name")
 
 	createCmd.cobraCmd = cobraCmd

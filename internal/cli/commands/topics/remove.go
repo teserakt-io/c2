@@ -35,6 +35,7 @@ func NewRemoveCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 		RunE:  removeCmd.run,
 	}
 
+	cobraCmd.Flags().SortFlags = false
 	cobraCmd.Flags().StringVar(&removeCmd.flags.Name, "name", "", "The topic name")
 
 	removeCmd.cobraCmd = cobraCmd
