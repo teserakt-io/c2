@@ -27,23 +27,23 @@ var _ cli.Command = &attachCommand{}
 // NewAttachCommand creates a new command allowing to
 // attach a client to a topic
 func NewAttachCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
-	countCmd := &attachCommand{
+	attachCmd := &attachCommand{
 		c2ClientFactory: c2ClientFactory,
 	}
 
 	cobraCmd := &cobra.Command{
 		Use:   "attach",
 		Short: "Link a client to a topic",
-		RunE:  countCmd.run,
+		RunE:  attachCmd.run,
 	}
 
 	cobraCmd.Flags().SortFlags = false
-	cobraCmd.Flags().StringVar(&countCmd.flags.ClientName, "client", "", "The client name to be linked to the topic")
-	cobraCmd.Flags().StringVar(&countCmd.flags.Topic, "topic", "", "The topic to be linked to the client")
+	cobraCmd.Flags().StringVar(&attachCmd.flags.ClientName, "client", "", "The client name to be linked to the topic")
+	cobraCmd.Flags().StringVar(&attachCmd.flags.Topic, "topic", "", "The topic to be linked to the client")
 
-	countCmd.cobraCmd = cobraCmd
+	attachCmd.cobraCmd = cobraCmd
 
-	return countCmd
+	return attachCmd
 }
 
 func (c *attachCommand) CobraCmd() *cobra.Command {
