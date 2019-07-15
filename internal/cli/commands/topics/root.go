@@ -19,6 +19,7 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 	topicListCommand := NewListCommand(c2ClientFactory)
 	topicCreateCommand := NewCreateCommand(c2ClientFactory)
 	topicRemoveCommand := NewRemoveCommand(c2ClientFactory)
+	listClientsCommand := NewListClientsCommand(c2ClientFactory)
 
 	cmd := &rootCommand{}
 	cobraCmd := &cobra.Command{
@@ -30,6 +31,7 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 		topicListCommand.CobraCmd(),
 		topicCreateCommand.CobraCmd(),
 		topicRemoveCommand.CobraCmd(),
+		listClientsCommand.CobraCmd(),
 	)
 
 	cmd.cobraCmd = cobraCmd

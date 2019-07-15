@@ -76,7 +76,7 @@ func (c *listTopicsCommand) run(cmd *cobra.Command, args []string) error {
 
 	totalCount := countResp.Count
 	if c.flags.Count > 0 {
-		// Will fetch as many as requested by user, up to maximum number of available clients
+		// Will fetch as many as requested by user, up to maximum number available
 		totalCount = int64(math.Min(float64(totalCount), float64(c.flags.Count)))
 	}
 
