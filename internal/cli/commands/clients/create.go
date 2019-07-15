@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -56,11 +57,11 @@ func (c *createCommand) CobraCmd() *cobra.Command {
 func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 	switch {
 	case len(c.flags.Name) == 0:
-		return fmt.Errorf("flag --name is required")
+		return errors.New("flag --name is required")
 	case len(c.flags.Password) == 0 && len(c.flags.Key) == 0:
-		return fmt.Errorf("one of --password or --key is required")
+		return errors.New("one of --password or --key is required")
 	case len(c.flags.Password) > 0 && len(c.flags.Key) > 0:
-		return fmt.Errorf("only one of --password or --key is allowed")
+		return errors.New("only one of --password or --key is allowed")
 	}
 
 	if err := e4.IsValidName(c.flags.Name); err != nil {
@@ -97,7 +98,7 @@ func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
 
-	fmt.Printf("Client %s created successfully\n", c.flags.Name)
+	c.CobraCmd().Printf("Client %s created successfully\n", c.flags.Name)
 
 	return nil
 }
