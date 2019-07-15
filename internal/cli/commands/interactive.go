@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/abiosoft/ishell"
@@ -8,6 +9,11 @@ import (
 	"github.com/spf13/pflag"
 
 	"gitlab.com/teserakt/c2/internal/cli"
+)
+
+const (
+	// DefaultPrompt is the default prompt to be displayed in interactive mode
+	DefaultPrompt = "c2cli➩  "
 )
 
 var (
@@ -54,7 +60,7 @@ func (c *interactiveCommand) run(cmd *cobra.Command, args []string) error {
 	shell := ishell.New()
 	//shell.Println(c.version)
 	shell.Println("type 'help' for usage information\n")
-	shell.SetPrompt("c2cli➩  ")
+	shell.SetPrompt(DefaultPrompt)
 	shell.AutoHelp(true)
 
 	c.addCobraCommands(shell, c.rootCmd.CobraCmd())
@@ -90,11 +96,20 @@ func (c *interactiveCommand) addCobraCommands(ishellCmd ishellCmdAdder, cobraCmd
 
 		if !cobraCmd.HasSubCommands() {
 			subIshellCmd.Func = func(ctx *ishell.Context) {
-				// Execute the root cobra command exactly as we would
-				// have when running the standard cli.
-				cobraRoot := c.rootCmd.CobraCmd()
-				cobraRoot.SetArgs(ctx.RawArgs)
-				err := cobraRoot.Execute()
+
+				args := ctx.RawArgs
+				cobraCmd.Flags().VisitAll(func(f *pflag.Flag) {
+					ctx.SetPrompt(fmt.Sprintf("%s (%s - default: \"%s\") ? ", f.Name, f.Value.Type(), f.DefValue))
+					input := ctx.ReadLine()
+					if len(input) == 0 {
+						input = f.DefValue
+					}
+
+					args = append(args, fmt.Sprintf("--%s", f.Name), input)
+				})
+
+				c.rootCmd.CobraCmd().SetArgs(args)
+				err := c.rootCmd.CobraCmd().Execute()
 				if err != nil {
 					ctx.Err(err)
 				}
@@ -105,6 +120,8 @@ func (c *interactiveCommand) addCobraCommands(ishellCmd ishellCmdAdder, cobraCmd
 				cobraCmd.Flags().Visit(func(f *pflag.Flag) {
 					f.Value.Set(f.DefValue)
 				})
+
+				ctx.SetPrompt(DefaultPrompt)
 			}
 		} else {
 			for _, subCobraCmd := range cobraCmd.Commands() {
