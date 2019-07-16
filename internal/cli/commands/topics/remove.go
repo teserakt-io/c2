@@ -3,7 +3,6 @@ package topics
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -53,7 +52,7 @@ func (c *removeCommand) run(cmd *cobra.Command, args []string) error {
 
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	c2Client, err := c.c2ClientFactory.NewClient(cmd)

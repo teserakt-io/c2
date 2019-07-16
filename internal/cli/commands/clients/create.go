@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -77,7 +76,7 @@ func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid key: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	c2Client, err := c.c2ClientFactory.NewClient(cmd)

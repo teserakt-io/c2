@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -58,7 +57,7 @@ func (c *listTopicsCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("flag --name is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	c2Client, err := c.c2ClientFactory.NewClient(cmd)

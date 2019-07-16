@@ -32,7 +32,8 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 	detachCommand := NewDetachCommand(c2ClientFactory)
 	messageCommand := NewMessageCommand(c2ClientFactory)
 
-	interactiveCmd := NewInteractiveCommand(rootCmd, version)
+	// TODO: disabled for now as it need a fair bit of polish before being usable
+	//interactiveCmd := NewInteractiveCommand(rootCmd, version)
 	completionCmd := NewCompletionCommand(rootCmd)
 
 	cobraCmd := &cobra.Command{
@@ -66,7 +67,9 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 		detachCommand.CobraCmd(),
 		messageCommand.CobraCmd(),
 
-		interactiveCmd.CobraCmd(),
+		// TODO: disabled for now as it need a fair bit of polish before being usable
+		//interactiveCmd.CobraCmd(),
+
 		// Autocompletion script generation command
 		completionCmd.CobraCmd(),
 	)

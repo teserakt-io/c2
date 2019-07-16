@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -67,7 +66,7 @@ func (c *countCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("can't use --topic when counting topics")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	c2Client, err := c.c2ClientFactory.NewClient(cmd)
