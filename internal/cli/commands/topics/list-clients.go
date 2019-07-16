@@ -98,7 +98,7 @@ func (c *listClientsCommand) run(cmd *cobra.Command, args []string) error {
 		currentOffset += count
 		totalCount -= count
 		for _, client := range resp.Clients {
-			fmt.Println(client.Name)
+			c.CobraCmd().Println(client.Name)
 		}
 	}
 
