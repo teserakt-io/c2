@@ -78,6 +78,6 @@ func (c *messageCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to send message: %v", err)
 	}
 
-	fmt.Printf("Successfully sent message to topic %s\n", c.flags.Topic)
+	c.CobraCmd().Printf("Successfully sent message to topic %s\n", c.flags.Topic)
 	return nil
 }
