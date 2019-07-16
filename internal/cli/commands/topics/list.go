@@ -88,7 +88,7 @@ func (c *listCommand) run(cmd *cobra.Command, args []string) error {
 		currentOffset += count
 		totalCount -= count
 		for _, topic := range resp.Topics {
-			fmt.Println(topic)
+			c.CobraCmd().Println(topic)
 		}
 	}
 
