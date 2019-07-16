@@ -147,7 +147,7 @@ func TestListTopics(t *testing.T) {
 	t.Run("Execute with count request only this amount to the api", func(t *testing.T) {
 		expectedClientName := "testClient1"
 		expectedCount := int64(42)
-		expectedClientCount := int64(10)
+		expectedUserCount := int64(10)
 
 		expectedCountRequest := &pb.CountTopicsForClientRequest{
 			Client: &pb.Client{Name: expectedClientName},
@@ -155,7 +155,7 @@ func TestListTopics(t *testing.T) {
 
 		expectedListRequest := &pb.GetTopicsForClientRequest{
 			Client: &pb.Client{Name: expectedClientName},
-			Count:  expectedClientCount,
+			Count:  expectedUserCount,
 		}
 
 		expectedTopics := []string{
@@ -173,7 +173,7 @@ func TestListTopics(t *testing.T) {
 		cmd.CobraCmd().SetOutput(buf)
 
 		cmd.CobraCmd().Flags().Set("name", expectedClientName)
-		cmd.CobraCmd().Flags().Set("count", fmt.Sprintf("%d", expectedClientCount))
+		cmd.CobraCmd().Flags().Set("count", fmt.Sprintf("%d", expectedUserCount))
 		err := cmd.CobraCmd().Execute()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
