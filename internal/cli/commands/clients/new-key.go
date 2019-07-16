@@ -66,7 +66,7 @@ func (c *newKeyCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to regenerate client key: %v", err)
 	}
 
-	fmt.Printf("Client %s key regenerated successfully\n", c.flags.Name)
+	c.CobraCmd().Printf("Client %s key regenerated successfully\n", c.flags.Name)
 
 	return nil
 }
