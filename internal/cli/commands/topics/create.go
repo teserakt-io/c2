@@ -64,7 +64,7 @@ func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create topic: %v", err)
 	}
 
-	fmt.Printf("Topic %s created successfully\n", c.flags.Name)
+	c.CobraCmd().Printf("Topic %s created successfully\n", c.flags.Name)
 
 	return nil
 }
