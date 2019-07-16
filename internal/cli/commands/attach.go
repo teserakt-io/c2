@@ -78,6 +78,6 @@ func (c *attachCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to attach client to topic: %v", err)
 	}
 
-	fmt.Printf("Successfully attached client %s to topic %s\n", c.flags.ClientName, c.flags.Topic)
+	c.CobraCmd().Printf("Successfully attached client %s to topic %s\n", c.flags.ClientName, c.flags.Topic)
 	return nil
 }
