@@ -84,7 +84,7 @@ func (c *countCommand) run(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("failed to count clients for topic: %v", err)
 			}
 
-			fmt.Println(resp.Count)
+			c.CobraCmd().Println(resp.Count)
 
 			return nil
 		}
@@ -94,7 +94,7 @@ func (c *countCommand) run(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to count clients: %v", err)
 		}
 
-		fmt.Println(resp.Count)
+		c.CobraCmd().Println(resp.Count)
 
 		return nil
 	case c.flags.CountTopics:
@@ -104,7 +104,7 @@ func (c *countCommand) run(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("failed to count topics for client: %v", err)
 			}
 
-			fmt.Println(resp.Count)
+			c.CobraCmd().Println(resp.Count)
 
 			return nil
 		}
@@ -114,7 +114,7 @@ func (c *countCommand) run(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to count topics: %v", err)
 		}
 
-		fmt.Println(resp.Count)
+		c.CobraCmd().Println(resp.Count)
 
 		return nil
 	default:
