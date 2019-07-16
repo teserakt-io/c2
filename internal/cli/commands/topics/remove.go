@@ -71,7 +71,7 @@ func (c *removeCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to remove client: %v", err)
 	}
 
-	fmt.Printf("Topic %s removed successfully\n", c.flags.Name)
+	c.CobraCmd().Printf("Topic %s removed successfully\n", c.flags.Name)
 
 	return nil
 }
