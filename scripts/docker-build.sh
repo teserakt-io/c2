@@ -21,7 +21,15 @@ echo "Building version $E4_VERSION, commit $E4_GIT_COMMIT\n"
 printf "=> c2"
 docker build \
     --target c2 \
-    --tag "registry.gitlab.com/teserakt/c2:$E4_VERSION" \
-    --tag "registry.gitlab.com/teserakt/c2:$E4_GIT_COMMIT" \
+    --tag "registry.gitlab.com/teserakt/c2/c2:$E4_VERSION" \
+    --tag "registry.gitlab.com/teserakt/c2/c2:$E4_GIT_COMMIT" \
+    -f "${DIR}/../docker/c2/Dockerfile" \
+    "${DIR}/../"
+
+printf "=> c2cli"
+docker build \
+    --target c2cli \
+    --tag "registry.gitlab.com/teserakt/c2/c2cli:$E4_VERSION" \
+    --tag "registry.gitlab.com/teserakt/c2/c2cli:$E4_GIT_COMMIT" \
     -f "${DIR}/../docker/c2/Dockerfile" \
     "${DIR}/../"
