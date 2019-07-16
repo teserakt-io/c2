@@ -66,7 +66,7 @@ func (c *resetCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to reset client: %v", err)
 	}
 
-	fmt.Printf("Client %s reset successfully\n", c.flags.Name)
+	c.CobraCmd().Printf("Client %s reset successfully\n", c.flags.Name)
 
 	return nil
 }
