@@ -78,6 +78,6 @@ func (c *detachCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to detach client from topic: %v", err)
 	}
 
-	fmt.Printf("Successfully detached client %s from topic %s\n", c.flags.ClientName, c.flags.Topic)
+	c.CobraCmd().Printf("Successfully detached client %s from topic %s\n", c.flags.ClientName, c.flags.Topic)
 	return nil
 }
