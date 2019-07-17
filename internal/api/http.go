@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/plugin/ochttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -68,7 +69,7 @@ func (s *httpServer) ListenAndServe(ctx context.Context) error {
 	}
 
 	httpMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{OrigName: true, EmitDefaults: true}))
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(creds)}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(creds), grpc.WithStatsHandler(&ocgrpc.ClientHandler{})}
 	err = pb.RegisterC2HandlerFromEndpoint(ctx, httpMux, s.cfg.GRPCAddr, opts)
 	if err != nil {
 		return fmt.Errorf("failed to register http listener : %v", err)
