@@ -25,3 +25,11 @@ docker build \
     --tag "registry.gitlab.com/teserakt/c2:$E4_GIT_COMMIT" \
     -f "${DIR}/../docker/c2/Dockerfile" \
     "${DIR}/../"
+
+printf "=> c2cli"
+docker build \
+    --target c2cli \
+    --tag "registry.gitlab.com/teserakt/c2/c2cli:$E4_VERSION" \
+    --tag "registry.gitlab.com/teserakt/c2/c2cli:$E4_GIT_COMMIT" \
+    -f "${DIR}/../docker/c2/Dockerfile" \
+    "${DIR}/../"

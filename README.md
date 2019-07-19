@@ -24,16 +24,29 @@ This will boot up MQTT broker, ELK, prometheus, jaeger and oc-agent and then sta
 
 ### Run from docker image
 
-The CI automatically push docker images of C2 after each successfull builds and for each branches.
-C2 from theses can be started like so:
+The CI automatically push docker images of C2 and C2Cli after each successfull builds and for each branches.
+
+List of available C2 and C2Cli images: https://gitlab.com/Teserakt/c2/container_registry
+
+#### Start C2
 ```
 # Replace <BRANCH_NAME> with the actual branch you want to pull the image from, like master, or devel, or tag...
-docker run -it --rm -v $(pwd)/configs:/opt/e4/configs -p 5555:5555 -p 8888:8888 registry.gitlab.com/teserakt/c2:<BRANCH_NAME>
+docker run -it --rm  --name c2 -v $(pwd)/configs:/opt/e4/configs -p 5555:5555 -p 8888:8888 registry.gitlab.com/teserakt/c2:<BRANCH_NAME>
 ```
 
 It just require a volume to the configs folder (Depending on your configuration, you may also need to get another volumes for the certificate and keys if they're not in the configs folder) and the ports for the GRPC and HTTP api (which can be independantly removed if not used)
 
-List of available C2 images: https://gitlab.com/Teserakt/c2/container_registry
+#### Start C2Cli
+```
+# Replace <BRANCH_NAME> with the actual branch you want to pull the image from, like master, or devel, or tag...
+docker run -it --rm \
+    -v $(pwd)/configs/c2-cert.pem:/opt/c2/c2-cert.pem \
+    -e C2_API_ENDPOINT=c2:5555 \
+    -e C2_API_CERT=/opt/c2/c2-cert.pem \
+    registry.gitlab.com/teserakt/c2/c2cli:<BRANCH_NAME> <command>
+```
+
+It requires a valid certificate C2 certificate. Both server endpoint and certificate path can be specified with the `-e` flag.
 
 ## Development
 
