@@ -32,6 +32,8 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 	detachCommand := NewDetachCommand(c2ClientFactory)
 	messageCommand := NewMessageCommand(c2ClientFactory)
 
+	eventsCommand := NewEventsCommand(c2ClientFactory)
+
 	// TODO: disabled for now as it need a fair bit of polish before being usable
 	//interactiveCmd := NewInteractiveCommand(rootCmd, version)
 	completionCmd := NewCompletionCommand(rootCmd)
@@ -67,6 +69,7 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 		detachCommand.CobraCmd(),
 		messageCommand.CobraCmd(),
 
+		eventsCommand.CobraCmd(),
 		// TODO: disabled for now as it need a fair bit of polish before being usable
 		//interactiveCmd.CobraCmd(),
 

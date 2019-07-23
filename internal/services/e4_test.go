@@ -8,11 +8,13 @@ import (
 	"math/rand"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/golang/mock/gomock"
 
 	"gitlab.com/teserakt/c2/internal/commands"
+	"gitlab.com/teserakt/c2/internal/events"
 	"gitlab.com/teserakt/c2/internal/models"
 	"gitlab.com/teserakt/c2/internal/protocols"
 	e4 "gitlab.com/teserakt/e4common"
@@ -88,12 +90,14 @@ func TestE4(t *testing.T) {
 	mockDB := models.NewMockDatabase(mockCtrl)
 	mockPubSubClient := protocols.NewMockPubSubClient(mockCtrl)
 	mockCommandFactory := commands.NewMockFactory(mockCtrl)
+	mockEventFactory := events.NewMockFactory(mockCtrl)
+	mockEventDispatcher := events.NewMockDispatcher(mockCtrl)
 
 	logger := log.NewNopLogger()
 
 	e4Key := newKey(t)
 
-	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, logger, e4Key)
+	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, mockEventDispatcher, mockEventFactory, logger, e4Key)
 
 	t.Run("Validation works successfully", func(t *testing.T) {
 
@@ -178,6 +182,13 @@ func TestE4(t *testing.T) {
 		mockCommand := commands.NewMockCommand(mockCtrl)
 		commandPayload := []byte("command-payload")
 
+		expectedEvt := events.Event{
+			Type:      events.ClientSubscribed,
+			Source:    client.Name,
+			Target:    topicKey.Topic,
+			Timestamp: time.Now(),
+		}
+
 		gomock.InOrder(
 			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
 			mockDB.EXPECT().GetTopicKey(topicKey.Topic).Return(topicKey, nil),
@@ -188,6 +199,9 @@ func TestE4(t *testing.T) {
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
 
 			mockDB.EXPECT().LinkClientTopic(client, topicKey),
+
+			mockEventFactory.EXPECT().NewClientSubscribedEvent(client.Name, topicKey.Topic).Return(expectedEvt),
+			mockEventDispatcher.EXPECT().Dispatch(expectedEvt),
 		)
 
 		if err := service.NewTopicClient(ctx, client.E4ID, topicKey.Topic); err != nil {
@@ -205,6 +219,13 @@ func TestE4(t *testing.T) {
 		mockCommand := commands.NewMockCommand(mockCtrl)
 		commandPayload := []byte("command-payload")
 
+		expectedEvt := events.Event{
+			Type:      events.ClientSubscribed,
+			Source:    client.Name,
+			Target:    topicKey.Topic,
+			Timestamp: time.Now(),
+		}
+
 		gomock.InOrder(
 			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
 			mockDB.EXPECT().GetTopicKey(topicKey.Topic).Return(topicKey, nil),
@@ -215,6 +236,9 @@ func TestE4(t *testing.T) {
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
 
 			mockDB.EXPECT().UnlinkClientTopic(client, topicKey),
+
+			mockEventFactory.EXPECT().NewClientUnsubscribedEvent(client.Name, topicKey.Topic).Return(expectedEvt),
+			mockEventDispatcher.EXPECT().Dispatch(expectedEvt),
 		)
 
 		if err := service.RemoveTopicClient(ctx, client.E4ID, topicKey.Topic); err != nil {

@@ -2,15 +2,18 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net"
 
 	"google.golang.org/grpc/codes"
 
 	"gitlab.com/teserakt/c2/internal/config"
+	"gitlab.com/teserakt/c2/internal/events"
 	"gitlab.com/teserakt/c2/internal/services"
 	"gitlab.com/teserakt/c2/pkg/pb"
 
 	"github.com/go-kit/kit/log"
+	"github.com/golang/protobuf/ptypes"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/stats/view"
 	"google.golang.org/grpc"
@@ -30,19 +33,21 @@ type GRPCServer interface {
 }
 
 type grpcServer struct {
-	logger    log.Logger
-	cfg       config.ServerCfg
-	e4Service services.E4
+	logger          log.Logger
+	cfg             config.ServerCfg
+	e4Service       services.E4
+	eventDispatcher events.Dispatcher
 }
 
 var _ GRPCServer = &grpcServer{}
 
 // NewGRPCServer creates a new server over GRPC
-func NewGRPCServer(scfg config.ServerCfg, e4Service services.E4, logger log.Logger) GRPCServer {
+func NewGRPCServer(scfg config.ServerCfg, e4Service services.E4, eventDispatcher events.Dispatcher, logger log.Logger) GRPCServer {
 	return &grpcServer{
-		cfg:       scfg,
-		logger:    logger,
-		e4Service: e4Service,
+		cfg:             scfg,
+		logger:          logger,
+		e4Service:       e4Service,
+		eventDispatcher: eventDispatcher,
 	}
 }
 
@@ -323,6 +328,42 @@ func (s *grpcServer) CountTopics(ctx context.Context, req *pb.CountTopicsRequest
 	}
 
 	return &pb.CountTopicsResponse{Count: int64(count)}, nil
+}
+
+func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamRequest, srv pb.C2_SubscribeToEventStreamServer) error {
+	listener := events.NewListener(s.eventDispatcher)
+	defer listener.Close()
+
+	logger := log.With(s.logger, "listener", fmt.Sprintf("%p", listener))
+
+	logger.Log("msg", "Started new event stream")
+
+	for {
+		ctx := srv.Context()
+		select {
+		case evt := <-listener.C():
+			ts, err := ptypes.TimestampProto(evt.Timestamp)
+			if err != nil {
+				return fmt.Errorf("failed to convert time.Time to proto.Timestamp: %v", err)
+			}
+
+			pbEvt := &pb.Event{
+				Type:      pb.EventType(evt.Type),
+				Source:    evt.Source,
+				Target:    evt.Target,
+				Timestamp: ts,
+			}
+
+			if err := srv.Send(pbEvt); err != nil {
+				logger.Log("msg", "failed to send event", "error", err)
+				return err
+			}
+
+			logger.Log("msg", "Successfully sent event", "eventType", pbEvt.Type.String())
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }
 
 // validateE4NamedOrIDPair wrap around services.ValidateE4NameOrIDPair but will

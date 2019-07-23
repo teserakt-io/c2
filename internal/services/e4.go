@@ -10,6 +10,7 @@ import (
 	"go.opencensus.io/trace"
 
 	"gitlab.com/teserakt/c2/internal/commands"
+	"gitlab.com/teserakt/c2/internal/events"
 	"gitlab.com/teserakt/c2/internal/models"
 	"gitlab.com/teserakt/c2/internal/protocols"
 	e4 "gitlab.com/teserakt/e4common"
@@ -77,11 +78,13 @@ type E4 interface {
 }
 
 type e4impl struct {
-	db             models.Database
-	pubSubClient   protocols.PubSubClient
-	commandFactory commands.Factory
-	logger         log.Logger
-	keyenckey      []byte
+	db              models.Database
+	pubSubClient    protocols.PubSubClient
+	commandFactory  commands.Factory
+	logger          log.Logger
+	keyenckey       []byte
+	eventDispatcher events.Dispatcher
+	eventFactory    events.Factory
 }
 
 var _ E4 = &e4impl{}
@@ -91,15 +94,19 @@ func NewE4(
 	db models.Database,
 	pubSubClient protocols.PubSubClient,
 	commandFactory commands.Factory,
+	eventDispatcher events.Dispatcher,
+	eventFactory events.Factory,
 	logger log.Logger,
 	keyenckey []byte,
 ) E4 {
 	return &e4impl{
-		db:             db,
-		pubSubClient:   pubSubClient,
-		commandFactory: commandFactory,
-		logger:         logger,
-		keyenckey:      keyenckey,
+		db:              db,
+		pubSubClient:    pubSubClient,
+		commandFactory:  commandFactory,
+		eventDispatcher: eventDispatcher,
+		eventFactory:    eventFactory,
+		logger:          logger,
+		keyenckey:       keyenckey,
 	}
 }
 
@@ -201,6 +208,8 @@ func (s *e4impl) NewTopicClient(ctx context.Context, id []byte, topic string) er
 		return ErrInternal{}
 	}
 
+	s.eventDispatcher.Dispatch(s.eventFactory.NewClientSubscribedEvent(client.Name, topic))
+
 	logger.Log(
 		"msg", "succeeded",
 		"clientName", client.Name,
@@ -251,6 +260,8 @@ func (s *e4impl) RemoveTopicClient(ctx context.Context, id []byte, topic string)
 		logger.Log("msg", "cannot remove DB record of client-topic link", "error", err)
 		return ErrInternal{}
 	}
+
+	s.eventDispatcher.Dispatch(s.eventFactory.NewClientUnsubscribedEvent(client.Name, topic))
 
 	logger.Log("msg", "succeeded")
 

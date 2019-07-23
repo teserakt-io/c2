@@ -427,3 +427,23 @@ func (mr *MockC2ClientMockRecorder) SendMessage(arg0, arg1 interface{}, arg2 ...
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockC2Client)(nil).SendMessage), varargs...)
 }
+
+// SubscribeToEventStream mocks base method
+func (m *MockC2Client) SubscribeToEventStream(arg0 context.Context, arg1 *pb.SubscribeToEventStreamRequest, arg2 ...grpc.CallOption) (pb.C2_SubscribeToEventStreamClient, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SubscribeToEventStream", varargs...)
+	ret0, _ := ret[0].(pb.C2_SubscribeToEventStreamClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubscribeToEventStream indicates an expected call of SubscribeToEventStream
+func (mr *MockC2ClientMockRecorder) SubscribeToEventStream(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeToEventStream", reflect.TypeOf((*MockC2Client)(nil).SubscribeToEventStream), varargs...)
+}

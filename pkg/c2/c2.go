@@ -16,6 +16,7 @@ import (
 	"gitlab.com/teserakt/c2/internal/api"
 	"gitlab.com/teserakt/c2/internal/commands"
 	"gitlab.com/teserakt/c2/internal/config"
+	"gitlab.com/teserakt/c2/internal/events"
 	"gitlab.com/teserakt/c2/internal/models"
 	"gitlab.com/teserakt/c2/internal/protocols"
 	"gitlab.com/teserakt/c2/internal/services"
@@ -35,11 +36,12 @@ type APIEndpoint interface {
 
 // C2 ...
 type C2 struct {
-	cfg          config.Config
-	db           models.Database
-	logger       log.Logger
-	e4Service    services.E4
-	pubSubClient protocols.PubSubClient
+	cfg             config.Config
+	db              models.Database
+	logger          log.Logger
+	e4Service       services.E4
+	pubSubClient    protocols.PubSubClient
+	eventDispatcher events.Dispatcher
 
 	endpoints []APIEndpoint
 }
@@ -135,10 +137,14 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		return nil, fmt.Errorf("MQTT client connection failed: %v", err)
 	}
 
+	eventDispatcher := events.NewDispatcher(logger)
+
 	e4Service := services.NewE4(
 		db,
 		pubSubClient,
 		commands.NewFactory(),
+		eventDispatcher,
+		events.NewFactory(),
 		log.With(logger, "protocol", "c2"),
 		e4.HashPwd(cfg.DB.Passphrase),
 	)
@@ -156,11 +162,12 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	logger.Log("msg", "Observability instrumentation setup successfully")
 
 	return &C2{
-		cfg:          cfg,
-		db:           db,
-		logger:       logger,
-		e4Service:    e4Service,
-		pubSubClient: pubSubClient,
+		cfg:             cfg,
+		db:              db,
+		logger:          logger,
+		e4Service:       e4Service,
+		pubSubClient:    pubSubClient,
+		eventDispatcher: eventDispatcher,
 	}, nil
 }
 
@@ -178,7 +185,7 @@ func (c *C2) EnableHTTPEndpoint() {
 
 // EnableGRPCEndpoint will turn on C2 over GRPC
 func (c *C2) EnableGRPCEndpoint() {
-	c.endpoints = append(c.endpoints, api.NewGRPCServer(c.cfg.GRPC, c.e4Service, log.With(c.logger, "protocol", "grpc")))
+	c.endpoints = append(c.endpoints, api.NewGRPCServer(c.cfg.GRPC, c.e4Service, c.eventDispatcher, log.With(c.logger, "protocol", "grpc")))
 	c.logger.Log("msg", "Enabled C2 GRPC server")
 }
 

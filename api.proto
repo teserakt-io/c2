@@ -3,6 +3,7 @@ package pb;
 
 import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
+import "google/protobuf/timestamp.proto";
 
 option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
   host : "127.0.0.1:8888"
@@ -120,6 +121,9 @@ service C2 {
       body : "*"
     };
   }
+
+  // Provide a stream on C2 system events, grpc only
+  rpc SubscribeToEventStream(SubscribeToEventStreamRequest) returns (stream Event) {}
 }
 
 message Client {
@@ -232,3 +236,18 @@ message SendMessageRequest {
   string message = 2;
 }
 message SendMessageResponse {}
+
+message SubscribeToEventStreamRequest {}
+
+enum EventType {
+  UNDEFINED = 0;
+  CLIENT_SUBSCRIBED = 1;
+  CLIENT_UNSUBSCRIBED = 2;
+}
+
+message Event {
+  EventType type = 1;
+  string source = 2;
+  string target = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
