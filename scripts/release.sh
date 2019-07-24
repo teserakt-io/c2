@@ -17,7 +17,7 @@ fi
 if ! [[ -z "${VERSION}" ]]; then
     V=$VERSION
 elif ! [[ -z "${GIT_TAG}" ]]; then
-    V=$VERSION
+    V=$GIT_TAG
 else
     echo "Bug in release script."
     return 1
@@ -43,3 +43,4 @@ cp -v configs/kibana_objects.json $OUTDIR/configs/
 
 pushd build/$V
 tar cjf ../e4-c2-$V.tar.gz *
+popd
