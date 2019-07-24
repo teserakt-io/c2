@@ -54,7 +54,7 @@ type mqttPubSubClient struct {
 	disconnectTimeout uint // idk why they used uint here instead of a time.Duration. They do convert internally tho.
 }
 
-var _ PubSubClient = &mqttPubSubClient{}
+var _ PubSubClient = (*mqttPubSubClient)(nil)
 
 // NewMQTTPubSubClient creates and connect a new PubSubClient over MQTT
 func NewMQTTPubSubClient(

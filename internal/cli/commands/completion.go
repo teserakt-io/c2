@@ -21,7 +21,7 @@ type completionCommandFlags struct {
 	IsZsh bool
 }
 
-var _ cli.Command = &CompletionCommand{}
+var _ cli.Command = (*CompletionCommand)(nil)
 
 // NewCompletionCommand returns the cobra command used to generate the autocompletion
 func NewCompletionCommand(rootCommand cli.Command) *CompletionCommand {

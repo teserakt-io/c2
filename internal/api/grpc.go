@@ -18,6 +18,7 @@ import (
 	"go.opencensus.io/stats/view"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/peer"
 )
 
 // Request parameters validation errors
@@ -39,7 +40,7 @@ type grpcServer struct {
 	eventDispatcher events.Dispatcher
 }
 
-var _ GRPCServer = &grpcServer{}
+var _ GRPCServer = (*grpcServer)(nil)
 
 // NewGRPCServer creates a new server over GRPC
 func NewGRPCServer(scfg config.ServerCfg, e4Service services.E4, eventDispatcher events.Dispatcher, logger log.Logger) GRPCServer {
@@ -334,13 +335,17 @@ func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamReques
 	listener := events.NewListener(s.eventDispatcher)
 	defer listener.Close()
 
-	logger := log.With(s.logger, "listener", fmt.Sprintf("%p", listener))
+	ctx := srv.Context()
+	grpcPeer := peerFromContext(ctx)
+	logger := log.With(s.logger, "client", grpcPeer.Addr)
 
 	logger.Log("msg", "Started new event stream")
 
 	for {
-		ctx := srv.Context()
 		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
 		case evt := <-listener.C():
 			ts, err := ptypes.TimestampProto(evt.Timestamp)
 			if err != nil {
@@ -360,8 +365,6 @@ func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamReques
 			}
 
 			logger.Log("msg", "Successfully sent event", "eventType", pbEvt.Type.String())
-		case <-ctx.Done():
-			return ctx.Err()
 		}
 	}
 }
@@ -390,4 +393,13 @@ func grpcError(err error) error {
 	}
 
 	return grpc.Errorf(code, "%s", err.Error())
+}
+
+func peerFromContext(ctx context.Context) *peer.Peer {
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		p = &peer.Peer{}
+	}
+
+	return p
 }

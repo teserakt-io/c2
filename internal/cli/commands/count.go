@@ -23,7 +23,7 @@ type countCommandFlags struct {
 	Topic        string
 }
 
-var _ cli.Command = &countCommand{}
+var _ cli.Command = (*countCommand)(nil)
 
 // NewCountCommand creates a new command allowing to
 // count clients, topics, clients for topics or topics for clients

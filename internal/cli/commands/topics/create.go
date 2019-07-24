@@ -20,6 +20,8 @@ type createCommandFlags struct {
 	Name string
 }
 
+var _ cli.Command = (*createCommand)(nil)
+
 // NewCreateCommand returns a new command to create a new topic
 func NewCreateCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 	createCmd := &createCommand{

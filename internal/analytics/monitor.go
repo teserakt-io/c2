@@ -24,7 +24,7 @@ type esMessageMonitor struct {
 	esIndexName string
 }
 
-var _ MessageMonitor = &esMessageMonitor{}
+var _ MessageMonitor = (*esMessageMonitor)(nil)
 
 // NewESMessageMonitor creates a new message monitor backed by elasticSearch
 func NewESMessageMonitor(esClient *elastic.Client, logger log.Logger, enabled bool, esIndexName string) MessageMonitor {

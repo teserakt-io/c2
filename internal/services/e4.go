@@ -87,7 +87,7 @@ type e4impl struct {
 	eventFactory    events.Factory
 }
 
-var _ E4 = &e4impl{}
+var _ E4 = (*e4impl)(nil)
 
 // NewE4 creates a new E4 service
 func NewE4(

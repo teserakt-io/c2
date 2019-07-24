@@ -9,7 +9,7 @@ type rootCommand struct {
 	cobraCmd *cobra.Command
 }
 
-var _ cli.Command = &rootCommand{}
+var _ cli.Command = (*rootCommand)(nil)
 
 // NewRootCommand returns a new Client Command, which
 // only exists to group all client related sub commands.

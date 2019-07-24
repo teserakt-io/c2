@@ -47,7 +47,7 @@ type APIClientFactory interface {
 type apiClientFactory struct {
 }
 
-var _ APIClientFactory = &apiClientFactory{}
+var _ APIClientFactory = (*apiClientFactory)(nil)
 
 // NewAPIClientFactory creates a new C2AutomationEngineClient factory
 func NewAPIClientFactory() APIClientFactory {
@@ -60,8 +60,8 @@ type c2Client struct {
 	cnx *grpc.ClientConn
 }
 
-var _ C2Client = &c2Client{}
-var _ pb.C2Client = &c2Client{}
+var _ C2Client = (*c2Client)(nil)
+var _ pb.C2Client = (*c2Client)(nil)
 
 // NewClient creates a new C2Client instance connecting to given api endpoint
 func (c *apiClientFactory) NewClient(cmd *cobra.Command) (C2Client, error) {

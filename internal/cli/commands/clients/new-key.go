@@ -20,7 +20,7 @@ type newKeyCommandFlags struct {
 	Name string
 }
 
-var _ cli.Command = &newKeyCommand{}
+var _ cli.Command = (*newKeyCommand)(nil)
 
 // NewNewKeyCommand returns a new command to regenerate a client key
 func NewNewKeyCommand(c2ClientFactory cli.APIClientFactory) cli.Command {

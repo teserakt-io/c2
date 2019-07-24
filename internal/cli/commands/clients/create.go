@@ -24,7 +24,7 @@ type createCommandFlags struct {
 	Key      []byte
 }
 
-var _ cli.Command = &createCommand{}
+var _ cli.Command = (*createCommand)(nil)
 
 // NewCreateCommand returns a new command to create clients
 func NewCreateCommand(c2ClientFactory cli.APIClientFactory) cli.Command {

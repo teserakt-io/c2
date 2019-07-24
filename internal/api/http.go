@@ -32,7 +32,7 @@ type httpServer struct {
 	isProd       bool
 }
 
-var _ HTTPServer = &httpServer{}
+var _ HTTPServer = (*httpServer)(nil)
 
 // NewHTTPServer creates a new http server for C2
 func NewHTTPServer(scfg config.HTTPServerCfg, grpcCertPath string, isProd bool, e4Service services.E4, logger log.Logger) HTTPServer {

@@ -249,5 +249,6 @@ message Event {
   EventType type = 1;
   string source = 2;
   string target = 3;
+  // Hold the time where event is sent
   google.protobuf.Timestamp timestamp = 4;
 }

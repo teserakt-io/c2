@@ -20,9 +20,10 @@ type eventsCommand struct {
 type eventsCommandFlags struct {
 }
 
-var _ cli.Command = &eventsCommand{}
+var _ cli.Command = (*eventsCommand)(nil)
 
 // NewEventsCommand creates a new command allowing to subscribe to C2 server event stream
+// events will get printed on the command output (stdout by default)
 func NewEventsCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 	messageCmd := &eventsCommand{
 		c2ClientFactory: c2ClientFactory,

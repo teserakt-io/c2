@@ -21,7 +21,7 @@ type attachCommandFlags struct {
 	Topic      string
 }
 
-var _ cli.Command = &attachCommand{}
+var _ cli.Command = (*attachCommand)(nil)
 
 // NewAttachCommand creates a new command allowing to
 // attach a client to a topic

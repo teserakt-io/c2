@@ -23,7 +23,7 @@ type listTopicsCommandFlags struct {
 	Count  int64
 }
 
-var _ cli.Command = &listTopicsCommand{}
+var _ cli.Command = (*listTopicsCommand)(nil)
 
 // NewListTopicsCommand creates a new command allowing to
 // list existing topics for a given client

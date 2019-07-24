@@ -31,7 +31,7 @@ type ishellCmdAdder interface {
 	AddCmd(*ishell.Cmd)
 }
 
-var _ cli.Command = &interactiveCommand{}
+var _ cli.Command = (*interactiveCommand)(nil)
 
 // NewInteractiveCommand returns a command enabling interactive mode
 func NewInteractiveCommand(rootCommand cli.Command, version string) cli.Command {

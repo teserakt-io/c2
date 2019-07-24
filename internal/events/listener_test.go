@@ -2,6 +2,7 @@ package events
 
 import (
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 )
@@ -50,8 +51,13 @@ func TestListener(t *testing.T) {
 			t.Errorf("Expected listener channel length to be %d, got %d", 1, len(lis.C()))
 		}
 
-		if e := <-lis.C(); e != event1 {
-			t.Errorf("Expected first channel event to be %#v, got %#v", event1, e)
+		select {
+		case <-time.After(1 * time.Millisecond):
+			t.Errorf("Timeout while waiting for an event")
+		case e := <-lis.C():
+			if e != event1 {
+				t.Errorf("Expected first channel event to be %#v, got %#v", event1, e)
+			}
 		}
 
 		lis.Send(event1)
@@ -62,8 +68,13 @@ func TestListener(t *testing.T) {
 			t.Errorf("Expected listener channel length to be %d, got %d", EventChanBufferSize, len(lis.C()))
 		}
 
-		if e := <-lis.C(); e != event2 {
-			t.Errorf("Expected first channel event to be %#v, got %#v", event2, e)
+		select {
+		case <-time.After(1 * time.Millisecond):
+			t.Errorf("Timeout while waiting for an event")
+		case e := <-lis.C():
+			if e != event2 {
+				t.Errorf("Expected first channel event to be %#v, got %#v", event2, e)
+			}
 		}
 	})
 }

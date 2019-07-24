@@ -26,13 +26,19 @@ type listener struct {
 	dispatcher Dispatcher
 }
 
-var _ Listener = &listener{}
+var _ Listener = (*listener)(nil)
 
 // NewListener creates a new Listener and register it on the dispatcher
+// It holds an internal buffered channel for events, of size EventChanBufferSize.
 func NewListener(dispatcher Dispatcher) Listener {
 	lis := &listener{
 		dispatcher: dispatcher,
 		c:          make(chan Event, EventChanBufferSize),
+	}
+
+	// Safety check that the listener channel is buffered
+	if cap(lis.c) == 0 {
+		panic("listener channel must be buffered to avoid blocking")
 	}
 
 	dispatcher.AddListener(lis)

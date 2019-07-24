@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+
 	e4 "gitlab.com/teserakt/e4common"
 )
 
@@ -21,7 +22,7 @@ type Command interface {
 
 type e4Command []byte
 
-var _ Command = e4Command{}
+var _ Command = (e4Command)(nil)
 
 func (c e4Command) Type() (e4.Command, error) {
 	if len(c) <= 0 {

@@ -20,7 +20,7 @@ type server struct {
 	cmd          *exec.Cmd
 }
 
-var _ Server = &server{}
+var _ Server = (*server)(nil)
 
 // NewServer creates a new C2 server to use for testing
 func NewServer(mqttEndpoint string) Server {

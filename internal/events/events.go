@@ -32,8 +32,9 @@ type Factory interface {
 type factory struct {
 }
 
-var _ Factory = &factory{}
+var _ Factory = (*factory)(nil)
 
+// NewFactory creates a new event factory
 func NewFactory() Factory {
 	return &factory{}
 }

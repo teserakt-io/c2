@@ -20,7 +20,7 @@ type resetCommandFlags struct {
 	Name string
 }
 
-var _ cli.Command = &resetCommand{}
+var _ cli.Command = (*resetCommand)(nil)
 
 // NewResetCommand returns a new command to reset a client
 func NewResetCommand(c2ClientFactory cli.APIClientFactory) cli.Command {

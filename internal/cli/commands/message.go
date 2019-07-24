@@ -21,7 +21,7 @@ type messageCommandFlags struct {
 	Message string
 }
 
-var _ cli.Command = &messageCommand{}
+var _ cli.Command = (*messageCommand)(nil)
 
 // NewMessageCommand creates a new command allowing to
 // send a message on a given topic

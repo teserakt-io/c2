@@ -18,7 +18,7 @@ type rootCommand struct {
 	flags    rootCommandFlags
 }
 
-var _ cli.Command = &rootCommand{}
+var _ cli.Command = (*rootCommand)(nil)
 
 // NewRootCommand creates and configure a new cli root command
 func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Command {

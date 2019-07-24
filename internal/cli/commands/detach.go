@@ -21,7 +21,7 @@ type detachCommandFlags struct {
 	Topic      string
 }
 
-var _ cli.Command = &detachCommand{}
+var _ cli.Command = (*detachCommand)(nil)
 
 // NewDetachCommand creates a new command allowing to
 // detach a client from a topic

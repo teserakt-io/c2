@@ -85,7 +85,7 @@ type gormDB struct {
 	logger *log.Logger
 }
 
-var _ Database = &gormDB{}
+var _ Database = (*gormDB)(nil)
 
 // NewDB creates a new database
 func NewDB(config config.DBCfg, logger *log.Logger) (Database, error) {

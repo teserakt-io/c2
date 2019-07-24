@@ -20,7 +20,7 @@ type removeCommandFlags struct {
 	Name string
 }
 
-var _ cli.Command = &removeCommand{}
+var _ cli.Command = (*removeCommand)(nil)
 
 // NewRemoveCommand returns a new command to remove topics
 func NewRemoveCommand(c2ClientFactory cli.APIClientFactory) cli.Command {

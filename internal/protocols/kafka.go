@@ -27,7 +27,7 @@ type kafkaPubSubClient struct {
 	subscribedTopics map[string]chan bool
 }
 
-var _ PubSubClient = &kafkaPubSubClient{}
+var _ PubSubClient = (*kafkaPubSubClient)(nil)
 
 // NewKafkaPubSubClient creates a new PubSubClient backed by Kafka
 func NewKafkaPubSubClient(cfg config.KafkaCfg, logger log.Logger, monitor analytics.MessageMonitor) PubSubClient {

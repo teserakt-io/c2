@@ -24,7 +24,7 @@ type dispatcher struct {
 	lock      sync.RWMutex
 }
 
-var _ Dispatcher = &dispatcher{}
+var _ Dispatcher = (*dispatcher)(nil)
 
 // NewDispatcher returns a new instance of an event dispatcher
 func NewDispatcher(logger log.Logger) Dispatcher {
