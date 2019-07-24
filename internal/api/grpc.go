@@ -340,6 +340,9 @@ func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamReques
 	logger := log.With(s.logger, "client", grpcPeer.Addr)
 
 	logger.Log("msg", "Started new event stream")
+	defer func() {
+		logger.Log("msg", "event stream closed")
+	}()
 
 	for {
 		select {
