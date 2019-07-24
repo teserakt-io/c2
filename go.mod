@@ -37,7 +37,7 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
 	gitlab.com/teserakt/e4common v1.0.0
-	gitlab.com/teserakt/serverlib v0.0.0-20190607072605-8fd4fe51
+	gitlab.com/teserakt/serverlib v1.0.0
 	go.opencensus.io v0.19.0
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/exp v0.0.0-20190510132918-efd6b22b2522 // indirect
