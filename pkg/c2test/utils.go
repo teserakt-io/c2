@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"strings"
 
@@ -183,5 +184,8 @@ func GenerateTopic() (string, error) {
 	tCleaned1 := strings.Replace(tCandidate, "+", "", -1)
 	tCleaned2 := strings.Replace(tCleaned1, "/", "", -1)
 	tCleaned3 := strings.Replace(tCleaned2, "=", "", -1)
-	return tCleaned3[0:32], nil
+
+	len := int(math.Min(float64(len(tCleaned3)), 32))
+
+	return tCleaned3[0:len], nil
 }
