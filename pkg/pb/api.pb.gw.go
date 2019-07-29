@@ -932,21 +932,21 @@ var (
 
 	pattern_C2_NewClientKey_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"e4", "client", "client.name"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_NewTopic_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1}, []string{"e4", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_NewTopic_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 3, 0, 4, 1, 5, 1}, []string{"e4", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_RemoveTopic_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1}, []string{"e4", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_RemoveTopic_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 3, 0, 4, 1, 5, 1}, []string{"e4", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_NewTopicClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 3}, []string{"e4", "client", "client.name", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_NewTopicClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 3, 0, 4, 1, 5, 3}, []string{"e4", "client", "client.name", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_RemoveTopicClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 3}, []string{"e4", "client", "client.name", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_RemoveTopicClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 3, 0, 4, 1, 5, 3}, []string{"e4", "client", "client.name", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_C2_CountTopicsForClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 2, 4}, []string{"e4", "client", "client.name", "topics", "count"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_C2_GetTopicsForClient_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"e4", "client", "client.name", "topics"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_CountClientsForTopic_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"e4", "topic", "clients", "count"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_CountClientsForTopic_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 3, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"e4", "topic", "clients", "count"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_C2_GetClientsForTopic_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"e4", "topic", "clients"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_C2_GetClientsForTopic_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 3, 0, 4, 1, 5, 1, 2, 2}, []string{"e4", "topic", "clients"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_C2_CountClients_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"e4", "clients", "count"}, "", runtime.AssumeColonVerbOpt(true)))
 

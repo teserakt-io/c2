@@ -548,7 +548,8 @@
         },
         "timestamp": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "Hold the time where event is sent"
         }
       }
     },

@@ -44,25 +44,25 @@ service C2 {
   // Create a new topic
   rpc NewTopic(NewTopicRequest) returns (NewTopicResponse) {
     option (google.api.http) = {
-      post : "/e4/topic/{topic}"
+      post : "/e4/topic/{topic=**}"
     };
   }
   // Remove a topic
   rpc RemoveTopic(RemoveTopicRequest) returns (RemoveTopicResponse) {
     option (google.api.http) = {
-      delete : "/e4/topic/{topic}"
+      delete : "/e4/topic/{topic=**}"
     };
   }
   // Associate a topic with a client
   rpc NewTopicClient(NewTopicClientRequest) returns (NewTopicClientResponse) {
     option (google.api.http) = {
-      put : "/e4/client/{client.name}/topic/{topic}"
+      put : "/e4/client/{client.name}/topic/{topic=**}"
     };
   }
   // Remove a topic / client association
   rpc RemoveTopicClient(RemoveTopicClientRequest) returns (RemoveTopicClientResponse) {
     option (google.api.http) = {
-      delete : "/e4/client/{client.name}/topic/{topic}"
+      delete : "/e4/client/{client.name}/topic/{topic=**}"
     };
   }
   // Count the number of topics for a client
@@ -80,13 +80,13 @@ service C2 {
   // Count the number of clients for a topic
   rpc CountClientsForTopic(CountClientsForTopicRequest) returns (CountClientsForTopicResponse) {
     option (google.api.http) = {
-      get : "/e4/topic/{topic}/clients/count"
+      get : "/e4/topic/{topic=**}/clients/count"
     };
   }
   // Retrieve paginated clients for a topic
   rpc GetClientsForTopic(GetClientsForTopicRequest) returns (GetClientsForTopicResponse) {
     option (google.api.http) = {
-      get : "/e4/topic/{topic}/clients"
+      get : "/e4/topic/{topic=**}/clients"
     };
   }
   // Count the number of clients
