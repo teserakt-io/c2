@@ -7,7 +7,7 @@ import (
 // Client represents an Identity Key in the database given a unique device ID.
 type Client struct {
 	ID        int         `gorm:"primary_key:true"`
-	E4ID      []byte      `gorm:"unique;NOT NULL"`
+	E4ID      []byte      `gorm:"unique_index;NOT NULL"`
 	Name      string      `gorm:"unique_index;NOT NULL" sql:"size:256"`
 	Key       []byte      `gorm:"NOT NULL"`
 	TopicKeys []*TopicKey `gorm:"many2many:clients_topickeys;"`
