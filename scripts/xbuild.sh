@@ -27,8 +27,8 @@ printf "building $PROJECT:\n\tversion $NOW-$GIT_COMMIT\n\tOS $GOOS\n\tarch: $GOA
 mkdir -p $OUTDIR/${GOOS}_${GOARCH}/
 
 printf "=> $PROJECT...\n"
-GOOS=$GOOS GOARCH=$GOARCH go build -o $OUTDIR/${GOOS}_${GOARCH}/$PROJECT -ldflags "-X main.gitTag=$GIT_TAG -X main.gitCommit=$GIT_COMMIT -X main.buildDate=$NOW" ${PWD}/cmd/$PROJECT
+CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build -o $OUTDIR/${GOOS}_${GOARCH}/$PROJECT -ldflags "-X main.gitTag=$GIT_TAG -X main.gitCommit=$GIT_COMMIT -X main.buildDate=$NOW" ${PWD}/cmd/$PROJECT
 
 PROJECT=c2cli
 printf "=> $PROJECT...\n"
-GOOS=$GOOS GOARCH=$GOARCH go build -o $OUTDIR/${GOOS}_${GOARCH}/$PROJECT -ldflags "-X main.gitTag=$GIT_TAG -X main.gitCommit=$GIT_COMMIT -X main.buildDate=$NOW" ${PWD}/cmd/$PROJECT
+CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build -o $OUTDIR/${GOOS}_${GOARCH}/$PROJECT -ldflags "-X main.gitTag=$GIT_TAG -X main.gitCommit=$GIT_COMMIT -X main.buildDate=$NOW" ${PWD}/cmd/$PROJECT

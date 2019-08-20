@@ -220,6 +220,8 @@ gitlab.com/teserakt/e4common v1.0.0 h1:f/qBGQv5adXXd7r1NgSPKsm+M/VNfM8LUahfS/ANb
 gitlab.com/teserakt/e4common v1.0.0/go.mod h1:5qhkUuN2zct90ybr25pqljQ/eK0DIy7u56nt+ifEuRY=
 gitlab.com/teserakt/serverlib v0.0.0-20190607072605-8fd4fe51 h1:HIYs/3JKjLtA3dkjffPhVmJmWjso8zj+qovUoeWv2c8=
 gitlab.com/teserakt/serverlib v0.0.0-20190607072605-8fd4fe51/go.mod h1:99Tkd5bNS5MPekTlbwBjHoCq9JpPURusq2xy4nX5bXU=
+gitlab.com/teserakt/serverlib v1.0.0 h1:LNnfkXx1pBgW/TY9zGcRYo/5WXGhuohVzgXl22Wd4jU=
+gitlab.com/teserakt/serverlib v1.0.0/go.mod h1:99Tkd5bNS5MPekTlbwBjHoCq9JpPURusq2xy4nX5bXU=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.opencensus.io v0.18.0/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=
 go.opencensus.io v0.18.1-0.20181204023538-aab39bd6a98b/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=
