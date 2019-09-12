@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 
-	"gitlab.com/teserakt/c2/internal/cli"
-	"gitlab.com/teserakt/c2/pkg/pb"
-	e4 "gitlab.com/teserakt/e4common"
+	"github.com/teserakt-io/c2/internal/cli"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 type createCommand struct {
@@ -35,13 +35,13 @@ func NewCreateCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 	cobraCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Creates a new client",
-		Long:  fmt.Sprintf("Creates a new client, require an unique name, and either a password or a %d bytes hexadecimal key", e4.KeyLenHex),
+		Long:  fmt.Sprintf("Creates a new client, require an unique name, and either a password or a %d bytes hexadecimal key", e4crypto.KeyLenHex),
 		RunE:  createCmd.run,
 	}
 
 	cobraCmd.Flags().SortFlags = false
 	cobraCmd.Flags().StringVar(&createCmd.flags.Name, "name", "", "The client name")
-	cobraCmd.Flags().BytesHexVar(&createCmd.flags.Key, "key", nil, fmt.Sprintf("The client %d bytes hexadecimal key", e4.KeyLenHex))
+	cobraCmd.Flags().BytesHexVar(&createCmd.flags.Key, "key", nil, fmt.Sprintf("The client %d bytes hexadecimal key", e4crypto.KeyLenHex))
 	cobraCmd.Flags().StringVar(&createCmd.flags.Password, "password", "", "The client password")
 
 	createCmd.cobraCmd = cobraCmd
@@ -63,16 +63,20 @@ func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 		return errors.New("only one of --password or --key is allowed")
 	}
 
-	if err := e4.IsValidName(c.flags.Name); err != nil {
+	if err := e4crypto.ValidateName(c.flags.Name); err != nil {
 		return fmt.Errorf("invalid name: %v", err)
 	}
 
 	key := c.flags.Key
 	if len(key) == 0 {
-		key = e4.HashPwd(c.flags.Password)
+		var err error
+		key, err = e4crypto.DeriveSymKey(c.flags.Password)
+		if err != nil {
+			return fmt.Errorf("failed to derive symKey from password: %v", err)
+		}
 	}
 
-	if err := e4.IsValidKey(key); err != nil {
+	if err := e4crypto.ValidateSymKey(key); err != nil {
 		return fmt.Errorf("invalid key: %v", err)
 	}
 

@@ -5,11 +5,12 @@ import (
 	reflect "reflect"
 	"testing"
 
-	e4 "gitlab.com/teserakt/e4common"
+	e4 "github.com/teserakt-io/e4go"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 )
 
 func newTopicHash(t *testing.T) []byte {
-	hash := make([]byte, e4.HashLen)
+	hash := make([]byte, e4crypto.HashLen)
 	_, err := rand.Read(hash)
 	if err != nil {
 		t.Fatalf("Failed to generate topic hash: %v", err)
@@ -19,7 +20,7 @@ func newTopicHash(t *testing.T) []byte {
 }
 
 func newKey(t *testing.T) []byte {
-	key := make([]byte, e4.KeyLen)
+	key := make([]byte, e4crypto.KeyLen)
 	_, err := rand.Read(key)
 	if err != nil {
 		t.Fatalf("Failed to generate key: %v", err)

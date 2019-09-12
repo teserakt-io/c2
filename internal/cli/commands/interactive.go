@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"gitlab.com/teserakt/c2/internal/cli"
+	"github.com/teserakt-io/c2/internal/cli"
 )
 
 const (

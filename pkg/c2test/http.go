@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"gitlab.com/teserakt/c2/pkg/pb"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 func testHTTPReq(testname string, httpClient *http.Client,
@@ -324,9 +324,9 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 	}
 	for i := 0; i < TESTCLIENTS; i++ {
 		found := false
-		testid := testClients[i]
+		testID := testClients[i]
 		for j := 0; j < len(getClientsResponse.Clients); j++ {
-			if getClientsResponse.Clients[j].Name == testid.Name {
+			if getClientsResponse.Clients[j].Name == testID.Name {
 				found = true
 				break
 			}
@@ -336,7 +336,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 				Name:     "Test Fetch Client",
 				Result:   false,
 				Critical: true,
-				Error:    fmt.Errorf("Test Fetch Client: Created client %s not found, clients are %s", testid, getTopicsResponse),
+				Error:    fmt.Errorf("Test Fetch Client: Created client %s not found, clients are %s", testID, getTopicsResponse),
 			}
 			return
 		}

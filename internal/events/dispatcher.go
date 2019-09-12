@@ -1,6 +1,6 @@
 package events
 
-//go:generate mockgen -destination=dispatcher_mocks.go -package events -self_package gitlab.com/teserakt/c2/internal/events gitlab.com/teserakt/c2/internal/events Dispatcher
+//go:generate mockgen -destination=dispatcher_mocks.go -package events -self_package github.com/teserakt-io/c2/internal/events github.com/teserakt-io/c2/internal/events Dispatcher
 
 import (
 	"fmt"

@@ -6,11 +6,11 @@ import (
 	"os"
 
 	"github.com/go-kit/kit/log"
+	slibcfg "github.com/teserakt-io/serverlib/config"
+	slibpath "github.com/teserakt-io/serverlib/path"
 
-	"gitlab.com/teserakt/c2/internal/config"
-	"gitlab.com/teserakt/c2/pkg/c2"
-	slibcfg "gitlab.com/teserakt/serverlib/config"
-	slibpath "gitlab.com/teserakt/serverlib/path"
+	"github.com/teserakt-io/c2/internal/config"
+	"github.com/teserakt-io/c2/pkg/c2"
 )
 
 // variables set at build time

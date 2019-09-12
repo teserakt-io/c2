@@ -7,13 +7,13 @@ import (
 	"fmt"
 
 	"github.com/go-kit/kit/log"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 	"go.opencensus.io/trace"
 
-	"gitlab.com/teserakt/c2/internal/commands"
-	"gitlab.com/teserakt/c2/internal/events"
-	"gitlab.com/teserakt/c2/internal/models"
-	"gitlab.com/teserakt/c2/internal/protocols"
-	e4 "gitlab.com/teserakt/e4common"
+	"github.com/teserakt-io/c2/internal/commands"
+	"github.com/teserakt-io/c2/internal/events"
+	"github.com/teserakt-io/c2/internal/models"
+	"github.com/teserakt-io/c2/internal/protocols"
 )
 
 /* E4 API Naming
@@ -121,11 +121,11 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 		return ErrValidation{fmt.Errorf("inconsistent E4 ID/Name: %v", err)}
 	}
 
-	if err := e4.IsValidKey(key); err != nil {
+	if err := e4crypto.ValidateSymKey(key); err != nil {
 		return ErrValidation{fmt.Errorf("invalid key: %v", err)}
 	}
 
-	protectedkey, err := e4.Encrypt(s.keyenckey, nil, key)
+	protectedkey, err := e4crypto.Encrypt(s.keyenckey, nil, key)
 	if err != nil {
 		logger.Log("msg", "failed to encrypt key", "error", err)
 		return ErrInternal{}
@@ -306,9 +306,9 @@ func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "newTopic", "topic", topic)
 
-	key := e4.RandomKey()
+	key := e4crypto.RandomKey()
 
-	protectedKey, err := e4.Encrypt(s.keyenckey[:], nil, key)
+	protectedKey, err := e4crypto.Encrypt(s.keyenckey[:], nil, key)
 	if err != nil {
 		logger.Log("msg", "failed to encrypt key", "error", err)
 		return ErrInternal{}
@@ -377,7 +377,7 @@ func (s *e4impl) SendMessage(ctx context.Context, topic, msg string) error {
 		return ErrInternal{}
 	}
 
-	payload, err := e4.Protect([]byte(msg), clearTopicKey)
+	payload, err := e4crypto.ProtectSymKey([]byte(msg), clearTopicKey)
 	if err != nil {
 		logger.Log("msg", "Protect failed", "error", err)
 		return ErrInternal{}
@@ -408,7 +408,7 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 		return ErrInternal{}
 	}
 
-	newKey := e4.RandomKey()
+	newKey := e4crypto.RandomKey()
 	command, err := s.commandFactory.CreateSetIDKeyCommand(newKey)
 	if err != nil {
 		logger.Log("msg", "failed to create SetClient command", "error", err)
@@ -421,7 +421,7 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 		return ErrInternal{}
 	}
 
-	protectedkey, err := e4.Encrypt(s.keyenckey, nil, newKey)
+	protectedkey, err := e4crypto.Encrypt(s.keyenckey, nil, newKey)
 	if err != nil {
 		return ErrInternal{}
 	}
@@ -621,7 +621,7 @@ func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Comma
 	return s.pubSubClient.Publish(ctx, payload, client.Topic(), protocols.QoSExactlyOnce)
 }
 
-// IsErrRecordNotFound indiquate whenever error is a RecordNotFound error
+// IsErrRecordNotFound indicate whenever error is a RecordNotFound error
 func IsErrRecordNotFound(err error) bool {
 	return models.IsErrRecordNotFound(err)
 }
@@ -637,17 +637,17 @@ func IsErrRecordNotFound(err error) bool {
 func ValidateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
 	if len(name) != 0 {
 		if len(id) != 0 {
-			idtest := e4.HashIDAlias(name)
-			if bytes.Equal(idtest, id) == false {
+			idTest := e4crypto.HashIDAlias(name)
+			if bytes.Equal(idTest, id) == false {
 				return nil, fmt.Errorf("Inconsistent Name Alias and E4ID")
 			}
 			return id, nil
 		}
-		return e4.HashIDAlias(name), nil
+		return e4crypto.HashIDAlias(name), nil
 	}
 
-	if len(id) != e4.IDLen {
-		return nil, fmt.Errorf("Incorrect ID Length, expected %d bytes, got %d", e4.IDLen, len(id))
+	if len(id) != e4crypto.IDLen {
+		return nil, fmt.Errorf("Incorrect ID Length, expected %d bytes, got %d", e4crypto.IDLen, len(id))
 	}
 	return id, nil
 }

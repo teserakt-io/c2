@@ -1,6 +1,6 @@
 package analytics
 
-//go:generate mockgen -destination=monitor_mocks.go -package analytics -self_package gitlab.com/teserakt/c2/internal/analytics gitlab.com/teserakt/c2/internal/analytics MessageMonitor
+//go:generate mockgen -destination=monitor_mocks.go -package analytics -self_package github.com/teserakt-io/c2/internal/analytics github.com/teserakt-io/c2/internal/analytics MessageMonitor
 
 import (
 	"context"

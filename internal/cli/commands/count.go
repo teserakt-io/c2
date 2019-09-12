@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"gitlab.com/teserakt/c2/internal/cli"
-	"gitlab.com/teserakt/c2/pkg/pb"
+	"github.com/teserakt-io/c2/internal/cli"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 type countCommand struct {
@@ -117,6 +117,6 @@ func (c *countCommand) run(cmd *cobra.Command, args []string) error {
 
 		return nil
 	default:
-		return fmt.Errorf("unknow operation")
+		return fmt.Errorf("unknown operation")
 	}
 }

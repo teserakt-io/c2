@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	slibcfg "gitlab.com/teserakt/serverlib/config"
+	slibcfg "github.com/teserakt-io/serverlib/config"
 )
 
 // Config type holds the application configuration
@@ -126,12 +126,12 @@ type ESCfg struct {
 	MessageIndexName     string
 }
 
-// IsC2LoggingEnabled indiquate whenever C2 logging is enabled in configuration
+// IsC2LoggingEnabled indicate whenever C2 logging is enabled in configuration
 func (c ESCfg) IsC2LoggingEnabled() bool {
 	return c.Enable && c.enableC2Logging
 }
 
-// IsMessageLoggingEnabled indiqate whenever broker message must be logged to elasticsearch
+// IsMessageLoggingEnabled indicate whenever broker message must be logged to elasticsearch
 func (c ESCfg) IsMessageLoggingEnabled() bool {
 	return c.Enable && c.enableMessageLogging
 }

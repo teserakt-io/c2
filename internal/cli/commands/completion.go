@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"gitlab.com/teserakt/c2/internal/cli"
+	"github.com/teserakt-io/c2/internal/cli"
 )
 
 // CompletionCommand defines a custom Command to deal with auto completion

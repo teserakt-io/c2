@@ -1,11 +1,12 @@
 package commands
 
-//go:generate mockgen -destination=factory_mocks.go -package commands -self_package gitlab.com/teserakt/c2/internal/commands gitlab.com/teserakt/c2/internal/commands Factory
+//go:generate mockgen -destination=factory_mocks.go -package commands -self_package github.com/teserakt-io/c2/internal/commands github.com/teserakt-io/c2/internal/commands Factory
 
 import (
 	"fmt"
 
-	e4 "gitlab.com/teserakt/e4common"
+	e4 "github.com/teserakt-io/e4go"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 )
 
 // Factory defines interface able to create e4 Commands
@@ -27,7 +28,7 @@ func NewFactory() Factory {
 }
 
 func (f *factory) CreateRemoveTopicCommand(topichash []byte) (Command, error) {
-	if err := e4.IsValidTopicHash(topichash); err != nil {
+	if err := e4crypto.ValidateTopicHash(topichash); err != nil {
 		return nil, fmt.Errorf("invalid topic hash for RemoveTopic: %v", err)
 	}
 
@@ -41,7 +42,7 @@ func (f *factory) CreateResetTopicsCommand() (Command, error) {
 }
 
 func (f *factory) CreateSetIDKeyCommand(key []byte) (Command, error) {
-	if err := e4.IsValidKey(key); err != nil {
+	if err := e4crypto.ValidateSymKey(key); err != nil {
 		return nil, fmt.Errorf("invalid key for SetIdKey: %v", err)
 	}
 
@@ -50,10 +51,10 @@ func (f *factory) CreateSetIDKeyCommand(key []byte) (Command, error) {
 }
 
 func (f *factory) CreateSetTopicKeyCommand(topicHash, key []byte) (Command, error) {
-	if err := e4.IsValidKey(key); err != nil {
+	if err := e4crypto.ValidateSymKey(key); err != nil {
 		return nil, fmt.Errorf("invalid key for SetTopicKey: %v", err)
 	}
-	if err := e4.IsValidTopicHash(topicHash); err != nil {
+	if err := e4crypto.ValidateTopicHash(topicHash); err != nil {
 		return nil, fmt.Errorf("invalid topic hash for SetTopicKey: %v", err)
 	}
 

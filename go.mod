@@ -1,4 +1,4 @@
-module gitlab.com/teserakt/c2
+module github.com/teserakt-io/c2
 
 require (
 	contrib.go.opencensus.io/exporter/ocagent v0.4.3
@@ -13,7 +13,6 @@ require (
 	github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5 // indirect
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/flynn-archive/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
-	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/go-kit/kit v0.8.0
 	github.com/go-sql-driver/mysql v1.4.1 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
@@ -31,8 +30,8 @@ require (
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
-	gitlab.com/teserakt/e4common v1.0.0
-	gitlab.com/teserakt/serverlib v1.0.0
+	github.com/teserakt-io/e4go v0.0.0-20190912121911-ef9603112859
+	github.com/teserakt-io/serverlib v0.0.0-20190912131345-29a7b76ad87c
 	go.opencensus.io v0.19.0
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80 // indirect

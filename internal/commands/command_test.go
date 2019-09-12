@@ -4,7 +4,8 @@ import (
 	reflect "reflect"
 	"testing"
 
-	e4 "gitlab.com/teserakt/e4common"
+	e4 "github.com/teserakt-io/e4go"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 )
 
 func TestE4Command(t *testing.T) {
@@ -77,7 +78,7 @@ func TestE4Command(t *testing.T) {
 			t.Errorf("Expected payload to be different from original command")
 		}
 
-		unprotected, err := e4.Unprotect(payload, key)
+		unprotected, err := e4crypto.UnprotectSymKey(payload, key)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}

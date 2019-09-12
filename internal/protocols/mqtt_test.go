@@ -9,8 +9,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/golang/mock/gomock"
 
-	"gitlab.com/teserakt/c2/internal/analytics"
-	"gitlab.com/teserakt/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/analytics"
+	"github.com/teserakt-io/c2/internal/config"
 )
 
 func TestMQTTPubSubClient(t *testing.T) {

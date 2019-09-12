@@ -3,9 +3,9 @@ package commands
 import (
 	"github.com/spf13/cobra"
 
-	"gitlab.com/teserakt/c2/internal/cli"
-	"gitlab.com/teserakt/c2/internal/cli/commands/clients"
-	"gitlab.com/teserakt/c2/internal/cli/commands/topics"
+	"github.com/teserakt-io/c2/internal/cli"
+	"github.com/teserakt-io/c2/internal/cli/commands/clients"
+	"github.com/teserakt-io/c2/internal/cli/commands/topics"
 )
 
 type rootCommandFlags struct {

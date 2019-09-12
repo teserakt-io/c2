@@ -1,7 +1,8 @@
 package models
 
 import (
-	e4 "gitlab.com/teserakt/e4common"
+	e4 "github.com/teserakt-io/e4go"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 )
 
 // Client represents an Identity Key in the database given a unique device ID.
@@ -21,14 +22,14 @@ type TopicKey struct {
 	Clients []*Client `gorm:"many2many:clients_topickeys;"`
 }
 
-// Hash return the E4 Hashed topic ofht the current TopicKey
+// Hash return the E4 Hashed topic of the current TopicKey
 func (t TopicKey) Hash() []byte {
-	return e4.HashTopic(t.Topic)
+	return e4crypto.HashTopic(t.Topic)
 }
 
 // DecryptKey returns the decrypted key of the current TopicKey
 func (t TopicKey) DecryptKey(keyenckey []byte) ([]byte, error) {
-	key, err := e4.Decrypt(keyenckey, nil, t.Key)
+	key, err := e4crypto.Decrypt(keyenckey, nil, t.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +39,7 @@ func (t TopicKey) DecryptKey(keyenckey []byte) ([]byte, error) {
 
 // DecryptKey returns the decrypted key of current Client
 func (i Client) DecryptKey(keyenckey []byte) ([]byte, error) {
-	key, err := e4.Decrypt(keyenckey, nil, i.Key)
+	key, err := e4crypto.Decrypt(keyenckey, nil, i.Key)
 	if err != nil {
 		return nil, err
 	}

@@ -10,7 +10,7 @@ import (
 	"net"
 	"strings"
 
-	e4 "gitlab.com/teserakt/e4common"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 )
 
 // TestClient provides a representation of an id-key pair.
@@ -98,7 +98,7 @@ func NewTestClient() (*TestClient, error) {
 		return nil, err
 	}
 	t.Name = name
-	t.ID = e4.HashIDAlias(name)
+	t.ID = e4crypto.HashIDAlias(name)
 	t.Key = key
 	return t, nil
 }
@@ -141,7 +141,7 @@ func NewTestTopic(topickeygen bool) (*TestTopic, error) {
 // GenerateName generates a random name beginning clientname-%s
 // it is used to make random-looking names for devices for test purposes.
 func GenerateName() (string, error) {
-	somebytes := [e4.IDLen]byte{}
+	somebytes := [e4crypto.IDLen]byte{}
 	_, err := rand.Read(somebytes[:])
 	if err != nil {
 		return "", err
@@ -154,18 +154,18 @@ func GenerateName() (string, error) {
 // GenerateID generates a random ID that is e4.IDLen bytes
 // in length, using a CSPRNG
 func GenerateID() ([]byte, error) {
-	idbytes := [e4.IDLen]byte{}
-	_, err := rand.Read(idbytes[:])
+	idBytes := [e4crypto.IDLen]byte{}
+	_, err := rand.Read(idBytes[:])
 	if err != nil {
 		return nil, err
 	}
-	return idbytes[:], nil
+	return idBytes[:], nil
 }
 
 // GenerateKey generates a random key that is e4.KeyLen bytes
 // in length, using a CSPRNG
 func GenerateKey() ([]byte, error) {
-	keybytes := [e4.KeyLen]byte{}
+	keybytes := [e4crypto.KeyLen]byte{}
 	_, err := rand.Read(keybytes[:])
 	if err != nil {
 		return nil, err

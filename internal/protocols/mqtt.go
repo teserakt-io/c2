@@ -1,6 +1,6 @@
 package protocols
 
-//go:generate mockgen -destination=mqtt_mocks.go -package protocols -self_package gitlab.com/teserakt/c2/internal/protocols gitlab.com/teserakt/c2/internal/protocols MQTTClient,MQTTMessage,MQTTToken
+//go:generate mockgen -destination=mqtt_mocks.go -package protocols -self_package github.com/teserakt-io/c2/internal/protocols github.com/teserakt-io/c2/internal/protocols MQTTClient,MQTTMessage,MQTTToken
 
 import (
 	"context"
@@ -14,8 +14,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"go.opencensus.io/trace"
 
-	"gitlab.com/teserakt/c2/internal/analytics"
-	"gitlab.com/teserakt/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/analytics"
+	"github.com/teserakt-io/c2/internal/config"
 )
 
 var (
@@ -84,7 +84,7 @@ func NewMQTTPubSubClient(
 func (c *mqttPubSubClient) Connect() error {
 	c.logger.Log("msg", "mqtt parameters", "broker", c.config.Broker, "id", c.config.ID, "username", c.config.Username)
 	token := c.mqtt.Connect()
-	// WaitTimeout instead of Wait or this will block indefinitively the execution if the server is down
+	// WaitTimeout instead of Wait or this will block indefinitely the execution if the server is down
 	if !token.WaitTimeout(c.waitTimeout) {
 		c.logger.Log("msg", "connection failed", "error", ErrMQTTTimeout)
 		return ErrMQTTTimeout

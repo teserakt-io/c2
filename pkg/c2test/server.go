@@ -33,17 +33,22 @@ func NewServer(mqttEndpoint string) Server {
 // Start will launch a C2 server and wait for it to be online
 func (s *server) Start() error {
 	// Start C2 server
-	DBNAME := fmt.Sprintf("E4C2_DB_FILE=%s", s.dbPath)
-	BROKER := fmt.Sprintf("E4C2_MQTT_BROKER=tcp://%s", s.mqttEndpoint)
-	ESENABLE := "E4C2_ES_ENABLE=false"
+	dbType := "E4C2_DB_TYPE=sqlite3"
+	dbName := fmt.Sprintf("E4C2_DB_FILE=%s", s.dbPath)
+	broker := fmt.Sprintf("E4C2_MQTT_BROKER=tcp://%s", s.mqttEndpoint)
+	esEnable := "E4C2_ES_ENABLE=false"
+	passphrase := "E4C2_DB_ENCRYPTION_PASSPHRASE=very_secure_testpass"
 
-	fmt.Fprintf(os.Stderr, "Database set to %s\n", DBNAME)
-	fmt.Fprintf(os.Stderr, "Broker set to %s\n", BROKER)
+	fmt.Fprintf(os.Stderr, "Database set to %s\n", dbName)
+	fmt.Fprintf(os.Stderr, "Broker set to %s\n", broker)
 
-	env := []string{"E4C2_DB_TYPE=sqlite3"}
-	env = append(env, DBNAME)
-	env = append(env, BROKER)
-	env = append(env, ESENABLE)
+	env := []string{
+		dbType,
+		dbName,
+		broker,
+		esEnable,
+		passphrase,
+	}
 
 	s.cmd = exec.Command("bin/c2")
 	s.cmd.Env = append(os.Environ(), env...)

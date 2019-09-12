@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	libconfig "gitlab.com/teserakt/serverlib/config"
+	libconfig "github.com/teserakt-io/serverlib/config"
 )
 
 var (

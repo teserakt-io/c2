@@ -11,8 +11,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"go.opencensus.io/trace"
 
-	"gitlab.com/teserakt/c2/internal/analytics"
-	"gitlab.com/teserakt/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/analytics"
+	"github.com/teserakt-io/c2/internal/config"
 )
 
 type kafkaPubSubClient struct {
@@ -56,14 +56,14 @@ func (c *kafkaPubSubClient) Connect() error {
 
 	consumer, err := sarama.NewConsumerFromClient(kafkaClient)
 	if err != nil {
-		c.logger.Log("msg", "failed to initialise kafka consumer", "error", err)
+		c.logger.Log("msg", "failed to initialize kafka consumer", "error", err)
 		return err
 	}
 	c.consumer = consumer
 
 	producer, err := sarama.NewSyncProducerFromClient(kafkaClient)
 	if err != nil {
-		c.logger.Log("msg", "failed to initialise kafka producer", "error", err)
+		c.logger.Log("msg", "failed to initialize kafka producer", "error", err)
 		return err
 	}
 	c.producer = producer

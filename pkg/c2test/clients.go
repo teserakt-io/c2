@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 
-	"gitlab.com/teserakt/c2/pkg/pb"
+	"github.com/teserakt-io/c2/pkg/pb"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

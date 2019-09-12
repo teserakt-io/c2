@@ -9,9 +9,10 @@ import (
 
 	"github.com/jinzhu/gorm"
 
-	"gitlab.com/teserakt/c2/internal/config"
-	e4 "gitlab.com/teserakt/e4common"
-	slibcfg "gitlab.com/teserakt/serverlib/config"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
+	slibcfg "github.com/teserakt-io/serverlib/config"
+
+	"github.com/teserakt-io/c2/internal/config"
 )
 
 // setupFunc defines a database setup function,
@@ -107,7 +108,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		expectedClient := Client{
 			ID:   1,
 			Name: "expectedName",
-			E4ID: e4.HashIDAlias("expectedName"),
+			E4ID: e4crypto.HashIDAlias("expectedName"),
 			Key:  []byte("someKey"),
 		}
 
@@ -209,7 +210,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		expectedClient := Client{
 			ID:   1,
 			Name: "someName",
-			E4ID: e4.HashIDAlias("someName"),
+			E4ID: e4crypto.HashIDAlias("someName"),
 			Key:  []byte("someKey"),
 		}
 
@@ -297,7 +298,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 				t.Errorf("Expected count to be %d, got %d", i, c)
 			}
 
-			err = db.InsertClient(name, e4.HashIDAlias(name), []byte("key"))
+			err = db.InsertClient(name, e4crypto.HashIDAlias(name), []byte("key"))
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
 			}
@@ -312,7 +313,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 				t.Errorf("Expected count to be %d, got %d", len(clients)-i, c)
 			}
 
-			err = db.DeleteClientByID(e4.HashIDAlias(name))
+			err = db.DeleteClientByID(e4crypto.HashIDAlias(name))
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
 			}
@@ -378,9 +379,9 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 
 		expectedClients := []Client{
-			Client{ID: 1, Name: "Client1", E4ID: e4.HashIDAlias("Client1"), Key: []byte("key1")},
-			Client{ID: 2, Name: "Client2", E4ID: e4.HashIDAlias("Client2"), Key: []byte("key2")},
-			Client{ID: 3, Name: "Client3", E4ID: e4.HashIDAlias("Client3"), Key: []byte("key3")},
+			Client{ID: 1, Name: "Client1", E4ID: e4crypto.HashIDAlias("Client1"), Key: []byte("key1")},
+			Client{ID: 2, Name: "Client2", E4ID: e4crypto.HashIDAlias("Client2"), Key: []byte("key2")},
+			Client{ID: 3, Name: "Client3", E4ID: e4crypto.HashIDAlias("Client3"), Key: []byte("key3")},
 		}
 
 		for _, client := range expectedClients {
@@ -440,7 +441,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		client := Client{ID: 1, Name: "i-1", E4ID: e4.HashIDAlias("i-1"), Key: []byte("key")}
+		client := Client{ID: 1, Name: "i-1", E4ID: e4crypto.HashIDAlias("i-1"), Key: []byte("key")}
 		if err := db.InsertClient(client.Name, client.E4ID, client.Key); err != nil {
 			t.Fatalf("Failed to insert Client: %v", err)
 		}
@@ -531,7 +532,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		client := Client{Name: "a", E4ID: e4.HashIDAlias("a"), Key: []byte("b")}
+		client := Client{Name: "a", E4ID: e4crypto.HashIDAlias("a"), Key: []byte("b")}
 		topicKey := TopicKey{Topic: "c", Key: []byte("d")}
 
 		if err := db.LinkClientTopic(client, topicKey); err != ErrClientNoPrimaryKey {
@@ -552,7 +553,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		client := Client{Name: "a", E4ID: e4.HashIDAlias("a"), Key: []byte("b")}
+		client := Client{Name: "a", E4ID: e4crypto.HashIDAlias("a"), Key: []byte("b")}
 		topicKey := TopicKey{Topic: "c", Key: []byte("d")}
 
 		if err := db.UnlinkClientTopic(client, topicKey); err != ErrClientNoPrimaryKey {

@@ -1,6 +1,6 @@
 package models
 
-//go:generate mockgen -destination=database_mocks.go -package models -self_package gitlab.com/teserakt/c2/internal/models gitlab.com/teserakt/c2/internal/models Database
+//go:generate mockgen -destination=database_mocks.go -package models -self_package github.com/teserakt-io/c2/internal/models github.com/teserakt-io/c2/internal/models Database
 
 import (
 	"bytes"
@@ -17,8 +17,9 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	// _ "github.com/jinzhu/gorm/dialects/mssql"
 
-	"gitlab.com/teserakt/c2/internal/config"
-	e4 "gitlab.com/teserakt/e4common"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
+
+	"github.com/teserakt-io/c2/internal/config"
 )
 
 // QueryLimit defines the maximum number of records returned
@@ -167,10 +168,10 @@ func (gdb *gormDB) Migrate() error {
 }
 
 // pgCheckConstraint probe the db to check if a foreign key with `name` exists on `table`
-// This method only support postgres dialect and will return an error otherwise.
+// This method only support Postgres dialect and will return an error otherwise.
 func (gdb *gormDB) pgCheckConstraint(name, table string) (bool, error) {
 	if gdb.config.Type != DBDialectPostgres {
-		return false, errors.New("invalid db dialect, only postgres is supported")
+		return false, errors.New("invalid db dialect, only Postgres is supported")
 	}
 
 	type constraintCounter struct {
@@ -199,13 +200,13 @@ func (gdb *gormDB) InsertClient(name string, id, protectedkey []byte) error {
 	// based functions.
 	// If the name is known, we must have H(name)==ID. Enforce this here:
 	if name != "" {
-		idtest := e4.HashIDAlias(name)
-		if bytes.Equal(id, idtest) == false {
+		idTest := e4crypto.HashIDAlias(name)
+		if bytes.Equal(id, idTest) == false {
 			return errors.New("H(Name) != E4ID, refusing to create or update client")
 		}
 	} else {
-		if len(id) != e4.IDLen {
-			return fmt.Errorf("ID Length invalid: got %d, expected %d", len(id), e4.IDLen)
+		if len(id) != e4crypto.IDLen {
+			return fmt.Errorf("ID Length invalid: got %d, expected %d", len(id), e4crypto.IDLen)
 		}
 	}
 

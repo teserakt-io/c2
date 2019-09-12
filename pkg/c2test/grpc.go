@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"gitlab.com/teserakt/c2/pkg/pb"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 // GRPCApi tests the GRPC api of the C2
@@ -189,7 +189,6 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 	_, err = grpcClient.RemoveTopic(ctx, &pb.RemoveTopicRequest{
 		Topic: testTopics[0].TopicName,
 	})
-	//bresult, ok = result.(bool)
 	if err == nil {
 		resChan <- TestResult{
 			Name:     "Check double remove fails",

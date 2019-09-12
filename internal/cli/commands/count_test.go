@@ -8,8 +8,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"gitlab.com/teserakt/c2/internal/cli"
-	"gitlab.com/teserakt/c2/pkg/pb"
+	"github.com/teserakt-io/c2/internal/cli"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 func newTestCountCommand(clientFactory cli.APIClientFactory) cli.Command {

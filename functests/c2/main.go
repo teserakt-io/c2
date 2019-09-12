@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"gitlab.com/teserakt/c2/pkg/c2test"
+	"github.com/teserakt-io/c2/pkg/c2test"
 )
 
 // variables set at build time
@@ -37,7 +37,7 @@ func runTest(errorChan chan<- error, testFunc func()) {
 }
 
 func main() {
-	fmt.Printf("E4: C2 functionnal tests - version %s-%s\n", buildDate, gitCommit)
+	fmt.Printf("E4: C2 functional tests - version %s-%s\n", buildDate, gitCommit)
 	fmt.Println("Copyright (c) Teserakt AG, 2018-2019")
 
 	var exitCode = 0

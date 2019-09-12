@@ -7,11 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"gitlab.com/teserakt/c2/pkg/pb"
-
 	"github.com/golang/mock/gomock"
 
-	"gitlab.com/teserakt/c2/internal/cli"
+	"github.com/teserakt-io/c2/internal/cli"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 func newTestListClientsCommand(clientFactory cli.APIClientFactory) cli.Command {
