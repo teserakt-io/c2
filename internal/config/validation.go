@@ -58,7 +58,7 @@ func (c Config) Validate() error {
 	}
 
 	if err := c.Kafka.Validate(); err != nil {
-		return fmt.Errorf("Kafka configuration validation error: %v", err)
+		return fmt.Errorf("kafka configuration validation error: %v", err)
 	}
 
 	if err := c.DB.Validate(); err != nil {

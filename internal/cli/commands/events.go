@@ -13,11 +13,7 @@ import (
 
 type eventsCommand struct {
 	cobraCmd        *cobra.Command
-	flags           eventsCommandFlags
 	c2ClientFactory cli.APIClientFactory
-}
-
-type eventsCommandFlags struct {
 }
 
 var _ cli.Command = (*eventsCommand)(nil)

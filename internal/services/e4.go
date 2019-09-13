@@ -111,7 +111,7 @@ func NewE4(
 }
 
 func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) error {
-	ctx, span := trace.StartSpan(ctx, "e4.NewClient")
+	_, span := trace.StartSpan(ctx, "e4.NewClient")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClient", "name", name, "id", prettyID(id))
@@ -142,7 +142,7 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 }
 
 func (s *e4impl) RemoveClient(ctx context.Context, id []byte) error {
-	ctx, span := trace.StartSpan(ctx, "e4.RemoveClient")
+	_, span := trace.StartSpan(ctx, "e4.RemoveClient")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeClient", "id", prettyID(id))
@@ -437,7 +437,7 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 }
 
 func (s *e4impl) GetClientsRange(ctx context.Context, offset, count int) ([]IDNamePair, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.GetClientsRange")
+	_, span := trace.StartSpan(ctx, "e4.GetClientsRange")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "getClientsRange", "offset", offset, "count", count)
@@ -459,7 +459,7 @@ func (s *e4impl) GetClientsRange(ctx context.Context, offset, count int) ([]IDNa
 }
 
 func (s *e4impl) GetTopicsRange(ctx context.Context, offset, count int) ([]string, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.GetTopicsRange")
+	_, span := trace.StartSpan(ctx, "e4.GetTopicsRange")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "getTopicsRange", "offset", offset, "count", count)
@@ -481,7 +481,7 @@ func (s *e4impl) GetTopicsRange(ctx context.Context, offset, count int) ([]strin
 }
 
 func (s *e4impl) CountClients(ctx context.Context) (int, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.CountClients")
+	_, span := trace.StartSpan(ctx, "e4.CountClients")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "countClients")
@@ -498,7 +498,7 @@ func (s *e4impl) CountClients(ctx context.Context) (int, error) {
 }
 
 func (s *e4impl) CountTopics(ctx context.Context) (int, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.CountTopics")
+	_, span := trace.StartSpan(ctx, "e4.CountTopics")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "countTopics")
@@ -515,7 +515,7 @@ func (s *e4impl) CountTopics(ctx context.Context) (int, error) {
 }
 
 func (s *e4impl) CountTopicsForClient(ctx context.Context, id []byte) (int, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.CountTopicsForClient")
+	_, span := trace.StartSpan(ctx, "e4.CountTopicsForClient")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "countTopicsForClient", "id", prettyID(id))
@@ -535,7 +535,7 @@ func (s *e4impl) CountTopicsForClient(ctx context.Context, id []byte) (int, erro
 }
 
 func (s *e4impl) GetTopicsRangeByClient(ctx context.Context, id []byte, offset, count int) ([]string, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.GetTopicsRangeByClient")
+	_, span := trace.StartSpan(ctx, "e4.GetTopicsRangeByClient")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "getTopicsRangeByClient", "id", prettyID(id))
@@ -560,7 +560,7 @@ func (s *e4impl) GetTopicsRangeByClient(ctx context.Context, id []byte, offset, 
 }
 
 func (s *e4impl) CountClientsForTopic(ctx context.Context, topic string) (int, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.CountClientsForTopic")
+	_, span := trace.StartSpan(ctx, "e4.CountClientsForTopic")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "countClientsForTopic", "topic", topic)
@@ -580,7 +580,7 @@ func (s *e4impl) CountClientsForTopic(ctx context.Context, topic string) (int, e
 }
 
 func (s *e4impl) GetClientsRangeByTopic(ctx context.Context, topic string, offset, count int) ([]IDNamePair, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.GetClientsRangeByTopic")
+	_, span := trace.StartSpan(ctx, "e4.GetClientsRangeByTopic")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "getClientsRangeByTopic", "topic", topic)
@@ -638,8 +638,8 @@ func ValidateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
 	if len(name) != 0 {
 		if len(id) != 0 {
 			idTest := e4crypto.HashIDAlias(name)
-			if bytes.Equal(idTest, id) == false {
-				return nil, fmt.Errorf("Inconsistent Name Alias and E4ID")
+			if !bytes.Equal(idTest, id) {
+				return nil, fmt.Errorf("inconsistent Name Alias and E4ID")
 			}
 			return id, nil
 		}
@@ -647,7 +647,7 @@ func ValidateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
 	}
 
 	if len(id) != e4crypto.IDLen {
-		return nil, fmt.Errorf("Incorrect ID Length, expected %d bytes, got %d", e4crypto.IDLen, len(id))
+		return nil, fmt.Errorf("incorrect ID Length, expected %d bytes, got %d", e4crypto.IDLen, len(id))
 	}
 	return id, nil
 }

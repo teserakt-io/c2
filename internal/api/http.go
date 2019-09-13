@@ -81,7 +81,7 @@ func (s *httpServer) ListenAndServe(ctx context.Context) error {
 		Addr:         s.cfg.Addr,
 		Handler:      och,
 		TLSConfig:    tlsConfig,
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
 	var lc net.ListenConfig

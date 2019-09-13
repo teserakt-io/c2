@@ -26,7 +26,7 @@ import (
 
 // C2 Errors
 var (
-	ErrSubscribeExisting = errors.New("Failed to subscribe to existing topics")
+	ErrSubscribeExisting = errors.New("failed to subscribe to existing topics")
 )
 
 // APIEndpoint defines an interface that all C2 api endpoints must implement
@@ -108,7 +108,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	if err := db.Migrate(); err != nil {
 		logger.Log("msg", "database setup failed", "error", err)
 
-		return nil, fmt.Errorf("Database migration failed: %v", err)
+		return nil, fmt.Errorf("database migration failed: %v", err)
 	}
 	logger.Log("msg", "database initialized")
 
@@ -162,7 +162,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	if err := deploymentMode.SetupObservability(); err != nil {
 		logger.Log("msg", "Observability instrumentation setup failed", "error", err)
 
-		return nil, fmt.Errorf("Observability instrumentation setup failed: %v", err)
+		return nil, fmt.Errorf("observability instrumentation setup failed: %v", err)
 	}
 	logger.Log("msg", "Observability instrumentation setup successfully")
 

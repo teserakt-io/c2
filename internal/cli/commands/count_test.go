@@ -78,7 +78,7 @@ func TestCount(t *testing.T) {
 		}
 
 		expectedOutput := []byte(fmt.Sprintf("%d\n", expectedCount))
-		if bytes.Compare(buf.Bytes(), expectedOutput) != 0 {
+		if !bytes.Equal(buf.Bytes(), expectedOutput) {
 			t.Errorf("Expected output to be %s, got %s", expectedOutput, buf.Bytes())
 		}
 	})
@@ -104,7 +104,7 @@ func TestCount(t *testing.T) {
 		}
 
 		expectedOutput := []byte(fmt.Sprintf("%d\n", expectedCount))
-		if bytes.Compare(buf.Bytes(), expectedOutput) != 0 {
+		if !bytes.Equal(buf.Bytes(), expectedOutput) {
 			t.Errorf("Expected output to be %s, got %s", expectedOutput, buf.Bytes())
 		}
 	})
@@ -125,7 +125,7 @@ func TestCount(t *testing.T) {
 		}
 
 		expectedOutput := []byte(fmt.Sprintf("%d\n", expectedCount))
-		if bytes.Compare(buf.Bytes(), expectedOutput) != 0 {
+		if !bytes.Equal(buf.Bytes(), expectedOutput) {
 			t.Errorf("Expected output to be %s, got %s", expectedOutput, buf.Bytes())
 		}
 	})
@@ -151,7 +151,7 @@ func TestCount(t *testing.T) {
 		}
 
 		expectedOutput := []byte(fmt.Sprintf("%d\n", expectedCount))
-		if bytes.Compare(buf.Bytes(), expectedOutput) != 0 {
+		if !bytes.Equal(buf.Bytes(), expectedOutput) {
 			t.Errorf("Expected output to be %s, got %s", expectedOutput, buf.Bytes())
 		}
 	})

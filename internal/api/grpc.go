@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
 
 	"github.com/teserakt-io/c2/internal/config"
 	"github.com/teserakt-io/c2/internal/events"
@@ -22,8 +23,8 @@ import (
 
 // Request parameters validation errors
 var (
-	ErrClientRequired     = grpc.Errorf(codes.InvalidArgument, "a client is required.")
-	ErrClientNameRequired = grpc.Errorf(codes.InvalidArgument, "a client name is required.")
+	ErrClientRequired     = status.Errorf(codes.InvalidArgument, "a client is required.")
+	ErrClientNameRequired = status.Errorf(codes.InvalidArgument, "a client name is required.")
 )
 
 // GRPCServer defines available endpoints on a GRPC server
@@ -376,7 +377,7 @@ func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamReques
 func validateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
 	id, err := services.ValidateE4NameOrIDPair(name, id)
 	if err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "%v", err)
+		return nil, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	return id, nil
@@ -394,7 +395,7 @@ func grpcError(err error) error {
 		code = codes.Internal
 	}
 
-	return grpc.Errorf(code, "%s", err.Error())
+	return status.Errorf(code, "%s", err.Error())
 }
 
 func peerFromContext(ctx context.Context) *peer.Peer {

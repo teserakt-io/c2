@@ -29,15 +29,6 @@ func encryptKey(t *testing.T, keyEncKey []byte, key []byte) []byte {
 	return protectedkey
 }
 
-func decryptKey(t *testing.T, keyEncKey []byte, encKey []byte) []byte {
-	key, err := e4crypto.Decrypt(keyEncKey, nil, encKey)
-	if err != nil {
-		t.Fatalf("Failed to decrypt key %v: %v", encKey, err)
-	}
-
-	return key
-}
-
 func newKey(t *testing.T) []byte {
 	key := make([]byte, e4crypto.KeyLen)
 	_, err := rand.Read(key)

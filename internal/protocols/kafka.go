@@ -136,7 +136,7 @@ func (c *kafkaPubSubClient) SubscribeToTopic(ctx context.Context, rawTopic strin
 }
 
 func (c *kafkaPubSubClient) UnsubscribeFromTopic(ctx context.Context, rawTopic string) error {
-	ctx, span := trace.StartSpan(ctx, "kafka.UnsubscribeFromTopic")
+	_, span := trace.StartSpan(ctx, "kafka.UnsubscribeFromTopic")
 	defer span.End()
 
 	stopChan, exists := c.subscribedTopics[rawTopic]
@@ -155,7 +155,7 @@ func (c *kafkaPubSubClient) UnsubscribeFromTopic(ctx context.Context, rawTopic s
 }
 
 func (c *kafkaPubSubClient) Publish(ctx context.Context, payload []byte, rawTopic string, qos byte) error {
-	ctx, span := trace.StartSpan(ctx, "kafka.Publish")
+	_, span := trace.StartSpan(ctx, "kafka.Publish")
 	defer span.End()
 
 	topic := filterTopicName(rawTopic)

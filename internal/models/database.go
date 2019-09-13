@@ -201,7 +201,7 @@ func (gdb *gormDB) InsertClient(name string, id, protectedkey []byte) error {
 	// If the name is known, we must have H(name)==ID. Enforce this here:
 	if name != "" {
 		idTest := e4crypto.HashIDAlias(name)
-		if bytes.Equal(id, idTest) == false {
+		if !bytes.Equal(id, idTest) {
 			return errors.New("H(Name) != E4ID, refusing to create or update client")
 		}
 	} else {
@@ -257,7 +257,7 @@ func (gdb *gormDB) GetClientByID(id []byte) (Client, error) {
 	}
 
 	if !bytes.Equal(id, client.E4ID) {
-		return Client{}, errors.New("Internal error: struct not populated but GORM indicated success")
+		return Client{}, errors.New("internal error: struct not populated but GORM indicated success")
 	}
 
 	return client, nil
@@ -272,7 +272,7 @@ func (gdb *gormDB) GetTopicKey(topic string) (TopicKey, error) {
 	}
 
 	if strings.Compare(topickey.Topic, topic) != 0 {
-		return TopicKey{}, errors.New("Internal error: struct not populated but GORM indicated success")
+		return TopicKey{}, errors.New("internal error: struct not populated but GORM indicated success")
 	}
 
 	return topickey, nil
@@ -287,7 +287,7 @@ func (gdb *gormDB) DeleteClientByID(id []byte) error {
 
 	// safety check:
 	if !bytes.Equal(client.E4ID, id) {
-		return errors.New("Single record not populated correctly; preventing whole DB delete")
+		return errors.New("single record not populated correctly; preventing whole DB delete")
 	}
 
 	tx := gdb.db.Begin()
@@ -312,7 +312,7 @@ func (gdb *gormDB) DeleteTopicKey(topic string) error {
 	}
 
 	if topicKey.Topic != topic {
-		return errors.New("Single record not populated correctly; preventing whole DB delete")
+		return errors.New("single record not populated correctly; preventing whole DB delete")
 	}
 
 	tx := gdb.db.Begin()

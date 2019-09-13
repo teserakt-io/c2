@@ -174,7 +174,7 @@ func (c *mqttPubSubClient) SubscribeToTopic(ctx context.Context, topic string) e
 }
 
 func (c *mqttPubSubClient) UnsubscribeFromTopic(ctx context.Context, topic string) error {
-	ctx, span := trace.StartSpan(ctx, "mqtt.UnsubscribeFromTopic")
+	_, span := trace.StartSpan(ctx, "mqtt.UnsubscribeFromTopic")
 	defer span.End()
 
 	// Only index message if monitoring enabled, i.e. if esClient is defined
@@ -200,7 +200,7 @@ func (c *mqttPubSubClient) UnsubscribeFromTopic(ctx context.Context, topic strin
 }
 
 func (c *mqttPubSubClient) Publish(ctx context.Context, payload []byte, topic string, qos byte) error {
-	ctx, span := trace.StartSpan(ctx, "mqtt.Publish")
+	_, span := trace.StartSpan(ctx, "mqtt.Publish")
 	defer span.End()
 
 	logger := log.With(c.logger, "protocol", "mqtt")

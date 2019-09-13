@@ -1,9 +1,7 @@
 package commands
 
 import (
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -78,16 +76,4 @@ func (c *CompletionCommand) GenerateCustomCompletionFuncs() string {
 	var out string
 
 	return out
-}
-
-func (c *CompletionCommand) generateCompletionFunc(funcName string, suggestions []string) string {
-	return fmt.Sprintf(`
-	%s()
-	{
-		COMPREPLY=( $(compgen -W "%s" -- "$cur") )
-	}
-	`,
-		funcName,
-		strings.Join(suggestions, " "),
-	)
 }

@@ -62,7 +62,7 @@ func TestList(t *testing.T) {
 		}
 
 		expectedOutput := []byte(strings.Join(expectedNames, "\n") + "\n")
-		if bytes.Compare(buf.Bytes(), expectedOutput) != 0 {
+		if !bytes.Equal(buf.Bytes(), expectedOutput) {
 			t.Errorf("Expected output to be %s, got %s", expectedOutput, buf.Bytes())
 		}
 	})
@@ -121,7 +121,7 @@ func TestList(t *testing.T) {
 		}
 
 		expectedOutput := []byte(strings.Join(append(expectedNames1, expectedNames2...), "\n") + "\n")
-		if bytes.Compare(buf.Bytes(), expectedOutput) != 0 {
+		if !bytes.Equal(buf.Bytes(), expectedOutput) {
 			t.Errorf("Expected output to be %s, got %s", expectedOutput, buf.Bytes())
 		}
 	})
@@ -160,7 +160,7 @@ func TestList(t *testing.T) {
 		}
 
 		expectedOutput := []byte(strings.Join(expectedNames, "\n") + "\n")
-		if bytes.Compare(buf.Bytes(), expectedOutput) != 0 {
+		if !bytes.Equal(buf.Bytes(), expectedOutput) {
 			t.Errorf("Expected output to be %s, got %s", expectedOutput, buf.Bytes())
 		}
 	})

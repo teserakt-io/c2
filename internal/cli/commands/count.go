@@ -56,9 +56,9 @@ func (c *countCommand) CobraCmd() *cobra.Command {
 func (c *countCommand) run(cmd *cobra.Command, args []string) error {
 
 	switch {
-	case c.flags.CountClients == false && c.flags.CountTopics == false:
+	case !c.flags.CountClients && !c.flags.CountTopics:
 		return fmt.Errorf("one of --clients or --topics is required")
-	case c.flags.CountClients == true && c.flags.CountTopics == true:
+	case c.flags.CountClients && c.flags.CountTopics:
 		return fmt.Errorf("only one of --clients or --topics is required")
 	case c.flags.CountClients && len(c.flags.ClientName) > 0:
 		return fmt.Errorf("can't use --client when counting clients")

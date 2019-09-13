@@ -31,7 +31,8 @@ func runTest(errorChan chan<- error, testFunc func()) {
 
 	s := time.Now()
 	testFunc()
-	fmt.Fprintf(os.Stderr, "Finished test suite (took %s)\n", time.Now().Sub(s))
+
+	fmt.Fprintf(os.Stderr, "Finished test suite (took %s)\n", time.Since(s))
 
 	errorChan <- nil
 }

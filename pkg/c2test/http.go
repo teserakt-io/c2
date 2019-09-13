@@ -19,21 +19,21 @@ func testHTTPReq(testname string, httpClient *http.Client,
 	if bodyStruct != nil {
 		body, err = json.Marshal(bodyStruct)
 		if err != nil {
-			return nil, fmt.Errorf("Test %s: %s", testname, err)
+			return nil, fmt.Errorf("test %s: %s", testname, err)
 		}
 	}
 
 	req, err := http.NewRequest(verb, url, strings.NewReader(string(body)))
 	if err != nil {
-		return nil, fmt.Errorf("Test %s: %s", testname, err)
+		return nil, fmt.Errorf("test %s: %s", testname, err)
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Test %s: %s", testname, err)
+		return nil, fmt.Errorf("test %s: %s", testname, err)
 	}
 	if resp.StatusCode != responseCode {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Test %s: Request %s failed response code test, expected %d, received %d (body: %s)", testname, url, responseCode, resp.StatusCode, body)
+		return nil, fmt.Errorf("test %s: Request %s failed response code test, expected %d, received %d (body: %s)", testname, url, responseCode, resp.StatusCode, body)
 	}
 
 	return resp, nil
@@ -146,7 +146,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 			Name:     "M2M Find Added Topic",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test M2M Find Added Topic: %s", err),
+			Error:    fmt.Errorf("test M2M Find Added Topic: %s", err),
 		}
 		return
 	}
@@ -155,7 +155,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 			Name:     "M2M Find Added Topic",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test M2M Find Added Topic: Incorrect topic returned, returned body is %s", getTopicsForClientResponse),
+			Error:    fmt.Errorf("test M2M Find Added Topic: Incorrect topic returned, returned body is %s", getTopicsForClientResponse),
 		}
 		return
 	}
@@ -194,7 +194,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 			Name:     "Test M2M Doesn't Show Removed Topic",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test M2M Doesn't Show Removed Topic: %s", err),
+			Error:    fmt.Errorf("test M2M Doesn't Show Removed Topic: %s", err),
 		}
 		return
 	}
@@ -203,7 +203,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 			Name:     "Test M2M Doesn't Show Removed Topic",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test M2M Doesn't Show Removed Topic: Topics found, returned body is %s", getTopicsForClientResponse),
+			Error:    fmt.Errorf("test M2M Doesn't Show Removed Topic: Topics found, returned body is %s", getTopicsForClientResponse),
 		}
 		return
 	}
@@ -256,7 +256,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 			Name:     "Test Fetch Topics",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test Fetch Topics: %s", err),
+			Error:    fmt.Errorf("test Fetch Topics: %s", err),
 		}
 		return
 	}
@@ -265,7 +265,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 			Name:     "Test Fetch Topics",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test Fetch Topics: Incorrect number of returned topics. Expected %d, got %d.\n returned body is %#v", TESTTOPICS-1, len(getTopicsResponse.Topics), getTopicsResponse),
+			Error:    fmt.Errorf("test Fetch Topics: Incorrect number of returned topics. Expected %d, got %d.\n returned body is %#v", TESTTOPICS-1, len(getTopicsResponse.Topics), getTopicsResponse),
 		}
 		return
 	}
@@ -283,7 +283,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 				Name:     "Test Fetch Topics",
 				Result:   false,
 				Critical: true,
-				Error:    fmt.Errorf("Test Fetch Topics: Created topic %s not found, topics are %s", testtopic.TopicName, getTopicsResponse),
+				Error:    fmt.Errorf("test Fetch Topics: Created topic %s not found, topics are %s", testtopic.TopicName, getTopicsResponse),
 			}
 			return
 		}
@@ -309,7 +309,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 			Name:     "Test Fetch Client",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test Fetch Client: %s", err),
+			Error:    fmt.Errorf("test Fetch Client: %s", err),
 		}
 		return
 	}
@@ -318,7 +318,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 			Name:     "Test Fetch Client",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test Fetch Client: Incorrect number of clients, returned body is %s", getClientsResponse),
+			Error:    fmt.Errorf("test Fetch Client: Incorrect number of clients, returned body is %s", getClientsResponse),
 		}
 		return
 	}
@@ -336,7 +336,7 @@ func HTTPApi(resChan chan<- TestResult, httpClient *http.Client, host string) {
 				Name:     "Test Fetch Client",
 				Result:   false,
 				Critical: true,
-				Error:    fmt.Errorf("Test Fetch Client: Created client %s not found, clients are %s", testID, getTopicsResponse),
+				Error:    fmt.Errorf("test Fetch Client: Created client %s not found, clients are %s", testID, getTopicsResponse),
 			}
 			return
 		}

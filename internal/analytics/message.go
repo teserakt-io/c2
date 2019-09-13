@@ -33,12 +33,9 @@ func LooksEncrypted(data []byte) bool {
 	for i := range data[:16] {
 		counter[int(data[i])]++
 	}
-	if len(counter) < 10 {
-		return false
-	}
-	// if encrypted, fails with low prob
 
-	return true
+	// if encrypted, fails with low prob
+	return len(counter) >= 10
 }
 
 // LooksCompressed indicate whenever given data looks compressed or not
