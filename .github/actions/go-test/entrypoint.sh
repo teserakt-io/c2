@@ -10,7 +10,6 @@ else
     echo "No CI_USERNAME or CI_ACCESS_TOKEN defined, skipping authentication."
 fi
 
-
 RACE=""
 if [ ! -e "{$INPUT_RACE}" ]; then
     RACE="-race"

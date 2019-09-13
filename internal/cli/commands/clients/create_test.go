@@ -69,7 +69,7 @@ func TestCreate(t *testing.T) {
 
 	t.Run("Execute forward expected request to the c2Client when passing a password", func(t *testing.T) {
 		expectedClientName := "testClient1"
-		expectedPassword := "testPassword"
+		expectedPassword := "testSuperSecretPassword"
 
 		k, err := e4crypto.DeriveSymKey(expectedPassword)
 		if err != nil {
