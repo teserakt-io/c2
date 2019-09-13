@@ -43,6 +43,7 @@ jobs:
     strategy:
       matrix:
         buildOS: [darwin, linux, windows]
+        project: [c2, c2cli]
     runs-on: ubuntu-latest
     needs: [test, lint]
     steps:
@@ -54,11 +55,11 @@ jobs:
           CI_USERNAME: daeMOn63
           CI_ACCESS_TOKEN: ${{ secrets.CI_ACCESS_TOKEN }}
         with:
-          project: testApp
+          project: ${{ matrix.project }}
           goos: ${{ matrix.buildOS }}
           goarch: amd64
 
       - uses: actions/upload-artifact@master
         with:
-          name: testApp-${{ matrix.buildOS }}-amd64
+          name: ${{ matrix.project }}-${{ matrix.buildOS }}-amd64
           path: ./${{ steps.build.outputs.binary-path }}
