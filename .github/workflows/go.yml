@@ -10,6 +10,13 @@ jobs:
         with:
           go-version: 1.12
 
+      - name: Setup access token
+        env:
+          CI_USERNAME: daeMOn63
+          CI_ACCESS_TOKEN: ${{ secrets.CI_ACCESS_TOKEN }}
+        run: |
+          echo "machine github.com login ${CI_USERNAME} password ${CI_ACCESS_TOKEN}" > ~/.netrc
+
       - name: Install dependencies
         run: |
           go get honnef.co/go/tools/cmd/staticcheck
@@ -27,6 +34,9 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: ./.github/actions/go-test
+        env:
+          CI_USERNAME: daeMOn63
+          CI_ACCESS_TOKEN: ${{ secrets.CI_ACCESS_TOKEN }}
 
   build:
     name: Build binaries
