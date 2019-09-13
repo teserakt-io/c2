@@ -1,0 +1,22 @@
+name: "Go Build action"
+description: "Runs `go build` and output a path to the binary."
+inputs:
+  project:
+    description: "the name of the project to build. this will build from cmd/<project> path and output a <project>-<os>-<arch> binary"
+    required: true
+  goos:
+    description: "the GOOS env to use when building"
+    required: true
+  goarch:
+    description: "the GOARCH env to use when building"
+    required: true
+  race:
+    description: "enable race detector during build"
+    required: false
+    default: false
+outputs:
+  binary-path:
+    description: "The path to the binary"
+runs:
+  using: "docker"
+  image: "Dockerfile"
