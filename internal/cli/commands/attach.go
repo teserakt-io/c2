@@ -50,7 +50,6 @@ func (c *attachCommand) CobraCmd() *cobra.Command {
 }
 
 func (c *attachCommand) run(cmd *cobra.Command, args []string) error {
-
 	switch {
 	case len(c.flags.ClientName) <= 0:
 		return fmt.Errorf("flag --client is required")

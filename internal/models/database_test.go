@@ -100,7 +100,6 @@ func TestDBPostgres(t *testing.T) {
 }
 
 func testDatabase(t *testing.T, setup setupFunc) {
-
 	t.Run("Insert and Get properly insert or update and retrieve", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()

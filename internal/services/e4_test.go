@@ -91,7 +91,6 @@ func TestE4(t *testing.T) {
 	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, mockEventDispatcher, mockEventFactory, logger, e4Key)
 
 	t.Run("Validation works successfully", func(t *testing.T) {
-
 		names := []string{"test1", "testtest2", "e4test3", "test4", "test5"}
 
 		// test names return the correct hashes:

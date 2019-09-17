@@ -50,7 +50,6 @@ func assertCommandContains(t *testing.T, command Command, expectedType e4.Comman
 }
 
 func TestFactory(t *testing.T) {
-
 	factory := NewFactory()
 
 	t.Run("CreateRemoveTopicCommand returns the expected command", func(t *testing.T) {

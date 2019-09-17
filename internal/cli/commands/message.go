@@ -50,7 +50,6 @@ func (c *messageCommand) CobraCmd() *cobra.Command {
 }
 
 func (c *messageCommand) run(cmd *cobra.Command, args []string) error {
-
 	switch {
 	case len(c.flags.Topic) <= 0:
 		return fmt.Errorf("flag --topic is required")
