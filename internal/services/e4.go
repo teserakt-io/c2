@@ -46,7 +46,6 @@ type IDNamePair struct {
 
 // E4 describe the available methods on the E4 service
 type E4 interface {
-
 	// Client Only Manipulation
 	NewClient(ctx context.Context, name string, id, key []byte) error
 	NewClientKey(ctx context.Context, id []byte) error

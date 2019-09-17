@@ -465,7 +465,6 @@ func (gdb *gormDB) UnlinkClientTopic(client Client, topicKey TopicKey) error {
 }
 
 func (gdb *gormDB) GetTopicsForClientByID(id []byte, offset int, count int) ([]TopicKey, error) {
-
 	var client Client
 	var topickeys []TopicKey
 
@@ -474,7 +473,6 @@ func (gdb *gormDB) GetTopicsForClientByID(id []byte, offset int, count int) ([]T
 	}
 
 	if err := gdb.db.Model(&client).Order("topic").Offset(offset).Limit(count).Related(&topickeys, "TopicKeys").Error; err != nil {
-
 		return nil, err
 	}
 
@@ -493,7 +491,6 @@ func (gdb *gormDB) CountClientsForTopic(topic string) (int, error) {
 }
 
 func (gdb *gormDB) CountTopicsForClientByID(id []byte) (int, error) {
-
 	var client Client
 
 	if err := gdb.db.Where(&Client{E4ID: id}).First(&client).Error; err != nil {
@@ -506,7 +503,6 @@ func (gdb *gormDB) CountTopicsForClientByID(id []byte) (int, error) {
 }
 
 func (gdb *gormDB) GetClientsForTopic(topic string, offset int, count int) ([]Client, error) {
-
 	var topickey TopicKey
 	var clients []Client
 

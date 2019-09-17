@@ -12,7 +12,6 @@ import (
 
 func testHTTPReq(testname string, httpClient *http.Client,
 	verb string, url string, bodyStruct interface{}, responseCode int) (*http.Response, error) {
-
 	var body []byte
 	var err error
 
