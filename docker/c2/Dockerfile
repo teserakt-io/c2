@@ -5,7 +5,9 @@
 ###########################################################
 FROM alpine AS c2
 
-COPY ./bin/c2 /opt/e4/bin/c2
+ARG binary_path
+
+COPY $binary_path /opt/e4/bin/c2
 COPY ./configs/ /opt/e4/configs
 
 # Redirect log file to stdout
@@ -29,6 +31,9 @@ CMD ["/opt/e4/bin/c2"]
 ###########################################################
 FROM alpine AS c2cli
 
+ARG binary_path
+
+COPY $binary_path /opt/e4/bin/c2cli
 COPY ./docker/c2/cli-entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
