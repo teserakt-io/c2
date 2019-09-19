@@ -54,17 +54,20 @@ jobs:
         env:
           CI_USERNAME: TeseRex
           CI_ACCESS_TOKEN: ${{ secrets.CI_ACCESS_TOKEN }}
+          GOOS: ${{ matrix.buildOS }}
+          GOARCH: amd64
+          CGO_ENABLED: 0
         with:
           project: ${{ matrix.project }}
-          goos: ${{ matrix.buildOS }}
-          goarch: amd64
 
       - uses: teserakt-io/gh-actions/docker-build@master
         if: matrix.buildOS == 'linux' # Only build image for linux
         with:
           branch: ${{ github.ref }}
           binary_path: ./${{ steps.build.outputs.binary-path }}
-          image_name: "c2-${{ matrix.project }}"
+          image_name: "${{ matrix.project }}"
+          dockerfile: "./docker/c2/Dockerfile"
+          dockerfile_target: "${{ matrix.project }}"
           registry_endpoint: "eu.gcr.io"
           registry_name: "${{ secrets.GCR_PROJECT }}"
           registry_username: _json_key
