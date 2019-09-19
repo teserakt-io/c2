@@ -3,7 +3,7 @@
 # c2 stage
 #
 ###########################################################
-FROM debian:stable AS c2
+FROM alpine AS c2
 
 COPY ./bin/c2 /opt/e4/bin/c2
 COPY ./configs/ /opt/e4/configs
@@ -27,7 +27,7 @@ CMD ["/opt/e4/bin/c2"]
 # c2cli stage
 #
 ###########################################################
-FROM debian:stable AS c2cli
+FROM alpine AS c2cli
 
 COPY ./docker/c2/cli-entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
