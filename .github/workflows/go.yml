@@ -59,6 +59,17 @@ jobs:
           goos: ${{ matrix.buildOS }}
           goarch: amd64
 
+      - uses: teserakt-io/gh-actions/docker-build@master
+        if: matrix.buildOS == 'linux' # Only build image for linux
+        with:
+          branch: ${{ github.ref }}
+          binary_path: ./${{ steps.build.outputs.binary-path }}
+          image_name: "c2-${{ matrix.project }}"
+          registry_endpoint: "eu.gcr.io"
+          registry_name: "${{ secrets.GCR_PROJECT }}"
+          registry_username: _json_key
+          registry_password: ${{ secrets.GCR_TOKEN }}
+
       - uses: actions/upload-artifact@master
         with:
           name: ${{ matrix.project }}-${{ matrix.buildOS }}-amd64
