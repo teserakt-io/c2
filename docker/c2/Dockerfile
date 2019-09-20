@@ -22,6 +22,7 @@ EXPOSE 8888
 
 VOLUME /opt/e4/configs
 
+
 CMD ["/opt/e4/bin/c2"]
 
 ###########################################################
@@ -45,5 +46,3 @@ ENV C2_API_ENDPOINT="localhost:5555"
 ENV C2_API_CERT="/opt/c2/c2-cert.pem"
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-
-COPY ./bin/c2cli /opt/e4/bin/c2cli
