@@ -1,6 +1,6 @@
 package cli
 
-//go:generate mockgen -destination=apiClient_mocks.go -package cli -self_package gitlab.com/teserakt/c2/internal/cli gitlab.com/teserakt/c2/internal/cli APIClientFactory,C2Client
+//go:generate mockgen -destination=apiClient_mocks.go -package cli -self_package github.com/teserakt-io/c2/internal/cli github.com/teserakt-io/c2/internal/cli APIClientFactory,C2Client
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"gitlab.com/teserakt/c2/pkg/pb"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 const (
@@ -51,7 +51,6 @@ var _ APIClientFactory = (*apiClientFactory)(nil)
 
 // NewAPIClientFactory creates a new C2AutomationEngineClient factory
 func NewAPIClientFactory() APIClientFactory {
-
 	return &apiClientFactory{}
 }
 

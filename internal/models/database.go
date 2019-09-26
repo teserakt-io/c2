@@ -1,6 +1,6 @@
 package models
 
-//go:generate mockgen -destination=database_mocks.go -package models -self_package gitlab.com/teserakt/c2/internal/models gitlab.com/teserakt/c2/internal/models Database
+//go:generate mockgen -destination=database_mocks.go -package models -self_package github.com/teserakt-io/c2/internal/models github.com/teserakt-io/c2/internal/models Database
 
 import (
 	"bytes"
@@ -17,8 +17,9 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	// _ "github.com/jinzhu/gorm/dialects/mssql"
 
-	"gitlab.com/teserakt/c2/internal/config"
-	e4 "gitlab.com/teserakt/e4common"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
+
+	"github.com/teserakt-io/c2/internal/config"
 )
 
 // QueryLimit defines the maximum number of records returned
@@ -167,10 +168,10 @@ func (gdb *gormDB) Migrate() error {
 }
 
 // pgCheckConstraint probe the db to check if a foreign key with `name` exists on `table`
-// This method only support postgres dialect and will return an error otherwise.
+// This method only support Postgres dialect and will return an error otherwise.
 func (gdb *gormDB) pgCheckConstraint(name, table string) (bool, error) {
 	if gdb.config.Type != DBDialectPostgres {
-		return false, errors.New("invalid db dialect, only postgres is supported")
+		return false, errors.New("invalid db dialect, only Postgres is supported")
 	}
 
 	type constraintCounter struct {
@@ -199,13 +200,13 @@ func (gdb *gormDB) InsertClient(name string, id, protectedkey []byte) error {
 	// based functions.
 	// If the name is known, we must have H(name)==ID. Enforce this here:
 	if name != "" {
-		idtest := e4.HashIDAlias(name)
-		if bytes.Equal(id, idtest) == false {
+		idTest := e4crypto.HashIDAlias(name)
+		if !bytes.Equal(id, idTest) {
 			return errors.New("H(Name) != E4ID, refusing to create or update client")
 		}
 	} else {
-		if len(id) != e4.IDLen {
-			return fmt.Errorf("ID Length invalid: got %d, expected %d", len(id), e4.IDLen)
+		if len(id) != e4crypto.IDLen {
+			return fmt.Errorf("ID Length invalid: got %d, expected %d", len(id), e4crypto.IDLen)
 		}
 	}
 
@@ -256,7 +257,7 @@ func (gdb *gormDB) GetClientByID(id []byte) (Client, error) {
 	}
 
 	if !bytes.Equal(id, client.E4ID) {
-		return Client{}, errors.New("Internal error: struct not populated but GORM indicated success")
+		return Client{}, errors.New("internal error: struct not populated but GORM indicated success")
 	}
 
 	return client, nil
@@ -271,7 +272,7 @@ func (gdb *gormDB) GetTopicKey(topic string) (TopicKey, error) {
 	}
 
 	if strings.Compare(topickey.Topic, topic) != 0 {
-		return TopicKey{}, errors.New("Internal error: struct not populated but GORM indicated success")
+		return TopicKey{}, errors.New("internal error: struct not populated but GORM indicated success")
 	}
 
 	return topickey, nil
@@ -286,7 +287,7 @@ func (gdb *gormDB) DeleteClientByID(id []byte) error {
 
 	// safety check:
 	if !bytes.Equal(client.E4ID, id) {
-		return errors.New("Single record not populated correctly; preventing whole DB delete")
+		return errors.New("single record not populated correctly; preventing whole DB delete")
 	}
 
 	tx := gdb.db.Begin()
@@ -311,7 +312,7 @@ func (gdb *gormDB) DeleteTopicKey(topic string) error {
 	}
 
 	if topicKey.Topic != topic {
-		return errors.New("Single record not populated correctly; preventing whole DB delete")
+		return errors.New("single record not populated correctly; preventing whole DB delete")
 	}
 
 	tx := gdb.db.Begin()
@@ -465,7 +466,6 @@ func (gdb *gormDB) UnlinkClientTopic(client Client, topicKey TopicKey) error {
 }
 
 func (gdb *gormDB) GetTopicsForClientByID(id []byte, offset int, count int) ([]TopicKey, error) {
-
 	var client Client
 	var topickeys []TopicKey
 
@@ -474,7 +474,6 @@ func (gdb *gormDB) GetTopicsForClientByID(id []byte, offset int, count int) ([]T
 	}
 
 	if err := gdb.db.Model(&client).Order("topic").Offset(offset).Limit(count).Related(&topickeys, "TopicKeys").Error; err != nil {
-
 		return nil, err
 	}
 
@@ -493,7 +492,6 @@ func (gdb *gormDB) CountClientsForTopic(topic string) (int, error) {
 }
 
 func (gdb *gormDB) CountTopicsForClientByID(id []byte) (int, error) {
-
 	var client Client
 
 	if err := gdb.db.Where(&Client{E4ID: id}).First(&client).Error; err != nil {
@@ -506,7 +504,6 @@ func (gdb *gormDB) CountTopicsForClientByID(id []byte) (int, error) {
 }
 
 func (gdb *gormDB) GetClientsForTopic(topic string, offset int, count int) ([]Client, error) {
-
 	var topickey TopicKey
 	var clients []Client
 

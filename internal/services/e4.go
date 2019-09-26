@@ -7,13 +7,13 @@ import (
 	"fmt"
 
 	"github.com/go-kit/kit/log"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 	"go.opencensus.io/trace"
 
-	"gitlab.com/teserakt/c2/internal/commands"
-	"gitlab.com/teserakt/c2/internal/events"
-	"gitlab.com/teserakt/c2/internal/models"
-	"gitlab.com/teserakt/c2/internal/protocols"
-	e4 "gitlab.com/teserakt/e4common"
+	"github.com/teserakt-io/c2/internal/commands"
+	"github.com/teserakt-io/c2/internal/events"
+	"github.com/teserakt-io/c2/internal/models"
+	"github.com/teserakt-io/c2/internal/protocols"
 )
 
 /* E4 API Naming
@@ -46,7 +46,6 @@ type IDNamePair struct {
 
 // E4 describe the available methods on the E4 service
 type E4 interface {
-
 	// Client Only Manipulation
 	NewClient(ctx context.Context, name string, id, key []byte) error
 	NewClientKey(ctx context.Context, id []byte) error
@@ -111,7 +110,7 @@ func NewE4(
 }
 
 func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) error {
-	ctx, span := trace.StartSpan(ctx, "e4.NewClient")
+	_, span := trace.StartSpan(ctx, "e4.NewClient")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClient", "name", name, "id", prettyID(id))
@@ -121,11 +120,11 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 		return ErrValidation{fmt.Errorf("inconsistent E4 ID/Name: %v", err)}
 	}
 
-	if err := e4.IsValidKey(key); err != nil {
+	if err := e4crypto.ValidateSymKey(key); err != nil {
 		return ErrValidation{fmt.Errorf("invalid key: %v", err)}
 	}
 
-	protectedkey, err := e4.Encrypt(s.keyenckey, nil, key)
+	protectedkey, err := e4crypto.Encrypt(s.keyenckey, nil, key)
 	if err != nil {
 		logger.Log("msg", "failed to encrypt key", "error", err)
 		return ErrInternal{}
@@ -142,7 +141,7 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 }
 
 func (s *e4impl) RemoveClient(ctx context.Context, id []byte) error {
-	ctx, span := trace.StartSpan(ctx, "e4.RemoveClient")
+	_, span := trace.StartSpan(ctx, "e4.RemoveClient")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "removeClient", "id", prettyID(id))
@@ -306,9 +305,9 @@ func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "newTopic", "topic", topic)
 
-	key := e4.RandomKey()
+	key := e4crypto.RandomKey()
 
-	protectedKey, err := e4.Encrypt(s.keyenckey[:], nil, key)
+	protectedKey, err := e4crypto.Encrypt(s.keyenckey[:], nil, key)
 	if err != nil {
 		logger.Log("msg", "failed to encrypt key", "error", err)
 		return ErrInternal{}
@@ -377,7 +376,7 @@ func (s *e4impl) SendMessage(ctx context.Context, topic, msg string) error {
 		return ErrInternal{}
 	}
 
-	payload, err := e4.Protect([]byte(msg), clearTopicKey)
+	payload, err := e4crypto.ProtectSymKey([]byte(msg), clearTopicKey)
 	if err != nil {
 		logger.Log("msg", "Protect failed", "error", err)
 		return ErrInternal{}
@@ -408,7 +407,7 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 		return ErrInternal{}
 	}
 
-	newKey := e4.RandomKey()
+	newKey := e4crypto.RandomKey()
 	command, err := s.commandFactory.CreateSetIDKeyCommand(newKey)
 	if err != nil {
 		logger.Log("msg", "failed to create SetClient command", "error", err)
@@ -421,7 +420,7 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 		return ErrInternal{}
 	}
 
-	protectedkey, err := e4.Encrypt(s.keyenckey, nil, newKey)
+	protectedkey, err := e4crypto.Encrypt(s.keyenckey, nil, newKey)
 	if err != nil {
 		return ErrInternal{}
 	}
@@ -437,7 +436,7 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 }
 
 func (s *e4impl) GetClientsRange(ctx context.Context, offset, count int) ([]IDNamePair, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.GetClientsRange")
+	_, span := trace.StartSpan(ctx, "e4.GetClientsRange")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "getClientsRange", "offset", offset, "count", count)
@@ -459,7 +458,7 @@ func (s *e4impl) GetClientsRange(ctx context.Context, offset, count int) ([]IDNa
 }
 
 func (s *e4impl) GetTopicsRange(ctx context.Context, offset, count int) ([]string, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.GetTopicsRange")
+	_, span := trace.StartSpan(ctx, "e4.GetTopicsRange")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "getTopicsRange", "offset", offset, "count", count)
@@ -481,7 +480,7 @@ func (s *e4impl) GetTopicsRange(ctx context.Context, offset, count int) ([]strin
 }
 
 func (s *e4impl) CountClients(ctx context.Context) (int, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.CountClients")
+	_, span := trace.StartSpan(ctx, "e4.CountClients")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "countClients")
@@ -498,7 +497,7 @@ func (s *e4impl) CountClients(ctx context.Context) (int, error) {
 }
 
 func (s *e4impl) CountTopics(ctx context.Context) (int, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.CountTopics")
+	_, span := trace.StartSpan(ctx, "e4.CountTopics")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "countTopics")
@@ -515,7 +514,7 @@ func (s *e4impl) CountTopics(ctx context.Context) (int, error) {
 }
 
 func (s *e4impl) CountTopicsForClient(ctx context.Context, id []byte) (int, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.CountTopicsForClient")
+	_, span := trace.StartSpan(ctx, "e4.CountTopicsForClient")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "countTopicsForClient", "id", prettyID(id))
@@ -535,7 +534,7 @@ func (s *e4impl) CountTopicsForClient(ctx context.Context, id []byte) (int, erro
 }
 
 func (s *e4impl) GetTopicsRangeByClient(ctx context.Context, id []byte, offset, count int) ([]string, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.GetTopicsRangeByClient")
+	_, span := trace.StartSpan(ctx, "e4.GetTopicsRangeByClient")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "getTopicsRangeByClient", "id", prettyID(id))
@@ -560,7 +559,7 @@ func (s *e4impl) GetTopicsRangeByClient(ctx context.Context, id []byte, offset, 
 }
 
 func (s *e4impl) CountClientsForTopic(ctx context.Context, topic string) (int, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.CountClientsForTopic")
+	_, span := trace.StartSpan(ctx, "e4.CountClientsForTopic")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "countClientsForTopic", "topic", topic)
@@ -580,7 +579,7 @@ func (s *e4impl) CountClientsForTopic(ctx context.Context, topic string) (int, e
 }
 
 func (s *e4impl) GetClientsRangeByTopic(ctx context.Context, topic string, offset, count int) ([]IDNamePair, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.GetClientsRangeByTopic")
+	_, span := trace.StartSpan(ctx, "e4.GetClientsRangeByTopic")
 	defer span.End()
 
 	logger := log.With(s.logger, "protocol", "e4", "command", "getClientsRangeByTopic", "topic", topic)
@@ -621,7 +620,7 @@ func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Comma
 	return s.pubSubClient.Publish(ctx, payload, client.Topic(), protocols.QoSExactlyOnce)
 }
 
-// IsErrRecordNotFound indiquate whenever error is a RecordNotFound error
+// IsErrRecordNotFound indicate whenever error is a RecordNotFound error
 func IsErrRecordNotFound(err error) bool {
 	return models.IsErrRecordNotFound(err)
 }
@@ -637,17 +636,17 @@ func IsErrRecordNotFound(err error) bool {
 func ValidateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
 	if len(name) != 0 {
 		if len(id) != 0 {
-			idtest := e4.HashIDAlias(name)
-			if bytes.Equal(idtest, id) == false {
-				return nil, fmt.Errorf("Inconsistent Name Alias and E4ID")
+			idTest := e4crypto.HashIDAlias(name)
+			if !bytes.Equal(idTest, id) {
+				return nil, fmt.Errorf("inconsistent Name Alias and E4ID")
 			}
 			return id, nil
 		}
-		return e4.HashIDAlias(name), nil
+		return e4crypto.HashIDAlias(name), nil
 	}
 
-	if len(id) != e4.IDLen {
-		return nil, fmt.Errorf("Incorrect ID Length, expected %d bytes, got %d", e4.IDLen, len(id))
+	if len(id) != e4crypto.IDLen {
+		return nil, fmt.Errorf("incorrect ID Length, expected %d bytes, got %d", e4crypto.IDLen, len(id))
 	}
 	return id, nil
 }

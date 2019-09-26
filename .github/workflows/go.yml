@@ -1,0 +1,65 @@
+name: Go
+on: [push]
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.12
+
+      - name: Setup access token
+        env:
+          CI_USERNAME: TeserRex
+          CI_ACCESS_TOKEN: ${{ secrets.CI_ACCESS_TOKEN }}
+        run: |
+          echo "machine github.com login ${CI_USERNAME} password ${CI_ACCESS_TOKEN}" > ~/.netrc
+
+      - name: Install dependencies
+        run: |
+          go get honnef.co/go/tools/cmd/staticcheck
+          go get golang.org/x/lint/golint
+
+      - name: Lint
+        run: /home/runner/go/bin/golint -set_exit_status ./...
+
+      - name: Static check
+        run: /home/runner/go/bin/staticcheck ./...
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: teserakt-io/gh-actions/go-test@master
+        env:
+          CI_USERNAME: TeserRex
+          CI_ACCESS_TOKEN: ${{ secrets.CI_ACCESS_TOKEN }}
+
+  build:
+    name: Build binaries
+    strategy:
+      matrix:
+        buildOS: [darwin, linux, windows]
+        project: [c2, c2cli]
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    steps:
+      - uses: actions/checkout@v1
+      - name: Build
+        id: build
+        uses: teserakt-io/gh-actions/go-build@master
+        env:
+          CI_USERNAME: TeseRex
+          CI_ACCESS_TOKEN: ${{ secrets.CI_ACCESS_TOKEN }}
+        with:
+          project: ${{ matrix.project }}
+          goos: ${{ matrix.buildOS }}
+          goarch: amd64
+
+      - uses: actions/upload-artifact@master
+        with:
+          name: ${{ matrix.project }}-${{ matrix.buildOS }}-amd64
+          path: ./${{ steps.build.outputs.binary-path }}

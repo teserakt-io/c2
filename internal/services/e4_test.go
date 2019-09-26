@@ -12,16 +12,16 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/golang/mock/gomock"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 
-	"gitlab.com/teserakt/c2/internal/commands"
-	"gitlab.com/teserakt/c2/internal/events"
-	"gitlab.com/teserakt/c2/internal/models"
-	"gitlab.com/teserakt/c2/internal/protocols"
-	e4 "gitlab.com/teserakt/e4common"
+	"github.com/teserakt-io/c2/internal/commands"
+	"github.com/teserakt-io/c2/internal/events"
+	"github.com/teserakt-io/c2/internal/models"
+	"github.com/teserakt-io/c2/internal/protocols"
 )
 
 func encryptKey(t *testing.T, keyEncKey []byte, key []byte) []byte {
-	protectedkey, err := e4.Encrypt(keyEncKey, nil, key)
+	protectedkey, err := e4crypto.Encrypt(keyEncKey, nil, key)
 	if err != nil {
 		t.Fatalf("Failed to encrypt key %v: %v", key, err)
 	}
@@ -29,17 +29,8 @@ func encryptKey(t *testing.T, keyEncKey []byte, key []byte) []byte {
 	return protectedkey
 }
 
-func decryptKey(t *testing.T, keyEncKey []byte, encKey []byte) []byte {
-	key, err := e4.Decrypt(keyEncKey, nil, encKey)
-	if err != nil {
-		t.Fatalf("Failed to decrypt key %v: %v", encKey, err)
-	}
-
-	return key
-}
-
 func newKey(t *testing.T) []byte {
-	key := make([]byte, e4.KeyLen)
+	key := make([]byte, e4crypto.KeyLen)
 	_, err := rand.Read(key)
 	if err != nil {
 		t.Fatalf("Failed to generate key: %v", err)
@@ -52,7 +43,7 @@ func createTestClient(t *testing.T, e4Key []byte) (models.Client, []byte) {
 	clearKey := newKey(t)
 	encryptedKey := encryptKey(t, e4Key, clearKey)
 
-	randombytes := make([]byte, e4.IDLen)
+	randombytes := make([]byte, e4crypto.IDLen)
 
 	_, err := rand.Read(randombytes)
 	if err != nil {
@@ -60,7 +51,7 @@ func createTestClient(t *testing.T, e4Key []byte) (models.Client, []byte) {
 	}
 
 	name := hex.EncodeToString(randombytes)
-	id := e4.HashIDAlias(name)
+	id := e4crypto.HashIDAlias(name)
 
 	client := models.Client{
 		Name: name,
@@ -100,7 +91,6 @@ func TestE4(t *testing.T) {
 	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, mockEventDispatcher, mockEventFactory, logger, e4Key)
 
 	t.Run("Validation works successfully", func(t *testing.T) {
-
 		names := []string{"test1", "testtest2", "e4test3", "test4", "test5"}
 
 		// test names return the correct hashes:
@@ -110,33 +100,33 @@ func TestE4(t *testing.T) {
 				t.Errorf("Expected no error, got %v", err)
 			}
 
-			if bytes.Equal(id, e4.HashIDAlias(name)) == false {
+			if bytes.Equal(id, e4crypto.HashIDAlias(name)) == false {
 				t.Errorf("Did not return correctly hashed name")
 			}
 		}
 
 		for _, name := range names {
-			submittedid := e4.HashIDAlias(name)
-			id, err := ValidateE4NameOrIDPair(name, submittedid)
+			submittedID := e4crypto.HashIDAlias(name)
+			id, err := ValidateE4NameOrIDPair(name, submittedID)
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
 			}
 
-			if bytes.Equal(id, submittedid) == false {
+			if bytes.Equal(id, submittedID) == false {
 				t.Errorf("Did not return correctly hashed name")
 			}
 		}
 
 		for _, name := range names {
-			submittedid := e4.HashIDAlias(name)
-			submittedid[0] ^= 0x01
-			_, err := ValidateE4NameOrIDPair(name, submittedid)
+			submittedID := e4crypto.HashIDAlias(name)
+			submittedID[0] ^= 0x01
+			_, err := ValidateE4NameOrIDPair(name, submittedID)
 			if err == nil {
 				t.Errorf("Expected an error, received a non-error result")
 			}
-			submittedid = e4.HashIDAlias(name)
-			shorterid := submittedid[0 : e4.IDLen-2]
-			_, err = ValidateE4NameOrIDPair(name, shorterid)
+			submittedID = e4crypto.HashIDAlias(name)
+			shorterID := submittedID[0 : e4crypto.IDLen-2]
+			_, err = ValidateE4NameOrIDPair(name, shorterID)
 			if err == nil {
 				t.Errorf("Expected an error, received a non-error result")
 			}
@@ -315,12 +305,12 @@ func TestE4(t *testing.T) {
 		gomock.InOrder(
 			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
 			mockCommandFactory.EXPECT().CreateSetIDKeyCommand(gomock.Any()).Do(func(newKey []byte) {
-				if len(newKey) != e4.KeyLen {
-					t.Errorf("Expected newKey to be %d bytes, got %d", e4.KeyLen, len(newKey))
+				if len(newKey) != e4crypto.KeyLen {
+					t.Errorf("Expected newKey to be %d bytes, got %d", e4crypto.KeyLen, len(newKey))
 				}
 
 				var err error
-				protectedNewKey, err = e4.Encrypt(e4Key, nil, newKey)
+				protectedNewKey, err = e4crypto.Encrypt(e4Key, nil, newKey)
 				if err != nil {
 					t.Fatalf("Expected no error, got %v", err)
 				}
@@ -347,7 +337,7 @@ func TestE4(t *testing.T) {
 		topicKey, clearTopicKey := createTestTopicKey(t, e4Key)
 
 		message := "message"
-		expectedPayload, err := e4.Protect([]byte(message), clearTopicKey)
+		expectedPayload, err := e4crypto.ProtectSymKey([]byte(message), clearTopicKey)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -414,7 +404,7 @@ func TestE4(t *testing.T) {
 		defer cancel()
 
 		mockDB.EXPECT().GetTopicsForClientByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
-		topics, err := service.GetTopicsRangeByClient(ctx, e4.HashIDAlias("client"), 1, 2)
+		topics, err := service.GetTopicsRangeByClient(ctx, e4crypto.HashIDAlias("client"), 1, 2)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}

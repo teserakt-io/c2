@@ -5,26 +5,26 @@ import (
 	"fmt"
 	"net"
 
-	"google.golang.org/grpc/codes"
-
-	"gitlab.com/teserakt/c2/internal/config"
-	"gitlab.com/teserakt/c2/internal/events"
-	"gitlab.com/teserakt/c2/internal/services"
-	"gitlab.com/teserakt/c2/pkg/pb"
-
 	"github.com/go-kit/kit/log"
 	"github.com/golang/protobuf/ptypes"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/stats/view"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
+
+	"github.com/teserakt-io/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/events"
+	"github.com/teserakt-io/c2/internal/services"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 // Request parameters validation errors
 var (
-	ErrClientRequired     = grpc.Errorf(codes.InvalidArgument, "a client is required.")
-	ErrClientNameRequired = grpc.Errorf(codes.InvalidArgument, "a client name is required.")
+	ErrClientRequired     = status.Errorf(codes.InvalidArgument, "a client is required.")
+	ErrClientNameRequired = status.Errorf(codes.InvalidArgument, "a client name is required.")
 )
 
 // GRPCServer defines available endpoints on a GRPC server
@@ -373,11 +373,11 @@ func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamReques
 }
 
 // validateE4NamedOrIDPair wrap around services.ValidateE4NameOrIDPair but will
-// conver the error to a suitable GRPC error
+// convert the error to a suitable GRPC error
 func validateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
 	id, err := services.ValidateE4NameOrIDPair(name, id)
 	if err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "%v", err)
+		return nil, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	return id, nil
@@ -395,7 +395,7 @@ func grpcError(err error) error {
 		code = codes.Internal
 	}
 
-	return grpc.Errorf(code, "%s", err.Error())
+	return status.Errorf(code, "%s", err.Error())
 }
 
 func peerFromContext(ctx context.Context) *peer.Peer {

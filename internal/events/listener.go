@@ -1,6 +1,6 @@
 package events
 
-//go:generate mockgen -destination=listener_mocks.go -package events -self_package gitlab.com/teserakt/c2/internal/events gitlab.com/teserakt/c2/internal/events Listener
+//go:generate mockgen -destination=listener_mocks.go -package events -self_package github.com/teserakt-io/c2/internal/events github.com/teserakt-io/c2/internal/events Listener
 
 import "errors"
 
@@ -58,7 +58,7 @@ func (e *listener) Close() error {
 }
 
 // Send will try to send the event on the listener channel (1st case)
-// if the channel block, (like when its buffer is full, or the client isn't reading fast enought)
+// if the channel block, (like when its buffer is full, or the client isn't reading fast enough)
 // we discard the oldest event from the channel and push the new one at the end (2nd case).
 // this ensure we never block when sending event to the listener
 func (e *listener) Send(evt Event) {

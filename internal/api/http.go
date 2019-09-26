@@ -7,16 +7,16 @@ import (
 	"net"
 	"net/http"
 
-	"gitlab.com/teserakt/c2/internal/config"
-	"gitlab.com/teserakt/c2/internal/services"
-	"gitlab.com/teserakt/c2/pkg/pb"
-
 	"github.com/go-kit/kit/log"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/plugin/ochttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	"github.com/teserakt-io/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/services"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 // HTTPServer defines methods available on a C2 HTTP server
@@ -81,7 +81,7 @@ func (s *httpServer) ListenAndServe(ctx context.Context) error {
 		Addr:         s.cfg.Addr,
 		Handler:      och,
 		TLSConfig:    tlsConfig,
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
 	var lc net.ListenConfig

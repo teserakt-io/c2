@@ -5,12 +5,11 @@ import (
 	"strings"
 	"testing"
 
-	"gitlab.com/teserakt/c2/pkg/pb"
-	e4 "gitlab.com/teserakt/e4common"
-
 	"github.com/golang/mock/gomock"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 
-	"gitlab.com/teserakt/c2/internal/cli"
+	"github.com/teserakt-io/c2/internal/cli"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 func newTestCreateCommand(clientFactory cli.APIClientFactory) cli.Command {
@@ -51,7 +50,7 @@ func TestCreate(t *testing.T) {
 			},
 			// Invalid name - too long
 			map[string]string{
-				"name":     strings.Repeat("a", e4.NameMaxLen+1),
+				"name":     strings.Repeat("a", e4crypto.NameMaxLen+1),
 				"password": "testPassword",
 			},
 		}
@@ -70,10 +69,16 @@ func TestCreate(t *testing.T) {
 
 	t.Run("Execute forward expected request to the c2Client when passing a password", func(t *testing.T) {
 		expectedClientName := "testClient1"
-		expectedPassword := "testPassword"
+		expectedPassword := "testSuperSecretPassword"
+
+		k, err := e4crypto.DeriveSymKey(expectedPassword)
+		if err != nil {
+			t.Fatalf("failed to derive symKey: %v", err)
+		}
+
 		expectedRequest := &pb.NewClientRequest{
 			Client: &pb.Client{Name: expectedClientName},
-			Key:    e4.HashPwd(expectedPassword),
+			Key:    k,
 		}
 
 		c2Client.EXPECT().NewClient(gomock.Any(), expectedRequest).Return(&pb.NewClientResponse{}, nil)
@@ -82,7 +87,7 @@ func TestCreate(t *testing.T) {
 		cmd := newTestCreateCommand(c2ClientFactory)
 		cmd.CobraCmd().Flags().Set("name", expectedClientName)
 		cmd.CobraCmd().Flags().Set("password", expectedPassword)
-		err := cmd.CobraCmd().Execute()
+		err = cmd.CobraCmd().Execute()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}

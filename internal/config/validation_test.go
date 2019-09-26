@@ -3,7 +3,7 @@ package config
 import (
 	"testing"
 
-	slibcfg "gitlab.com/teserakt/serverlib/config"
+	slibcfg "github.com/teserakt-io/serverlib/config"
 )
 
 func TestServerCfgValidation(t *testing.T) {

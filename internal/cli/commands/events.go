@@ -7,17 +7,13 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/spf13/cobra"
 
-	"gitlab.com/teserakt/c2/internal/cli"
-	"gitlab.com/teserakt/c2/pkg/pb"
+	"github.com/teserakt-io/c2/internal/cli"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 type eventsCommand struct {
 	cobraCmd        *cobra.Command
-	flags           eventsCommandFlags
 	c2ClientFactory cli.APIClientFactory
-}
-
-type eventsCommandFlags struct {
 }
 
 var _ cli.Command = (*eventsCommand)(nil)

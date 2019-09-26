@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"gitlab.com/teserakt/c2/internal/cli"
+	"github.com/teserakt-io/c2/internal/cli"
 )
 
 const (
@@ -96,7 +96,6 @@ func (c *interactiveCommand) addCobraCommands(ishellCmd ishellCmdAdder, cobraCmd
 
 		if !cobraCmd.HasSubCommands() {
 			subIshellCmd.Func = func(ctx *ishell.Context) {
-
 				args := ctx.RawArgs
 				cobraCmd.Flags().VisitAll(func(f *pflag.Flag) {
 					ctx.SetPrompt(fmt.Sprintf("%s (%s - default: \"%s\") ? ", f.Name, f.Value.Type(), f.DefValue))

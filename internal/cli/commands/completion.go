@@ -1,13 +1,11 @@
 package commands
 
 import (
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 
-	"gitlab.com/teserakt/c2/internal/cli"
+	"github.com/teserakt-io/c2/internal/cli"
 )
 
 // CompletionCommand defines a custom Command to deal with auto completion
@@ -25,7 +23,6 @@ var _ cli.Command = (*CompletionCommand)(nil)
 
 // NewCompletionCommand returns the cobra command used to generate the autocompletion
 func NewCompletionCommand(rootCommand cli.Command) *CompletionCommand {
-
 	completionCmd := &CompletionCommand{
 		rootCmd: rootCommand,
 	}
@@ -78,16 +75,4 @@ func (c *CompletionCommand) GenerateCustomCompletionFuncs() string {
 	var out string
 
 	return out
-}
-
-func (c *CompletionCommand) generateCompletionFunc(funcName string, suggestions []string) string {
-	return fmt.Sprintf(`
-	%s()
-	{
-		COMPREPLY=( $(compgen -W "%s" -- "$cur") )
-	}
-	`,
-		funcName,
-		strings.Join(suggestions, " "),
-	)
 }

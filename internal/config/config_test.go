@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	slibcfg "gitlab.com/teserakt/serverlib/config"
+	slibcfg "github.com/teserakt-io/serverlib/config"
 )
 
 func TestDBCfg(t *testing.T) {
@@ -63,7 +63,7 @@ func TestDBCfg(t *testing.T) {
 
 	t.Run("ConnectionString returns an error on unsupported DB type", func(t *testing.T) {
 		cfg := DBCfg{
-			Type: slibcfg.DBType("unknow"),
+			Type: slibcfg.DBType("unknown"),
 		}
 
 		_, err := cfg.ConnectionString()

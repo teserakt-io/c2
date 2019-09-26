@@ -11,22 +11,22 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/olivere/elastic"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
+	sliblog "github.com/teserakt-io/serverlib/log"
 
-	"gitlab.com/teserakt/c2/internal/analytics"
-	"gitlab.com/teserakt/c2/internal/api"
-	"gitlab.com/teserakt/c2/internal/commands"
-	"gitlab.com/teserakt/c2/internal/config"
-	"gitlab.com/teserakt/c2/internal/events"
-	"gitlab.com/teserakt/c2/internal/models"
-	"gitlab.com/teserakt/c2/internal/protocols"
-	"gitlab.com/teserakt/c2/internal/services"
-	e4 "gitlab.com/teserakt/e4common"
-	sliblog "gitlab.com/teserakt/serverlib/log"
+	"github.com/teserakt-io/c2/internal/analytics"
+	"github.com/teserakt-io/c2/internal/api"
+	"github.com/teserakt-io/c2/internal/commands"
+	"github.com/teserakt-io/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/events"
+	"github.com/teserakt-io/c2/internal/models"
+	"github.com/teserakt-io/c2/internal/protocols"
+	"github.com/teserakt-io/c2/internal/services"
 )
 
 // C2 Errors
 var (
-	ErrSubscribeExisting = errors.New("Failed to subscribe to existing topics")
+	ErrSubscribeExisting = errors.New("failed to subscribe to existing topics")
 )
 
 // APIEndpoint defines an interface that all C2 api endpoints must implement
@@ -100,7 +100,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	if err != nil {
 		logger.Log("msg", "database creation failed", "error", err)
 
-		return nil, fmt.Errorf("failed to initialise database: %v", err)
+		return nil, fmt.Errorf("failed to initialize database: %v", err)
 	}
 
 	logger.Log("msg", "database open")
@@ -108,7 +108,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	if err := db.Migrate(); err != nil {
 		logger.Log("msg", "database setup failed", "error", err)
 
-		return nil, fmt.Errorf("Database migration failed: %v", err)
+		return nil, fmt.Errorf("database migration failed: %v", err)
 	}
 	logger.Log("msg", "database initialized")
 
@@ -139,6 +139,11 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 
 	eventDispatcher := events.NewDispatcher(logger)
 
+	c2key, err := e4crypto.DeriveSymKey(cfg.DB.Passphrase)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create key from passphrase: %v", err)
+	}
+
 	e4Service := services.NewE4(
 		db,
 		pubSubClient,
@@ -146,7 +151,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		eventDispatcher,
 		events.NewFactory(),
 		log.With(logger, "protocol", "c2"),
-		e4.HashPwd(cfg.DB.Passphrase),
+		c2key,
 	)
 
 	// initialize Observability
@@ -157,7 +162,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	if err := deploymentMode.SetupObservability(); err != nil {
 		logger.Log("msg", "Observability instrumentation setup failed", "error", err)
 
-		return nil, fmt.Errorf("Observability instrumentation setup failed: %v", err)
+		return nil, fmt.Errorf("observability instrumentation setup failed: %v", err)
 	}
 	logger.Log("msg", "Observability instrumentation setup successfully")
 

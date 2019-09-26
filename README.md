@@ -24,7 +24,7 @@ This will boot up MQTT broker, ELK, prometheus, jaeger and oc-agent and then sta
 
 ### Run from docker image
 
-The CI automatically push docker images of C2 and C2Cli after each successfull builds and for each branches.
+The CI automatically push docker images of C2 and C2Cli after each successful builds and for each branches.
 
 List of available C2 and C2Cli images: https://gitlab.com/Teserakt/c2/container_registry
 
@@ -34,7 +34,7 @@ List of available C2 and C2Cli images: https://gitlab.com/Teserakt/c2/container_
 docker run -it --rm  --name c2 -v $(pwd)/configs:/opt/e4/configs -p 5555:5555 -p 8888:8888 registry.gitlab.com/teserakt/c2:<BRANCH_NAME>
 ```
 
-It just require a volume to the configs folder (Depending on your configuration, you may also need to get another volumes for the certificate and keys if they're not in the configs folder) and the ports for the GRPC and HTTP api (which can be independantly removed if not used)
+It just require a volume to the configs folder (Depending on your configuration, you may also need to get another volumes for the certificate and keys if they're not in the configs folder) and the ports for the GRPC and HTTP api (which can be independently removed if not used)
 
 #### Start C2Cli
 ```
@@ -69,8 +69,8 @@ The default configuration should work out of the box.
 
 # Gitlab registry
 
-CI will auto build docker images for devel branch. To be able to pull them, you must firstr login to the gitlab registry.
-For this you first need to generate a personnal access token on gitlab, with the `api` scope:
+CI will auto build docker images for devel branch. To be able to pull them, you must first login to the gitlab registry.
+For this you first need to generate a personal access token on gitlab, with the `api` scope:
 - https://gitlab.com/profile/personal_access_tokens
 
 Prior to use the `docker login` command, we need to configure the docker daemon to use a secret store. Otherwise tokens will get stored in clear in configuration file. (see https://docs.docker.com/engine/reference/commandline/login/#credentials-store for full reference)
@@ -102,7 +102,7 @@ From here, run
 ```
 docker login registry.gitlab.com
 ```
-and enter your gitlab email and the personnal token as password.
+and enter your gitlab email and the personal token as password.
 It should display `Login Succeeded`. You can check it didn't stored clear password with:
 ```
 cat .docker/config.json

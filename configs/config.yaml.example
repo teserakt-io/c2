@@ -41,8 +41,8 @@ db-file: /tmp/e4c2test.sqlite
 db-host: localhost
 ## db name
 db-database: e4
-## passphrase used to derive the key to encrypt keys in the db
-db-encryption-passphrase: meh
+## passphrase used to derive the key to encrypt keys in the db. Min 16 characters
+db-encryption-passphrase: very_secure_pass
 ## TLS connection: enabled || selfsigned || insecure
 db-secure-connection: enabled
 # Postgres database schema

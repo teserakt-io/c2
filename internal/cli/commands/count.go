@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"gitlab.com/teserakt/c2/internal/cli"
-	"gitlab.com/teserakt/c2/pkg/pb"
+	"github.com/teserakt-io/c2/internal/cli"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 type countCommand struct {
@@ -54,11 +54,10 @@ func (c *countCommand) CobraCmd() *cobra.Command {
 }
 
 func (c *countCommand) run(cmd *cobra.Command, args []string) error {
-
 	switch {
-	case c.flags.CountClients == false && c.flags.CountTopics == false:
+	case !c.flags.CountClients && !c.flags.CountTopics:
 		return fmt.Errorf("one of --clients or --topics is required")
-	case c.flags.CountClients == true && c.flags.CountTopics == true:
+	case c.flags.CountClients && c.flags.CountTopics:
 		return fmt.Errorf("only one of --clients or --topics is required")
 	case c.flags.CountClients && len(c.flags.ClientName) > 0:
 		return fmt.Errorf("can't use --client when counting clients")
@@ -117,6 +116,6 @@ func (c *countCommand) run(cmd *cobra.Command, args []string) error {
 
 		return nil
 	default:
-		return fmt.Errorf("unknow operation")
+		return fmt.Errorf("unknown operation")
 	}
 }

@@ -3,7 +3,7 @@ package topics
 import (
 	"github.com/spf13/cobra"
 
-	"gitlab.com/teserakt/c2/internal/cli"
+	"github.com/teserakt-io/c2/internal/cli"
 )
 
 type rootCommand struct {
@@ -15,7 +15,6 @@ var _ cli.Command = (*rootCommand)(nil)
 // NewRootCommand returns a new Client Command, which
 // only exists to group all client related sub commands.
 func NewRootCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
-
 	topicListCommand := NewListCommand(c2ClientFactory)
 	topicCreateCommand := NewCreateCommand(c2ClientFactory)
 	topicRemoveCommand := NewRemoveCommand(c2ClientFactory)

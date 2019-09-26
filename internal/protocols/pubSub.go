@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-//go:generate mockgen -destination=pubSub_mocks.go -package protocols -self_package gitlab.com/teserakt/c2/internal/protocols gitlab.com/teserakt/c2/internal/protocols PubSubClient
+//go:generate mockgen -destination=pubSub_mocks.go -package protocols -self_package github.com/teserakt-io/c2/internal/protocols github.com/teserakt-io/c2/internal/protocols PubSubClient
 
 var (
 	// ErrAlreadyConnected is returned when trying to connect an already connected client

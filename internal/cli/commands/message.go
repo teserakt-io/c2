@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"gitlab.com/teserakt/c2/internal/cli"
-	"gitlab.com/teserakt/c2/pkg/pb"
+	"github.com/teserakt-io/c2/internal/cli"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 type messageCommand struct {
@@ -50,7 +50,6 @@ func (c *messageCommand) CobraCmd() *cobra.Command {
 }
 
 func (c *messageCommand) run(cmd *cobra.Command, args []string) error {
-
 	switch {
 	case len(c.flags.Topic) <= 0:
 		return fmt.Errorf("flag --topic is required")

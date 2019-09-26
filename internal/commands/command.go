@@ -3,10 +3,11 @@ package commands
 import (
 	"errors"
 
-	e4 "gitlab.com/teserakt/e4common"
+	e4 "github.com/teserakt-io/e4go"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 )
 
-//go:generate mockgen -destination=command_mocks.go -package commands -self_package gitlab.com/teserakt/c2/internal/commands gitlab.com/teserakt/c2/internal/commands Command
+//go:generate mockgen -destination=command_mocks.go -package commands -self_package github.com/teserakt-io/c2/internal/commands github.com/teserakt-io/c2/internal/commands Command
 
 var (
 	// ErrEmptyCommand is returned when trying to access content of an empty command
@@ -40,7 +41,7 @@ func (c e4Command) Content() ([]byte, error) {
 	return c[1:], nil
 }
 
-// Protect returns an encrypoted command payload with the given key
+// Protect returns an encrypted command payload with the given key
 func (c e4Command) Protect(key []byte) ([]byte, error) {
-	return e4.Protect(c, key)
+	return e4crypto.ProtectSymKey(c, key)
 }

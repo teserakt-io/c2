@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"gitlab.com/teserakt/c2/pkg/pb"
+	"github.com/teserakt-io/c2/pkg/pb"
 
 	"github.com/golang/mock/gomock"
 
-	"gitlab.com/teserakt/c2/internal/cli"
+	"github.com/teserakt-io/c2/internal/cli"
 )
 
 func newTestListTopicsCommand(clientFactory cli.APIClientFactory) cli.Command {
@@ -83,7 +83,7 @@ func TestListTopics(t *testing.T) {
 		}
 
 		expectedOutput := []byte(strings.Join(expectedTopics, "\n") + "\n")
-		if bytes.Compare(buf.Bytes(), expectedOutput) != 0 {
+		if !bytes.Equal(buf.Bytes(), expectedOutput) {
 			t.Errorf("Expected output to be %s, got %s", expectedOutput, buf.Bytes())
 		}
 	})
@@ -139,7 +139,7 @@ func TestListTopics(t *testing.T) {
 		}
 
 		expectedOutput := []byte(strings.Join(append(expectedTopics1, expectedTopics2...), "\n") + "\n")
-		if bytes.Compare(buf.Bytes(), expectedOutput) != 0 {
+		if !bytes.Equal(buf.Bytes(), expectedOutput) {
 			t.Errorf("Expected output to be %s, got %s", expectedOutput, buf.Bytes())
 		}
 	})
@@ -180,7 +180,7 @@ func TestListTopics(t *testing.T) {
 		}
 
 		expectedOutput := []byte(strings.Join(expectedTopics, "\n") + "\n")
-		if bytes.Compare(buf.Bytes(), expectedOutput) != 0 {
+		if !bytes.Equal(buf.Bytes(), expectedOutput) {
 			t.Errorf("Expected output to be %s, got %s", expectedOutput, buf.Bytes())
 		}
 	})

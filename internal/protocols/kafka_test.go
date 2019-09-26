@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"gitlab.com/teserakt/c2/internal/analytics"
-	"gitlab.com/teserakt/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/analytics"
+	"github.com/teserakt-io/c2/internal/config"
 
 	"github.com/go-kit/kit/log"
 	gomock "github.com/golang/mock/gomock"
