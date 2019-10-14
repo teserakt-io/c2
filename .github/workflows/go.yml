@@ -64,7 +64,7 @@ jobs:
         if: matrix.buildOS == 'linux' # Only build image for linux
         with:
           branch: ${{ github.ref }}
-          binary_path: ./${{ steps.build.outputs.binary-path }}
+          docker_build_args: "--build-arg binary_path=./${{ steps.build.outputs.binary-path }}"
           image_name: "${{ matrix.project }}"
           dockerfile: "./docker/c2/Dockerfile"
           dockerfile_target: "${{ matrix.project }}"
