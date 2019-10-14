@@ -1,7 +1,6 @@
-version: '3.7'
+version: "3.7"
 
 services:
-
   vernemq:
     image: erlio/docker-vernemq
     ports:
@@ -32,8 +31,6 @@ services:
       - ALL
     volumes:
       - esdata1:/usr/share/elasticsearch/data
-    networks:
-      - e4monitoring
 
   kibana:
     image: docker.elastic.co/kibana/kibana:${ELKTAG}
@@ -59,8 +56,6 @@ services:
       - ALL
     depends_on:
       - elasticsearch
-    networks:
-      - e4monitoring
 
   prometheus:
     image: prom/prometheus
@@ -70,15 +65,11 @@ services:
       - ./configs/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
     depends_on:
       - oc-agent
-    networks:
-      - e4monitoring
 
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
       - 127.0.0.1:16686:16686
-    networks:
-      - e4monitoring
 
   oc-agent:
     build: docker/ocagent
@@ -89,8 +80,6 @@ services:
       - ./configs/ocagent.yaml:/etc/ocagent/config.yaml:ro
     depends_on:
       - jaeger
-    networks:
-      - e4monitoring
 
   postgres:
     image: postgres:alpine
@@ -132,6 +121,3 @@ volumes:
   esdata1:
   postgres-data:
   kafkadata1:
-
-networks:
-  e4monitoring:
