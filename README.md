@@ -26,12 +26,12 @@ This will boot up MQTT broker, ELK, prometheus, jaeger and oc-agent and then sta
 
 The CI automatically push docker images of C2 and C2Cli after each successful builds and for each branches.
 
-List of available C2 and C2Cli images: https://gitlab.com/Teserakt/c2/container_registry
+List of available C2 and C2Cli images: https://console.cloud.google.com/gcr/images/teserakt-dev/EU/c2?project=teserakt-dev&authuser=1&gcrImageListsize=30
 
 #### Start C2
 ```
 # Replace <BRANCH_NAME> with the actual branch you want to pull the image from, like master, or devel, or tag...
-docker run -it --rm  --name c2 -v $(pwd)/configs:/opt/e4/configs -p 5555:5555 -p 8888:8888 registry.gitlab.com/teserakt/c2:<BRANCH_NAME>
+docker run -it --rm  --name c2 -v $(pwd)/configs:/opt/e4/configs -p 5555:5555 -p 8888:8888 eu.gcr.io/teserakt-dev/c2:<BRANCH_NAME>
 ```
 
 It just require a volume to the configs folder (Depending on your configuration, you may also need to get another volumes for the certificate and keys if they're not in the configs folder) and the ports for the GRPC and HTTP api (which can be independently removed if not used)
@@ -43,7 +43,7 @@ docker run -it --rm \
     -v $(pwd)/configs/c2-cert.pem:/opt/c2/c2-cert.pem \
     -e C2_API_ENDPOINT=c2:5555 \
     -e C2_API_CERT=/opt/c2/c2-cert.pem \
-    registry.gitlab.com/teserakt/c2/c2cli:<BRANCH_NAME> <command>
+    eu.gcr.io/teserakt-dev/c2cli:<BRANCH_NAME> <command>
 ```
 
 It requires a valid certificate C2 certificate. Both server endpoint and certificate path can be specified with the `-e` flag.
@@ -67,52 +67,12 @@ The default configuration should work out of the box.
 - Release with `scripts/release.sh` (in branch master only).
 
 
-# Gitlab registry
+# GCP registry
 
-CI will auto build docker images for devel branch. To be able to pull them, you must first login to the gitlab registry.
-For this you first need to generate a personal access token on gitlab, with the `api` scope:
-- https://gitlab.com/profile/personal_access_tokens
-
-Prior to use the `docker login` command, we need to configure the docker daemon to use a secret store. Otherwise tokens will get stored in clear in configuration file. (see https://docs.docker.com/engine/reference/commandline/login/#credentials-store for full reference)
-
-First, install the docker-credential-helpers (the install instructions from their README are outdated, so you can follow those instead...):
+CI will auto build docker images for all branch. To be able to pull them, you must first login to the GCP registry.
+For this you first need to configure docker to be able to authenticate on GCP:
 ```
-go get github.com/docker/docker-credential-helpers...
-cd $GOPATH/src/github.com/docker/docker-credential-helpers/
-# for DBus
-make secretservice
-# for OSX keychain
-make osxkeychain
-cp bin/* $GOPATH/bin/
+gcloud auth configure-docker
 ```
 
-Create or append to `.docker/config.json`:
-
-*DBus secret service:*
-```
-"credsStore": "secretservice",
-```
-*OSX keychain:*
-```
-"credsStore": "osxkeychain",
-```
-
-If you're already logged to a docker registry, remember to run `docker logout` first.
-From here, run
-```
-docker login registry.gitlab.com
-```
-and enter your gitlab email and the personal token as password.
-It should display `Login Succeeded`. You can check it didn't stored clear password with:
-```
-cat .docker/config.json
-# It should have:
-# "auths": {
-#		"registry.gitlab.com": {}
-# }
-# If wrong, it will show:
-# "auths": {
-#		"registry.gitlab.com": {"auth": "<b64 string with username/password>"}
-# }
-# Logout, check config & helpers installation, and retry login again
-```
+From here, you are able to `docker pull eu.gcr.io/teserakt-dev/<image>:<version>`
