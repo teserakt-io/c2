@@ -72,6 +72,7 @@ The default configuration should work out of the box.
 CI will auto build docker images for all branch. To be able to pull them, you must first login to the GCP registry.
 For this you first need to configure docker to be able to authenticate on GCP:
 ```
+# Make sure your current active config points to teserakt-dev project
 gcloud auth configure-docker
 ```
 
