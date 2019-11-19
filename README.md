@@ -12,23 +12,24 @@ docker-compose up -d
 ./bin/c2
 ```
 
-This will boot up MQTT broker, ELK, prometheus, jaeger and oc-agent and then start up C2.
+This will start the MQTT broker (VerneMQ), Elasticsearch, Kibana, Prometheus, Jaeger, the OpenCensus Agent, and then start up C2.
 
 ### Services list
 
-- [http://localhost:9200]: elasticsearch endpoint
-- [http://localhost:5601]: kibana UI
-- [http://localhost:16686]: jaeger UI
+- [http://localhost:9200]: Elasticsearch endpoint
+- [http://localhost:5601]: Kibana UI
+- [http://localhost:16686]: Jaeger UI
 - [http://localhost:9999]: zPages
-- [http://localhost:9090]: prometheus UI
+- [http://localhost:9090]: Prometheus UI
 
-### Run from docker image
+### Run from Docker image
 
-The CI automatically push docker images of C2 and C2Cli after each successful builds and for each branches.
+The CI automatically pushes docker images of C2 and C2CLI after each successful builds and for each branches.
 
-List of available C2 and C2Cli images: https://console.cloud.google.com/gcr/images/teserakt-dev/EU/c2?project=teserakt-dev&authuser=1&gcrImageListsize=30
+List of available C2 and C2CLI images: https://console.cloud.google.com/gcr/images/teserakt-dev/EU/c2?project=teserakt-dev&authuser=1&gcrImageListsize=30
 
 #### Start C2
+
 ```
 # Replace <BRANCH_NAME> with the actual branch you want to pull the image from, like master, or devel, or tag...
 docker run -it --rm  --name c2 -v $(pwd)/configs:/opt/e4/configs -p 5555:5555 -p 8888:8888 eu.gcr.io/teserakt-dev/c2:<BRANCH_NAME>
@@ -69,8 +70,9 @@ The default configuration should work out of the box.
 
 # GCP registry
 
-CI will auto build docker images for all branch. To be able to pull them, you must first login to the GCP registry.
-For this you first need to configure docker to be able to authenticate on GCP:
+CI will automatically build Docker images for all branches. To be able to pull them, you must first login to the GCP registry.
+For this you first need to configure Docker to be able to authenticate on GCP:
+
 ```
 # Make sure your current active config points to teserakt-dev project
 gcloud auth configure-docker
