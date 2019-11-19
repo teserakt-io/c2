@@ -120,6 +120,7 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 		return ErrValidation{fmt.Errorf("inconsistent E4 ID/Name: %v", err)}
 	}
 
+	// TODO: validate either pubkey or symkey
 	if err := e4crypto.ValidateSymKey(key); err != nil {
 		return ErrValidation{fmt.Errorf("invalid key: %v", err)}
 	}

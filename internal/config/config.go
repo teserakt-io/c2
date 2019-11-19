@@ -11,6 +11,8 @@ type Config struct {
 	IsProd  bool
 	Monitor bool
 
+	Crypto CryptoCfg
+
 	GRPC ServerCfg
 	HTTP HTTPServerCfg
 
@@ -124,6 +126,12 @@ type ESCfg struct {
 	enableMessageLogging bool
 	C2LogsIndexName      string
 	MessageIndexName     string
+}
+
+// CryptoCfg holds the crypto configuration
+type CryptoCfg struct {
+	SymmetricOnly    bool
+	C2PrivateKeyPath string
 }
 
 // IsC2LoggingEnabled indicate whenever C2 logging is enabled in configuration
