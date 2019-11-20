@@ -72,7 +72,7 @@ func (s *httpServer) ListenAndServe(ctx context.Context) error {
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(creds), grpc.WithStatsHandler(&ocgrpc.ClientHandler{})}
 	err = pb.RegisterC2HandlerFromEndpoint(ctx, httpMux, s.cfg.GRPCAddr, opts)
 	if err != nil {
-		return fmt.Errorf("failed to register http listener : %v", err)
+		return fmt.Errorf("failed to register http listener: %v", err)
 	}
 
 	och := &ochttp.Handler{Handler: httpMux}

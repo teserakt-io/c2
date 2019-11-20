@@ -35,7 +35,7 @@ func (cfg *Config) ViperCfgFields() []slibcfg.ViperCfgField {
 		{&cfg.IsProd, "production", slibcfg.ViperBool, false, ""},
 
 		{&cfg.IsProd, "crypto-mode", slibcfg.ViperString, "symkey", "E4C2_CRYPTO_MODE"},
-		{&cfg.IsProd, "crypto-key", slibcfg.ViperRelativePath, "symkey", "E4C2_CRYPTO_KEY"},
+		{&cfg.IsProd, "crypto-key", slibcfg.ViperRelativePath, "", "E4C2_CRYPTO_KEY"},
 
 		{&cfg.GRPC.Addr, "grpc-host-port", slibcfg.ViperString, "0.0.0.0:5555", "E4C2_GRPC_HOST_PORT"},
 		{&cfg.GRPC.Cert, "grpc-cert", slibcfg.ViperRelativePath, "", "E4C2_GRPC_CERT"},

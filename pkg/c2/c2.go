@@ -2,8 +2,10 @@ package c2
 
 import (
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	stdlog "log"
 	"os"
 	"os/signal"
@@ -63,6 +65,17 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	var err error
 	var esClient *elastic.Client
 
+	var privateKey []byte
+	if cfg.Crypto.Mode == config.PubKey {
+		privateKey, err = ioutil.ReadFile(cfg.Crypto.C2PrivateKeyPath)
+		if err != nil {
+			return nil, err
+		}
+		if g, w := len(privateKey), ed25519.PrivateKeySize; g != w {
+			return nil, fmt.Errorf("invalid private key length, expected %d, got %d", g, w)
+		}
+	}
+
 	if cfg.ES.Enable {
 		esClient, err = elastic.NewClient(
 			elastic.SetURL(cfg.ES.URLs...),
@@ -89,10 +102,10 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 
 	switch {
 	case cfg.DB.SecureConnection.IsInsecure():
-		logger.Log("msg", "Unencrypted database connection.")
+		logger.Log("msg", "ynencrypted database connection.")
 		fmt.Fprintf(os.Stderr, "WARNING: Unencrypted database connection. We do not recommend this setup.\n")
 	case cfg.DB.SecureConnection.IsSelfSigned():
-		logger.Log("msg", "Self signed certificate used. We do not recommend this setup.")
+		logger.Log("msg", "self-signed certificate used. We do not recommend this setup.")
 		fmt.Fprintf(os.Stderr, "WARNING: Self-signed connection to database. We do not recommend this setup.\n")
 	}
 
@@ -162,11 +175,11 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		deploymentMode = analytics.Development
 	}
 	if err := deploymentMode.SetupObservability(); err != nil {
-		logger.Log("msg", "Observability instrumentation setup failed", "error", err)
+		logger.Log("msg", "observability instrumentation setup failed", "error", err)
 
 		return nil, fmt.Errorf("observability instrumentation setup failed: %v", err)
 	}
-	logger.Log("msg", "Observability instrumentation setup successfully")
+	logger.Log("msg", "observability instrumentation setup successfully")
 
 	return &C2{
 		cfg:             cfg,
@@ -175,6 +188,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		e4Service:       e4Service,
 		pubSubClient:    pubSubClient,
 		eventDispatcher: eventDispatcher,
+		privateKey:      privateKey,
 	}, nil
 }
 
