@@ -18,7 +18,6 @@ require (
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
 	github.com/olivere/elastic v6.2.21+incompatible
-	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
 	github.com/teserakt-io/e4go v0.0.0-20190912121911-ef9603112859

@@ -72,12 +72,13 @@ services:
       - 127.0.0.1:16686:16686
 
   oc-agent:
-    build: docker/ocagent
+    image: omnition/opencensus-agent:0.1.11
     ports:
       - 127.0.0.1:9999:9999 # expose zPages (from custom port defined in configs/ocagent.yaml)
       - 127.0.0.1:55678:55678
     volumes:
       - ./configs/ocagent.yaml:/etc/ocagent/config.yaml:ro
+    command: "-c /etc/ocagent/config.yaml"
     depends_on:
       - jaeger
 

@@ -19,6 +19,9 @@ type Config struct {
 
 	DB DBCfg
 
+	OpencensusSampleAll bool
+	OpencensusAddress string
+
 	ES ESCfg
 }
 
@@ -62,6 +65,9 @@ func (cfg *Config) ViperCfgFields() []slibcfg.ViperCfgField {
 		{&cfg.DB.Password, "db-password", slibcfg.ViperString, "", "E4C2_DB_PASSWORD"},
 		{&cfg.DB.Passphrase, "db-encryption-passphrase", slibcfg.ViperString, "", "E4C2_DB_ENCRYPTION_PASSPHRASE"},
 		{&cfg.DB.SecureConnection, "db-secure-connection", slibcfg.ViperDBSecureConnection, slibcfg.DBSecureConnectionEnabled, "E4C2_DB_SECURE_CONNECTION"},
+
+		{&cfg.OpencensusAddress, "oc-agent-addr", slibcfg.ViperString, "localhost:55678", "C2AE_OC_ENDPOINT"},
+		{&cfg.OpencensusSampleAll, "oc-sample-all", slibcfg.ViperBool, true, ""},
 
 		{&cfg.ES.Enable, "es-enable", slibcfg.ViperBool, false, "E4C2_ES_ENABLE"},
 		{&cfg.ES.URLs, "es-urls", slibcfg.ViperStringSlice, "", "E4C2_ES_URLS"},
