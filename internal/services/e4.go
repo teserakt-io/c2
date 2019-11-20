@@ -81,7 +81,7 @@ type e4impl struct {
 	pubSubClient    protocols.PubSubClient
 	commandFactory  commands.Factory
 	logger          log.Logger
-	keyenckey       []byte
+	dbEncKey        []byte
 	eventDispatcher events.Dispatcher
 	eventFactory    events.Factory
 }
@@ -96,7 +96,7 @@ func NewE4(
 	eventDispatcher events.Dispatcher,
 	eventFactory events.Factory,
 	logger log.Logger,
-	keyenckey []byte,
+	DBEncKey []byte,
 ) E4 {
 	return &e4impl{
 		db:              db,
@@ -105,7 +105,7 @@ func NewE4(
 		eventDispatcher: eventDispatcher,
 		eventFactory:    eventFactory,
 		logger:          logger,
-		keyenckey:       keyenckey,
+		dbEncKey:        DBEncKey,
 	}
 }
 
@@ -125,7 +125,7 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 		return ErrValidation{fmt.Errorf("invalid key: %v", err)}
 	}
 
-	protectedkey, err := e4crypto.Encrypt(s.keyenckey, nil, key)
+	protectedkey, err := e4crypto.Encrypt(s.dbEncKey, nil, key)
 	if err != nil {
 		logger.Log("msg", "failed to encrypt key", "error", err)
 		return ErrInternal{}
@@ -184,7 +184,7 @@ func (s *e4impl) NewTopicClient(ctx context.Context, id []byte, topic string) er
 		return ErrInternal{}
 	}
 
-	clearTopicKey, err := topicKey.DecryptKey(s.keyenckey)
+	clearTopicKey, err := topicKey.DecryptKey(s.dbEncKey)
 	if err != nil {
 		logger.Log("msg", "failed to decrypt topicKey", "error", err)
 		return ErrInternal{}
@@ -308,7 +308,7 @@ func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
 
 	key := e4crypto.RandomKey()
 
-	protectedKey, err := e4crypto.Encrypt(s.keyenckey[:], nil, key)
+	protectedKey, err := e4crypto.Encrypt(s.dbEncKey[:], nil, key)
 	if err != nil {
 		logger.Log("msg", "failed to encrypt key", "error", err)
 		return ErrInternal{}
@@ -371,7 +371,7 @@ func (s *e4impl) SendMessage(ctx context.Context, topic, msg string) error {
 		return ErrInternal{}
 	}
 
-	clearTopicKey, err := topicKey.DecryptKey(s.keyenckey)
+	clearTopicKey, err := topicKey.DecryptKey(s.dbEncKey)
 	if err != nil {
 		logger.Log("msg", "failed to decrypt topicKey", "error", err)
 		return ErrInternal{}
@@ -421,7 +421,7 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 		return ErrInternal{}
 	}
 
-	protectedkey, err := e4crypto.Encrypt(s.keyenckey, nil, newKey)
+	protectedkey, err := e4crypto.Encrypt(s.dbEncKey, nil, newKey)
 	if err != nil {
 		return ErrInternal{}
 	}
@@ -608,7 +608,7 @@ func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Comma
 	ctx, span := trace.StartSpan(ctx, "e4.sendCommandToClient")
 	defer span.End()
 
-	clearKey, err := client.DecryptKey(s.keyenckey)
+	clearKey, err := client.DecryptKey(s.dbEncKey)
 	if err != nil {
 		return fmt.Errorf("failed to decrypt client: %v", err)
 	}

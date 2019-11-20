@@ -43,6 +43,8 @@ type C2 struct {
 	pubSubClient    protocols.PubSubClient
 	eventDispatcher events.Dispatcher
 
+	privateKey []byte
+
 	endpoints []APIEndpoint
 }
 
@@ -139,7 +141,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 
 	eventDispatcher := events.NewDispatcher(logger)
 
-	c2key, err := e4crypto.DeriveSymKey(cfg.DB.Passphrase)
+	DBEncKey, err := e4crypto.DeriveSymKey(cfg.DB.Passphrase)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create key from passphrase: %v", err)
 	}
@@ -151,7 +153,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		eventDispatcher,
 		events.NewFactory(),
 		log.With(logger, "protocol", "c2"),
-		c2key,
+		DBEncKey,
 	)
 
 	// initialize Observability
