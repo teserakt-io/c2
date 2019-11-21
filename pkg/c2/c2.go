@@ -106,7 +106,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 
 	switch {
 	case cfg.DB.SecureConnection.IsInsecure():
-		logger.Log("msg", "ynencrypted database connection.")
+		logger.Log("msg", "unencrypted database connection.")
 		fmt.Fprintf(os.Stderr, "WARNING: Unencrypted database connection. We do not recommend this setup.\n")
 	case cfg.DB.SecureConnection.IsSelfSigned():
 		logger.Log("msg", "self-signed certificate used. We do not recommend this setup.")
