@@ -76,6 +76,10 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		}
 	}
 
+	if cfg.Crypto.Mode != config.SymKey {
+		return nil, fmt.Errorf("invalid crypto mode")
+	}
+
 	if cfg.ES.Enable {
 		esClient, err = elastic.NewClient(
 			elastic.SetURL(cfg.ES.URLs...),
