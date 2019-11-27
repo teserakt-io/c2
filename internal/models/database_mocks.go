@@ -5,6 +5,8 @@
 package models
 
 import (
+	context "context"
+	sql "database/sql"
 	gomock "github.com/golang/mock/gomock"
 	gorm "github.com/jinzhu/gorm"
 	reflect "reflect"
@@ -33,6 +35,21 @@ func (m *MockDatabase) EXPECT() *MockDatabaseMockRecorder {
 	return m.recorder
 }
 
+// BeginTx mocks base method
+func (m *MockDatabase) BeginTx(arg0 context.Context, arg1 *sql.TxOptions) (Database, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BeginTx", arg0, arg1)
+	ret0, _ := ret[0].(Database)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BeginTx indicates an expected call of BeginTx
+func (mr *MockDatabaseMockRecorder) BeginTx(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginTx", reflect.TypeOf((*MockDatabase)(nil).BeginTx), arg0, arg1)
+}
+
 // Close mocks base method
 func (m *MockDatabase) Close() error {
 	m.ctrl.T.Helper()
@@ -45,6 +62,20 @@ func (m *MockDatabase) Close() error {
 func (mr *MockDatabaseMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockDatabase)(nil).Close))
+}
+
+// CommitTx mocks base method
+func (m *MockDatabase) CommitTx() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CommitTx")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CommitTx indicates an expected call of CommitTx
+func (mr *MockDatabaseMockRecorder) CommitTx() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CommitTx", reflect.TypeOf((*MockDatabase)(nil).CommitTx))
 }
 
 // Connection mocks base method
@@ -338,6 +369,20 @@ func (m *MockDatabase) Migrate() error {
 func (mr *MockDatabaseMockRecorder) Migrate() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Migrate", reflect.TypeOf((*MockDatabase)(nil).Migrate))
+}
+
+// Rollback mocks base method
+func (m *MockDatabase) Rollback() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Rollback")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Rollback indicates an expected call of Rollback
+func (mr *MockDatabaseMockRecorder) Rollback() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Rollback", reflect.TypeOf((*MockDatabase)(nil).Rollback))
 }
 
 // UnlinkClientTopic mocks base method

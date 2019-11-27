@@ -13,6 +13,7 @@ func TestDBCfg(t *testing.T) {
 		expectedHost := "some/host:port"
 		expectedUsername := "username"
 		expectedPassword := "password"
+		expectedSchema := "schema"
 
 		cfg := DBCfg{
 			Type:     slibcfg.DBTypePostgres,
@@ -20,14 +21,16 @@ func TestDBCfg(t *testing.T) {
 			Host:     expectedHost,
 			Username: expectedUsername,
 			Password: expectedPassword,
+			Schema:   expectedSchema,
 		}
 
 		expectedConnectionString := fmt.Sprintf(
-			"host=%s dbname=%s user=%s password=%s %s",
+			"host=%s dbname=%s user=%s password=%s search_path=%s %s",
 			expectedHost,
 			expectedDatabase,
 			expectedUsername,
 			expectedPassword,
+			expectedSchema,
 			slibcfg.PostgresSSLModeFull,
 		)
 
