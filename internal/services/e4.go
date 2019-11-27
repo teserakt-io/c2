@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"fmt"
 
@@ -37,6 +38,11 @@ import (
 	- Range = if the item in question has offset/count limits, this specifier
 	          is included.
 */
+
+// NewTopicBatchSize is the maximum number of topic clients pulled from the database at a time
+// when sending them the new topic key.
+// Having it too low will create too many queries, and too high will create too slow queries.
+var NewTopicBatchSize = 500
 
 // IDNamePair stores an E4 client ID and names, omitting the key
 type IDNamePair struct {
@@ -313,11 +319,74 @@ func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
 		return ErrInternal{}
 	}
 
-	if err := s.db.InsertTopicKey(topic, protectedKey); err != nil {
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		logger.Log("msg", "failed to begin transaction", "error", err)
+		return ErrInternal{}
+	}
+
+	if err := tx.InsertTopicKey(topic, protectedKey); err != nil {
 		logger.Log("msg", "insertTopicKey failed", "error", err)
+		if err := tx.Rollback(); err != nil {
+			logger.Log("msg", "failed to rollback transaction", "error", err)
+		}
 		return ErrInternal{}
 	}
 	logger.Log("msg", "insertTopicKey succeeded")
+
+	command, err := s.commandFactory.CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), key)
+	if err != nil {
+		logger.Log("msg", "failed to create setTopicKey command", "error", err)
+		if err := tx.Rollback(); err != nil {
+			logger.Log("msg", "failed to rollback transaction", "error", err)
+		}
+		return ErrInternal{}
+	}
+
+	clientCount, err := tx.CountClientsForTopic(topic)
+	if err != nil {
+		logger.Log("msg", "failed to count topic clients", "error", err)
+		if err := tx.Rollback(); err != nil {
+			logger.Log("msg", "failed to rollback transaction", "error", err)
+		}
+		return ErrInternal{}
+	}
+
+	if err := tx.CommitTx(); err != nil {
+		logger.Log("msg", "failed to commit transaction", "error", err)
+		return ErrInternal{}
+	}
+
+	// Send the new topic key to all its subscribed clients.
+	// Doing 500 clients batch. If any error happen and prevent the
+	// key to be sent to the client, the error is just logged for now
+	// with all metadata to allow reforging and publishing the message.
+	ctx, sendKeySpan := trace.StartSpan(ctx, "e4.NewTopic.SendKeyToClients")
+	offset := 0
+	for offset < clientCount {
+		ctx, sendKeySpanBatch := trace.StartSpan(ctx, "e4.NewTopic.SendKeyToClientsBatch")
+		clients, err := s.db.GetClientsForTopic(topic, offset, NewTopicBatchSize)
+		if err != nil {
+			logger.Log("msg", "failed to retrieve topic clients", "error", err, "offset", offset, "batchSize", NewTopicBatchSize)
+
+			continue
+		}
+
+		for _, client := range clients {
+			err = s.sendCommandToClient(ctx, command, client)
+			if err != nil {
+				logger.Log("msg", "sendCommandToClient failed for setTopicKey", "error", err, "client", client.Name)
+
+				continue
+			}
+		}
+
+		logger.Log("msg", "successfully sent new topic key to clients", "offset", offset, "batchSize", NewTopicBatchSize)
+		offset += NewTopicBatchSize
+
+		sendKeySpanBatch.End()
+	}
+	sendKeySpan.End()
 
 	err = s.pubSubClient.SubscribeToTopic(ctx, topic) // Monitoring
 	if err != nil {
