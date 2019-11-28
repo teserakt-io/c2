@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/go-kit/kit/log"
+	log "github.com/sirupsen/logrus"
 	"go.opencensus.io/trace"
 
 	"github.com/teserakt-io/c2/internal/analytics"
@@ -48,7 +48,7 @@ type MQTTToken interface {
 type mqttPubSubClient struct {
 	mqtt              MQTTClient
 	config            config.MQTTCfg
-	logger            log.Logger
+	logger            log.FieldLogger
 	monitor           analytics.MessageMonitor
 	waitTimeout       time.Duration
 	disconnectTimeout uint // idk why they used uint here instead of a time.Duration. They do convert internally tho.
@@ -59,7 +59,7 @@ var _ PubSubClient = (*mqttPubSubClient)(nil)
 // NewMQTTPubSubClient creates and connect a new PubSubClient over MQTT
 func NewMQTTPubSubClient(
 	cfg config.MQTTCfg,
-	logger log.Logger,
+	logger log.FieldLogger,
 	monitor analytics.MessageMonitor,
 ) PubSubClient {
 	// TODO: secure connection to broker
@@ -82,20 +82,25 @@ func NewMQTTPubSubClient(
 }
 
 func (c *mqttPubSubClient) Connect() error {
-	c.logger.Log("msg", "mqtt parameters", "broker", c.config.Broker, "id", c.config.ID, "username", c.config.Username)
+	c.logger.WithFields(log.Fields{
+		"broker":   c.config.Broker,
+		"id":       c.config.ID,
+		"username": c.config.Username,
+	}).Debug("mqtt parameters")
+
 	token := c.mqtt.Connect()
 	// WaitTimeout instead of Wait or this will block indefinitely the execution if the server is down
 	if !token.WaitTimeout(c.waitTimeout) {
-		c.logger.Log("msg", "connection failed", "error", ErrMQTTTimeout)
+		c.logger.WithError(ErrMQTTTimeout).Error("connection timeout")
 		return ErrMQTTTimeout
 	}
 
 	if token.Error() != nil {
-		c.logger.Log("msg", "connection failed", "error", token.Error())
+		c.logger.WithError(token.Error()).Error("connection failed")
 		return token.Error()
 	}
 
-	c.logger.Log("msg", "connected to broker")
+	c.logger.Info("connected to broker")
 
 	return nil
 }
@@ -110,13 +115,15 @@ func (c *mqttPubSubClient) SubscribeToTopics(ctx context.Context, topics []strin
 	ctx, span := trace.StartSpan(ctx, "mqtt.SubscribeToTopics")
 	defer span.End()
 
+	logger := c.logger.WithField("topicCount", len(topics))
+
 	if !c.monitor.Enabled() {
-		c.logger.Log("msg", "monitoring is not enabled, skipping topics subscription")
+		logger.Warn("monitoring is not enabled, skipping topics subscription")
 		return nil
 	}
 
 	if len(topics) == 0 {
-		c.logger.Log("msg", "no topic provided, no subscribe request sent")
+		logger.Warn("no topic provided, no subscribe request sent")
 		return nil
 	}
 
@@ -130,15 +137,14 @@ func (c *mqttPubSubClient) SubscribeToTopics(ctx context.Context, topics []strin
 		c.logMessage(ctx, m)
 	})
 	if !token.WaitTimeout(c.waitTimeout) {
-		c.logger.Log("msg", "subscribe-multiple failed", "topics", len(topics), "error", ErrMQTTTimeout)
-
+		logger.WithError(ErrMQTTTimeout).Error("subscribe-multiple timeout")
 		return ErrMQTTTimeout
 	}
 	if token.Error() != nil {
-		c.logger.Log("msg", "subscribe-multiple failed", "topics", len(topics), "error", token.Error())
+		logger.WithError(token.Error()).Error("subscribe-multiple failed")
 		return token.Error()
 	}
-	c.logger.Log("msg", "subscribe-multiple succeeded", "topics", len(topics))
+	logger.Info("subscribe-multiple succeeded")
 
 	return nil
 }
@@ -147,28 +153,26 @@ func (c *mqttPubSubClient) SubscribeToTopic(ctx context.Context, topic string) e
 	ctx, span := trace.StartSpan(ctx, "mqtt.SubscribeToTopic")
 	defer span.End()
 
+	logger := c.logger.WithField("topic", topic)
+
 	// Only index message if monitoring enabled, i.e. if esClient is defined
 	if !c.monitor.Enabled() {
-		c.logger.Log("msg", "monitoring is not enabled, skipping topic subscription")
+		logger.Warn("monitoring is not enabled, skipping topic subscription")
 		return nil
 	}
-
-	logger := log.With(c.logger, "protocol", "mqtt")
 
 	token := c.mqtt.Subscribe(topic, byte(c.config.QoSSub), func(mqttClient mqtt.Client, message mqtt.Message) {
 		c.logMessage(ctx, message)
 	})
 	if !token.WaitTimeout(c.waitTimeout) {
-		logger.Log("msg", "subscribe failed", "topic", topic, "error", ErrMQTTTimeout)
-
+		logger.WithError(ErrMQTTTimeout).Error("subscribe timeout")
 		return ErrMQTTTimeout
 	}
 	if token.Error() != nil {
-		logger.Log("msg", "subscribe failed", "topic", topic, "error", token.Error())
-
+		logger.WithError(token.Error()).Error("subscribe failed")
 		return token.Error()
 	}
-	logger.Log("msg", "subscribe succeeded", "topic", topic)
+	logger.Info("subscribe succeeded")
 
 	return nil
 }
@@ -177,24 +181,25 @@ func (c *mqttPubSubClient) UnsubscribeFromTopic(ctx context.Context, topic strin
 	_, span := trace.StartSpan(ctx, "mqtt.UnsubscribeFromTopic")
 	defer span.End()
 
+	logger := c.logger.WithField("topic", topic)
+
 	// Only index message if monitoring enabled, i.e. if esClient is defined
 	if !c.monitor.Enabled() {
+		logger.Warn("monitoring is not enabled, skipping topic unsubscription")
 		return nil
 	}
 
-	logger := log.With(c.logger, "protocol", "mqtt")
-
 	token := c.mqtt.Unsubscribe(topic)
 	if !token.WaitTimeout(c.waitTimeout) {
-		logger.Log("msg", "unsubscribe failed", "topic", topic, "error", ErrMQTTTimeout)
+		logger.WithError(ErrMQTTTimeout).Error("unsubscribe timeout")
 
 		return ErrMQTTTimeout
 	}
 	if token.Error() != nil {
-		logger.Log("msg", "unsubscribe failed", "topic", topic, "error", token.Error())
+		logger.WithError(token.Error()).Error("unsubscribe failed")
 		return token.Error()
 	}
-	logger.Log("msg", "unsubscribe succeeded", "topic", topic)
+	logger.Info("unsubscribe succeeded")
 
 	return nil
 }
@@ -203,21 +208,23 @@ func (c *mqttPubSubClient) Publish(ctx context.Context, payload []byte, topic st
 	_, span := trace.StartSpan(ctx, "mqtt.Publish")
 	defer span.End()
 
-	logger := log.With(c.logger, "protocol", "mqtt")
+	logger := log.WithFields(log.Fields{
+		"topic": topic,
+		"qos":   qos,
+	})
 
 	payloadStr := string(payload)
 
 	token := c.mqtt.Publish(topic, qos, true, payloadStr)
 	if !token.WaitTimeout(c.waitTimeout) {
-		logger.Log("msg", "publish failed", "topic", topic, "error", ErrMQTTTimeout)
-
+		logger.WithError(ErrMQTTTimeout).Error("publish timeout")
 		return ErrMQTTTimeout
 	}
 	if token.Error() != nil {
-		logger.Log("msg", "publish failed", "topic", topic, "error", token.Error())
+		logger.WithError(token.Error()).Error("publish failed")
 		return token.Error()
 	}
-	logger.Log("msg", "publish succeeded", "topic", topic)
+	logger.Info("publish succeeded")
 
 	return nil
 }

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-kit/kit/log"
 	"github.com/olivere/elastic"
+	log "github.com/sirupsen/logrus"
 )
 
 // MessageMonitor defines an interface able to monitor C2 messages
@@ -19,7 +19,7 @@ type MessageMonitor interface {
 
 type esMessageMonitor struct {
 	esClient    *elastic.Client
-	logger      log.Logger
+	logger      log.FieldLogger
 	enabled     bool
 	esIndexName string
 }
@@ -27,7 +27,7 @@ type esMessageMonitor struct {
 var _ MessageMonitor = (*esMessageMonitor)(nil)
 
 // NewESMessageMonitor creates a new message monitor backed by elasticSearch
-func NewESMessageMonitor(esClient *elastic.Client, logger log.Logger, enabled bool, esIndexName string) MessageMonitor {
+func NewESMessageMonitor(esClient *elastic.Client, logger log.FieldLogger, enabled bool, esIndexName string) MessageMonitor {
 	return &esMessageMonitor{
 		esClient:    esClient,
 		logger:      logger,
@@ -42,7 +42,7 @@ func (m *esMessageMonitor) Enabled() bool {
 
 func (m *esMessageMonitor) OnMessage(ctx context.Context, msg LoggedMessage) {
 	if !m.enabled {
-		m.logger.Log("msg", "message monitoring is not enabled, skipping logging.")
+		m.logger.Warn("message monitoring is not enabled, skipping logging.")
 		return
 	}
 
@@ -51,9 +51,9 @@ func (m *esMessageMonitor) OnMessage(ctx context.Context, msg LoggedMessage) {
 		BodyJson(msg).
 		Do(ctx)
 	if err != nil {
-		m.logger.Log("msg", "failed to send LoggedMessage to elasticSearch", "error", err, "loggedMessage", msg)
+		m.logger.WithFields(log.Fields{"error": err, "loggedMessage": msg}).Error("failed to send LoggedMessage to elasticSearch")
 		return
 	}
 	// This log produce lots of entries when enabled over a busy broker. Enable with care :)
-	//m.logger.Log("msg", "successfully logged message to elasticsearch", "index", index)
+	m.logger.WithField("index", index).Debug("successfully logged message to elasticsearch")
 }

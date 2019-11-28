@@ -1,19 +1,21 @@
 package events
 
 import (
+	"io/ioutil"
 	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/go-kit/kit/log"
+	log "github.com/sirupsen/logrus"
 )
 
 func TestDispatcher(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	logger := log.NewNopLogger()
+	logger := log.New()
+	logger.SetOutput(ioutil.Discard)
 
 	t.Run("Dispatcher register and hold listeners", func(t *testing.T) {
 		dispatcher := NewDispatcher(logger)

@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/go-kit/kit/log"
+	log "github.com/sirupsen/logrus"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 	"go.opencensus.io/trace"
 
@@ -80,7 +80,7 @@ type e4impl struct {
 	db              models.Database
 	pubSubClient    protocols.PubSubClient
 	commandFactory  commands.Factory
-	logger          log.Logger
+	logger          log.FieldLogger
 	keyenckey       []byte
 	eventDispatcher events.Dispatcher
 	eventFactory    events.Factory
@@ -95,7 +95,7 @@ func NewE4(
 	commandFactory commands.Factory,
 	eventDispatcher events.Dispatcher,
 	eventFactory events.Factory,
-	logger log.Logger,
+	logger log.FieldLogger,
 	keyenckey []byte,
 ) E4 {
 	return &e4impl{
@@ -113,10 +113,14 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 	_, span := trace.StartSpan(ctx, "e4.NewClient")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "newClient", "name", name, "id", prettyID(id))
+	logger := s.logger.WithFields(log.Fields{
+		"name": name,
+		"id":   prettyID(id),
+	})
+
 	newID, err := ValidateE4NameOrIDPair(name, id)
 	if err != nil {
-		logger.Log("msg", "Inconsistent E4 ID/Alias, refusing insert", "error", err)
+		logger.WithError(err).Error("Inconsistent E4 ID/Alias, refusing insert")
 		return ErrValidation{fmt.Errorf("inconsistent E4 ID/Name: %v", err)}
 	}
 
@@ -126,16 +130,16 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 
 	protectedkey, err := e4crypto.Encrypt(s.keyenckey, nil, key)
 	if err != nil {
-		logger.Log("msg", "failed to encrypt key", "error", err)
+		logger.WithError(err).Error("failed to encrypt key")
 		return ErrInternal{}
 	}
 
 	if err := s.db.InsertClient(name, newID, protectedkey); err != nil {
-		logger.Log("msg", "insertClient failed", "error", err)
+		logger.WithError(err).Error("insertClient failed")
 		return ErrInternal{}
 	}
 
-	logger.Log("msg", "succeeded")
+	logger.Info("succeeded")
 
 	return nil
 }
@@ -144,18 +148,18 @@ func (s *e4impl) RemoveClient(ctx context.Context, id []byte) error {
 	_, span := trace.StartSpan(ctx, "e4.RemoveClient")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "removeClient", "id", prettyID(id))
+	logger := s.logger.WithField("id", prettyID(id))
 
 	err := s.db.DeleteClientByID(id)
 	if err != nil {
-		logger.Log("msg", "deleteClient failed", "error", err)
+		logger.WithError(err).Error("deleteClient failed")
 		if models.IsErrRecordNotFound(err) {
 			return ErrClientNotFound{}
 		}
 		return ErrInternal{}
 	}
 
-	logger.Log("msg", "succeeded")
+	logger.Info("succeeded")
 	return nil
 }
 
@@ -163,11 +167,14 @@ func (s *e4impl) NewTopicClient(ctx context.Context, id []byte, topic string) er
 	ctx, span := trace.StartSpan(ctx, "e4.NewTopicClient")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "newTopicClient", "id", prettyID(id), "topic", topic)
+	logger := s.logger.WithFields(log.Fields{
+		"id":    prettyID(id),
+		"topic": topic,
+	})
 
 	client, err := s.db.GetClientByID(id)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve client", "error", err)
+		logger.WithError(err).Error("failed to retrieve client")
 		if models.IsErrRecordNotFound(err) {
 			return ErrClientNotFound{}
 		}
@@ -176,7 +183,7 @@ func (s *e4impl) NewTopicClient(ctx context.Context, id []byte, topic string) er
 
 	topicKey, err := s.db.GetTopicKey(topic)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve topicKey", "error", err)
+		logger.WithError(err).Error("failed to retrieve topicKey")
 		if models.IsErrRecordNotFound(err) {
 			return ErrTopicNotFound{}
 		}
@@ -185,35 +192,31 @@ func (s *e4impl) NewTopicClient(ctx context.Context, id []byte, topic string) er
 
 	clearTopicKey, err := topicKey.DecryptKey(s.keyenckey)
 	if err != nil {
-		logger.Log("msg", "failed to decrypt topicKey", "error", err)
+		logger.WithError(err).Error("failed to decrypt topicKey")
 		return ErrInternal{}
 	}
 
 	command, err := s.commandFactory.CreateSetTopicKeyCommand(topicKey.Hash(), clearTopicKey)
 	if err != nil {
-		logger.Log("msg", "failed to create setTopicKey command", "error", err)
+		logger.WithError(err).Error("failed to create setTopicKey command")
 		return ErrInternal{}
 	}
 
 	err = s.sendCommandToClient(ctx, command, client)
 	if err != nil {
-		logger.Log("msg", "sendCommandToClient failed", "error", err)
+		logger.WithError(err).Error("sendCommandToClient failed")
 		return ErrInternal{}
 	}
 
 	err = s.db.LinkClientTopic(client, topicKey)
 	if err != nil {
-		logger.Log("msg", "Database record of client-topic link failed", err)
+		logger.WithError(err).Error("saving client-topic link failed")
 		return ErrInternal{}
 	}
 
 	s.eventDispatcher.Dispatch(s.eventFactory.NewClientSubscribedEvent(client.Name, topic))
 
-	logger.Log(
-		"msg", "succeeded",
-		"clientName", client.Name,
-		"topichash", topicKey.Hash(),
-	)
+	logger.Info("succeeded")
 
 	return nil
 }
@@ -222,11 +225,14 @@ func (s *e4impl) RemoveTopicClient(ctx context.Context, id []byte, topic string)
 	ctx, span := trace.StartSpan(ctx, "e4.RemoveTopicClient")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopicClient", "id", prettyID(id), "topic", topic)
+	logger := s.logger.WithFields(log.Fields{
+		"id":    prettyID(id),
+		"topic": topic,
+	})
 
 	client, err := s.db.GetClientByID(id)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve client", "error", err)
+		logger.WithError(err).Error("failed to retrieve client")
 		if models.IsErrRecordNotFound(err) {
 			return ErrClientNotFound{}
 		}
@@ -235,7 +241,7 @@ func (s *e4impl) RemoveTopicClient(ctx context.Context, id []byte, topic string)
 
 	topicKey, err := s.db.GetTopicKey(topic)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve topicKey", "error", err)
+		logger.WithError(err).Error("failed to retrieve topicKey")
 		if models.IsErrRecordNotFound(err) {
 			return ErrTopicNotFound{}
 		}
@@ -244,25 +250,25 @@ func (s *e4impl) RemoveTopicClient(ctx context.Context, id []byte, topic string)
 
 	command, err := s.commandFactory.CreateRemoveTopicCommand(topicKey.Hash())
 	if err != nil {
-		logger.Log("msg", "failed to create removeTopic command", "error", err)
+		logger.WithError(err).Error("failed to create removeTopic command")
 		return ErrInternal{}
 	}
 
 	err = s.sendCommandToClient(ctx, command, client)
 	if err != nil {
-		logger.Log("msg", "sendCommandToClient failed", "error", err)
+		logger.WithError(err).Error("sendCommandToClient failed")
 		return ErrInternal{}
 	}
 
 	err = s.db.UnlinkClientTopic(client, topicKey)
 	if err != nil {
-		logger.Log("msg", "cannot remove DB record of client-topic link", "error", err)
+		logger.WithError(err).Error("cannot remove DB record of client-topic link")
 		return ErrInternal{}
 	}
 
 	s.eventDispatcher.Dispatch(s.eventFactory.NewClientUnsubscribedEvent(client.Name, topic))
 
-	logger.Log("msg", "succeeded")
+	logger.Info("succeeded")
 
 	return nil
 }
@@ -271,11 +277,11 @@ func (s *e4impl) ResetClient(ctx context.Context, id []byte) error {
 	ctx, span := trace.StartSpan(ctx, "e4.ResetClient")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "resetClient", "id", prettyID(id))
+	logger := s.logger.WithField("id", prettyID(id))
 
 	client, err := s.db.GetClientByID(id)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve client", "error", err)
+		logger.WithError(err).Error("failed to retrieve client")
 		if models.IsErrRecordNotFound(err) {
 			return ErrClientNotFound{}
 		}
@@ -284,17 +290,17 @@ func (s *e4impl) ResetClient(ctx context.Context, id []byte) error {
 
 	command, err := s.commandFactory.CreateResetTopicsCommand()
 	if err != nil {
-		logger.Log("msg", "failed to create resetTopics command", "error", err)
+		logger.WithError(err).Error("failed to create resetTopics command")
 		return ErrInternal{}
 	}
 
 	err = s.sendCommandToClient(ctx, command, client)
 	if err != nil {
-		logger.Log("msg", "sendCommandToClient failed", "error", err)
+		logger.WithError(err).Error("sendCommandToClient failed")
 		return ErrInternal{}
 	}
 
-	logger.Log("msg", "succeeded")
+	logger.Info("succeeded")
 
 	return nil
 }
@@ -303,28 +309,28 @@ func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
 	ctx, span := trace.StartSpan(ctx, "e4.NewTopic")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "newTopic", "topic", topic)
+	logger := s.logger.WithField("topic", topic)
 
 	key := e4crypto.RandomKey()
 
 	protectedKey, err := e4crypto.Encrypt(s.keyenckey[:], nil, key)
 	if err != nil {
-		logger.Log("msg", "failed to encrypt key", "error", err)
+		logger.WithError(err).Error("failed to encrypt key")
 		return ErrInternal{}
 	}
 
 	if err := s.db.InsertTopicKey(topic, protectedKey); err != nil {
-		logger.Log("msg", "insertTopicKey failed", "error", err)
+		logger.WithError(err).Error("insertTopicKey failed")
 		return ErrInternal{}
 	}
-	logger.Log("msg", "insertTopicKey succeeded")
+	logger.Info("insertTopicKey succeeded")
 
 	err = s.pubSubClient.SubscribeToTopic(ctx, topic) // Monitoring
 	if err != nil {
-		logger.Log("msg", "subscribeToTopic failed", "error", err)
+		logger.WithError(err).Error("subscribeToTopic failed")
 		return ErrInternal{}
 	}
-	logger.Log("msg", "subscribeToTopic succeeded")
+	logger.Info("subscribeToTopic succeeded")
 
 	return nil
 }
@@ -333,23 +339,23 @@ func (s *e4impl) RemoveTopic(ctx context.Context, topic string) error {
 	ctx, span := trace.StartSpan(ctx, "e4.RemoveTopic")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "removeTopic", "topic", topic)
+	logger := s.logger.WithField("topic", topic)
 
 	err := s.pubSubClient.UnsubscribeFromTopic(ctx, topic) // Monitoring
 	if err != nil {
-		logger.Log("msg", "unsubscribeFromTopic failed", "error", err)
+		logger.WithError(err).Warn("msg", "unsubscribeFromTopic failed")
 	} else {
-		logger.Log("msg", "unsubscribeFromTopic succeeded")
+		logger.Debug("unsubscribeFromTopic succeeded")
 	}
 
 	if err := s.db.DeleteTopicKey(topic); err != nil {
-		logger.Log("msg", "deleteTopicKey failed", "error", err)
+		logger.WithError(err).Error("deleteTopicKey failed")
 		if models.IsErrRecordNotFound(err) {
 			return ErrTopicNotFound{}
 		}
 		return ErrInternal{}
 	}
-	logger.Log("msg", "succeeded")
+	logger.Info("succeeded")
 
 	return nil
 }
@@ -359,11 +365,11 @@ func (s *e4impl) SendMessage(ctx context.Context, topic, msg string) error {
 	ctx, span := trace.StartSpan(ctx, "e4.SendMessage")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "sendMessage", "topic", topic)
+	logger := s.logger.WithField("topic", topic)
 
 	topicKey, err := s.db.GetTopicKey(topic)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve topicKey", "error", err)
+		logger.WithError(err).Error("failed to retrieve topicKey")
 		if models.IsErrRecordNotFound(err) {
 			return ErrTopicNotFound{}
 		}
@@ -372,22 +378,22 @@ func (s *e4impl) SendMessage(ctx context.Context, topic, msg string) error {
 
 	clearTopicKey, err := topicKey.DecryptKey(s.keyenckey)
 	if err != nil {
-		logger.Log("msg", "failed to decrypt topicKey", "error", err)
+		logger.WithError(err).Error("failed to decrypt topicKey")
 		return ErrInternal{}
 	}
 
 	payload, err := e4crypto.ProtectSymKey([]byte(msg), clearTopicKey)
 	if err != nil {
-		logger.Log("msg", "Protect failed", "error", err)
+		logger.WithError(err).Error("protect failed")
 		return ErrInternal{}
 	}
 	err = s.pubSubClient.Publish(ctx, payload, topic, protocols.QoSAtMostOnce)
 	if err != nil {
-		logger.Log("msg", "publish failed", "error", err)
+		logger.WithError(err).Error("publish failed")
 		return ErrInternal{}
 	}
 
-	logger.Log("msg", "succeeded")
+	logger.Info("succeeded")
 	return nil
 }
 
@@ -396,11 +402,11 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 	ctx, span := trace.StartSpan(ctx, "e4.NewClientKey")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "newClientKey", "id", prettyID(id))
+	logger := s.logger.WithField("id", prettyID(id))
 
 	client, err := s.db.GetClientByID(id)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve client", "error", err)
+		logger.WithError(err).Error("failed to retrieve client")
 		if models.IsErrRecordNotFound(err) {
 			return ErrClientNotFound{}
 		}
@@ -410,27 +416,28 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 	newKey := e4crypto.RandomKey()
 	command, err := s.commandFactory.CreateSetIDKeyCommand(newKey)
 	if err != nil {
-		logger.Log("msg", "failed to create SetClient command", "error", err)
+		logger.WithError(err).Error("failed to create SetClient command")
 		return ErrInternal{}
 	}
 
 	err = s.sendCommandToClient(ctx, command, client)
 	if err != nil {
-		logger.Log("msg", "sendCommandToClient failed", "error", err)
+		logger.WithError(err).Error("sendCommandToClient failed")
 		return ErrInternal{}
 	}
 
 	protectedkey, err := e4crypto.Encrypt(s.keyenckey, nil, newKey)
 	if err != nil {
+		logger.WithError(err).Error("encrypt failed")
 		return ErrInternal{}
 	}
 
 	err = s.db.InsertClient(client.Name, id, protectedkey)
 	if err != nil {
-		logger.Log("msg", "insertClient failed", "error", err)
+		logger.WithError(err).Error("insertClient failed")
 		return ErrInternal{}
 	}
-	logger.Log("msg", "succeeded")
+	logger.Info("succeeded")
 
 	return nil
 }
@@ -439,11 +446,14 @@ func (s *e4impl) GetClientsRange(ctx context.Context, offset, count int) ([]IDNa
 	_, span := trace.StartSpan(ctx, "e4.GetClientsRange")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "getClientsRange", "offset", offset, "count", count)
+	logger := s.logger.WithFields(log.Fields{
+		"offset": offset,
+		"count":  count,
+	})
 
 	clients, err := s.db.GetClientsRange(offset, count)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve clients", "error", err)
+		logger.WithError(err).Error("failed to retrieve clients")
 		return nil, ErrInternal{}
 	}
 
@@ -452,7 +462,7 @@ func (s *e4impl) GetClientsRange(ctx context.Context, offset, count int) ([]IDNa
 		idNamePairs = append(idNamePairs, IDNamePair{ID: client.E4ID, Name: client.Name})
 	}
 
-	logger.Log("msg", "succeeded", "count", len(idNamePairs))
+	logger.WithField("total", len(idNamePairs)).Info("succeeded")
 
 	return idNamePairs, nil
 }
@@ -461,11 +471,14 @@ func (s *e4impl) GetTopicsRange(ctx context.Context, offset, count int) ([]strin
 	_, span := trace.StartSpan(ctx, "e4.GetTopicsRange")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "getTopicsRange", "offset", offset, "count", count)
+	logger := s.logger.WithFields(log.Fields{
+		"offset": offset,
+		"count":  count,
+	})
 
 	topics, err := s.db.GetTopicsRange(offset, count)
 	if err != nil {
-		logger.Log("msg", "failed to retrieve topics", "error", err)
+		logger.WithError(err).Error("failed to retrieve topics")
 		return nil, ErrInternal{}
 	}
 
@@ -474,7 +487,7 @@ func (s *e4impl) GetTopicsRange(ctx context.Context, offset, count int) ([]strin
 		topicNames = append(topicNames, topic.Topic)
 	}
 
-	logger.Log("msg", "succeeded", "count", len(topicNames))
+	logger.WithField("total", len(topicNames)).Info("succeeded")
 
 	return topicNames, nil
 }
@@ -483,15 +496,13 @@ func (s *e4impl) CountClients(ctx context.Context) (int, error) {
 	_, span := trace.StartSpan(ctx, "e4.CountClients")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "countClients")
-
 	count, err := s.db.CountClients()
 	if err != nil {
-		logger.Log("msg", "failed to count clients", "error", err)
+		s.logger.WithError(err).Error("failed to count clients")
 		return 0, ErrInternal{}
 	}
 
-	logger.Log("msg", "succeeded", "count", count)
+	s.logger.WithField("total", count).Info("succeeded")
 
 	return count, nil
 }
@@ -500,15 +511,13 @@ func (s *e4impl) CountTopics(ctx context.Context) (int, error) {
 	_, span := trace.StartSpan(ctx, "e4.CountTopics")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "countTopics")
-
 	count, err := s.db.CountTopicKeys()
 	if err != nil {
-		logger.Log("msg", "failed to count clients", "error", err)
+		s.logger.WithError(err).Error("failed to count clients")
 		return 0, ErrInternal{}
 	}
 
-	logger.Log("msg", "succeeded", "count", count)
+	s.logger.WithField("total", count).Info("succeeded")
 
 	return count, nil
 }
@@ -517,18 +526,18 @@ func (s *e4impl) CountTopicsForClient(ctx context.Context, id []byte) (int, erro
 	_, span := trace.StartSpan(ctx, "e4.CountTopicsForClient")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "countTopicsForClient", "id", prettyID(id))
+	logger := s.logger.WithField("id", prettyID(id))
 
 	count, err := s.db.CountTopicsForClientByID(id)
 	if err != nil {
-		logger.Log("msg", "failed to count topics for client", "error", err)
+		logger.WithError(err).Error("failed to count topics for client")
 		if models.IsErrRecordNotFound(err) {
 			return 0, ErrClientNotFound{}
 		}
 		return 0, ErrInternal{}
 	}
 
-	logger.Log("msg", "succeeded", "count", count)
+	logger.WithField("total", count).Info("succeeded")
 
 	return count, nil
 }
@@ -537,11 +546,15 @@ func (s *e4impl) GetTopicsRangeByClient(ctx context.Context, id []byte, offset, 
 	_, span := trace.StartSpan(ctx, "e4.GetTopicsRangeByClient")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "getTopicsRangeByClient", "id", prettyID(id))
+	logger := s.logger.WithFields(log.Fields{
+		"id":     prettyID(id),
+		"offset": offset,
+		"count":  count,
+	})
 
 	topicKeys, err := s.db.GetTopicsForClientByID(id, offset, count)
 	if err != nil {
-		logger.Log("msg", "failed to get topics for client", "error", err)
+		logger.WithError(err).Error("failed to get topics for client")
 		if models.IsErrRecordNotFound(err) {
 			return nil, ErrClientNotFound{}
 		}
@@ -553,7 +566,7 @@ func (s *e4impl) GetTopicsRangeByClient(ctx context.Context, id []byte, offset, 
 		topics = append(topics, topicKey.Topic)
 	}
 
-	logger.Log("msg", "succeeded", "topicCount", len(topics))
+	logger.WithField("total", len(topics)).Info("succeeded")
 
 	return topics, nil
 }
@@ -562,18 +575,18 @@ func (s *e4impl) CountClientsForTopic(ctx context.Context, topic string) (int, e
 	_, span := trace.StartSpan(ctx, "e4.CountClientsForTopic")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "countClientsForTopic", "topic", topic)
+	logger := s.logger.WithField("topic", topic)
 
 	count, err := s.db.CountClientsForTopic(topic)
 	if err != nil {
-		logger.Log("msg", "failed to count clients for topic", "error", err)
+		logger.WithError(err).Error("failed to count clients for topic")
 		if models.IsErrRecordNotFound(err) {
 			return 0, ErrTopicNotFound{}
 		}
 		return 0, ErrInternal{}
 	}
 
-	logger.Log("msg", "succeeded", "count", count)
+	logger.WithField("total", count).Info("succeeded")
 
 	return count, nil
 }
@@ -582,11 +595,15 @@ func (s *e4impl) GetClientsRangeByTopic(ctx context.Context, topic string, offse
 	_, span := trace.StartSpan(ctx, "e4.GetClientsRangeByTopic")
 	defer span.End()
 
-	logger := log.With(s.logger, "protocol", "e4", "command", "getClientsRangeByTopic", "topic", topic)
+	logger := s.logger.WithFields(log.Fields{
+		"topic":  topic,
+		"offset": offset,
+		"count":  count,
+	})
 
 	clients, err := s.db.GetClientsForTopic(topic, offset, count)
 	if err != nil {
-		logger.Log("msg", "failed to get clients for topic", "error", err)
+		logger.WithError(err).Error("failed to get clients for topic")
 		if models.IsErrRecordNotFound(err) {
 			return nil, ErrTopicNotFound{}
 		}
@@ -598,7 +615,7 @@ func (s *e4impl) GetClientsRangeByTopic(ctx context.Context, topic string, offse
 		idNamePairs = append(idNamePairs, IDNamePair{ID: client.E4ID, Name: client.Name})
 	}
 
-	logger.Log("msg", "succeeded", "clientCount", len(idNamePairs))
+	logger.WithField("total", len(idNamePairs)).Info("succeeded")
 
 	return idNamePairs, nil
 }

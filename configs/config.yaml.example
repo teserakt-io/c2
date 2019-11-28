@@ -74,11 +74,6 @@ http-key: c2-key.pem
 es-enable: true
 ## space separated list of available elasticsearch severs: http://host1:port1 http://host2:port2
 es-urls: http://127.0.0.1:9200
-## enable C2 logs forwarding to elasticsearch
-es-c2-logging-enable: true
-## name of the elasticSearch index for C2 logs. The indexes will be created daily like so: <name>-YYYY.MM.DD
-## ( /!\ changing it imply to update the kibana dashboards to use the new name)
-es-c2-logging-index: logs
 ## enable broker messages logging to elasticsearch
 es-message-logging-enable: true
 ## name of the elasticSearch index for messages. The indexes will be created daily like so: <name>-YYYY.MM.DD
@@ -89,3 +84,8 @@ es-message-logging-index: messages
 ###############################################################
 oc-agent-addr: localhost:55678
 oc-sample-all: true
+
+# Logging config
+###############################################################
+Available levels: trace | debug | info | warn | error | fatal | panic
+log-level: debug
