@@ -208,7 +208,7 @@ func (c *mqttPubSubClient) Publish(ctx context.Context, payload []byte, topic st
 	_, span := trace.StartSpan(ctx, "mqtt.Publish")
 	defer span.End()
 
-	logger := log.WithFields(log.Fields{
+	logger := c.logger.WithFields(log.Fields{
 		"topic": topic,
 		"qos":   qos,
 	})
