@@ -42,6 +42,15 @@ services:
     depends_on:
       - elasticsearch
 
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:${ELKTAG}
+    environment:
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+      - KIBANA_HOST=kibana:5601
+    volumes:
+      - ./configs/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - /var/log/e4_c2.log:/logs/e4_c2.log:ro
+
   prometheus:
     image: prom/prometheus
     ports:
