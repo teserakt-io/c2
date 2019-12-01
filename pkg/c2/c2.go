@@ -139,9 +139,20 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 
 	eventDispatcher := events.NewDispatcher(logger)
 
-	c2key, err := e4crypto.DeriveSymKey(cfg.DB.Passphrase)
+	dbKey, err := e4crypto.DeriveSymKey(cfg.DB.Passphrase)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create key from passphrase: %v", err)
+	}
+
+	var e4Key keys.E4Key
+	switch cfg.KeyMode {
+	case keys.E4SymKey:
+		e4Key = keys.NewE4SymKey()
+	case keys.E4PubKey:
+		if len(cfg.C2PrivateKey) == 0 {
+			return nil, fmt.Errorf("C2PrivateKey is required in pubkey mode")
+		}
+		e4Key = keys.NewE4PubKey(cfg.C2PrivateKey)
 	}
 
 	e4Service := services.NewE4(
@@ -151,7 +162,8 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		eventDispatcher,
 		events.NewFactory(),
 		log.With(logger, "protocol", "c2"),
-		c2key,
+		dbKey,
+		e4Key,
 	)
 
 	// initialize Observability

@@ -12,6 +12,7 @@ import (
 
 	"github.com/teserakt-io/c2/internal/commands"
 	"github.com/teserakt-io/c2/internal/events"
+	"github.com/teserakt-io/c2/internal/keys"
 	"github.com/teserakt-io/c2/internal/models"
 	"github.com/teserakt-io/c2/internal/protocols"
 )
@@ -84,6 +85,7 @@ type e4impl struct {
 	keyenckey       []byte
 	eventDispatcher events.Dispatcher
 	eventFactory    events.Factory
+	e4Key           keys.E4Key
 }
 
 var _ E4 = (*e4impl)(nil)
@@ -97,6 +99,7 @@ func NewE4(
 	eventFactory events.Factory,
 	logger log.Logger,
 	keyenckey []byte,
+	e4Key keys.E4Key,
 ) E4 {
 	return &e4impl{
 		db:              db,
@@ -106,6 +109,7 @@ func NewE4(
 		eventFactory:    eventFactory,
 		logger:          logger,
 		keyenckey:       keyenckey,
+		e4Key:           e4Key,
 	}
 }
 
@@ -376,7 +380,7 @@ func (s *e4impl) SendMessage(ctx context.Context, topic, msg string) error {
 		return ErrInternal{}
 	}
 
-	payload, err := e4crypto.ProtectSymKey([]byte(msg), clearTopicKey)
+	payload, err := s.e4Key.ProtectMessage([]byte(msg), clearTopicKey)
 	if err != nil {
 		logger.Log("msg", "Protect failed", "error", err)
 		return ErrInternal{}
@@ -611,8 +615,7 @@ func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Comma
 	if err != nil {
 		return fmt.Errorf("failed to decrypt client: %v", err)
 	}
-
-	payload, err := command.Protect(clearKey)
+	payload, err := s.e4Key.ProtectCommand(command, clearKey)
 	if err != nil {
 		return fmt.Errorf("failed to protect command: %v", err)
 	}
