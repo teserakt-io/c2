@@ -116,11 +116,11 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 	logger := log.With(s.logger, "protocol", "e4", "command", "newClient", "name", name, "id", prettyID(id))
 	newID, err := ValidateE4NameOrIDPair(name, id)
 	if err != nil {
-		logger.Log("msg", "Inconsistent E4 ID/Alias, refusing insert", "error", err)
+		logger.Log("msg", "inconsistent E4 ID/Alias, refusing insert", "error", err)
 		return ErrValidation{fmt.Errorf("inconsistent E4 ID/Name: %v", err)}
 	}
 
-	// TODO: validate either pubkey or symkey
+	// TODO (@JP): validate either pubkey or symkey
 	if err := e4crypto.ValidateSymKey(key); err != nil {
 		return ErrValidation{fmt.Errorf("invalid key: %v", err)}
 	}
@@ -132,7 +132,7 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 	}
 
 	if err := s.db.InsertClient(name, newID, protectedkey); err != nil {
-		logger.Log("msg", "insertClient failed", "error", err)
+		logger.Log("msg", "failed to insert client", "error", err)
 		return ErrInternal{}
 	}
 
@@ -149,7 +149,7 @@ func (s *e4impl) RemoveClient(ctx context.Context, id []byte) error {
 
 	err := s.db.DeleteClientByID(id)
 	if err != nil {
-		logger.Log("msg", "deleteClient failed", "error", err)
+		logger.Log("msg", "failed to delete client", "error", err)
 		if models.IsErrRecordNotFound(err) {
 			return ErrClientNotFound{}
 		}
@@ -198,13 +198,13 @@ func (s *e4impl) NewTopicClient(ctx context.Context, id []byte, topic string) er
 
 	err = s.sendCommandToClient(ctx, command, client)
 	if err != nil {
-		logger.Log("msg", "sendCommandToClient failed", "error", err)
+		logger.Log("msg", "failed to sent command to client", "error", err)
 		return ErrInternal{}
 	}
 
 	err = s.db.LinkClientTopic(client, topicKey)
 	if err != nil {
-		logger.Log("msg", "Database record of client-topic link failed", err)
+		logger.Log("msg", "database record of client-topic link failed", err)
 		return ErrInternal{}
 	}
 
@@ -251,7 +251,7 @@ func (s *e4impl) RemoveTopicClient(ctx context.Context, id []byte, topic string)
 
 	err = s.sendCommandToClient(ctx, command, client)
 	if err != nil {
-		logger.Log("msg", "sendCommandToClient failed", "error", err)
+		logger.Log("msg", "failed to send command to  client", "error", err)
 		return ErrInternal{}
 	}
 
@@ -338,9 +338,9 @@ func (s *e4impl) RemoveTopic(ctx context.Context, topic string) error {
 
 	err := s.pubSubClient.UnsubscribeFromTopic(ctx, topic) // Monitoring
 	if err != nil {
-		logger.Log("msg", "unsubscribeFromTopic failed", "error", err)
+		logger.Log("msg", "UnsubscribeFromTopic failed", "error", err)
 	} else {
-		logger.Log("msg", "unsubscribeFromTopic succeeded")
+		logger.Log("msg", "UnsubscribeFromTopic succeeded")
 	}
 
 	if err := s.db.DeleteTopicKey(topic); err != nil {
@@ -377,14 +377,15 @@ func (s *e4impl) SendMessage(ctx context.Context, topic, msg string) error {
 		return ErrInternal{}
 	}
 
+	// TODO (@JP): Protect for any mode
 	payload, err := e4crypto.ProtectSymKey([]byte(msg), clearTopicKey)
 	if err != nil {
-		logger.Log("msg", "Protect failed", "error", err)
+		logger.Log("msg", "failed to protect message", "error", err)
 		return ErrInternal{}
 	}
 	err = s.pubSubClient.Publish(ctx, payload, topic, protocols.QoSAtMostOnce)
 	if err != nil {
-		logger.Log("msg", "publish failed", "error", err)
+		logger.Log("msg", "failed to publish message", "error", err)
 		return ErrInternal{}
 	}
 

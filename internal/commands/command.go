@@ -41,6 +41,7 @@ func (c e4Command) Content() ([]byte, error) {
 	return c[1:], nil
 }
 
+// TODO (@JP): use sym key or public key
 // Protect returns an encrypted command payload with the given key
 func (c e4Command) Protect(key []byte) ([]byte, error) {
 	return e4crypto.ProtectSymKey(c, key)
