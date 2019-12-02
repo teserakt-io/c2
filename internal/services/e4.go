@@ -120,7 +120,7 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 
 	newID, err := ValidateE4NameOrIDPair(name, id)
 	if err != nil {
-		logger.WithError(err).Error("Inconsistent E4 ID/Alias, refusing insert")
+		logger.WithError(err).Error("inconsistent E4 ID/Alias, refusing insert")
 		return ErrValidation{fmt.Errorf("inconsistent E4 ID/Name: %v", err)}
 	}
 
@@ -135,7 +135,7 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 	}
 
 	if err := s.db.InsertClient(name, newID, protectedkey); err != nil {
-		logger.WithError(err).Error("insertClient failed")
+		logger.WithError(err).Error("failed to insert client")
 		return ErrInternal{}
 	}
 
@@ -152,7 +152,7 @@ func (s *e4impl) RemoveClient(ctx context.Context, id []byte) error {
 
 	err := s.db.DeleteClientByID(id)
 	if err != nil {
-		logger.WithError(err).Error("deleteClient failed")
+		logger.WithError(err).Error("failed to delete client")
 		if models.IsErrRecordNotFound(err) {
 			return ErrClientNotFound{}
 		}
@@ -204,7 +204,7 @@ func (s *e4impl) NewTopicClient(ctx context.Context, id []byte, topic string) er
 
 	err = s.sendCommandToClient(ctx, command, client)
 	if err != nil {
-		logger.WithError(err).Error("sendCommandToClient failed")
+		logger.WithError(err).Error("failed to send command to client")
 		return ErrInternal{}
 	}
 
@@ -343,9 +343,9 @@ func (s *e4impl) RemoveTopic(ctx context.Context, topic string) error {
 
 	err := s.pubSubClient.UnsubscribeFromTopic(ctx, topic) // Monitoring
 	if err != nil {
-		logger.WithError(err).Warn("msg", "unsubscribeFromTopic failed")
+		logger.WithError(err).Warn("UnsubscribeFromTopic failed")
 	} else {
-		logger.Debug("unsubscribeFromTopic succeeded")
+		logger.Debug("UnsubscribeFromTopic succeeded")
 	}
 
 	if err := s.db.DeleteTopicKey(topic); err != nil {
@@ -384,12 +384,12 @@ func (s *e4impl) SendMessage(ctx context.Context, topic, msg string) error {
 
 	payload, err := e4crypto.ProtectSymKey([]byte(msg), clearTopicKey)
 	if err != nil {
-		logger.WithError(err).Error("protect failed")
+		logger.WithError(err).Error("failed to protect message")
 		return ErrInternal{}
 	}
 	err = s.pubSubClient.Publish(ctx, payload, topic, protocols.QoSAtMostOnce)
 	if err != nil {
-		logger.WithError(err).Error("publish failed")
+		logger.WithError(err).Error("failed to publish message")
 		return ErrInternal{}
 	}
 
@@ -422,7 +422,7 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 
 	err = s.sendCommandToClient(ctx, command, client)
 	if err != nil {
-		logger.WithError(err).Error("sendCommandToClient failed")
+		logger.WithError(err).Error("failed to send command to client")
 		return ErrInternal{}
 	}
 
