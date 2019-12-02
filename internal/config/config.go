@@ -85,7 +85,7 @@ func (cfg *Config) ViperCfgFields() []slibcfg.ViperCfgField {
 		{&cfg.ES.enableMessageLogging, "es-message-logging-enable", slibcfg.ViperBool, true, ""},
 		{&cfg.ES.MessageIndexName, "es-message-logging-index", slibcfg.ViperString, "messages", ""},
 
-		{&cfg.LoggerLevel, "logger-level", slibcfg.ViperString, "debug", "E4C2_LOGGER_LEVEL"},
+		{&cfg.LoggerLevel, "log-level", slibcfg.ViperString, "debug", "E4C2_LOG_LEVEL"},
 	}
 }
 

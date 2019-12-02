@@ -4,8 +4,7 @@ filebeat.inputs:
     paths:
       - /logs/*.log
     json:
-      keys_under_root: true
-      overwrite_keys: true
+      keys_under_root: false
 
 output.elasticsearch:
   hosts: ["http://elasticsearch:9200"]

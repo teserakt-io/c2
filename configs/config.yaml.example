@@ -87,5 +87,5 @@ oc-sample-all: true
 
 # Logging config
 ###############################################################
-Available levels: trace | debug | info | warn | error | fatal | panic
+# Available levels: trace | debug | info | warn | error | fatal | panic
 log-level: debug
