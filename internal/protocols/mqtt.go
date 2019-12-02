@@ -112,7 +112,7 @@ func (c *mqttPubSubClient) Disconnect() error {
 }
 
 func (c *mqttPubSubClient) SubscribeToTopics(ctx context.Context, topics []string) error {
-	ctx, span := trace.StartSpan(ctx, "mqtt.SubscribeToTopics")
+	_, span := trace.StartSpan(ctx, "mqtt.SubscribeToTopics")
 	defer span.End()
 
 	logger := c.logger.WithField("topicCount", len(topics))
@@ -134,7 +134,8 @@ func (c *mqttPubSubClient) SubscribeToTopics(ctx context.Context, topics []strin
 	}
 
 	token := c.mqtt.SubscribeMultiple(filters, func(mqttClient mqtt.Client, m mqtt.Message) {
-		c.logMessage(ctx, m)
+		// Can't reuse global context, as it get canceled before request is sent
+		c.logMessage(context.Background(), m)
 	})
 	if !token.WaitTimeout(c.waitTimeout) {
 		logger.WithError(ErrMQTTTimeout).Error("subscribe-multiple timeout")
@@ -150,7 +151,7 @@ func (c *mqttPubSubClient) SubscribeToTopics(ctx context.Context, topics []strin
 }
 
 func (c *mqttPubSubClient) SubscribeToTopic(ctx context.Context, topic string) error {
-	ctx, span := trace.StartSpan(ctx, "mqtt.SubscribeToTopic")
+	_, span := trace.StartSpan(ctx, "mqtt.SubscribeToTopic")
 	defer span.End()
 
 	logger := c.logger.WithField("topic", topic)
@@ -162,7 +163,8 @@ func (c *mqttPubSubClient) SubscribeToTopic(ctx context.Context, topic string) e
 	}
 
 	token := c.mqtt.Subscribe(topic, byte(c.config.QoSSub), func(mqttClient mqtt.Client, message mqtt.Message) {
-		c.logMessage(ctx, message)
+		// Can't reuse global context, as it get canceled before request is sent
+		c.logMessage(context.Background(), message)
 	})
 	if !token.WaitTimeout(c.waitTimeout) {
 		logger.WithError(ErrMQTTTimeout).Error("subscribe timeout")
