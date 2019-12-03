@@ -642,7 +642,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 
 		if _, err := db.GetClientByID(clientID); !IsErrRecordNotFound(err) {
-			t.Fatalf("got error '%v' fetching client, wanted '%v' when transaction is not yet committed", err, gorm.ErrRecordNotFound)
+			t.Fatalf("Uncommitted transaction: got error '%v' fetching client, want '%v' ", err, gorm.ErrRecordNotFound)
 		}
 
 		if err := txDb.CommitTx(); err != nil {
@@ -650,7 +650,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 
 		if _, err := db.GetClientByID(clientID); err != nil {
-			t.Fatalf("got error '%v' fetching client when transaction is committed", err)
+			t.Fatalf("Committed transaction: got error '%v' fetching client", err)
 		}
 	})
 
@@ -671,7 +671,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 
 		if _, err := db.GetClientByID(clientID); !IsErrRecordNotFound(err) {
-			t.Fatalf("got error '%v' fetching client, wanted '%v' when transaction is not yet committed", err, gorm.ErrRecordNotFound)
+			t.Fatalf("Uncommitted transaction: got error '%v' fetching client, want '%v' ", err, gorm.ErrRecordNotFound)
 		}
 
 		if err := txDb.Rollback(); err != nil {
@@ -679,7 +679,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 
 		if _, err := db.GetClientByID(clientID); !IsErrRecordNotFound(err) {
-			t.Fatalf("got error '%v' fetching client, wanted '%v' when transaction is has been rollback", err, gorm.ErrRecordNotFound)
+			t.Fatalf("Rollback transaction: got error '%v' fetching client, want '%v' ", err, gorm.ErrRecordNotFound)
 		}
 	})
 }

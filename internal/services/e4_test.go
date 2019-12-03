@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/golang/mock/gomock"
+	e4 "github.com/teserakt-io/e4go"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 
 	"github.com/teserakt-io/c2/internal/commands"
@@ -266,10 +267,10 @@ func TestE4(t *testing.T) {
 		topic := "topic"
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
+		mockCommand.EXPECT().Type().AnyTimes().Return(e4.Command(1), nil)
 
 		mockTx := models.NewMockDatabase(mockCtrl)
 		gomock.InOrder(
-
 			mockDB.EXPECT().BeginTx(gomock.Any(), gomock.Any()).Return(mockTx, nil),
 			mockTx.EXPECT().InsertTopicKey(topic, gomock.Any()),
 			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), gomock.Any()).Return(mockCommand, nil),
@@ -308,10 +309,10 @@ func TestE4(t *testing.T) {
 		topic := "topic"
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
+		mockCommand.EXPECT().Type().AnyTimes().Return(e4.Command(1), nil)
 
 		mockTx := models.NewMockDatabase(mockCtrl)
 		gomock.InOrder(
-
 			mockDB.EXPECT().BeginTx(gomock.Any(), gomock.Any()).Return(mockTx, nil),
 			mockTx.EXPECT().InsertTopicKey(topic, gomock.Any()),
 			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), gomock.Any()).Return(mockCommand, nil),

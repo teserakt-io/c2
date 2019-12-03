@@ -357,36 +357,7 @@ func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
 		return ErrInternal{}
 	}
 
-	// Send the new topic key to all its subscribed clients.
-	// Doing 500 clients batch. If any error happen and prevent the
-	// key to be sent to the client, the error is just logged for now
-	// with all metadata to allow reforging and publishing the message.
-	ctx, sendKeySpan := trace.StartSpan(ctx, "e4.NewTopic.SendKeyToClients")
-	offset := 0
-	for offset < clientCount {
-		ctx, sendKeySpanBatch := trace.StartSpan(ctx, "e4.NewTopic.SendKeyToClientsBatch")
-		clients, err := s.db.GetClientsForTopic(topic, offset, NewTopicBatchSize)
-		if err != nil {
-			logger.Log("msg", "failed to retrieve topic clients", "error", err, "offset", offset, "batchSize", NewTopicBatchSize)
-
-			continue
-		}
-
-		for _, client := range clients {
-			err = s.sendCommandToClient(ctx, command, client)
-			if err != nil {
-				logger.Log("msg", "sendCommandToClient failed for setTopicKey", "error", err, "client", client.Name)
-
-				continue
-			}
-		}
-
-		logger.Log("msg", "successfully sent new topic key to clients", "offset", offset, "batchSize", NewTopicBatchSize)
-		offset += NewTopicBatchSize
-
-		sendKeySpanBatch.End()
-	}
-	sendKeySpan.End()
+	s.sendCommandToTopicClients(ctx, command, topic, clientCount)
 
 	err = s.pubSubClient.SubscribeToTopic(ctx, topic) // Monitoring
 	if err != nil {
@@ -396,6 +367,62 @@ func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
 	logger.Log("msg", "subscribeToTopic succeeded")
 
 	return nil
+}
+
+// sendCommandToTopicClients will send the given command to all clientCount clients of given topic,
+// by fetching NewTopicBatchSize from the DB at a time.
+// If any error happen and prevent the key to be sent to the client, the error is just logged for now
+// with all metadata to allow reforging and publishing the message.
+func (s *e4impl) sendCommandToTopicClients(ctx context.Context, command commands.Command, topic string, clientCount int) {
+	logger := log.With(s.logger, "protocol", "e4", "topic", topic)
+
+	cmdType, err := command.Type()
+	if err != nil {
+		logger.Log("msg", "failed to get command type", "error", err)
+
+		return
+	}
+
+	ctx, span := trace.StartSpan(ctx, "e4.sendCommandToTopicClients")
+	defer span.End()
+
+	for offset := 0; offset < clientCount; offset += NewTopicBatchSize {
+		span.Annotate([]trace.Attribute{
+			trace.Int64Attribute("offset", int64(offset)),
+			trace.Int64Attribute("command", int64(cmdType)),
+			trace.Int64Attribute("clientCount", int64(clientCount)),
+			trace.Int64Attribute("batchSize", int64(NewTopicBatchSize)),
+		}, "e4.sendCommandToTopicClients")
+
+		clients, err := s.db.GetClientsForTopic(topic, offset, NewTopicBatchSize)
+		if err != nil {
+			logger.Log(
+				"msg", "failed to retrieve topic clients",
+				"error", err,
+				"offset", offset,
+				"batchSize", NewTopicBatchSize,
+				"command", cmdType,
+			)
+
+			continue
+		}
+
+		for _, client := range clients {
+			err = s.sendCommandToClient(ctx, command, client)
+			if err != nil {
+				logger.Log(
+					"msg", "sendCommandToClient failed",
+					"error", err,
+					"client", client.Name,
+					"command", cmdType,
+				)
+
+				continue
+			}
+		}
+
+		logger.Log("msg", "successfully sent command to clients", "command", cmdType, "offset", offset, "batchSize", NewTopicBatchSize)
+	}
 }
 
 func (s *e4impl) RemoveTopic(ctx context.Context, topic string) error {
