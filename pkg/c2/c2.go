@@ -200,7 +200,7 @@ func (c *C2) Close() {
 
 // EnableHTTPEndpoint will turn on C2 over HTTP
 func (c *C2) EnableHTTPEndpoint() {
-	c.endpoints = append(c.endpoints, api.NewHTTPServer(c.cfg.HTTP, c.cfg.GRPC.Cert, c.cfg.IsProd, c.e4Service, log.With(c.logger, "protocol", "http")))
+	c.endpoints = append(c.endpoints, api.NewHTTPServer(c.cfg.HTTP, c.cfg.GRPC.Cert, c.e4Service, log.With(c.logger, "protocol", "http")))
 	c.logger.Log("msg", "Enabled C2 HTTP server")
 }
 

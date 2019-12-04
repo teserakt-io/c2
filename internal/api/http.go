@@ -29,19 +29,17 @@ type httpServer struct {
 	logger       log.Logger
 	cfg          config.HTTPServerCfg
 	grpcCertPath string
-	isProd       bool
 }
 
 var _ HTTPServer = (*httpServer)(nil)
 
 // NewHTTPServer creates a new http server for C2
-func NewHTTPServer(scfg config.HTTPServerCfg, grpcCertPath string, isProd bool, e4Service services.E4, logger log.Logger) HTTPServer {
+func NewHTTPServer(scfg config.HTTPServerCfg, grpcCertPath string, e4Service services.E4, logger log.Logger) HTTPServer {
 	return &httpServer{
 		e4Service:    e4Service,
 		logger:       logger,
 		cfg:          scfg,
 		grpcCertPath: grpcCertPath,
-		isProd:       isProd,
 	}
 }
 

@@ -8,7 +8,6 @@ import (
 
 // Config type holds the application configuration
 type Config struct {
-	IsProd  bool
 	Monitor bool
 
 	Crypto CryptoCfg
@@ -22,7 +21,7 @@ type Config struct {
 	DB DBCfg
 
 	OpencensusSampleAll bool
-	OpencensusAddress string
+	OpencensusAddress   string
 
 	ES ESCfg
 }
@@ -35,10 +34,8 @@ func New() *Config {
 // ViperCfgFields returns the list of configuration fields to be loaded by viper
 func (cfg *Config) ViperCfgFields() []slibcfg.ViperCfgField {
 	return []slibcfg.ViperCfgField{
-		{&cfg.IsProd, "production", slibcfg.ViperBool, false, ""},
-
-		{&cfg.IsProd, "crypto-mode", slibcfg.ViperString, "symkey", "E4C2_CRYPTO_MODE"},
-		{&cfg.IsProd, "crypto-key", slibcfg.ViperRelativePath, "", "E4C2_CRYPTO_KEY"},
+		{&cfg.Crypto.Mode, "crypto-mode", slibcfg.ViperString, "symkey", "E4C2_CRYPTO_MODE"},
+		{&cfg.Crypto.C2PrivateKeyPath, "crypto-c2-private-key", slibcfg.ViperRelativePath, "", "E4C2_CRYPTO_KEY"},
 
 		{&cfg.GRPC.Addr, "grpc-host-port", slibcfg.ViperString, "0.0.0.0:5555", "E4C2_GRPC_HOST_PORT"},
 		{&cfg.GRPC.Cert, "grpc-cert", slibcfg.ViperRelativePath, "", "E4C2_GRPC_CERT"},

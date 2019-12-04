@@ -37,6 +37,8 @@ var (
 	ErrIndexNameRequired = errors.New("index name is required")
 	// ErrGRPCAddrRequired is returned when the http-grpc-host-port is empty but required
 	ErrGRPCAddrRequired = errors.New("http-grpc-host-port is required")
+	// ErrInvalidCryptoMode is returned when the provided crypto mode is unknown
+	ErrInvalidCryptoMode = errors.New("crypto-mode is invalid")
 )
 
 // Validate check Config and returns an error if anything is invalid
@@ -63,6 +65,10 @@ func (c Config) Validate() error {
 
 	if err := c.DB.Validate(); err != nil {
 		return fmt.Errorf("DB configuration validation error: %v", err)
+	}
+
+	if err := c.Crypto.Validate(); err != nil {
+		return fmt.Errorf("crypto configuration validation error: %v", err)
 	}
 
 	return nil
@@ -174,6 +180,22 @@ func (c DBCfg) validatePostgres() error {
 func (c DBCfg) validateSQLite() error {
 	if len(c.File) == 0 {
 		return ErrNoDBFile
+	}
+
+	return nil
+}
+
+// Validate checks CryptoCfg and returns an error if anything is invalid
+func (c CryptoCfg) Validate() error {
+	switch c.Mode {
+	case SymKey:
+		return nil
+	case PubKey:
+		if len(c.C2PrivateKeyPath) == 0 {
+			return ErrNoKey
+		}
+	default:
+		return ErrInvalidCryptoMode
 	}
 
 	return nil
