@@ -49,7 +49,7 @@ func (m *esMessageMonitor) OnMessage(ctx context.Context, msg LoggedMessage) {
 	index := fmt.Sprintf("%s-%s", m.esIndexName, time.Now().Format("2006.01.02"))
 	_, err := m.esClient.Index().Index(index).Type("message").
 		BodyJson(msg).
-		Do(ctx)
+		Do(context.Background())
 	if err != nil {
 		m.logger.Log("msg", "failed to send LoggedMessage to elasticSearch", "error", err, "loggedMessage", msg)
 		return
