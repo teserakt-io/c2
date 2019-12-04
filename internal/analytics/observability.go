@@ -8,22 +8,15 @@ import (
 	"go.opencensus.io/trace"
 )
 
-// DeploymentMode describe the per environment analytics configuration modes
-type DeploymentMode int
-
-// List of available DeploymentMode
-const (
-	Development DeploymentMode = iota
-	Production
-)
-
 // SetupObservability will configure the various observers for C2.
 // currently register an opencensus exporter
-func (m DeploymentMode) SetupObservability() error {
+func SetupObservability(ocAgentAddr string, ocAgentSampleAll bool) error {
 	oce, err := ocagent.NewExporter(
 		// TODO: (@odeke-em), enable ocagent-exporter.WithCredentials option.
 		ocagent.WithInsecure(),
-		ocagent.WithServiceName("c2"))
+		ocagent.WithServiceName("c2"),
+		ocagent.WithAddress(ocAgentAddr),
+	)
 
 	if err != nil {
 		return fmt.Errorf("failed to create the OpenCensus Agent exporter: %v", err)
@@ -33,10 +26,8 @@ func (m DeploymentMode) SetupObservability() error {
 	trace.RegisterExporter(oce)
 	view.RegisterExporter(oce)
 
-	switch m {
-	case Production:
-	default:
-		// setting trace sample rate to 100%
+	// setting trace sample rate to 100%
+	if ocAgentSampleAll {
 		trace.ApplyConfig(trace.Config{
 			DefaultSampler: trace.AlwaysSample(),
 		})

@@ -174,16 +174,12 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	)
 
 	// initialize Observability
-	deploymentMode := analytics.Production
-	if !cfg.IsProd {
-		deploymentMode = analytics.Development
-	}
-	if err := deploymentMode.SetupObservability(); err != nil {
-		logger.Log("msg", "observability instrumentation setup failed", "error", err)
+	if err := analytics.SetupObservability(cfg.OpencensusAddress, cfg.OpencensusSampleAll); err != nil {
+		logger.Log("msg", "Observability instrumentation setup failed", "error", err)
 
 		return nil, fmt.Errorf("observability instrumentation setup failed: %v", err)
 	}
-	logger.Log("msg", "observability instrumentation setup successfully")
+	logger.Log("msg", "Observability instrumentation setup successfully", "oc-agent", cfg.OpencensusAddress, "sample-all", cfg.OpencensusSampleAll)
 
 	return &C2{
 		cfg:             cfg,

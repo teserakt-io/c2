@@ -92,3 +92,8 @@ es-message-logging-enable: true
 ## name of the elasticSearch index for messages. The indexes will be created daily like so: <name>-YYYY.MM.DD
 ## ( /!\ changing it imply to update the kibana dashboards to use the new name)
 es-message-logging-index: messages
+
+# OpenCensus settings
+###############################################################
+oc-agent-addr: localhost:55678
+oc-sample-all: true
