@@ -187,7 +187,7 @@ func (c DBCfg) validateSQLite() error {
 
 // Validate checks CryptoCfg and returns an error if anything is invalid
 func (c CryptoCfg) Validate() error {
-	switch c.Mode {
+	switch c.CryptoMode() {
 	case SymKey:
 		return nil
 	case PubKey:

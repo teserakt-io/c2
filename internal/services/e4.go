@@ -11,6 +11,7 @@ import (
 	"go.opencensus.io/trace"
 
 	"github.com/teserakt-io/c2/internal/commands"
+	"github.com/teserakt-io/c2/internal/crypto"
 	"github.com/teserakt-io/c2/internal/events"
 	"github.com/teserakt-io/c2/internal/models"
 	"github.com/teserakt-io/c2/internal/protocols"
@@ -71,15 +72,13 @@ type E4 interface {
 	// > Retrieving clients per topic or topics per client
 	GetTopicsRangeByClient(ctx context.Context, id []byte, offset, count int) ([]string, error)
 	GetClientsRangeByTopic(ctx context.Context, topic string, offset, count int) ([]IDNamePair, error)
-
-	// Communications
-	SendMessage(ctx context.Context, topic, msg string) error
 }
 
 type e4impl struct {
 	db              models.Database
 	pubSubClient    protocols.PubSubClient
 	commandFactory  commands.Factory
+	e4Key           crypto.E4Key
 	logger          log.Logger
 	dbEncKey        []byte
 	eventDispatcher events.Dispatcher
@@ -95,6 +94,7 @@ func NewE4(
 	commandFactory commands.Factory,
 	eventDispatcher events.Dispatcher,
 	eventFactory events.Factory,
+	e4Key crypto.E4Key,
 	logger log.Logger,
 	DBEncKey []byte,
 ) E4 {
@@ -104,6 +104,7 @@ func NewE4(
 		commandFactory:  commandFactory,
 		eventDispatcher: eventDispatcher,
 		eventFactory:    eventFactory,
+		e4Key:           e4Key,
 		logger:          logger,
 		dbEncKey:        DBEncKey,
 	}
@@ -120,8 +121,7 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 		return ErrValidation{fmt.Errorf("inconsistent E4 ID/Name: %v", err)}
 	}
 
-	// TODO (@JP): validate either pubkey or symkey
-	if err := e4crypto.ValidateSymKey(key); err != nil {
+	if err := s.e4Key.ValidateKey(key); err != nil {
 		return ErrValidation{fmt.Errorf("invalid key: %v", err)}
 	}
 
@@ -355,44 +355,6 @@ func (s *e4impl) RemoveTopic(ctx context.Context, topic string) error {
 	return nil
 }
 
-// SendMessage allows to publish an E4 protected message on the given topic
-func (s *e4impl) SendMessage(ctx context.Context, topic, msg string) error {
-	ctx, span := trace.StartSpan(ctx, "e4.SendMessage")
-	defer span.End()
-
-	logger := log.With(s.logger, "protocol", "e4", "command", "sendMessage", "topic", topic)
-
-	topicKey, err := s.db.GetTopicKey(topic)
-	if err != nil {
-		logger.Log("msg", "failed to retrieve topicKey", "error", err)
-		if models.IsErrRecordNotFound(err) {
-			return ErrTopicNotFound{}
-		}
-		return ErrInternal{}
-	}
-
-	clearTopicKey, err := topicKey.DecryptKey(s.dbEncKey)
-	if err != nil {
-		logger.Log("msg", "failed to decrypt topicKey", "error", err)
-		return ErrInternal{}
-	}
-
-	// TODO (@JP): Protect for any mode
-	payload, err := e4crypto.ProtectSymKey([]byte(msg), clearTopicKey)
-	if err != nil {
-		logger.Log("msg", "failed to protect message", "error", err)
-		return ErrInternal{}
-	}
-	err = s.pubSubClient.Publish(ctx, payload, topic, protocols.QoSAtMostOnce)
-	if err != nil {
-		logger.Log("msg", "failed to publish message", "error", err)
-		return ErrInternal{}
-	}
-
-	logger.Log("msg", "succeeded")
-	return nil
-}
-
 // NewClientKey will generate a new client key, send it to the client, and update the database.
 func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 	ctx, span := trace.StartSpan(ctx, "e4.NewClientKey")
@@ -409,8 +371,13 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 		return ErrInternal{}
 	}
 
-	newKey := e4crypto.RandomKey()
-	command, err := s.commandFactory.CreateSetIDKeyCommand(newKey)
+	clientKey, c2StoredKey, err := s.e4Key.RandomKey()
+	if err != nil {
+		logger.Log("msg", "failed to generate new key", "error", err)
+		return ErrInternal{}
+	}
+
+	command, err := s.commandFactory.CreateSetIDKeyCommand(clientKey)
 	if err != nil {
 		logger.Log("msg", "failed to create SetClient command", "error", err)
 		return ErrInternal{}
@@ -422,7 +389,7 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 		return ErrInternal{}
 	}
 
-	protectedkey, err := e4crypto.Encrypt(s.dbEncKey, nil, newKey)
+	protectedkey, err := e4crypto.Encrypt(s.dbEncKey, nil, c2StoredKey)
 	if err != nil {
 		return ErrInternal{}
 	}
@@ -614,7 +581,7 @@ func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Comma
 		return fmt.Errorf("failed to decrypt client: %v", err)
 	}
 
-	payload, err := command.Protect(clearKey)
+	payload, err := s.e4Key.ProtectCommand(command, clearKey)
 	if err != nil {
 		return fmt.Errorf("failed to protect command: %v", err)
 	}

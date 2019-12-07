@@ -114,13 +114,6 @@ service C2 {
       get : "/e4/topics"
     };
   }
-  // Send a message on a topic
-  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {
-    option (google.api.http) = {
-      post : "/e4/message"
-      body : "*"
-    };
-  }
 
   // Provide a stream on C2 system events, grpc only
   rpc SubscribeToEventStream(SubscribeToEventStreamRequest) returns (stream Event) {}

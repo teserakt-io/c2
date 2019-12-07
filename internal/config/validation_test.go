@@ -70,10 +70,10 @@ func TestDBCfgValidation(t *testing.T) {
 func TestCryptoCfgValidation(t *testing.T) {
 	t.Run("Validate properly checks configuration and return errors", func(t *testing.T) {
 		testData := map[CryptoCfg]error{
-			CryptoCfg{Mode: "unknown"}:                              ErrInvalidCryptoMode,
-			CryptoCfg{Mode: PubKey}:                                 ErrNoKey,
-			CryptoCfg{Mode: PubKey, C2PrivateKeyPath: "/some/path"}: nil,
-			CryptoCfg{Mode: SymKey}:                                 nil,
+			CryptoCfg{mode: "unknown"}:                                      ErrInvalidCryptoMode,
+			CryptoCfg{mode: string(PubKey)}:                                 ErrNoKey,
+			CryptoCfg{mode: string(PubKey), C2PrivateKeyPath: "/some/path"}: nil,
+			CryptoCfg{mode: string(SymKey)}:                                 nil,
 		}
 
 		for cfg, expectedErr := range testData {

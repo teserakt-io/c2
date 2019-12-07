@@ -2,7 +2,6 @@ package c2
 
 import (
 	"context"
-	"crypto/ed25519"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -20,6 +19,7 @@ import (
 	"github.com/teserakt-io/c2/internal/api"
 	"github.com/teserakt-io/c2/internal/commands"
 	"github.com/teserakt-io/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/crypto"
 	"github.com/teserakt-io/c2/internal/events"
 	"github.com/teserakt-io/c2/internal/models"
 	"github.com/teserakt-io/c2/internal/protocols"
@@ -45,8 +45,6 @@ type C2 struct {
 	pubSubClient    protocols.PubSubClient
 	eventDispatcher events.Dispatcher
 
-	privateKey []byte
-
 	endpoints []APIEndpoint
 }
 
@@ -63,22 +61,34 @@ func (e SignalError) Error() string {
 // New creates a new C2
 func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	var err error
-	var esClient *elastic.Client
 
-	var privateKey []byte
-	if cfg.Crypto.Mode == config.PubKey {
-		privateKey, err = ioutil.ReadFile(cfg.Crypto.C2PrivateKeyPath)
+	var e4Key crypto.E4Key
+	switch cfg.Crypto.CryptoMode() {
+	case config.SymKey:
+		e4Key = crypto.NewE4SymKey()
+		logger.Log("msg", "initialized E4Key in symmetric key mode")
+	case config.PubKey:
+		keyFile, err := os.Open(cfg.Crypto.C2PrivateKeyPath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to open file %s: %v", cfg.Crypto.C2PrivateKeyPath, err)
 		}
-		if g, w := len(privateKey), ed25519.PrivateKeySize; g != w {
-			return nil, fmt.Errorf("invalid private key length, expected %d, got %d", g, w)
+		defer keyFile.Close()
+		keyBytes, err := ioutil.ReadAll(keyFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read e4key from %s: %v", cfg.Crypto.C2PrivateKeyPath, err)
 		}
+
+		e4Key, err = crypto.NewE4PubKey(keyBytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create E4PubKey: %v", err)
+		}
+
+		logger.Log("msg", "initialized E4Key in public key mode")
+	default:
+		return nil, fmt.Errorf("unsupported crypto mode: %s", cfg.Crypto.CryptoMode())
 	}
 
-	if cfg.Crypto.Mode != config.SymKey {
-		return nil, fmt.Errorf("invalid crypto mode")
-	}
+	var esClient *elastic.Client
 
 	if cfg.ES.Enable {
 		esClient, err = elastic.NewClient(
@@ -138,8 +148,6 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		cfg.ES.MessageIndexName,
 	)
 
-	// TODO switch between available protocols from config. Add config option to choose only 1.
-
 	var pubSubClient protocols.PubSubClient
 	switch {
 	case cfg.MQTT.Enabled:
@@ -158,7 +166,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 
 	eventDispatcher := events.NewDispatcher(logger)
 
-	DBEncKey, err := e4crypto.DeriveSymKey(cfg.DB.Passphrase)
+	dbEncKey, err := e4crypto.DeriveSymKey(cfg.DB.Passphrase)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create key from passphrase: %v", err)
 	}
@@ -169,8 +177,9 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		commands.NewFactory(),
 		eventDispatcher,
 		events.NewFactory(),
+		e4Key,
 		log.With(logger, "protocol", "c2"),
-		DBEncKey,
+		dbEncKey,
 	)
 
 	// initialize Observability
@@ -188,7 +197,6 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		e4Service:       e4Service,
 		pubSubClient:    pubSubClient,
 		eventDispatcher: eventDispatcher,
-		privateKey:      privateKey,
 	}, nil
 }
 

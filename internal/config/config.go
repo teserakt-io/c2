@@ -34,7 +34,7 @@ func New() *Config {
 // ViperCfgFields returns the list of configuration fields to be loaded by viper
 func (cfg *Config) ViperCfgFields() []slibcfg.ViperCfgField {
 	return []slibcfg.ViperCfgField{
-		{&cfg.Crypto.Mode, "crypto-mode", slibcfg.ViperString, "symkey", "E4C2_CRYPTO_MODE"},
+		{&cfg.Crypto.mode, "crypto-mode", slibcfg.ViperString, "symkey", "E4C2_CRYPTO_MODE"},
 		{&cfg.Crypto.C2PrivateKeyPath, "crypto-c2-private-key", slibcfg.ViperRelativePath, "", "E4C2_CRYPTO_KEY"},
 
 		{&cfg.GRPC.Addr, "grpc-host-port", slibcfg.ViperString, "0.0.0.0:5555", "E4C2_GRPC_HOST_PORT"},
@@ -145,8 +145,13 @@ const (
 
 // CryptoCfg holds the crypto configuration
 type CryptoCfg struct {
-	Mode             CryptoMode
+	mode             string
 	C2PrivateKeyPath string
+}
+
+// CryptoMode returns configued mode as CryptoMode
+func (c CryptoCfg) CryptoMode() CryptoMode {
+	return CryptoMode(c.mode)
 }
 
 // IsC2LoggingEnabled indicate whenever C2 logging is enabled in configuration

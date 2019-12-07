@@ -15,13 +15,14 @@ import (
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 
 	"github.com/teserakt-io/c2/internal/commands"
+	"github.com/teserakt-io/c2/internal/crypto"
 	"github.com/teserakt-io/c2/internal/events"
 	"github.com/teserakt-io/c2/internal/models"
 	"github.com/teserakt-io/c2/internal/protocols"
 )
 
-func encryptKey(t *testing.T, keyEncKey []byte, key []byte) []byte {
-	protectedkey, err := e4crypto.Encrypt(keyEncKey, nil, key)
+func encryptKey(t *testing.T, dbEncKey []byte, key []byte) []byte {
+	protectedkey, err := e4crypto.Encrypt(dbEncKey, nil, key)
 	if err != nil {
 		t.Fatalf("Failed to encrypt key %v: %v", key, err)
 	}
@@ -39,9 +40,9 @@ func newKey(t *testing.T) []byte {
 	return key
 }
 
-func createTestClient(t *testing.T, e4Key []byte) (models.Client, []byte) {
+func createTestClient(t *testing.T, dbEncKey []byte) (models.Client, []byte) {
 	clearKey := newKey(t)
-	encryptedKey := encryptKey(t, e4Key, clearKey)
+	encryptedKey := encryptKey(t, dbEncKey, clearKey)
 
 	randombytes := make([]byte, e4crypto.IDLen)
 
@@ -62,9 +63,9 @@ func createTestClient(t *testing.T, e4Key []byte) (models.Client, []byte) {
 	return client, clearKey
 }
 
-func createTestTopicKey(t *testing.T, e4Key []byte) (models.TopicKey, []byte) {
+func createTestTopicKey(t *testing.T, dbEncKey []byte) (models.TopicKey, []byte) {
 	clearTopicKey := newKey(t)
-	encryptedTopicKey := encryptKey(t, e4Key, clearTopicKey)
+	encryptedTopicKey := encryptKey(t, dbEncKey, clearTopicKey)
 
 	topicKey := models.TopicKey{
 		Topic: fmt.Sprintf("topic-%d", rand.Int()),
@@ -83,12 +84,13 @@ func TestE4(t *testing.T) {
 	mockCommandFactory := commands.NewMockFactory(mockCtrl)
 	mockEventFactory := events.NewMockFactory(mockCtrl)
 	mockEventDispatcher := events.NewMockDispatcher(mockCtrl)
+	mockE4Key := crypto.NewMockE4Key(mockCtrl)
 
 	logger := log.NewNopLogger()
 
-	e4Key := newKey(t)
+	dbEncKey := newKey(t)
 
-	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, mockEventDispatcher, mockEventFactory, logger, e4Key)
+	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, mockEventDispatcher, mockEventFactory, mockE4Key, logger, dbEncKey)
 
 	t.Run("Validation works successfully", func(t *testing.T) {
 		names := []string{"test1", "testtest2", "e4test3", "test4", "test5"}
@@ -138,8 +140,9 @@ func TestE4(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		client, clearKey := createTestClient(t, e4Key)
+		client, clearKey := createTestClient(t, dbEncKey)
 
+		mockE4Key.EXPECT().ValidateKey(clearKey).Return(nil).Times(2)
 		mockDB.EXPECT().InsertClient(client.Name, client.E4ID, client.Key).Times(2)
 
 		if err := service.NewClient(ctx, client.Name, nil, clearKey); err != nil {
@@ -154,7 +157,7 @@ func TestE4(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		client, _ := createTestClient(t, e4Key)
+		client, _ := createTestClient(t, dbEncKey)
 
 		mockDB.EXPECT().DeleteClientByID(client.E4ID)
 		if err := service.RemoveClient(ctx, client.E4ID); err != nil {
@@ -166,8 +169,8 @@ func TestE4(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		client, clearClientKey := createTestClient(t, e4Key)
-		topicKey, clearTopicKey := createTestTopicKey(t, e4Key)
+		client, clearClientKey := createTestClient(t, dbEncKey)
+		topicKey, clearTopicKey := createTestTopicKey(t, dbEncKey)
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
 		commandPayload := []byte("command-payload")
@@ -184,7 +187,7 @@ func TestE4(t *testing.T) {
 			mockDB.EXPECT().GetTopicKey(topicKey.Topic).Return(topicKey, nil),
 
 			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(topicKey.Hash(), clearTopicKey).Return(mockCommand, nil),
-			mockCommand.EXPECT().Protect(clearClientKey).Return(commandPayload, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClientKey).Return(commandPayload, nil),
 
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
 
@@ -203,8 +206,8 @@ func TestE4(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		client, clearIDKey := createTestClient(t, e4Key)
-		topicKey, _ := createTestTopicKey(t, e4Key)
+		client, clearIDKey := createTestClient(t, dbEncKey)
+		topicKey, _ := createTestTopicKey(t, dbEncKey)
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
 		commandPayload := []byte("command-payload")
@@ -221,7 +224,7 @@ func TestE4(t *testing.T) {
 			mockDB.EXPECT().GetTopicKey(topicKey.Topic).Return(topicKey, nil),
 
 			mockCommandFactory.EXPECT().CreateRemoveTopicCommand(topicKey.Hash()).Return(mockCommand, nil),
-			mockCommand.EXPECT().Protect(clearIDKey).Return(commandPayload, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearIDKey).Return(commandPayload, nil),
 
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
 
@@ -240,7 +243,7 @@ func TestE4(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		client, clearIDKey := createTestClient(t, e4Key)
+		client, clearIDKey := createTestClient(t, dbEncKey)
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
 		commandPayload := []byte("command-payload")
@@ -249,7 +252,7 @@ func TestE4(t *testing.T) {
 			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
 
 			mockCommandFactory.EXPECT().CreateResetTopicsCommand().Return(mockCommand, nil),
-			mockCommand.EXPECT().Protect(clearIDKey).Return(commandPayload, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearIDKey).Return(commandPayload, nil),
 
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
 		)
@@ -295,59 +298,28 @@ func TestE4(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		client, clearClientKey := createTestClient(t, e4Key)
+		client, clearClientKey := createTestClient(t, dbEncKey)
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
 		commandPayload := []byte("command-payload")
 
-		var protectedNewKey []byte
+		clientKey := []byte("clientKey")
+		c2StoredKey := []byte("c2StoredKey")
+		protectedC2StoredKey, err := e4crypto.Encrypt(dbEncKey, nil, c2StoredKey)
+		if err != nil {
+			t.Fatalf("failed to encrypt new key: %v", err)
+		}
 
 		gomock.InOrder(
 			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
-			mockCommandFactory.EXPECT().CreateSetIDKeyCommand(gomock.Any()).Do(func(newKey []byte) {
-				if len(newKey) != e4crypto.KeyLen {
-					t.Errorf("Expected newKey to be %d bytes, got %d", e4crypto.KeyLen, len(newKey))
-				}
-
-				var err error
-				protectedNewKey, err = e4crypto.Encrypt(e4Key, nil, newKey)
-				if err != nil {
-					t.Fatalf("Expected no error, got %v", err)
-				}
-
-			}).Return(mockCommand, nil),
-			mockCommand.EXPECT().Protect(clearClientKey).Return(commandPayload, nil),
+			mockE4Key.EXPECT().RandomKey().Return(clientKey, c2StoredKey, nil),
+			mockCommandFactory.EXPECT().CreateSetIDKeyCommand(clientKey).Return(mockCommand, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClientKey).Return(commandPayload, nil),
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
-			mockDB.EXPECT().InsertClient(client.Name, client.E4ID, gomock.Any()).Do(func(name string, id, key []byte) {
-				if reflect.DeepEqual(key, protectedNewKey) == false {
-					t.Errorf("Expected protected new key to be %#v, got %#v", protectedNewKey, key)
-				}
-			}),
+			mockDB.EXPECT().InsertClient(client.Name, client.E4ID, protectedC2StoredKey),
 		)
 
 		if err := service.NewClientKey(ctx, client.E4ID); err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-	})
-
-	t.Run("SendMessage send the given message on the topic", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		topicKey, clearTopicKey := createTestTopicKey(t, e4Key)
-
-		message := "message"
-		expectedPayload, err := e4crypto.ProtectSymKey([]byte(message), clearTopicKey)
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-
-		gomock.InOrder(
-			mockDB.EXPECT().GetTopicKey(topicKey.Topic).Return(topicKey, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), expectedPayload, topicKey.Topic, protocols.QoSAtMostOnce),
-		)
-
-		if err := service.SendMessage(ctx, topicKey.Topic, message); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
@@ -356,7 +328,7 @@ func TestE4(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		client, _ := createTestClient(t, e4Key)
+		client, _ := createTestClient(t, dbEncKey)
 
 		expectedCount := 10
 
@@ -376,13 +348,13 @@ func TestE4(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		client, _ := createTestClient(t, e4Key)
+		client, _ := createTestClient(t, dbEncKey)
 		expectedOffset := 1
 		expectedCount := 2
 
-		t1, _ := createTestTopicKey(t, e4Key)
-		t2, _ := createTestTopicKey(t, e4Key)
-		t3, _ := createTestTopicKey(t, e4Key)
+		t1, _ := createTestTopicKey(t, dbEncKey)
+		t2, _ := createTestTopicKey(t, dbEncKey)
+		t3, _ := createTestTopicKey(t, dbEncKey)
 
 		topicKeys := []models.TopicKey{t1, t2, t3}
 		expectedTopics := []string{t1.Topic, t2.Topic, t3.Topic}
@@ -418,7 +390,7 @@ func TestE4(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		topicKey, _ := createTestTopicKey(t, e4Key)
+		topicKey, _ := createTestTopicKey(t, dbEncKey)
 
 		expectedCount := 10
 
@@ -438,13 +410,13 @@ func TestE4(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		topicKey, _ := createTestTopicKey(t, e4Key)
+		topicKey, _ := createTestTopicKey(t, dbEncKey)
 		expectedOffset := 1
 		expectedCount := 2
 
-		i1, _ := createTestClient(t, e4Key)
-		i2, _ := createTestClient(t, e4Key)
-		i3, _ := createTestClient(t, e4Key)
+		i1, _ := createTestClient(t, dbEncKey)
+		i2, _ := createTestClient(t, dbEncKey)
+		i3, _ := createTestClient(t, dbEncKey)
 
 		clients := []models.Client{i1, i2, i3}
 		expectedIDNamePairs := []IDNamePair{
@@ -484,9 +456,9 @@ func TestE4(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		i1, _ := createTestClient(t, e4Key)
-		i2, _ := createTestClient(t, e4Key)
-		i3, _ := createTestClient(t, e4Key)
+		i1, _ := createTestClient(t, dbEncKey)
+		i2, _ := createTestClient(t, dbEncKey)
+		i3, _ := createTestClient(t, dbEncKey)
 
 		clients := []models.Client{i1, i2, i3}
 		expectedPäirs := []IDNamePair{
@@ -529,9 +501,9 @@ func TestE4(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		t1, _ := createTestTopicKey(t, e4Key)
-		t2, _ := createTestTopicKey(t, e4Key)
-		t3, _ := createTestTopicKey(t, e4Key)
+		t1, _ := createTestTopicKey(t, dbEncKey)
+		t2, _ := createTestTopicKey(t, dbEncKey)
+		t3, _ := createTestTopicKey(t, dbEncKey)
 
 		topicKeys := []models.TopicKey{t1, t2, t3}
 		expectedTopics := []string{

@@ -304,15 +304,6 @@ func (s *grpcServer) GetTopics(ctx context.Context, req *pb.GetTopicsRequest) (*
 	return &pb.GetTopicsResponse{Topics: topics}, nil
 }
 
-func (s *grpcServer) SendMessage(ctx context.Context, req *pb.SendMessageRequest) (*pb.SendMessageResponse, error) {
-	err := s.e4Service.SendMessage(ctx, req.Topic, req.Message)
-	if err != nil {
-		return nil, grpcError(err)
-	}
-
-	return &pb.SendMessageResponse{}, nil
-}
-
 func (s *grpcServer) CountClients(ctx context.Context, req *pb.CountClientsRequest) (*pb.CountClientsResponse, error) {
 	count, err := s.e4Service.CountClients(ctx)
 	if err != nil {

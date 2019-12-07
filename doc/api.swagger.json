@@ -299,33 +299,6 @@
         ]
       }
     },
-    "/e4/message": {
-      "post": {
-        "summary": "Send a message on a topic",
-        "operationId": "SendMessage",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbSendMessageResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/pbSendMessageRequest"
-            }
-          }
-        ],
-        "tags": [
-          "C2"
-        ]
-      }
-    },
     "/e4/topic/{topic}": {
       "delete": {
         "summary": "Remove a topic",
@@ -648,20 +621,6 @@
       "type": "object"
     },
     "pbResetClientResponse": {
-      "type": "object"
-    },
-    "pbSendMessageRequest": {
-      "type": "object",
-      "properties": {
-        "topic": {
-          "type": "string"
-        },
-        "message": {
-          "type": "string"
-        }
-      }
-    },
-    "pbSendMessageResponse": {
       "type": "object"
     },
     "protobufAny": {

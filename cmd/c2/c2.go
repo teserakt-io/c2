@@ -46,7 +46,13 @@ func main() {
 
 	logger := log.NewJSONLogger(logFile)
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
-	defer logger.Log("msg", "goodbye")
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Log("msg", "c2 panic", "error", r)
+		}
+
+		logger.Log("msg", "goodbye")
+	}()
 
 	// set up config resolver
 	configResolver, err := slibpath.NewAppPathResolver(os.Args[0])

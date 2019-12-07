@@ -28,8 +28,8 @@ func (t TopicKey) Hash() []byte {
 }
 
 // DecryptKey returns the decrypted key of the current TopicKey
-func (t TopicKey) DecryptKey(DBEncKey []byte) ([]byte, error) {
-	key, err := e4crypto.Decrypt(DBEncKey, nil, t.Key)
+func (t TopicKey) DecryptKey(dbEncKey []byte) ([]byte, error) {
+	key, err := e4crypto.Decrypt(dbEncKey, nil, t.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -38,8 +38,8 @@ func (t TopicKey) DecryptKey(DBEncKey []byte) ([]byte, error) {
 }
 
 // DecryptKey returns the decrypted key of current Client
-func (i Client) DecryptKey(DBEncKey []byte) ([]byte, error) {
-	key, err := e4crypto.Decrypt(DBEncKey, nil, i.Key)
+func (i Client) DecryptKey(dbEncKey []byte) ([]byte, error) {
+	key, err := e4crypto.Decrypt(dbEncKey, nil, i.Key)
 	if err != nil {
 		return nil, err
 	}
