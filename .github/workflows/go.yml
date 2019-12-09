@@ -72,8 +72,3 @@ jobs:
           registry_name: "${{ secrets.GCR_PROJECT }}"
           registry_username: _json_key
           registry_password: ${{ secrets.GCR_TOKEN }}
-
-      - uses: actions/upload-artifact@master
-        with:
-          name: ${{ matrix.project }}-${{ matrix.buildOS }}-amd64
-          path: ./${{ steps.build.outputs.binary-path }}
