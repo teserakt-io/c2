@@ -3,11 +3,12 @@ package protocols
 import (
 	"context"
 	"errors"
+	"io/ioutil"
 	"testing"
 	"time"
 
-	"github.com/go-kit/kit/log"
 	"github.com/golang/mock/gomock"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/teserakt-io/c2/internal/analytics"
 	"github.com/teserakt-io/c2/internal/config"
@@ -32,10 +33,13 @@ func TestMQTTPubSubClient(t *testing.T) {
 	expectedTimeout := 10 * time.Millisecond
 	expectedDisconnectTimeout := uint(1000)
 
+	logger := log.New()
+	logger.SetOutput(ioutil.Discard)
+
 	pubSubClient := &mqttPubSubClient{
 		mqtt:              mockMQTTClient,
 		config:            config,
-		logger:            log.NewNopLogger(),
+		logger:            logger,
 		monitor:           mockMonitor,
 		waitTimeout:       expectedTimeout,
 		disconnectTimeout: expectedDisconnectTimeout,

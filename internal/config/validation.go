@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	libconfig "github.com/teserakt-io/serverlib/config"
+	slibcfg "github.com/teserakt-io/serverlib/config"
 )
 
 var (
@@ -109,10 +109,6 @@ func (c ESCfg) Validate() error {
 		return ErrAtLeastOneURLRequired
 	}
 
-	if c.IsC2LoggingEnabled() && len(c.C2LogsIndexName) == 0 {
-		return ErrIndexNameRequired
-	}
-
 	if c.IsMessageLoggingEnabled() && len(c.MessageIndexName) == 0 {
 		return ErrIndexNameRequired
 	}
@@ -132,9 +128,9 @@ func (c DBCfg) Validate() error {
 	}
 
 	switch c.Type {
-	case libconfig.DBTypePostgres:
+	case slibcfg.DBTypePostgres:
 		return c.validatePostgres()
-	case libconfig.DBTypeSQLite:
+	case slibcfg.DBTypeSQLite:
 		return c.validateSQLite()
 	default:
 		return ErrUnsupportedDBType
@@ -162,9 +158,9 @@ func (c DBCfg) validatePostgres() error {
 		return ErrNoSchema
 	}
 
-	if c.SecureConnection != libconfig.DBSecureConnectionEnabled &&
-		c.SecureConnection != libconfig.DBSecureConnectionSelfSigned &&
-		c.SecureConnection != libconfig.DBSecureConnectionInsecure {
+	if c.SecureConnection != slibcfg.DBSecureConnectionEnabled &&
+		c.SecureConnection != slibcfg.DBSecureConnectionSelfSigned &&
+		c.SecureConnection != slibcfg.DBSecureConnectionInsecure {
 		return ErrInvalidSecureConnection
 	}
 

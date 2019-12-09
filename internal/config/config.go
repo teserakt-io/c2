@@ -6,6 +6,15 @@ import (
 	slibcfg "github.com/teserakt-io/serverlib/config"
 )
 
+// List of available log levels
+const (
+	LogLevelNone  = "none"
+	LogLevelDebug = "debug"
+	LogLevelInfo  = "info"
+	LogLevelWarn  = "warn"
+	LogLevelError = "error"
+)
+
 // Config type holds the application configuration
 type Config struct {
 	IsProd  bool
@@ -23,6 +32,8 @@ type Config struct {
 	OpencensusAddress   string
 
 	ES ESCfg
+
+	LoggerLevel string
 }
 
 // New creates a fresh configuration.
@@ -71,10 +82,10 @@ func (cfg *Config) ViperCfgFields() []slibcfg.ViperCfgField {
 
 		{&cfg.ES.Enable, "es-enable", slibcfg.ViperBool, false, "E4C2_ES_ENABLE"},
 		{&cfg.ES.URLs, "es-urls", slibcfg.ViperStringSlice, "", "E4C2_ES_URLS"},
-		{&cfg.ES.enableC2Logging, "es-c2-logging-enable", slibcfg.ViperBool, true, ""},
-		{&cfg.ES.C2LogsIndexName, "es-c2-logging-index", slibcfg.ViperString, "logs", ""},
 		{&cfg.ES.enableMessageLogging, "es-message-logging-enable", slibcfg.ViperBool, true, ""},
 		{&cfg.ES.MessageIndexName, "es-message-logging-index", slibcfg.ViperString, "messages", ""},
+
+		{&cfg.LoggerLevel, "log-level", slibcfg.ViperString, "debug", "E4C2_LOG_LEVEL"},
 	}
 }
 
@@ -126,15 +137,8 @@ type DBCfg struct {
 type ESCfg struct {
 	Enable               bool
 	URLs                 []string
-	enableC2Logging      bool
 	enableMessageLogging bool
-	C2LogsIndexName      string
 	MessageIndexName     string
-}
-
-// IsC2LoggingEnabled indicate whenever C2 logging is enabled in configuration
-func (c ESCfg) IsC2LoggingEnabled() bool {
-	return c.Enable && c.enableC2Logging
 }
 
 // IsMessageLoggingEnabled indicate whenever broker message must be logged to elasticsearch

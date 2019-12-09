@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/Shopify/sarama"
-	"github.com/go-kit/kit/log"
+	log "github.com/sirupsen/logrus"
 	"go.opencensus.io/trace"
 
 	"github.com/teserakt-io/c2/internal/analytics"
@@ -16,7 +16,7 @@ import (
 )
 
 type kafkaPubSubClient struct {
-	logger  log.Logger
+	logger  log.FieldLogger
 	cfg     config.KafkaCfg
 	monitor analytics.MessageMonitor
 
@@ -30,7 +30,7 @@ type kafkaPubSubClient struct {
 var _ PubSubClient = (*kafkaPubSubClient)(nil)
 
 // NewKafkaPubSubClient creates a new PubSubClient backed by Kafka
-func NewKafkaPubSubClient(cfg config.KafkaCfg, logger log.Logger, monitor analytics.MessageMonitor) PubSubClient {
+func NewKafkaPubSubClient(cfg config.KafkaCfg, logger log.FieldLogger, monitor analytics.MessageMonitor) PubSubClient {
 	return &kafkaPubSubClient{
 		logger:  logger,
 		cfg:     cfg,
@@ -50,20 +50,20 @@ func (c *kafkaPubSubClient) Connect() error {
 
 	kafkaClient, err := sarama.NewClient(c.cfg.Brokers, kafkaCfg)
 	if err != nil {
-		c.logger.Log("msg", "kafka client failed to connect to broker(s)", "error", err)
+		c.logger.WithError(err).Error("kafka client failed to connect to broker(s)")
 		return err
 	}
 
 	consumer, err := sarama.NewConsumerFromClient(kafkaClient)
 	if err != nil {
-		c.logger.Log("msg", "failed to initialize kafka consumer", "error", err)
+		c.logger.WithError(err).Error("failed to initialize kafka consumer")
 		return err
 	}
 	c.consumer = consumer
 
 	producer, err := sarama.NewSyncProducerFromClient(kafkaClient)
 	if err != nil {
-		c.logger.Log("msg", "failed to initialize kafka producer", "error", err)
+		c.logger.WithError(err).Error("failed to initialize kafka producer")
 		return err
 	}
 	c.producer = producer
@@ -79,12 +79,12 @@ func (c *kafkaPubSubClient) Disconnect() error {
 	}
 
 	if err := c.consumer.Close(); err != nil {
-		c.logger.Log("msg", "failed to close kafka consumer", "error", err)
+		c.logger.WithError(err).Error("failed to close kafka consumer")
 		return err
 	}
 
 	if err := c.producer.Close(); err != nil {
-		c.logger.Log("msg", "failed to close kafka producer", "error", err)
+		c.logger.WithError(err).Error("failed to close kafka producer")
 		return err
 	}
 
@@ -117,11 +117,13 @@ func (c *kafkaPubSubClient) SubscribeToTopic(ctx context.Context, rawTopic strin
 	ctx, span := trace.StartSpan(ctx, "kafka.SubscribeToTopic")
 	defer span.End()
 
+	logger := c.logger.WithField("topic", rawTopic)
+
 	topic := filterTopicName(rawTopic)
 
 	partitionConsumer, err := c.consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
 	if err != nil {
-		c.logger.Log("msg", "failed to subscribe to topic", "topic", rawTopic, "error", err)
+		logger.WithError(err).Error("failed to subscribe to topic")
 		return err
 	}
 
@@ -130,7 +132,7 @@ func (c *kafkaPubSubClient) SubscribeToTopic(ctx context.Context, rawTopic strin
 
 	go c.watchForMessages(ctx, partitionConsumer, stopChan)
 
-	c.logger.Log("msg", "successfully subscribed to topic", "topic", rawTopic)
+	logger.Info("successfully subscribed to topic")
 
 	return nil
 }
@@ -139,9 +141,11 @@ func (c *kafkaPubSubClient) UnsubscribeFromTopic(ctx context.Context, rawTopic s
 	_, span := trace.StartSpan(ctx, "kafka.UnsubscribeFromTopic")
 	defer span.End()
 
+	logger := c.logger.WithField("topic", rawTopic)
+
 	stopChan, exists := c.subscribedTopics[rawTopic]
 	if !exists {
-		c.logger.Log("msg", "cannot unsubscribe to a non subscribed topic", "topic", rawTopic)
+		logger.Warn("cannot unsubscribe to a non subscribed topic")
 
 		return nil
 	}
@@ -149,7 +153,7 @@ func (c *kafkaPubSubClient) UnsubscribeFromTopic(ctx context.Context, rawTopic s
 	delete(c.subscribedTopics, rawTopic)
 
 	close(stopChan)
-	c.logger.Log("msg", "successfully unsubscribed from topic", "topic", rawTopic)
+	logger.Info("successfully unsubscribed from topic")
 
 	return nil
 }
@@ -158,6 +162,8 @@ func (c *kafkaPubSubClient) Publish(ctx context.Context, payload []byte, rawTopi
 	_, span := trace.StartSpan(ctx, "kafka.Publish")
 	defer span.End()
 
+	logger := c.logger.WithField("topic", rawTopic)
+
 	topic := filterTopicName(rawTopic)
 
 	partition, offset, err := c.producer.SendMessage(&sarama.ProducerMessage{
@@ -165,12 +171,11 @@ func (c *kafkaPubSubClient) Publish(ctx context.Context, payload []byte, rawTopi
 		Value: sarama.ByteEncoder(payload),
 	})
 	if err != nil {
-		c.logger.Log("msg", "failed to published message", "topic", topic, "partition", partition, "offset", offset)
-
+		logger.WithFields(log.Fields{"partition": partition, "offset": offset}).WithError(err).Error("failed to publish message")
 		return err
 	}
 
-	c.logger.Log("msg", "successfully published message", "topic", topic, "partition", partition, "offset", offset)
+	logger.WithFields(log.Fields{"partition": partition, "offset": offset}).Info("successfully published message")
 
 	return nil
 }
@@ -179,11 +184,11 @@ func (c *kafkaPubSubClient) watchForMessages(ctx context.Context, partitionConsu
 	for {
 		select {
 		case err := <-partitionConsumer.Errors():
-			c.logger.Log("msg", "partitionConsumer error", "error", err)
+			c.logger.WithError(err).Error("partitionConsumer error")
 		case msg := <-partitionConsumer.Messages():
 			ctx, span := trace.StartSpan(ctx, "kafka.onMessage")
 
-			c.logger.Log("msg", "received kafka message", "data", msg)
+			c.logger.WithField("data", msg).Debug("received kafka message")
 			loggedMsg := analytics.LoggedMessage{
 				Duplicate:       false,
 				Qos:             byte(0),
@@ -210,7 +215,6 @@ func (c *kafkaPubSubClient) watchForMessages(ctx context.Context, partitionConsu
 				if json.Unmarshal(loggedMsg.Payload, &js) == nil {
 					loggedMsg.IsJSON = true
 				} else {
-					c.logger.Log(string(loggedMsg.Payload))
 					if _, err := base64.StdEncoding.DecodeString(string(loggedMsg.Payload)); err == nil {
 						loggedMsg.IsBase64 = true
 					}
@@ -221,15 +225,15 @@ func (c *kafkaPubSubClient) watchForMessages(ctx context.Context, partitionConsu
 			span.End()
 
 		case <-stopChan:
-			c.logger.Log("msg", "stopping watching for messages by stop channel")
+			c.logger.Info("stopping watching for messages by stop channel")
 			if err := partitionConsumer.Close(); err != nil {
-				c.logger.Log("msg", "failed to stop partition consumer", "error", err)
+				c.logger.WithError(err).Error("failed to stop partition consumer")
 				return
 			}
 
 			return
 		case <-ctx.Done():
-			c.logger.Log("msg", "stopping watching for messages by context", "error", ctx.Err())
+			c.logger.WithError(ctx.Err()).Warn("stopping watching for messages by context")
 			return
 		}
 	}
