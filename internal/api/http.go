@@ -7,8 +7,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/go-kit/kit/log"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	log "github.com/sirupsen/logrus"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/plugin/ochttp"
 	"google.golang.org/grpc"
@@ -26,7 +26,7 @@ type HTTPServer interface {
 
 type httpServer struct {
 	e4Service    services.E4
-	logger       log.Logger
+	logger       log.FieldLogger
 	cfg          config.HTTPServerCfg
 	grpcCertPath string
 }
@@ -34,7 +34,7 @@ type httpServer struct {
 var _ HTTPServer = (*httpServer)(nil)
 
 // NewHTTPServer creates a new http server for C2
-func NewHTTPServer(scfg config.HTTPServerCfg, grpcCertPath string, e4Service services.E4, logger log.Logger) HTTPServer {
+func NewHTTPServer(scfg config.HTTPServerCfg, grpcCertPath string, e4Service services.E4, logger log.FieldLogger) HTTPServer {
 	return &httpServer{
 		e4Service:    e4Service,
 		logger:       logger,
@@ -85,12 +85,12 @@ func (s *httpServer) ListenAndServe(ctx context.Context) error {
 	var lc net.ListenConfig
 	lis, err := lc.Listen(ctx, "tcp", s.cfg.Addr)
 	if err != nil {
-		s.logger.Log("msg", "failed to listen", "error", err)
+		s.logger.WithError(err).Error("failed to listen")
 
 		return err
 	}
 
-	s.logger.Log("msg", "starting http listener", "addr", s.cfg.Addr)
+	s.logger.WithField("addr", s.cfg.Addr).Info("starting http listener")
 
 	return apiServer.ServeTLS(lis, s.cfg.Cert, s.cfg.Key)
 }

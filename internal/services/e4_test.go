@@ -5,13 +5,14 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/go-kit/kit/log"
 	"github.com/golang/mock/gomock"
+	log "github.com/sirupsen/logrus"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 
 	"github.com/teserakt-io/c2/internal/commands"
@@ -86,7 +87,8 @@ func TestE4(t *testing.T) {
 	mockEventDispatcher := events.NewMockDispatcher(mockCtrl)
 	mockE4Key := crypto.NewMockE4Key(mockCtrl)
 
-	logger := log.NewNopLogger()
+	logger := log.New()
+	logger.SetOutput(ioutil.Discard)
 
 	dbEncKey := newKey(t)
 

@@ -2,15 +2,16 @@ package protocols
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
 	"testing"
 	"time"
 
+	gomock "github.com/golang/mock/gomock"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/teserakt-io/c2/internal/analytics"
 	"github.com/teserakt-io/c2/internal/config"
-
-	"github.com/go-kit/kit/log"
-	gomock "github.com/golang/mock/gomock"
 )
 
 func TestKafkaPubSubClient(t *testing.T) {
@@ -23,7 +24,8 @@ func TestKafkaPubSubClient(t *testing.T) {
 
 	mockMonitor := analytics.NewMockMessageMonitor(mockCtrl)
 
-	logger := log.NewNopLogger()
+	logger := log.New()
+	logger.SetOutput(ioutil.Discard)
 
 	cfg := config.KafkaCfg{
 		Brokers: []string{"127.0.0.1:9092"},

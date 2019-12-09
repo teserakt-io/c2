@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/go-kit/kit/log"
 	"github.com/golang/protobuf/ptypes"
+	log "github.com/sirupsen/logrus"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/stats/view"
 	"google.golang.org/grpc"
@@ -34,7 +34,7 @@ type GRPCServer interface {
 }
 
 type grpcServer struct {
-	logger          log.Logger
+	logger          log.FieldLogger
 	cfg             config.ServerCfg
 	e4Service       services.E4
 	eventDispatcher events.Dispatcher
@@ -43,7 +43,7 @@ type grpcServer struct {
 var _ GRPCServer = (*grpcServer)(nil)
 
 // NewGRPCServer creates a new server over GRPC
-func NewGRPCServer(scfg config.ServerCfg, e4Service services.E4, eventDispatcher events.Dispatcher, logger log.Logger) GRPCServer {
+func NewGRPCServer(scfg config.ServerCfg, e4Service services.E4, eventDispatcher events.Dispatcher, logger log.FieldLogger) GRPCServer {
 	return &grpcServer{
 		cfg:             scfg,
 		logger:          logger,
@@ -56,21 +56,26 @@ func (s *grpcServer) ListenAndServe(ctx context.Context) error {
 	var lc net.ListenConfig
 	lis, err := lc.Listen(ctx, "tcp", s.cfg.Addr)
 	if err != nil {
-		s.logger.Log("msg", "failed to listen", "error", err)
+		s.logger.WithError(err).Error("failed to listen")
 
 		return err
+	}
+
+	logFields := log.Fields{
+		"cert": s.cfg.Cert,
+		"key":  s.cfg.Key,
 	}
 
 	creds, err := credentials.NewServerTLSFromFile(s.cfg.Cert, s.cfg.Key)
 	if err != nil {
-		s.logger.Log("msg", "failed to get credentials", "cert", s.cfg.Cert, "key", s.cfg.Key, "error", err)
+		s.logger.WithError(err).WithFields(logFields).Error("failed to get credentials")
 		return err
 	}
 
-	s.logger.Log("msg", "using TLS for gRPC", "cert", s.cfg.Cert, "key", s.cfg.Key)
+	s.logger.WithFields(logFields).Info("using TLS for gRPC")
 
 	if err = view.Register(ocgrpc.DefaultServerViews...); err != nil {
-		s.logger.Log("msg", "failed to register ocgrpc server views", "error", err)
+		s.logger.WithError(err).Error("failed to register ocgrpc server views")
 
 		return err
 	}
@@ -78,7 +83,7 @@ func (s *grpcServer) ListenAndServe(ctx context.Context) error {
 	srv := grpc.NewServer(grpc.Creds(creds), grpc.StatsHandler(&ocgrpc.ServerHandler{}))
 	pb.RegisterC2Server(srv, s)
 
-	s.logger.Log("msg", "Starting api grpc server", "addr", s.cfg.Addr)
+	s.logger.WithField("addr", s.cfg.Addr).Info("starting api grpc server")
 
 	errc := make(chan error)
 	go func() {
@@ -328,11 +333,11 @@ func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamReques
 
 	ctx := srv.Context()
 	grpcPeer := peerFromContext(ctx)
-	logger := log.With(s.logger, "client", grpcPeer.Addr)
+	logger := s.logger.WithField("client", grpcPeer.Addr)
 
-	logger.Log("msg", "Started new event stream")
+	logger.Info("started new event stream")
 	defer func() {
-		logger.Log("msg", "event stream closed")
+		logger.Warn("event stream closed")
 	}()
 
 	for {
@@ -354,11 +359,11 @@ func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamReques
 			}
 
 			if err := srv.Send(pbEvt); err != nil {
-				logger.Log("msg", "failed to send event", "error", err)
+				logger.WithError(err).Error("failed to send event")
 				return err
 			}
 
-			logger.Log("msg", "Successfully sent event", "eventType", pbEvt.Type.String())
+			logger.WithField("eventType", pbEvt.Type.String()).Info("successfully sent event")
 		}
 	}
 }

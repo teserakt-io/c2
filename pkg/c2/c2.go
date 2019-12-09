@@ -10,10 +10,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/go-kit/kit/log"
 	"github.com/olivere/elastic"
+	log "github.com/sirupsen/logrus"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
-	sliblog "github.com/teserakt-io/serverlib/log"
 
 	"github.com/teserakt-io/c2/internal/analytics"
 	"github.com/teserakt-io/c2/internal/api"
@@ -40,7 +39,7 @@ type APIEndpoint interface {
 type C2 struct {
 	cfg             config.Config
 	db              models.Database
-	logger          log.Logger
+	logger          log.FieldLogger
 	e4Service       services.E4
 	pubSubClient    protocols.PubSubClient
 	eventDispatcher events.Dispatcher
@@ -59,14 +58,14 @@ func (e SignalError) Error() string {
 }
 
 // New creates a new C2
-func New(logger log.Logger, cfg config.Config) (*C2, error) {
+func New(logger log.FieldLogger, cfg config.Config) (*C2, error) {
 	var err error
 
 	var e4Key crypto.E4Key
 	switch cfg.Crypto.CryptoMode() {
 	case config.SymKey:
 		e4Key = crypto.NewE4SymKey()
-		logger.Log("msg", "initialized E4Key in symmetric key mode")
+		logger.Info("initialized E4Key in symmetric key mode")
 	case config.PubKey:
 		keyFile, err := os.Open(cfg.Crypto.C2PrivateKeyPath)
 		if err != nil {
@@ -83,7 +82,7 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 			return nil, fmt.Errorf("failed to create E4PubKey: %v", err)
 		}
 
-		logger.Log("msg", "initialized E4Key in public key mode")
+		logger.Info("initialized E4Key in public key mode")
 	default:
 		return nil, fmt.Errorf("unsupported crypto mode: %s", cfg.Crypto.CryptoMode())
 	}
@@ -100,50 +99,35 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		}
 	}
 
-	if cfg.ES.IsC2LoggingEnabled() {
-		// extend logger to forward log to ES
-		esLogger, err := sliblog.WithElasticSearch(logger, esClient, cfg.ES.C2LogsIndexName)
-		logger = log.With(esLogger)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create ES logger: %v", err)
-		}
-
-		logger.Log("msg", "elasticsearch log forwarding enabled")
-	}
-
-	// compatibility for packages that do not understand go-kit logger:
-	stdloglogger := stdlog.New(log.NewStdlibAdapter(logger), "", 0)
-
 	switch {
 	case cfg.DB.SecureConnection.IsInsecure():
-		logger.Log("msg", "unencrypted database connection.")
+		logger.Warn("Unencrypted database connection.")
 		fmt.Fprintf(os.Stderr, "WARNING: Unencrypted database connection. We do not recommend this setup.\n")
 	case cfg.DB.SecureConnection.IsSelfSigned():
-		logger.Log("msg", "self-signed certificate used. We do not recommend this setup.")
+		logger.Warn("Self signed certificate used. We do not recommend this setup.")
 		fmt.Fprintf(os.Stderr, "WARNING: Self-signed connection to database. We do not recommend this setup.\n")
 	}
 
-	logger.Log("msg", "config loaded")
-
-	db, err := models.NewDB(cfg.DB, stdloglogger)
+	dbLogger := stdlog.New(logger.WithField("protocol", "db").WriterLevel(log.DebugLevel), "", 0)
+	db, err := models.NewDB(cfg.DB, dbLogger)
 	if err != nil {
-		logger.Log("msg", "database creation failed", "error", err)
+		logger.WithError(err).Error("database creation failed")
 
 		return nil, fmt.Errorf("failed to initialize database: %v", err)
 	}
 
-	logger.Log("msg", "database open")
+	logger.Info("database connection opened")
 
 	if err := db.Migrate(); err != nil {
-		logger.Log("msg", "database setup failed", "error", err)
+		log.WithError(err).Error("database migration failed")
 
 		return nil, fmt.Errorf("database migration failed: %v", err)
 	}
-	logger.Log("msg", "database initialized")
+	logger.Info("database initialized")
 
 	monitor := analytics.NewESMessageMonitor(
 		esClient,
-		log.With(logger, "protocol", "monitoring"),
+		logger.WithField("protocol", "monitoring"),
 		cfg.ES.IsMessageLoggingEnabled(),
 		cfg.ES.MessageIndexName,
 	)
@@ -151,11 +135,11 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 	var pubSubClient protocols.PubSubClient
 	switch {
 	case cfg.MQTT.Enabled:
-		pubSubClient = protocols.NewMQTTPubSubClient(cfg.MQTT, log.With(logger, "protocol", "mqtt"), monitor)
-		logger.Log("msg", "MQTT client created")
+		pubSubClient = protocols.NewMQTTPubSubClient(cfg.MQTT, logger.WithField("protocol", "mqtt"), monitor)
+		logger.Info("MQTT client created")
 	case cfg.Kafka.Enabled:
-		pubSubClient = protocols.NewKafkaPubSubClient(cfg.Kafka, log.With(logger, "protocol", "kafka"), monitor)
-		logger.Log("msg", "Kafka client created")
+		pubSubClient = protocols.NewKafkaPubSubClient(cfg.Kafka, logger.WithField("protocol", "kafka"), monitor)
+		logger.Info("Kafka client created")
 	default:
 		return nil, errors.New("no pubSub client enabled from configuration, cannot start c2 without one")
 	}
@@ -178,17 +162,19 @@ func New(logger log.Logger, cfg config.Config) (*C2, error) {
 		eventDispatcher,
 		events.NewFactory(),
 		e4Key,
-		log.With(logger, "protocol", "c2"),
+		logger.WithField("protocol", "e4"),
 		dbEncKey,
 	)
 
 	// initialize Observability
 	if err := analytics.SetupObservability(cfg.OpencensusAddress, cfg.OpencensusSampleAll); err != nil {
-		logger.Log("msg", "Observability instrumentation setup failed", "error", err)
-
+		logger.WithError(err).Error("observability instrumentation setup failed")
 		return nil, fmt.Errorf("observability instrumentation setup failed: %v", err)
 	}
-	logger.Log("msg", "Observability instrumentation setup successfully", "oc-agent", cfg.OpencensusAddress, "sample-all", cfg.OpencensusSampleAll)
+	logger.WithFields(log.Fields{
+		"oc-agent":   cfg.OpencensusAddress,
+		"sample-all": cfg.OpencensusSampleAll,
+	}).Info("observability instrumentation setup successfully")
 
 	return &C2{
 		cfg:             cfg,
@@ -208,14 +194,14 @@ func (c *C2) Close() {
 
 // EnableHTTPEndpoint will turn on C2 over HTTP
 func (c *C2) EnableHTTPEndpoint() {
-	c.endpoints = append(c.endpoints, api.NewHTTPServer(c.cfg.HTTP, c.cfg.GRPC.Cert, c.e4Service, log.With(c.logger, "protocol", "http")))
-	c.logger.Log("msg", "Enabled C2 HTTP server")
+	c.endpoints = append(c.endpoints, api.NewHTTPServer(c.cfg.HTTP, c.cfg.GRPC.Cert, c.e4Service, c.logger.WithField("protocol", "http")))
+	c.logger.Info("enabled C2 HTTP server")
 }
 
 // EnableGRPCEndpoint will turn on C2 over GRPC
 func (c *C2) EnableGRPCEndpoint() {
-	c.endpoints = append(c.endpoints, api.NewGRPCServer(c.cfg.GRPC, c.e4Service, c.eventDispatcher, log.With(c.logger, "protocol", "grpc")))
-	c.logger.Log("msg", "Enabled C2 GRPC server")
+	c.endpoints = append(c.endpoints, api.NewGRPCServer(c.cfg.GRPC, c.e4Service, c.eventDispatcher, c.logger.WithField("protocol", "grpc")))
+	c.logger.Info("enabled C2 GRPC server")
 }
 
 // ListenAndServe will start C2
@@ -231,7 +217,7 @@ func (c *C2) ListenAndServe(ctx context.Context) error {
 		go func() {
 			topicCount, err := c.e4Service.CountTopics(ctx)
 			if err != nil {
-				c.logger.Log("msg", "Failed to count topics", "error", err)
+				c.logger.WithError(err).Error("failed to count topics")
 				errc <- ErrSubscribeExisting
 				return
 			}
@@ -241,13 +227,13 @@ func (c *C2) ListenAndServe(ctx context.Context) error {
 			for offset < topicCount {
 				topics, err := c.e4Service.GetTopicsRange(ctx, offset, batchSize)
 				if err != nil {
-					c.logger.Log("msg", "Failed to get topic batch", "error", err, "offset", offset, "batchSize", batchSize)
+					c.logger.WithError(err).Error("failed to get topic batch")
 					errc <- ErrSubscribeExisting
 					return
 				}
 
 				if err := c.pubSubClient.SubscribeToTopics(ctx, topics); err != nil {
-					c.logger.Log("msg", "Subscribing to all existing topics failed", "error", err)
+					c.logger.WithError(err).Error("subscribing to all existing topics failed")
 					errc <- ErrSubscribeExisting
 					return
 				}
@@ -255,10 +241,10 @@ func (c *C2) ListenAndServe(ctx context.Context) error {
 				offset += batchSize
 			}
 
-			c.logger.Log("msg", "subscribed to all topics", "count", topicCount)
+			c.logger.WithField("count", topicCount).Info("subscribed to all topics")
 		}()
 	} else {
-		c.logger.Log("msg", "message monitoring is not enabled, skipping global subscription")
+		c.logger.Warn("message monitoring is not enabled, skipping global subscription")
 	}
 
 	go func() {
