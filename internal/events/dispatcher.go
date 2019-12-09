@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/go-kit/kit/log"
+	log "github.com/sirupsen/logrus"
 )
 
 // Dispatcher defines a component able to dispatch an event to
@@ -19,7 +19,7 @@ type Dispatcher interface {
 }
 
 type dispatcher struct {
-	logger    log.Logger
+	logger    log.FieldLogger
 	listeners []Listener
 	lock      sync.RWMutex
 }
@@ -27,7 +27,7 @@ type dispatcher struct {
 var _ Dispatcher = (*dispatcher)(nil)
 
 // NewDispatcher returns a new instance of an event dispatcher
-func NewDispatcher(logger log.Logger) Dispatcher {
+func NewDispatcher(logger log.FieldLogger) Dispatcher {
 	return &dispatcher{
 		logger: logger,
 	}
@@ -39,7 +39,7 @@ func (d *dispatcher) AddListener(lis Listener) {
 	d.listeners = append(d.listeners, lis)
 	d.lock.Unlock()
 
-	d.logger.Log("msg", "registered new listener on event dispatcher", "listener", fmt.Sprintf("%p", lis))
+	d.logger.WithField("listener", fmt.Sprintf("%p", lis)).Info("registered new listener on event dispatcher")
 }
 
 // Listeners returns the list of registered listeners on the dispatcher
@@ -57,7 +57,7 @@ func (d *dispatcher) RemoveListener(l Listener) error {
 			d.listeners = append(d.listeners[:i], d.listeners[i+1:]...)
 			d.lock.Unlock()
 
-			d.logger.Log("msg", "removed listener from event dispatcher", "listener", fmt.Sprintf("%p", l))
+			d.logger.WithField("listener", fmt.Sprintf("%p", lis)).Info("removed listener from event dispatcher")
 			return nil
 		}
 	}
@@ -71,6 +71,6 @@ func (d *dispatcher) Dispatch(evt Event) {
 	for _, lis := range d.listeners {
 		lis.Send(evt)
 	}
-	d.logger.Log("msg", "dispatched event to listeners", "count", len(d.listeners))
+	d.logger.WithField("count", len(d.listeners)).Debug("dispatched event to listeners")
 	d.lock.RUnlock()
 }
