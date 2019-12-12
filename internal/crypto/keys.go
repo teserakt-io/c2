@@ -23,9 +23,11 @@ type E4Key interface {
 	ValidateKey(key []byte) error
 	// RandomKey generates a new random key, and returns distinct variables for the key to be sent to the client
 	// and the one to be stored.
-	// If the key has a public part, the clientKey will contains the private part and the c2Stored the public part
+	// If the key has a public part, the clientKey will contains the private part and the c2StoredKey the public part
 	// If the key is a symmetric one, both clientKey and c2StoredKey will be equals.
 	RandomKey() (clientKey, c2StoredKey []byte, err error)
+	// IsPubKeyMode returns true when the E4Key support pubkey mode, or false otherwise
+	IsPubKeyMode() bool
 }
 
 type e4PubKey struct {
@@ -71,6 +73,10 @@ func (k *e4PubKey) RandomKey() (clientKey, c2StoredKey []byte, err error) {
 	return privKey, pubKey, nil
 }
 
+func (k *e4PubKey) IsPubKeyMode() bool {
+	return true
+}
+
 type e4SymKey struct {
 }
 
@@ -100,4 +106,8 @@ func (k *e4SymKey) ValidateKey(key []byte) error {
 func (k *e4SymKey) RandomKey() (clientKey, c2StoredKey []byte, err error) {
 	key := e4crypto.RandomKey()
 	return key, key, nil
+}
+
+func (k *e4SymKey) IsPubKeyMode() bool {
+	return false
 }

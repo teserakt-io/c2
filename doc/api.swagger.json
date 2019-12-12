@@ -299,6 +299,33 @@
         ]
       }
     },
+    "/e4/send-client-pubkey": {
+      "post": {
+        "summary": "Send a client pubkey to another client (pubkey mode only)",
+        "operationId": "SendClientPubkeyCommand",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbSendClientPubkeyCommandResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbSendClientPubkeyCommandRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
     "/e4/topic/{topic}": {
       "delete": {
         "summary": "Remove a topic",
@@ -621,6 +648,20 @@
       "type": "object"
     },
     "pbResetClientResponse": {
+      "type": "object"
+    },
+    "pbSendClientPubkeyCommandRequest": {
+      "type": "object",
+      "properties": {
+        "sourceClient": {
+          "$ref": "#/definitions/pbClient"
+        },
+        "targetClient": {
+          "$ref": "#/definitions/pbClient"
+        }
+      }
+    },
+    "pbSendClientPubkeyCommandResponse": {
       "type": "object"
     },
     "protobufAny": {

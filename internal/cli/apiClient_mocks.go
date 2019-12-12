@@ -408,6 +408,26 @@ func (mr *MockC2ClientMockRecorder) ResetClient(arg0, arg1 interface{}, arg2 ...
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetClient", reflect.TypeOf((*MockC2Client)(nil).ResetClient), varargs...)
 }
 
+// SendClientPubkeyCommand mocks base method
+func (m *MockC2Client) SendClientPubkeyCommand(arg0 context.Context, arg1 *pb.SendClientPubkeyCommandRequest, arg2 ...grpc.CallOption) (*pb.SendClientPubkeyCommandResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SendClientPubkeyCommand", varargs...)
+	ret0, _ := ret[0].(*pb.SendClientPubkeyCommandResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SendClientPubkeyCommand indicates an expected call of SendClientPubkeyCommand
+func (mr *MockC2ClientMockRecorder) SendClientPubkeyCommand(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendClientPubkeyCommand", reflect.TypeOf((*MockC2Client)(nil).SendClientPubkeyCommand), varargs...)
+}
+
 // SubscribeToEventStream mocks base method
 func (m *MockC2Client) SubscribeToEventStream(arg0 context.Context, arg1 *pb.SubscribeToEventStreamRequest, arg2 ...grpc.CallOption) (pb.C2_SubscribeToEventStreamClient, error) {
 	m.ctrl.T.Helper()

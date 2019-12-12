@@ -578,4 +578,43 @@ func TestE4(t *testing.T) {
 		}
 	})
 
+	t.Run("SendClientPubkeyCommand returns error when key does not support pubkey mode", func(t *testing.T) {
+		mockE4Key.EXPECT().IsPubKeyMode().Return(false)
+		err := service.SendClientPubkeyCommand(context.Background(), []byte("source"), []byte("target"))
+		want := ErrInvalidCryptoMode{}
+		if err != want {
+			t.Fatalf("got error %v, wanted %v", err, want)
+		}
+	})
+
+	t.Run("SendClientPubkeyCommand sends the expected command with a key supporting pubkey mode", func(t *testing.T) {
+		mockE4Key.EXPECT().IsPubKeyMode().Return(true)
+
+		sourceClient, clearSourceClientKey := createTestClient(t, dbEncKey)
+		targetClient, clearTargetClientKey := createTestClient(t, dbEncKey)
+
+		mockCommand := commands.NewMockCommand(mockCtrl)
+		cmdPayload := []byte("protectedSetPubKeyCommand")
+
+		gomock.InOrder(
+			mockDB.EXPECT().GetClientByID(sourceClient.E4ID).Return(sourceClient, nil),
+			mockDB.EXPECT().GetClientByID(targetClient.E4ID).Return(targetClient, nil),
+
+			// TODO: figure out why does gomock doesn't match properly the key here ? DoAndReturn used as a workaround...
+			mockCommandFactory.EXPECT().CreateSetPubKeyCommand(gomock.Any(), sourceClient.Name).DoAndReturn(func(key []byte, clientName string) (commands.Command, error) {
+				if !bytes.Equal(clearSourceClientKey, key) {
+					t.Fatalf("Invalid key, got %v, want %v", key, clearSourceClientKey)
+				}
+				return mockCommand, nil
+			}),
+
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearTargetClientKey).Return(cmdPayload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload, targetClient.Topic(), protocols.QoSExactlyOnce).Return(nil),
+		)
+
+		err := service.SendClientPubkeyCommand(context.Background(), sourceClient.E4ID, targetClient.E4ID)
+		if err != nil {
+			t.Fatalf("failed to send pubkey command: %v", err)
+		}
+	})
 }

@@ -115,6 +115,14 @@ service C2 {
     };
   }
 
+  // Send a client pubkey to another client (pubkey mode only)
+  rpc SendClientPubkeyCommand(SendClientPubkeyCommandRequest) returns (SendClientPubkeyCommandResponse) {
+    option (google.api.http) = {
+      post: "/e4/send-client-pubkey"
+      body: "*"
+    };
+  }
+
   // Provide a stream on C2 system events, grpc only
   rpc SubscribeToEventStream(SubscribeToEventStreamRequest) returns (stream Event) {}
 }
@@ -224,11 +232,11 @@ message GetTopicsResponse {
   repeated string topics = 1;
 }
 
-message SendMessageRequest {
-  string topic = 1;
-  string message = 2;
+message SendClientPubkeyCommandRequest {
+  Client sourceClient = 1;
+  Client targetClient = 2;
 }
-message SendMessageResponse {}
+message SendClientPubkeyCommandResponse {}
 
 message SubscribeToEventStreamRequest {}
 

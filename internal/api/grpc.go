@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 
@@ -325,6 +326,31 @@ func (s *grpcServer) CountTopics(ctx context.Context, req *pb.CountTopicsRequest
 	}
 
 	return &pb.CountTopicsResponse{Count: int64(count)}, nil
+}
+
+func (s *grpcServer) SendClientPubkeyCommand(ctx context.Context, req *pb.SendClientPubkeyCommandRequest) (*pb.SendClientPubkeyCommandResponse, error) {
+	if req.SourceClient == nil {
+		return nil, errors.New("source client name is required")
+	}
+	if req.TargetClient == nil {
+		return nil, errors.New("target client name is required")
+	}
+
+	sourceClientID, err := validateE4NameOrIDPair(req.SourceClient.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	targetClientID, err := validateE4NameOrIDPair(req.TargetClient.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	if err := s.e4Service.SendClientPubkeyCommand(ctx, sourceClientID, targetClientID); err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.SendClientPubkeyCommandResponse{}, nil
 }
 
 func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamRequest, srv pb.C2_SubscribeToEventStreamServer) error {

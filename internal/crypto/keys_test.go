@@ -83,6 +83,35 @@ func TestE4PubKey(t *testing.T) {
 			t.Fatalf("got error: %v, expected key to be valid", err)
 		}
 	})
+
+	t.Run("IsPubKeyMode returns true", func(t *testing.T) {
+		if !e4Key.IsPubKeyMode() {
+			t.Fatalf("IsPubKeyMode with an e4PubKey must return true")
+		}
+	})
+
+	t.Run("Random keys generate new keys", func(t *testing.T) {
+		privKey, pubKey, err := e4Key.RandomKey()
+		if err != nil {
+			t.Fatalf("Failed to generate random key: %v", err)
+		}
+
+		if bytes.Equal(privKey, pubKey) {
+			t.Fatalf("private and public key must not be equals")
+		}
+
+		privKey2, pubKey2, err := e4Key.RandomKey()
+		if err != nil {
+			t.Fatalf("failed to generate random key: %v", err)
+		}
+
+		if bytes.Equal(privKey, privKey2) {
+			t.Fatalf("successive private keys must not be equals")
+		}
+		if bytes.Equal(pubKey, pubKey2) {
+			t.Fatalf("successive public keys must not be equals")
+		}
+	})
 }
 
 func TestE4SymKey(t *testing.T) {
@@ -130,6 +159,35 @@ func TestE4SymKey(t *testing.T) {
 		key := e4crypto.RandomKey()
 		if err := e4Key.ValidateKey(key); err != nil {
 			t.Fatalf("got error: %v, expected key to be valid", err)
+		}
+	})
+
+	t.Run("IsPubKeyMode returns false", func(t *testing.T) {
+		if e4Key.IsPubKeyMode() {
+			t.Fatalf("IsPubKeyMode with an e4SymKey must return false")
+		}
+	})
+
+	t.Run("Random keys generate new keys", func(t *testing.T) {
+		clientKey, c2Key, err := e4Key.RandomKey()
+		if err != nil {
+			t.Fatalf("Failed to generate random key: %v", err)
+		}
+
+		if !bytes.Equal(clientKey, c2Key) {
+			t.Fatalf("expected both keys to be equals")
+		}
+
+		clientKey2, c2Key2, err := e4Key.RandomKey()
+		if err != nil {
+			t.Fatalf("failed to generate random key: %v", err)
+		}
+
+		if bytes.Equal(clientKey, clientKey2) {
+			t.Fatalf("successive client keys must not be equals")
+		}
+		if bytes.Equal(c2Key, c2Key2) {
+			t.Fatalf("successive c2 keys must not be equals")
 		}
 	})
 }

@@ -40,3 +40,12 @@ type ErrValidation struct {
 func (e ErrValidation) Error() string {
 	return fmt.Sprintf("validation error: %v", e.Err)
 }
+
+// ErrInvalidCryptoMode is returned when trying to execute a method retricted by the current mode
+type ErrInvalidCryptoMode struct {
+	Err error
+}
+
+func (e ErrInvalidCryptoMode) Error() string {
+	return fmt.Sprintf("invalid crypto mode: %v", e.Err)
+}

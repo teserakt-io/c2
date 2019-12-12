@@ -33,6 +33,20 @@ func (m *MockE4Key) EXPECT() *MockE4KeyMockRecorder {
 	return m.recorder
 }
 
+// IsPubKeyMode mocks base method
+func (m *MockE4Key) IsPubKeyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsPubKeyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsPubKeyMode indicates an expected call of IsPubKeyMode
+func (mr *MockE4KeyMockRecorder) IsPubKeyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPubKeyMode", reflect.TypeOf((*MockE4Key)(nil).IsPubKeyMode))
+}
+
 // ProtectCommand mocks base method
 func (m *MockE4Key) ProtectCommand(arg0 commands.Command, arg1 []byte) ([]byte, error) {
 	m.ctrl.T.Helper()

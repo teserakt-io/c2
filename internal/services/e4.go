@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -72,6 +73,10 @@ type E4 interface {
 	// > Retrieving clients per topic or topics per client
 	GetTopicsRangeByClient(ctx context.Context, id []byte, offset, count int) ([]string, error)
 	GetClientsRangeByTopic(ctx context.Context, topic string, offset, count int) ([]IDNamePair, error)
+
+	// SendClientPubkeyCommand send the sourceClientID public key to targetClientID via a SetPubKeyCmd
+	// only when C2 is configured in pubkey mode, otherwise an error will be immediately returned.
+	SendClientPubkeyCommand(ctx context.Context, sourceClientID, targetClientID []byte) error
 }
 
 type e4impl struct {
@@ -587,6 +592,60 @@ func (s *e4impl) GetClientsRangeByTopic(ctx context.Context, topic string, offse
 	logger.WithField("total", len(idNamePairs)).Info("succeeded")
 
 	return idNamePairs, nil
+}
+
+func (s *e4impl) SendClientPubkeyCommand(ctx context.Context, sourceClientID, targetClientID []byte) error {
+	ctx, span := trace.StartSpan(ctx, "e4.SendClientPubkeyCommand")
+	defer span.End()
+
+	logger := s.logger.WithFields(log.Fields{
+		"sourceClientID": sourceClientID,
+		"targetClientID": targetClientID,
+	})
+
+	if !s.e4Key.IsPubKeyMode() {
+		logger.WithError(errors.New("e4Key is not a publicKey type")).Error("failed to send public key")
+		return ErrInvalidCryptoMode{}
+	}
+
+	sourceClient, err := s.db.GetClientByID(sourceClientID)
+	if err != nil {
+		logger.WithError(err).Error("failed to get source client")
+		if models.IsErrRecordNotFound(err) {
+			return ErrClientNotFound{}
+		}
+		return ErrInternal{}
+	}
+
+	targetClient, err := s.db.GetClientByID(targetClientID)
+	if err != nil {
+		logger.WithError(err).Error("failed to get target client")
+		if models.IsErrRecordNotFound(err) {
+			return ErrClientNotFound{}
+		}
+		return ErrInternal{}
+	}
+
+	clearPubKey, err := sourceClient.DecryptKey(s.dbEncKey)
+	if err != nil {
+		logger.WithError(err).Error("failed to decrypt source client key")
+		return ErrInternal{}
+	}
+
+	cmd, err := s.commandFactory.CreateSetPubKeyCommand(clearPubKey, sourceClient.Name)
+	if err != nil {
+		logger.WithError(err).Error("failed to create SetPubKey command")
+		return ErrInternal{}
+	}
+
+	if err := s.sendCommandToClient(ctx, cmd, targetClient); err != nil {
+		logger.WithError(err).Error("failed to send SetPubKey command to target client")
+		return ErrInternal{}
+	}
+
+	logger.Info("success sending SetPubKey command")
+
+	return nil
 }
 
 func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Command, client models.Client) error {
