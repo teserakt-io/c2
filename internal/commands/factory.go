@@ -3,8 +3,9 @@ package commands
 //go:generate mockgen -destination=factory_mocks.go -package commands -self_package github.com/teserakt-io/c2/internal/commands github.com/teserakt-io/c2/internal/commands Factory
 
 import (
-	"crypto/ed25519"
 	"fmt"
+
+	"golang.org/x/crypto/ed25519"
 
 	e4 "github.com/teserakt-io/e4go"
 	e4crypto "github.com/teserakt-io/e4go/crypto"

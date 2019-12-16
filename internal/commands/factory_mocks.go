@@ -5,8 +5,8 @@
 package commands
 
 import (
-	ed25519 "crypto/ed25519"
 	gomock "github.com/golang/mock/gomock"
+	ed25519 "golang.org/x/crypto/ed25519"
 	reflect "reflect"
 )
 
