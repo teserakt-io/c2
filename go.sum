@@ -221,8 +221,10 @@ github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
-github.com/teserakt-io/e4go v1.0.1-0.20191205180133-787111d15244 h1:fl2IkwuUCsMqLU3KcBu0WdBDvRkuKa9wTdjI2ejSAb8=
-github.com/teserakt-io/e4go v1.0.1-0.20191205180133-787111d15244/go.mod h1:mIqa5mYOjm+OEw0QzdHKGRSj48rWG3KOIuOEJGO19oE=
+github.com/teserakt-io/e4go v0.0.0-20190912121911-ef9603112859 h1:fdzuYS+7zF82oNIMg255K5dOfAUzXAS6h2Ew/ZlrU/w=
+github.com/teserakt-io/e4go v0.0.0-20190912121911-ef9603112859/go.mod h1:eG2YPACiGMpr9XNwj5aIg9LZqQknj7sVtLcymqW0A7I=
+github.com/teserakt-io/e4go v1.0.1-0.20191218100317-7b4c9b308a2e h1:n+LnE6HxuUO1K0RYe2cXYgafS7i9tBVO4aN02BO2zOw=
+github.com/teserakt-io/e4go v1.0.1-0.20191218100317-7b4c9b308a2e/go.mod h1:LAUemYwJ/Ersq9WvPUVILKdzPbAzKONV6j3PvN5JqxM=
 github.com/teserakt-io/serverlib v0.0.0-20190912131345-29a7b76ad87c h1:4VZwgi8DLRJIAqFtiaIDbl87NWyjMf3aBvZ4dpF2VKA=
 github.com/teserakt-io/serverlib v0.0.0-20190912131345-29a7b76ad87c/go.mod h1:Royi7lAJYr1NUXhN2qmqaKeHDMCxfw8XhFm9tyYFxbU=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
@@ -246,10 +248,10 @@ golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9/go.mod h1:6SG95UA2DQfeDnf
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5/go.mod h1:WFFai1msRO1wXaEeE5yQxYXgSfI8pQAWXbQop6sCtWE=
-golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e h1:egKlR8l7Nu9vHGWbcUV8lqR4987UfUbBd7GbhqGzNYU=
-golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
-golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413 h1:ULYEB3JvPRE/IfO+9uO7vKV/xzVTO7XPAwm8xbf4w2g=
-golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
+golang.org/x/crypto v0.0.0-20190530122614-20be4c3c3ed5 h1:8dUaAV7K4uHsF56JQWkprecIQKdPHtR9jCHF5nB8uzc=
+golang.org/x/crypto v0.0.0-20190530122614-20be4c3c3ed5/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
+golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd h1:GGJVjV8waZKRHrgwvtH66z9ZGVurTD1MT0n1Bb+q4aM=
+golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3/go.mod h1:UVdnD1Gm6xHRNCYTkRU2/jEulfH38KcIWyp/GAMgvoE=
 golang.org/x/lint v0.0.0-20190227174305-5b3e6a55c961/go.mod h1:wehouNa3lNwaWXcvxsM5YxQ5yQlVC4a0KAMCusXpPoU=

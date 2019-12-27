@@ -23,7 +23,7 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
-	github.com/teserakt-io/e4go v1.0.1-0.20191205180133-787111d15244
+	github.com/teserakt-io/e4go v1.0.1-0.20191218100317-7b4c9b308a2e
 	github.com/teserakt-io/serverlib v0.0.0-20190912131345-29a7b76ad87c
 	go.opencensus.io v0.22.1
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
