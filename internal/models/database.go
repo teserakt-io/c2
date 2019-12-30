@@ -4,6 +4,8 @@ package models
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -49,6 +51,11 @@ type Database interface {
 	Close() error
 	Connection() *gorm.DB
 	Migrate() error
+
+	// Transaction management
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (Database, error)
+	CommitTx() error
+	Rollback() error
 
 	// Client Only Manipulation
 	InsertClient(name string, id, protectedkey []byte) error
@@ -120,8 +127,6 @@ func (gdb *gormDB) Migrate() error {
 	case DBDialectSQLite:
 		// Enable foreign key support for sqlite3
 		gdb.Connection().Exec("PRAGMA foreign_keys = ON")
-	case DBDialectPostgres:
-		gdb.Connection().Exec(fmt.Sprintf("SET search_path TO %s;", gdb.config.Schema))
 	}
 
 	result := gdb.Connection().AutoMigrate(
@@ -516,6 +521,27 @@ func (gdb *gormDB) GetClientsForTopic(topic string, offset int, count int) ([]Cl
 	}
 
 	return clients, nil
+}
+
+func (gdb *gormDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (Database, error) {
+	db := gdb.db.BeginTx(ctx, opts)
+	if db.Error != nil {
+		return nil, db.Error
+	}
+
+	return &gormDB{
+		logger: gdb.logger,
+		config: gdb.config,
+		db:     db,
+	}, nil
+}
+
+func (gdb *gormDB) CommitTx() error {
+	return gdb.db.Commit().Error
+}
+
+func (gdb *gormDB) Rollback() error {
+	return gdb.db.Rollback().Error
 }
 
 // IsErrRecordNotFound indicate whenever the err is a gorm.RecordNotFound error

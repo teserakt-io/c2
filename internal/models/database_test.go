@@ -1,6 +1,8 @@
 package models
 
 import (
+	"context"
+	"database/sql"
 	"io/ioutil"
 	"log"
 	"os"
@@ -620,6 +622,64 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		err := db.Migrate()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Transactions properly commits", func(t *testing.T) {
+		db, tearDown := setup(t)
+		defer tearDown()
+
+		txDb, err := db.BeginTx(context.Background(), &sql.TxOptions{})
+		if err != nil {
+			t.Fatalf("got error '%v' when beginning tx", err)
+		}
+
+		clientName := "client1"
+		clientID := e4crypto.HashIDAlias(clientName)
+
+		if err := txDb.InsertClient(clientName, clientID, []byte("client1key")); err != nil {
+			t.Fatalf("got error '%v' when inserting client", err)
+		}
+
+		if _, err := db.GetClientByID(clientID); !IsErrRecordNotFound(err) {
+			t.Fatalf("Uncommitted transaction: got error '%v' fetching client, want '%v' ", err, gorm.ErrRecordNotFound)
+		}
+
+		if err := txDb.CommitTx(); err != nil {
+			t.Fatalf("got error '%v' when committing tx", err)
+		}
+
+		if _, err := db.GetClientByID(clientID); err != nil {
+			t.Fatalf("Committed transaction: got error '%v' fetching client", err)
+		}
+	})
+
+	t.Run("Transactions properly rollback", func(t *testing.T) {
+		db, tearDown := setup(t)
+		defer tearDown()
+
+		txDb, err := db.BeginTx(context.Background(), &sql.TxOptions{})
+		if err != nil {
+			t.Fatalf("got error '%v' when beginning tx", err)
+		}
+
+		clientName := "client1"
+		clientID := e4crypto.HashIDAlias(clientName)
+
+		if err := txDb.InsertClient(clientName, clientID, []byte("client1key")); err != nil {
+			t.Fatalf("got error '%v' when inserting client", err)
+		}
+
+		if _, err := db.GetClientByID(clientID); !IsErrRecordNotFound(err) {
+			t.Fatalf("Uncommitted transaction: got error '%v' fetching client, want '%v' ", err, gorm.ErrRecordNotFound)
+		}
+
+		if err := txDb.Rollback(); err != nil {
+			t.Fatalf("got error '%v' when committing tx", err)
+		}
+
+		if _, err := db.GetClientByID(clientID); !IsErrRecordNotFound(err) {
+			t.Fatalf("Rollback transaction: got error '%v' fetching client, want '%v' ", err, gorm.ErrRecordNotFound)
 		}
 	})
 }
