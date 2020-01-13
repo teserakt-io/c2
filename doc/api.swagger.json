@@ -299,15 +299,15 @@
         ]
       }
     },
-    "/e4/message": {
+    "/e4/send-client-pubkey": {
       "post": {
-        "summary": "Send a message on a topic",
-        "operationId": "SendMessage",
+        "summary": "Send a client pubkey to another client (pubkey mode only)",
+        "operationId": "SendClientPubkeyCommand",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbSendMessageResponse"
+              "$ref": "#/definitions/pbSendClientPubkeyCommandResponse"
             }
           }
         },
@@ -317,7 +317,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/pbSendMessageRequest"
+              "$ref": "#/definitions/pbSendClientPubkeyCommandRequest"
             }
           }
         ],
@@ -650,18 +650,18 @@
     "pbResetClientResponse": {
       "type": "object"
     },
-    "pbSendMessageRequest": {
+    "pbSendClientPubkeyCommandRequest": {
       "type": "object",
       "properties": {
-        "topic": {
-          "type": "string"
+        "sourceClient": {
+          "$ref": "#/definitions/pbClient"
         },
-        "message": {
-          "type": "string"
+        "targetClient": {
+          "$ref": "#/definitions/pbClient"
         }
       }
     },
-    "pbSendMessageResponse": {
+    "pbSendClientPubkeyCommandResponse": {
       "type": "object"
     },
     "protobufAny": {

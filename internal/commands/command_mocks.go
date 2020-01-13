@@ -33,6 +33,20 @@ func (m *MockCommand) EXPECT() *MockCommandMockRecorder {
 	return m.recorder
 }
 
+// Bytes mocks base method
+func (m *MockCommand) Bytes() []byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Bytes")
+	ret0, _ := ret[0].([]byte)
+	return ret0
+}
+
+// Bytes indicates an expected call of Bytes
+func (mr *MockCommandMockRecorder) Bytes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockCommand)(nil).Bytes))
+}
+
 // Content mocks base method
 func (m *MockCommand) Content() ([]byte, error) {
 	m.ctrl.T.Helper()
@@ -46,21 +60,6 @@ func (m *MockCommand) Content() ([]byte, error) {
 func (mr *MockCommandMockRecorder) Content() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Content", reflect.TypeOf((*MockCommand)(nil).Content))
-}
-
-// Protect mocks base method
-func (m *MockCommand) Protect(arg0 []byte) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Protect", arg0)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Protect indicates an expected call of Protect
-func (mr *MockCommandMockRecorder) Protect(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Protect", reflect.TypeOf((*MockCommand)(nil).Protect), arg0)
 }
 
 // Type mocks base method

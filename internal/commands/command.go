@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	e4 "github.com/teserakt-io/e4go"
-	e4crypto "github.com/teserakt-io/e4go/crypto"
 )
 
 //go:generate mockgen -destination=command_mocks.go -package commands -self_package github.com/teserakt-io/c2/internal/commands github.com/teserakt-io/c2/internal/commands Command
@@ -16,9 +15,9 @@ var (
 
 // Command defines an interface for a protectable Commands
 type Command interface {
-	Protect(key []byte) ([]byte, error)
 	Type() (e4.Command, error)
 	Content() ([]byte, error)
+	Bytes() []byte
 }
 
 type e4Command []byte
@@ -41,7 +40,6 @@ func (c e4Command) Content() ([]byte, error) {
 	return c[1:], nil
 }
 
-// Protect returns an encrypted command payload with the given key
-func (c e4Command) Protect(key []byte) ([]byte, error) {
-	return e4crypto.ProtectSymKey(c, key)
+func (c e4Command) Bytes() []byte {
+	return c
 }

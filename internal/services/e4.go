@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/base64"
+	"errors"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -12,6 +13,7 @@ import (
 	"go.opencensus.io/trace"
 
 	"github.com/teserakt-io/c2/internal/commands"
+	"github.com/teserakt-io/c2/internal/crypto"
 	"github.com/teserakt-io/c2/internal/events"
 	"github.com/teserakt-io/c2/internal/models"
 	"github.com/teserakt-io/c2/internal/protocols"
@@ -78,16 +80,18 @@ type E4 interface {
 	GetTopicsRangeByClient(ctx context.Context, id []byte, offset, count int) ([]string, error)
 	GetClientsRangeByTopic(ctx context.Context, topic string, offset, count int) ([]IDNamePair, error)
 
-	// Communications
-	SendMessage(ctx context.Context, topic, msg string) error
+	// SendClientPubkeyCommand send the sourceClientID public key to targetClientID via a SetPubKeyCmd
+	// only when C2 is configured in pubkey mode, otherwise an error will be immediately returned.
+	SendClientPubkeyCommand(ctx context.Context, sourceClientID, targetClientID []byte) error
 }
 
 type e4impl struct {
 	db              models.Database
 	pubSubClient    protocols.PubSubClient
 	commandFactory  commands.Factory
+	e4Key           crypto.E4Key
+	dbEncKey        []byte
 	logger          log.FieldLogger
-	keyenckey       []byte
 	eventDispatcher events.Dispatcher
 	eventFactory    events.Factory
 }
@@ -101,8 +105,9 @@ func NewE4(
 	commandFactory commands.Factory,
 	eventDispatcher events.Dispatcher,
 	eventFactory events.Factory,
+	e4Key crypto.E4Key,
 	logger log.FieldLogger,
-	keyenckey []byte,
+	dbEncKey []byte,
 ) E4 {
 	return &e4impl{
 		db:              db,
@@ -110,8 +115,9 @@ func NewE4(
 		commandFactory:  commandFactory,
 		eventDispatcher: eventDispatcher,
 		eventFactory:    eventFactory,
+		e4Key:           e4Key,
 		logger:          logger,
-		keyenckey:       keyenckey,
+		dbEncKey:        dbEncKey,
 	}
 }
 
@@ -130,11 +136,11 @@ func (s *e4impl) NewClient(ctx context.Context, name string, id, key []byte) err
 		return ErrValidation{fmt.Errorf("inconsistent E4 ID/Name: %v", err)}
 	}
 
-	if err := e4crypto.ValidateSymKey(key); err != nil {
+	if err := s.e4Key.ValidateKey(key); err != nil {
 		return ErrValidation{fmt.Errorf("invalid key: %v", err)}
 	}
 
-	protectedkey, err := e4crypto.Encrypt(s.keyenckey, nil, key)
+	protectedkey, err := e4crypto.Encrypt(s.dbEncKey, nil, key)
 	if err != nil {
 		logger.WithError(err).Error("failed to encrypt key")
 		return ErrInternal{}
@@ -196,7 +202,7 @@ func (s *e4impl) NewTopicClient(ctx context.Context, id []byte, topic string) er
 		return ErrInternal{}
 	}
 
-	clearTopicKey, err := topicKey.DecryptKey(s.keyenckey)
+	clearTopicKey, err := topicKey.DecryptKey(s.dbEncKey)
 	if err != nil {
 		logger.WithError(err).Error("failed to decrypt topicKey")
 		return ErrInternal{}
@@ -319,7 +325,7 @@ func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
 
 	key := e4crypto.RandomKey()
 
-	protectedKey, err := e4crypto.Encrypt(s.keyenckey[:], nil, key)
+	protectedKey, err := e4crypto.Encrypt(s.dbEncKey[:], nil, key)
 	if err != nil {
 		logger.WithError(err).Error("failed to encrypt key")
 		return ErrInternal{}
@@ -454,43 +460,6 @@ func (s *e4impl) RemoveTopic(ctx context.Context, topic string) error {
 	return nil
 }
 
-// SendMessage allows to publish an E4 protected message on the given topic
-func (s *e4impl) SendMessage(ctx context.Context, topic, msg string) error {
-	ctx, span := trace.StartSpan(ctx, "e4.SendMessage")
-	defer span.End()
-
-	logger := s.logger.WithField("topic", topic)
-
-	topicKey, err := s.db.GetTopicKey(topic)
-	if err != nil {
-		logger.WithError(err).Error("failed to retrieve topicKey")
-		if models.IsErrRecordNotFound(err) {
-			return ErrTopicNotFound{}
-		}
-		return ErrInternal{}
-	}
-
-	clearTopicKey, err := topicKey.DecryptKey(s.keyenckey)
-	if err != nil {
-		logger.WithError(err).Error("failed to decrypt topicKey")
-		return ErrInternal{}
-	}
-
-	payload, err := e4crypto.ProtectSymKey([]byte(msg), clearTopicKey)
-	if err != nil {
-		logger.WithError(err).Error("failed to protect message")
-		return ErrInternal{}
-	}
-	err = s.pubSubClient.Publish(ctx, payload, topic, protocols.QoSAtMostOnce)
-	if err != nil {
-		logger.WithError(err).Error("failed to publish message")
-		return ErrInternal{}
-	}
-
-	logger.Info("succeeded")
-	return nil
-}
-
 // NewClientKey will generate a new client key, send it to the client, and update the database.
 func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 	ctx, span := trace.StartSpan(ctx, "e4.NewClientKey")
@@ -507,8 +476,13 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 		return ErrInternal{}
 	}
 
-	newKey := e4crypto.RandomKey()
-	command, err := s.commandFactory.CreateSetIDKeyCommand(newKey)
+	clientKey, c2StoredKey, err := s.e4Key.RandomKey()
+	if err != nil {
+		logger.WithError(err).Error("failed to generate new key")
+		return ErrInternal{}
+	}
+
+	command, err := s.commandFactory.CreateSetIDKeyCommand(clientKey)
 	if err != nil {
 		logger.WithError(err).Error("failed to create SetClient command")
 		return ErrInternal{}
@@ -520,7 +494,7 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 		return ErrInternal{}
 	}
 
-	protectedkey, err := e4crypto.Encrypt(s.keyenckey, nil, newKey)
+	protectedkey, err := e4crypto.Encrypt(s.dbEncKey, nil, c2StoredKey)
 	if err != nil {
 		logger.WithError(err).Error("encrypt failed")
 		return ErrInternal{}
@@ -714,16 +688,70 @@ func (s *e4impl) GetClientsRangeByTopic(ctx context.Context, topic string, offse
 	return idNamePairs, nil
 }
 
+func (s *e4impl) SendClientPubkeyCommand(ctx context.Context, sourceClientID, targetClientID []byte) error {
+	ctx, span := trace.StartSpan(ctx, "e4.SendClientPubkeyCommand")
+	defer span.End()
+
+	logger := s.logger.WithFields(log.Fields{
+		"sourceClientID": sourceClientID,
+		"targetClientID": targetClientID,
+	})
+
+	if !s.e4Key.IsPubKeyMode() {
+		logger.WithError(errors.New("e4Key is not a publicKey type")).Error("failed to send public key")
+		return ErrInvalidCryptoMode{}
+	}
+
+	sourceClient, err := s.db.GetClientByID(sourceClientID)
+	if err != nil {
+		logger.WithError(err).Error("failed to get source client")
+		if models.IsErrRecordNotFound(err) {
+			return ErrClientNotFound{}
+		}
+		return ErrInternal{}
+	}
+
+	targetClient, err := s.db.GetClientByID(targetClientID)
+	if err != nil {
+		logger.WithError(err).Error("failed to get target client")
+		if models.IsErrRecordNotFound(err) {
+			return ErrClientNotFound{}
+		}
+		return ErrInternal{}
+	}
+
+	clearPubKey, err := sourceClient.DecryptKey(s.dbEncKey)
+	if err != nil {
+		logger.WithError(err).Error("failed to decrypt source client key")
+		return ErrInternal{}
+	}
+
+	cmd, err := s.commandFactory.CreateSetPubKeyCommand(clearPubKey, sourceClient.Name)
+	if err != nil {
+		logger.WithError(err).Error("failed to create SetPubKey command")
+		return ErrInternal{}
+	}
+
+	if err := s.sendCommandToClient(ctx, cmd, targetClient); err != nil {
+		logger.WithError(err).Error("failed to send SetPubKey command to target client")
+		return ErrInternal{}
+	}
+
+	logger.Info("success sending SetPubKey command")
+
+	return nil
+}
+
 func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Command, client models.Client) error {
 	ctx, span := trace.StartSpan(ctx, "e4.sendCommandToClient")
 	defer span.End()
 
-	clearKey, err := client.DecryptKey(s.keyenckey)
+	clearKey, err := client.DecryptKey(s.dbEncKey)
 	if err != nil {
 		return fmt.Errorf("failed to decrypt client: %v", err)
 	}
 
-	payload, err := command.Protect(clearKey)
+	payload, err := s.e4Key.ProtectCommand(command, clearKey)
 	if err != nil {
 		return fmt.Errorf("failed to protect command: %v", err)
 	}

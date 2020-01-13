@@ -50,8 +50,13 @@ func main() {
 		defer logFile.Close()
 	}
 
-	logger = logger.WithField("application", "c2")
-	defer logger.Info("goodbye")
+	defer func() {
+		if r := recover(); r != nil {
+			logger.WithError(fmt.Errorf("%v", r)).Error("c2 panic")
+		}
+
+		logger.Warn("goodbye")
+	}()
 
 	// set up config resolver
 	configResolver, err := slibpath.NewAppPathResolver(os.Args[0])

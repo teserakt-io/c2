@@ -408,24 +408,24 @@ func (mr *MockC2ClientMockRecorder) ResetClient(arg0, arg1 interface{}, arg2 ...
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetClient", reflect.TypeOf((*MockC2Client)(nil).ResetClient), varargs...)
 }
 
-// SendMessage mocks base method
-func (m *MockC2Client) SendMessage(arg0 context.Context, arg1 *pb.SendMessageRequest, arg2 ...grpc.CallOption) (*pb.SendMessageResponse, error) {
+// SendClientPubkeyCommand mocks base method
+func (m *MockC2Client) SendClientPubkeyCommand(arg0 context.Context, arg1 *pb.SendClientPubkeyCommandRequest, arg2 ...grpc.CallOption) (*pb.SendClientPubkeyCommandResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "SendMessage", varargs...)
-	ret0, _ := ret[0].(*pb.SendMessageResponse)
+	ret := m.ctrl.Call(m, "SendClientPubkeyCommand", varargs...)
+	ret0, _ := ret[0].(*pb.SendClientPubkeyCommandResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SendMessage indicates an expected call of SendMessage
-func (mr *MockC2ClientMockRecorder) SendMessage(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// SendClientPubkeyCommand indicates an expected call of SendClientPubkeyCommand
+func (mr *MockC2ClientMockRecorder) SendClientPubkeyCommand(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockC2Client)(nil).SendMessage), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendClientPubkeyCommand", reflect.TypeOf((*MockC2Client)(nil).SendClientPubkeyCommand), varargs...)
 }
 
 // SubscribeToEventStream mocks base method

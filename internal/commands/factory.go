@@ -5,6 +5,8 @@ package commands
 import (
 	"fmt"
 
+	"golang.org/x/crypto/ed25519"
+
 	e4 "github.com/teserakt-io/e4go"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 )
@@ -15,6 +17,7 @@ type Factory interface {
 	CreateResetTopicsCommand() (Command, error)
 	CreateSetIDKeyCommand(key []byte) (Command, error)
 	CreateSetTopicKeyCommand(topicHash, key []byte) (Command, error)
+	CreateSetPubKeyCommand(publicKey ed25519.PublicKey, clientName string) (Command, error)
 }
 
 type factory struct {
@@ -60,4 +63,13 @@ func (f *factory) CreateSetTopicKeyCommand(topicHash, key []byte) (Command, erro
 
 	cmd := e4.SetTopicKey
 	return e4Command(append(append([]byte{cmd.ToByte()}, key...), topicHash...)), nil
+}
+
+func (f *factory) CreateSetPubKeyCommand(publicKey ed25519.PublicKey, clientName string) (Command, error) {
+	cmd, err := e4.CmdSetPubKey(publicKey, clientName)
+	if err != nil {
+		return nil, err
+	}
+
+	return e4Command(cmd), nil
 }

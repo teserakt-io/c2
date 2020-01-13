@@ -114,11 +114,12 @@ service C2 {
       get : "/e4/topics"
     };
   }
-  // Send a message on a topic
-  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {
+
+  // Send a client pubkey to another client (pubkey mode only)
+  rpc SendClientPubkeyCommand(SendClientPubkeyCommandRequest) returns (SendClientPubkeyCommandResponse) {
     option (google.api.http) = {
-      post : "/e4/message"
-      body : "*"
+      post: "/e4/send-client-pubkey"
+      body: "*"
     };
   }
 
@@ -231,11 +232,11 @@ message GetTopicsResponse {
   repeated string topics = 1;
 }
 
-message SendMessageRequest {
-  string topic = 1;
-  string message = 2;
+message SendClientPubkeyCommandRequest {
+  Client sourceClient = 1;
+  Client targetClient = 2;
 }
-message SendMessageResponse {}
+message SendClientPubkeyCommandResponse {}
 
 message SubscribeToEventStreamRequest {}
 

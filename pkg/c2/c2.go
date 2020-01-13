@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	stdlog "log"
 	"os"
 	"os/signal"
@@ -17,6 +18,7 @@ import (
 	"github.com/teserakt-io/c2/internal/api"
 	"github.com/teserakt-io/c2/internal/commands"
 	"github.com/teserakt-io/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/crypto"
 	"github.com/teserakt-io/c2/internal/events"
 	"github.com/teserakt-io/c2/internal/models"
 	"github.com/teserakt-io/c2/internal/protocols"
@@ -58,6 +60,33 @@ func (e SignalError) Error() string {
 // New creates a new C2
 func New(logger log.FieldLogger, cfg config.Config) (*C2, error) {
 	var err error
+
+	var e4Key crypto.E4Key
+	switch cfg.Crypto.CryptoMode() {
+	case config.SymKey:
+		e4Key = crypto.NewE4SymKey()
+		logger.Info("initialized E4Key in symmetric key mode")
+	case config.PubKey:
+		keyFile, err := os.Open(cfg.Crypto.C2PrivateKeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open file %s: %v", cfg.Crypto.C2PrivateKeyPath, err)
+		}
+		defer keyFile.Close()
+		keyBytes, err := ioutil.ReadAll(keyFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read e4key from %s: %v", cfg.Crypto.C2PrivateKeyPath, err)
+		}
+
+		e4Key, err = crypto.NewE4PubKey(keyBytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create E4PubKey: %v", err)
+		}
+
+		logger.Info("initialized E4Key in public key mode")
+	default:
+		return nil, fmt.Errorf("unsupported crypto mode: %s", cfg.Crypto.CryptoMode())
+	}
+
 	var esClient *elastic.Client
 
 	if cfg.ES.Enable {
@@ -121,7 +150,7 @@ func New(logger log.FieldLogger, cfg config.Config) (*C2, error) {
 
 	eventDispatcher := events.NewDispatcher(logger)
 
-	c2key, err := e4crypto.DeriveSymKey(cfg.DB.Passphrase)
+	dbEncKey, err := e4crypto.DeriveSymKey(cfg.DB.Passphrase)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create key from passphrase: %v", err)
 	}
@@ -132,8 +161,9 @@ func New(logger log.FieldLogger, cfg config.Config) (*C2, error) {
 		commands.NewFactory(),
 		eventDispatcher,
 		events.NewFactory(),
+		e4Key,
 		logger.WithField("protocol", "e4"),
-		c2key,
+		dbEncKey,
 	)
 
 	// initialize Observability
@@ -164,7 +194,7 @@ func (c *C2) Close() {
 
 // EnableHTTPEndpoint will turn on C2 over HTTP
 func (c *C2) EnableHTTPEndpoint() {
-	c.endpoints = append(c.endpoints, api.NewHTTPServer(c.cfg.HTTP, c.cfg.GRPC.Cert, c.cfg.IsProd, c.e4Service, c.logger.WithField("protocol", "http")))
+	c.endpoints = append(c.endpoints, api.NewHTTPServer(c.cfg.HTTP, c.cfg.GRPC.Cert, c.e4Service, c.logger.WithField("protocol", "http")))
 	c.logger.Info("enabled C2 HTTP server")
 }
 

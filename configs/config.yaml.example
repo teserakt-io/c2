@@ -2,10 +2,13 @@
 # C2 configuration file, to be edited manually
 ###############################################################
 
-# Other settings
+# Crypto settings
 ###############################################################
-## in non-prod, allow sqlite, use 100% sampling rate, etc.
-production: false
+## supported modes are: symkey, pubkey
+crypto-mode: pubkey
+# path to the private key file (for pubkey mode only)
+crypto-c2-private-key: c2key
+
 
 # MQTT settings
 ###############################################################

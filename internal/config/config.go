@@ -17,8 +17,9 @@ const (
 
 // Config type holds the application configuration
 type Config struct {
-	IsProd  bool
 	Monitor bool
+
+	Crypto CryptoCfg
 
 	GRPC ServerCfg
 	HTTP HTTPServerCfg
@@ -41,10 +42,11 @@ func New() *Config {
 	return &Config{}
 }
 
-// ViperCfgFields returns the list of configuration bound's fields to be loaded by viper
+// ViperCfgFields returns the list of configuration fields to be loaded by viper
 func (cfg *Config) ViperCfgFields() []slibcfg.ViperCfgField {
 	return []slibcfg.ViperCfgField{
-		{&cfg.IsProd, "production", slibcfg.ViperBool, false, ""},
+		{&cfg.Crypto.mode, "crypto-mode", slibcfg.ViperString, "symkey", "E4C2_CRYPTO_MODE"},
+		{&cfg.Crypto.C2PrivateKeyPath, "crypto-c2-private-key", slibcfg.ViperRelativePath, "", "E4C2_CRYPTO_KEY"},
 
 		{&cfg.GRPC.Addr, "grpc-host-port", slibcfg.ViperString, "0.0.0.0:5555", "E4C2_GRPC_HOST_PORT"},
 		{&cfg.GRPC.Cert, "grpc-cert", slibcfg.ViperRelativePath, "", "E4C2_GRPC_CERT"},
@@ -139,6 +141,26 @@ type ESCfg struct {
 	URLs                 []string
 	enableMessageLogging bool
 	MessageIndexName     string
+}
+
+// CryptoMode defines the type of cryptography used by the C2 instance
+type CryptoMode string
+
+// List of crypto modes supported
+const (
+	SymKey CryptoMode = "symkey"
+	PubKey CryptoMode = "pubkey"
+)
+
+// CryptoCfg holds the crypto configuration
+type CryptoCfg struct {
+	mode             string
+	C2PrivateKeyPath string
+}
+
+// CryptoMode returns configued mode as CryptoMode
+func (c CryptoCfg) CryptoMode() CryptoMode {
+	return CryptoMode(c.mode)
 }
 
 // IsMessageLoggingEnabled indicate whenever broker message must be logged to elasticsearch

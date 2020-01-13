@@ -6,6 +6,7 @@ package commands
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	ed25519 "golang.org/x/crypto/ed25519"
 	reflect "reflect"
 )
 
@@ -75,6 +76,21 @@ func (m *MockFactory) CreateSetIDKeyCommand(arg0 []byte) (Command, error) {
 func (mr *MockFactoryMockRecorder) CreateSetIDKeyCommand(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSetIDKeyCommand", reflect.TypeOf((*MockFactory)(nil).CreateSetIDKeyCommand), arg0)
+}
+
+// CreateSetPubKeyCommand mocks base method
+func (m *MockFactory) CreateSetPubKeyCommand(arg0 ed25519.PublicKey, arg1 string) (Command, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSetPubKeyCommand", arg0, arg1)
+	ret0, _ := ret[0].(Command)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSetPubKeyCommand indicates an expected call of CreateSetPubKeyCommand
+func (mr *MockFactoryMockRecorder) CreateSetPubKeyCommand(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSetPubKeyCommand", reflect.TypeOf((*MockFactory)(nil).CreateSetPubKeyCommand), arg0, arg1)
 }
 
 // CreateSetTopicKeyCommand mocks base method

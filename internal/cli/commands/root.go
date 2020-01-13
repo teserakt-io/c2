@@ -30,7 +30,6 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 	countCommand := NewCountCommand(c2ClientFactory)
 	attachCommand := NewAttachCommand(c2ClientFactory)
 	detachCommand := NewDetachCommand(c2ClientFactory)
-	messageCommand := NewMessageCommand(c2ClientFactory)
 
 	eventsCommand := NewEventsCommand(c2ClientFactory)
 
@@ -67,7 +66,6 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 		countCommand.CobraCmd(),
 		attachCommand.CobraCmd(),
 		detachCommand.CobraCmd(),
-		messageCommand.CobraCmd(),
 
 		eventsCommand.CobraCmd(),
 		// TODO: disabled for now as it need a fair bit of polish before being usable
