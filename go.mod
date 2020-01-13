@@ -19,11 +19,10 @@ require (
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
 	github.com/olivere/elastic v6.2.21+incompatible
-	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
-	github.com/teserakt-io/e4go v1.0.1-0.20191218100317-7b4c9b308a2e
+	github.com/teserakt-io/e4go v1.0.0
 	github.com/teserakt-io/serverlib v0.0.0-20190912131345-29a7b76ad87c
 	go.opencensus.io v0.22.1
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413

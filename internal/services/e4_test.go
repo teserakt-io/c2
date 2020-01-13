@@ -297,17 +297,17 @@ func TestE4(t *testing.T) {
 		NewTopicBatchSize = 3
 		totalClients := 5
 
-		client11, client11Key := createTestClient(t, e4Key)
+		client11, client11Key := createTestClient(t, dbEncKey)
 		client11Payload := []byte("client11")
-		client12, client12Key := createTestClient(t, e4Key)
+		client12, client12Key := createTestClient(t, dbEncKey)
 		client12Payload := []byte("client12")
-		client13, client13Key := createTestClient(t, e4Key)
+		client13, client13Key := createTestClient(t, dbEncKey)
 		client13Payload := []byte("client13")
 		clientsBatch1 := []models.Client{client11, client12, client13}
 
-		client21, client21Key := createTestClient(t, e4Key)
+		client21, client21Key := createTestClient(t, dbEncKey)
 		client21Payload := []byte("client21")
-		client22, client22Key := createTestClient(t, e4Key)
+		client22, client22Key := createTestClient(t, dbEncKey)
 		client22Payload := []byte("client22")
 		clientsBatch2 := []models.Client{client21, client22}
 
@@ -325,16 +325,17 @@ func TestE4(t *testing.T) {
 			mockTx.EXPECT().CommitTx(),
 
 			mockDB.EXPECT().GetClientsForTopic(topic, 0, NewTopicBatchSize).Return(clientsBatch1, nil),
-			mockCommand.EXPECT().Protect(client11Key).Return(client11Payload, nil),
+
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client11Key).Return(client11Payload, nil),
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), client11Payload, client11.Topic(), protocols.QoSExactlyOnce),
-			mockCommand.EXPECT().Protect(client12Key).Return(client12Payload, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client12Key).Return(client12Payload, nil),
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), client12Payload, client12.Topic(), protocols.QoSExactlyOnce),
-			mockCommand.EXPECT().Protect(client13Key).Return(client13Payload, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client13Key).Return(client13Payload, nil),
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), client13Payload, client13.Topic(), protocols.QoSExactlyOnce),
 			mockDB.EXPECT().GetClientsForTopic(topic, NewTopicBatchSize, NewTopicBatchSize).Return(clientsBatch2, nil),
-			mockCommand.EXPECT().Protect(client21Key).Return(client21Payload, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client21Key).Return(client21Payload, nil),
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), client21Payload, client21.Topic(), protocols.QoSExactlyOnce),
-			mockCommand.EXPECT().Protect(client22Key).Return(client22Payload, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client22Key).Return(client22Payload, nil),
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), client22Payload, client22.Topic(), protocols.QoSExactlyOnce),
 			mockPubSubClient.EXPECT().SubscribeToTopic(gomock.Any(), topic),
 		)
