@@ -268,6 +268,7 @@ func TestE4(t *testing.T) {
 		topic := "topic"
 
 		gomock.InOrder(
+			mockPubSubClient.EXPECT().ValidateTopic(topic).Return(nil),
 			mockDB.EXPECT().InsertTopicKey(topic, gomock.Any()),
 			mockPubSubClient.EXPECT().SubscribeToTopic(gomock.Any(), topic),
 		)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"strings"
+	"regexp"
 	"unicode/utf8"
 
 	"github.com/Shopify/sarama"
@@ -105,6 +105,10 @@ func (c *kafkaPubSubClient) SubscribeToTopics(ctx context.Context, topics []stri
 	defer span.End()
 
 	for _, topic := range topics {
+		if err := c.ValidateTopic(topic); err != nil {
+			return err
+		}
+
 		if err := c.SubscribeToTopic(ctx, topic); err != nil {
 			return err
 		}
@@ -113,13 +117,15 @@ func (c *kafkaPubSubClient) SubscribeToTopics(ctx context.Context, topics []stri
 	return nil
 }
 
-func (c *kafkaPubSubClient) SubscribeToTopic(ctx context.Context, rawTopic string) error {
+func (c *kafkaPubSubClient) SubscribeToTopic(ctx context.Context, topic string) error {
 	ctx, span := trace.StartSpan(ctx, "kafka.SubscribeToTopic")
 	defer span.End()
 
-	logger := c.logger.WithField("topic", rawTopic)
+	logger := c.logger.WithField("topic", topic)
 
-	topic := filterTopicName(rawTopic)
+	if err := c.ValidateTopic(topic); err != nil {
+		return err
+	}
 
 	partitionConsumer, err := c.consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
 	if err != nil {
@@ -128,7 +134,7 @@ func (c *kafkaPubSubClient) SubscribeToTopic(ctx context.Context, rawTopic strin
 	}
 
 	stopChan := make(chan bool)
-	c.subscribedTopics[rawTopic] = stopChan
+	c.subscribedTopics[topic] = stopChan
 
 	go c.watchForMessages(ctx, partitionConsumer, stopChan)
 
@@ -137,20 +143,24 @@ func (c *kafkaPubSubClient) SubscribeToTopic(ctx context.Context, rawTopic strin
 	return nil
 }
 
-func (c *kafkaPubSubClient) UnsubscribeFromTopic(ctx context.Context, rawTopic string) error {
+func (c *kafkaPubSubClient) UnsubscribeFromTopic(ctx context.Context, topic string) error {
 	_, span := trace.StartSpan(ctx, "kafka.UnsubscribeFromTopic")
 	defer span.End()
 
-	logger := c.logger.WithField("topic", rawTopic)
+	logger := c.logger.WithField("topic", topic)
 
-	stopChan, exists := c.subscribedTopics[rawTopic]
+	if err := c.ValidateTopic(topic); err != nil {
+		return err
+	}
+
+	stopChan, exists := c.subscribedTopics[topic]
 	if !exists {
 		logger.Warn("cannot unsubscribe to a non subscribed topic")
 
 		return nil
 	}
 
-	delete(c.subscribedTopics, rawTopic)
+	delete(c.subscribedTopics, topic)
 
 	close(stopChan)
 	logger.Info("successfully unsubscribed from topic")
@@ -158,13 +168,15 @@ func (c *kafkaPubSubClient) UnsubscribeFromTopic(ctx context.Context, rawTopic s
 	return nil
 }
 
-func (c *kafkaPubSubClient) Publish(ctx context.Context, payload []byte, rawTopic string, qos byte) error {
+func (c *kafkaPubSubClient) Publish(ctx context.Context, payload []byte, topic string, qos byte) error {
 	_, span := trace.StartSpan(ctx, "kafka.Publish")
 	defer span.End()
 
-	logger := c.logger.WithField("topic", rawTopic)
+	logger := c.logger.WithField("topic", topic)
 
-	topic := filterTopicName(rawTopic)
+	if err := c.ValidateTopic(topic); err != nil {
+		return err
+	}
 
 	partition, offset, err := c.producer.SendMessage(&sarama.ProducerMessage{
 		Topic: topic,
@@ -176,6 +188,21 @@ func (c *kafkaPubSubClient) Publish(ctx context.Context, payload []byte, rawTopi
 	}
 
 	logger.WithFields(log.Fields{"partition": partition, "offset": offset}).Info("successfully published message")
+
+	return nil
+}
+
+func (c *kafkaPubSubClient) ValidateTopic(topic string) error {
+	// Kafka have restricted charlist for topic names,
+	// see https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/common/internals/Topic.java#L29
+	matched, err := regexp.MatchString(`^[a-zA-Z0-9\._-]+$`, topic)
+	if err != nil {
+		return err
+	}
+
+	if !matched {
+		return ErrInvalidTopic
+	}
 
 	return nil
 }
@@ -237,10 +264,4 @@ func (c *kafkaPubSubClient) watchForMessages(ctx context.Context, partitionConsu
 			return
 		}
 	}
-}
-
-func filterTopicName(topic string) string {
-	// Kafka have restricted charlist for topic names,
-	// see https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/common/internals/Topic.java#L29
-	return strings.Replace(topic, "/", "-", -1)
 }

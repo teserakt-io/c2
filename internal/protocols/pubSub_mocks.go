@@ -116,3 +116,17 @@ func (mr *MockPubSubClientMockRecorder) UnsubscribeFromTopic(arg0, arg1 interfac
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnsubscribeFromTopic", reflect.TypeOf((*MockPubSubClient)(nil).UnsubscribeFromTopic), arg0, arg1)
 }
+
+// ValidateTopic mocks base method
+func (m *MockPubSubClient) ValidateTopic(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidateTopic", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ValidateTopic indicates an expected call of ValidateTopic
+func (mr *MockPubSubClientMockRecorder) ValidateTopic(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateTopic", reflect.TypeOf((*MockPubSubClient)(nil).ValidateTopic), arg0)
+}

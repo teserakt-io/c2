@@ -16,7 +16,7 @@ import (
 
 func TestKafkaPubSubClient(t *testing.T) {
 	if os.Getenv("C2TEST_KAFKA") == "" {
-		t.Skip("C2TEST_KAFKA environment variable isn't set, skipping postgress tests")
+		t.Skip("C2TEST_KAFKA environment variable isn't set, skipping postgres tests")
 	}
 
 	mockCtrl := gomock.NewController(t)
@@ -45,7 +45,7 @@ func TestKafkaPubSubClient(t *testing.T) {
 		}
 
 		if err := kafkaClient.Connect(); err != nil {
-			t.Errorf("Epected no error, got %v", err)
+			t.Errorf("Expected no error, got %v", err)
 		}
 
 		if !kafkaClient.connected {
@@ -162,10 +162,10 @@ func TestKafkaPubSubClient(t *testing.T) {
 			IsUTF8:  true,
 		}
 
-		mockMonitor.EXPECT().OnMessage(ctx, expectedLoggedMessage1)
-		mockMonitor.EXPECT().OnMessage(ctx, expectedLoggedMessage2)
-		mockMonitor.EXPECT().OnMessage(ctx, expectedLoggedMessage3)
-		mockMonitor.EXPECT().OnMessage(ctx, expectedLoggedMessage4)
+		mockMonitor.EXPECT().OnMessage(gomock.Any(), expectedLoggedMessage1)
+		mockMonitor.EXPECT().OnMessage(gomock.Any(), expectedLoggedMessage2)
+		mockMonitor.EXPECT().OnMessage(gomock.Any(), expectedLoggedMessage3)
+		mockMonitor.EXPECT().OnMessage(gomock.Any(), expectedLoggedMessage4)
 
 		if err := kafkaClient.Publish(ctx, expectedMessage1, expectedTopic1, byte(0)); err != nil {
 			t.Errorf("failed to publish, expected no error, got %v", err)
@@ -184,37 +184,6 @@ func TestKafkaPubSubClient(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 	})
 
-	t.Run("Publish / Subscribe handles '/' character in topic names", func(t *testing.T) {
-		kafkaClient := NewKafkaPubSubClient(cfg, logger, mockMonitor).(*kafkaPubSubClient)
-		if err := kafkaClient.Connect(); err != nil {
-			t.Fatalf("failed to connect client")
-		}
-
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		expectedTopic := "e4/topicWithSlash"
-		if err := kafkaClient.SubscribeToTopic(ctx, expectedTopic); err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
-		expectedMessage := []byte("message")
-
-		expectedLoggedMessage := analytics.LoggedMessage{
-			Topic:   "e4-topicWithSlash",
-			Payload: expectedMessage,
-			IsUTF8:  true,
-		}
-		mockMonitor.EXPECT().OnMessage(ctx, expectedLoggedMessage)
-
-		if err := kafkaClient.Publish(ctx, expectedMessage, expectedTopic, byte(0)); err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
-		// gives some time for the message to get consumed
-		time.Sleep(100 * time.Millisecond)
-	})
-
 	t.Run("Subscribe / Unsubscribe properly add / remove topic subscription", func(t *testing.T) {
 		kafkaClient := NewKafkaPubSubClient(cfg, logger, mockMonitor).(*kafkaPubSubClient)
 		if err := kafkaClient.Connect(); err != nil {
@@ -224,7 +193,7 @@ func TestKafkaPubSubClient(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		expectedTopic := "e4/topic1"
+		expectedTopic := "e4_topic1"
 
 		if err := kafkaClient.SubscribeToTopic(ctx, expectedTopic); err != nil {
 			t.Errorf("Expected no error, got %v", err)
@@ -240,6 +209,28 @@ func TestKafkaPubSubClient(t *testing.T) {
 
 		if _, exists := kafkaClient.subscribedTopics[expectedTopic]; exists {
 			t.Errorf("Expected topic to have been removed from subscription list, got %#v", kafkaClient.subscribedTopics)
+		}
+	})
+
+	t.Run("ValidateTopic properly filter out invalid topics", func(t *testing.T) {
+		kafkaClient := NewKafkaPubSubClient(cfg, logger, mockMonitor).(*kafkaPubSubClient)
+
+		testData := map[string]error{
+			"kafka_valid":    nil,
+			"kafka-valid":    nil,
+			"kafka.valid":    nil,
+			"kafka.valid123": nil,
+			"#":              ErrInvalidTopic,
+			"kafka/invalid":  ErrInvalidTopic,
+			"+":              ErrInvalidTopic,
+			"kafka$":         ErrInvalidTopic,
+		}
+
+		for topic, want := range testData {
+			got := kafkaClient.ValidateTopic(topic)
+			if got != want {
+				t.Errorf("got error '%v', want '%v' when validating topic %s", got, want, topic)
+			}
 		}
 	})
 }
