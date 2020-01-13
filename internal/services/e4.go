@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -39,6 +40,11 @@ import (
 	- Range = if the item in question has offset/count limits, this specifier
 	          is included.
 */
+
+// NewTopicBatchSize is the maximum number of topic clients pulled from the database at a time
+// when sending them the new topic key.
+// Having it too low will create too many queries, and too high will create too slow queries.
+var NewTopicBatchSize = 500
 
 // IDNamePair stores an E4 client ID and names, omitting the key
 type IDNamePair struct {
@@ -325,11 +331,46 @@ func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
 		return ErrInternal{}
 	}
 
-	if err := s.db.InsertTopicKey(topic, protectedKey); err != nil {
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		logger.WithError(err).Error("failed to begin transaction")
+		return ErrInternal{}
+	}
+
+	if err := tx.InsertTopicKey(topic, protectedKey); err != nil {
 		logger.WithError(err).Error("insertTopicKey failed")
+		if err := tx.Rollback(); err != nil {
+			logger.WithError(err).Error("failed to rollback transaction")
+		}
+
 		return ErrInternal{}
 	}
 	logger.Info("insertTopicKey succeeded")
+
+	command, err := s.commandFactory.CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), key)
+	if err != nil {
+		logger.WithError(err).Error("failed to create setTopicKey command")
+		if err := tx.Rollback(); err != nil {
+			logger.WithError(err).Error("failed to rollback transaction")
+		}
+		return ErrInternal{}
+	}
+
+	clientCount, err := tx.CountClientsForTopic(topic)
+	if err != nil {
+		logger.WithError(err).Error("failed to count topic clients")
+		if err := tx.Rollback(); err != nil {
+			logger.WithError(err).Error("failed to rollback transaction")
+		}
+		return ErrInternal{}
+	}
+
+	if err := tx.CommitTx(); err != nil {
+		logger.WithError(err).Error("failed to commit transaction")
+		return ErrInternal{}
+	}
+
+	s.sendCommandToTopicClients(ctx, command, topic, clientCount)
 
 	err = s.pubSubClient.SubscribeToTopic(ctx, topic) // Monitoring
 	if err != nil {
@@ -339,6 +380,59 @@ func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
 	logger.Info("subscribeToTopic succeeded")
 
 	return nil
+}
+
+// sendCommandToTopicClients will send the given command to all clientCount clients of given topic,
+// by fetching NewTopicBatchSize from the DB at a time.
+// If any error happen and prevent the key to be sent to the client, the error is just logged for now
+// with all metadata to allow reforging and publishing the message.
+func (s *e4impl) sendCommandToTopicClients(ctx context.Context, command commands.Command, topic string, clientCount int) {
+	logger := s.logger.WithField("topic", topic)
+
+	cmdType, err := command.Type()
+	if err != nil {
+		logger.WithError(err).Error("failed to get command type")
+
+		return
+	}
+
+	logger = logger.WithField("command", cmdType)
+
+	ctx, span := trace.StartSpan(ctx, "e4.sendCommandToTopicClients")
+	defer span.End()
+
+	for offset := 0; offset < clientCount; offset += NewTopicBatchSize {
+		span.Annotate([]trace.Attribute{
+			trace.Int64Attribute("offset", int64(offset)),
+			trace.Int64Attribute("command", int64(cmdType)),
+			trace.Int64Attribute("clientCount", int64(clientCount)),
+			trace.Int64Attribute("batchSize", int64(NewTopicBatchSize)),
+		}, "e4.sendCommandToTopicClients")
+
+		clients, err := s.db.GetClientsForTopic(topic, offset, NewTopicBatchSize)
+		if err != nil {
+			logger.WithError(err).WithFields(log.Fields{
+				"offset":    offset,
+				"batchSize": NewTopicBatchSize,
+			}).Error("failed to retrieve topic clients")
+
+			continue
+		}
+
+		for _, client := range clients {
+			err = s.sendCommandToClient(ctx, command, client)
+			if err != nil {
+				logger.WithError(err).WithField("client", client.Name).Error("sendCommandToClient failed")
+
+				continue
+			}
+		}
+
+		logger.WithFields(log.Fields{
+			"offset":    offset,
+			"batchSize": NewTopicBatchSize,
+		}).Info("successfully sent command to clients")
+	}
 }
 
 func (s *e4impl) RemoveTopic(ctx context.Context, topic string) error {

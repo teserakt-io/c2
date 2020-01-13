@@ -173,8 +173,8 @@ func (c DBCfg) ConnectionString() (string, error) {
 	switch slibcfg.DBType(c.Type) {
 	case slibcfg.DBTypePostgres:
 		return fmt.Sprintf(
-			"host=%s dbname=%s user=%s password=%s %s",
-			c.Host, c.Database, c.Username, c.Password, c.SecureConnection.PostgresSSLMode(),
+			"host=%s dbname=%s user=%s password=%s search_path=%s %s",
+			c.Host, c.Database, c.Username, c.Password, c.Schema, c.SecureConnection.PostgresSSLMode(),
 		), nil
 	case slibcfg.DBTypeSQLite:
 		return c.File, nil
