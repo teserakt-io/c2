@@ -276,12 +276,8 @@ func TestE4(t *testing.T) {
 
 		mockTx := models.NewMockDatabase(mockCtrl)
 		gomock.InOrder(
-			mockDB.EXPECT().BeginTx(gomock.Any(), gomock.Any()).Return(mockTx, nil),
-			mockTx.EXPECT().InsertTopicKey(topic, gomock.Any()),
-			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), gomock.Any()).Return(mockCommand, nil),
-			mockTx.EXPECT().CountClientsForTopic(topic).Return(0, nil),
-			mockTx.EXPECT().CommitTx(),
-
+			mockPubSubClient.EXPECT().ValidateTopic(topic).Return(nil),
+			mockDB.EXPECT().InsertTopicKey(topic, gomock.Any()),
 			mockPubSubClient.EXPECT().SubscribeToTopic(gomock.Any(), topic),
 		)
 

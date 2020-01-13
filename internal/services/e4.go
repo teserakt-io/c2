@@ -323,6 +323,10 @@ func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
 
 	logger := s.logger.WithField("topic", topic)
 
+	if err := s.pubSubClient.ValidateTopic(topic); err != nil {
+		return err
+	}
+
 	key := e4crypto.RandomKey()
 
 	protectedKey, err := e4crypto.Encrypt(s.dbEncKey[:], nil, key)

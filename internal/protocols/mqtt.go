@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"regexp"
 	"time"
 	"unicode/utf8"
 
@@ -24,7 +25,7 @@ var (
 )
 
 // List of MQTT availabe QoS
-var (
+const (
 	QoSAtMostOnce  = byte(0)
 	QosAtLeastOnce = byte(1)
 	QoSExactlyOnce = byte(2)
@@ -127,6 +128,12 @@ func (c *mqttPubSubClient) SubscribeToTopics(ctx context.Context, topics []strin
 		return nil
 	}
 
+	for _, topic := range topics {
+		if err := c.ValidateTopic(topic); err != nil {
+			return err
+		}
+	}
+
 	// create map string->qos as needed by SubscribeMultiple
 	filters := make(map[string]byte, len(topics))
 	for _, topic := range topics {
@@ -156,6 +163,10 @@ func (c *mqttPubSubClient) SubscribeToTopic(ctx context.Context, topic string) e
 
 	logger := c.logger.WithField("topic", topic)
 
+	if err := c.ValidateTopic(topic); err != nil {
+		return err
+	}
+
 	// Only index message if monitoring enabled, i.e. if esClient is defined
 	if !c.monitor.Enabled() {
 		logger.Warn("monitoring is not enabled, skipping topic subscription")
@@ -184,6 +195,10 @@ func (c *mqttPubSubClient) UnsubscribeFromTopic(ctx context.Context, topic strin
 	defer span.End()
 
 	logger := c.logger.WithField("topic", topic)
+
+	if err := c.ValidateTopic(topic); err != nil {
+		return err
+	}
 
 	// Only index message if monitoring enabled, i.e. if esClient is defined
 	if !c.monitor.Enabled() {
@@ -215,6 +230,10 @@ func (c *mqttPubSubClient) Publish(ctx context.Context, payload []byte, topic st
 		"qos":   qos,
 	})
 
+	if err := c.ValidateTopic(topic); err != nil {
+		return err
+	}
+
 	payloadStr := string(payload)
 
 	token := c.mqtt.Publish(topic, qos, true, payloadStr)
@@ -227,6 +246,19 @@ func (c *mqttPubSubClient) Publish(ctx context.Context, payload []byte, topic st
 		return token.Error()
 	}
 	logger.Info("publish succeeded")
+
+	return nil
+}
+
+func (c *mqttPubSubClient) ValidateTopic(topic string) error {
+	matched, err := regexp.MatchString(`^\$SYS|[+#]`, topic)
+	if err != nil {
+		return err
+	}
+
+	if matched {
+		return ErrInvalidTopic
+	}
 
 	return nil
 }

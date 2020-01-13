@@ -400,4 +400,26 @@ func TestMQTTPubSubClient(t *testing.T) {
 			t.Errorf("Expected error to be %v, got %v", expectedError, err)
 		}
 	})
+
+	t.Run("ValidateTopic properly filter out invalid topics", func(t *testing.T) {
+		testData := map[string]error{
+			"/mqtt/topic": nil,
+			"mqttTopic":   nil,
+			"mqtt/$SYS":   nil,
+			"mqtt/123":    nil,
+			"#":           ErrInvalidTopic,
+			"/mqtt/#":     ErrInvalidTopic,
+			"/mqtt/+":     ErrInvalidTopic,
+			"+":           ErrInvalidTopic,
+			"$SYS":        ErrInvalidTopic,
+			"$SYS/foo":    ErrInvalidTopic,
+		}
+
+		for topic, want := range testData {
+			got := pubSubClient.ValidateTopic(topic)
+			if got != want {
+				t.Errorf("got error '%v', want '%v' when validating topic %s", got, want, topic)
+			}
+		}
+	})
 }
