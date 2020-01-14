@@ -275,9 +275,15 @@ func TestE4(t *testing.T) {
 		mockCommand.EXPECT().Type().AnyTimes().Return(e4.Command(1), nil)
 
 		mockTx := models.NewMockDatabase(mockCtrl)
+
 		gomock.InOrder(
 			mockPubSubClient.EXPECT().ValidateTopic(topic).Return(nil),
-			mockDB.EXPECT().InsertTopicKey(topic, gomock.Any()),
+			mockDB.EXPECT().BeginTx(gomock.Any(), gomock.Any()).Return(mockTx, nil),
+			mockTx.EXPECT().InsertTopicKey(topic, gomock.Any()),
+			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), gomock.Any()).Return(mockCommand, nil),
+			mockTx.EXPECT().CountClientsForTopic(topic).Return(0, nil),
+			mockTx.EXPECT().CommitTx(),
+
 			mockPubSubClient.EXPECT().SubscribeToTopic(gomock.Any(), topic),
 		)
 
@@ -314,6 +320,117 @@ func TestE4(t *testing.T) {
 
 		mockTx := models.NewMockDatabase(mockCtrl)
 		gomock.InOrder(
+			mockPubSubClient.EXPECT().ValidateTopic(topic).Return(nil),
+			mockDB.EXPECT().BeginTx(gomock.Any(), gomock.Any()).Return(mockTx, nil),
+			mockTx.EXPECT().InsertTopicKey(topic, gomock.Any()),
+			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), gomock.Any()).Return(mockCommand, nil),
+			mockTx.EXPECT().CountClientsForTopic(topic).Return(totalClients, nil),
+			mockTx.EXPECT().CommitTx(),
+
+			mockDB.EXPECT().GetClientsForTopic(topic, 0, NewTopicBatchSize).Return(clientsBatch1, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client11Key).Return(client11Payload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client11Payload, client11.Topic(), protocols.QoSExactlyOnce),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client12Key).Return(client12Payload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client12Payload, client12.Topic(), protocols.QoSExactlyOnce),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client13Key).Return(client13Payload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client13Payload, client13.Topic(), protocols.QoSExactlyOnce),
+			mockDB.EXPECT().GetClientsForTopic(topic, NewTopicBatchSize, NewTopicBatchSize).Return(clientsBatch2, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client21Key).Return(client21Payload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client21Payload, client21.Topic(), protocols.QoSExactlyOnce),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client22Key).Return(client22Payload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client22Payload, client22.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().SubscribeToTopic(gomock.Any(), topic),
+		)
+
+		if err := service.NewTopic(ctx, topic); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("NewTopic send the topic key to its clients in batch", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		NewTopicBatchSize = 3
+		totalClients := 5
+
+		client11, client11Key := createTestClient(t, dbEncKey)
+		client11Payload := []byte("client11")
+		client12, client12Key := createTestClient(t, dbEncKey)
+		client12Payload := []byte("client12")
+		client13, client13Key := createTestClient(t, dbEncKey)
+		client13Payload := []byte("client13")
+		clientsBatch1 := []models.Client{client11, client12, client13}
+
+		client21, client21Key := createTestClient(t, dbEncKey)
+		client21Payload := []byte("client21")
+		client22, client22Key := createTestClient(t, dbEncKey)
+		client22Payload := []byte("client22")
+		clientsBatch2 := []models.Client{client21, client22}
+
+		topic := "topic"
+
+		mockCommand := commands.NewMockCommand(mockCtrl)
+		mockCommand.EXPECT().Type().AnyTimes().Return(e4.Command(1), nil)
+
+		mockTx := models.NewMockDatabase(mockCtrl)
+		gomock.InOrder(
+			mockPubSubClient.EXPECT().ValidateTopic(topic).Return(nil),
+			mockDB.EXPECT().BeginTx(gomock.Any(), gomock.Any()).Return(mockTx, nil),
+			mockTx.EXPECT().InsertTopicKey(topic, gomock.Any()),
+			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), gomock.Any()).Return(mockCommand, nil),
+			mockTx.EXPECT().CountClientsForTopic(topic).Return(totalClients, nil),
+			mockTx.EXPECT().CommitTx(),
+
+			mockDB.EXPECT().GetClientsForTopic(topic, 0, NewTopicBatchSize).Return(clientsBatch1, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client11Key).Return(client11Payload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client11Payload, client11.Topic(), protocols.QoSExactlyOnce),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client12Key).Return(client12Payload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client12Payload, client12.Topic(), protocols.QoSExactlyOnce),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client13Key).Return(client13Payload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client13Payload, client13.Topic(), protocols.QoSExactlyOnce),
+			mockDB.EXPECT().GetClientsForTopic(topic, NewTopicBatchSize, NewTopicBatchSize).Return(clientsBatch2, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client21Key).Return(client21Payload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client21Payload, client21.Topic(), protocols.QoSExactlyOnce),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, client22Key).Return(client22Payload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client22Payload, client22.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().SubscribeToTopic(gomock.Any(), topic),
+		)
+
+		if err := service.NewTopic(ctx, topic); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("NewTopic send the topic key to its clients in batch", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		NewTopicBatchSize = 3
+		totalClients := 5
+
+		client11, client11Key := createTestClient(t, dbEncKey)
+		client11Payload := []byte("client11")
+		client12, client12Key := createTestClient(t, dbEncKey)
+		client12Payload := []byte("client12")
+		client13, client13Key := createTestClient(t, dbEncKey)
+		client13Payload := []byte("client13")
+		clientsBatch1 := []models.Client{client11, client12, client13}
+
+		client21, client21Key := createTestClient(t, dbEncKey)
+		client21Payload := []byte("client21")
+		client22, client22Key := createTestClient(t, dbEncKey)
+		client22Payload := []byte("client22")
+		clientsBatch2 := []models.Client{client21, client22}
+
+		topic := "topic"
+
+		mockCommand := commands.NewMockCommand(mockCtrl)
+		mockCommand.EXPECT().Type().AnyTimes().Return(e4.Command(1), nil)
+
+		mockTx := models.NewMockDatabase(mockCtrl)
+		gomock.InOrder(
+			mockPubSubClient.EXPECT().ValidateTopic(topic).Return(nil),
 			mockDB.EXPECT().BeginTx(gomock.Any(), gomock.Any()).Return(mockTx, nil),
 			mockTx.EXPECT().InsertTopicKey(topic, gomock.Any()),
 			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), gomock.Any()).Return(mockCommand, nil),
