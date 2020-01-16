@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/spf13/cobra"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
@@ -19,9 +20,9 @@ type createCommand struct {
 }
 
 type createCommandFlags struct {
-	Name     string
-	Password string
-	Key      []byte
+	Name         string
+	PasswordPath string
+	KeyPath      string
 }
 
 var _ cli.Command = (*createCommand)(nil)
@@ -35,14 +36,14 @@ func NewCreateCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 	cobraCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Creates a new client",
-		Long:  fmt.Sprintf("Creates a new client, require an unique name, and either a password or a %d bytes hexadecimal key", e4crypto.KeyLenHex),
+		Long:  fmt.Sprintf("Creates a new client, require an unique name, and a file containing either a password or a %d bytes key", e4crypto.KeyLen),
 		RunE:  createCmd.run,
 	}
 
 	cobraCmd.Flags().SortFlags = false
 	cobraCmd.Flags().StringVar(&createCmd.flags.Name, "name", "", "The client name")
-	cobraCmd.Flags().BytesHexVar(&createCmd.flags.Key, "key", nil, fmt.Sprintf("The client %d bytes hexadecimal key", e4crypto.KeyLenHex))
-	cobraCmd.Flags().StringVar(&createCmd.flags.Password, "password", "", "The client password")
+	cobraCmd.Flags().StringVar(&createCmd.flags.KeyPath, "key", "", fmt.Sprintf("Filepath to a %d bytes key", e4crypto.KeyLen))
+	cobraCmd.Flags().StringVar(&createCmd.flags.PasswordPath, "password", "", "Filepath to a plaintext password file")
 
 	createCmd.cobraCmd = cobraCmd
 
@@ -57,9 +58,9 @@ func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 	switch {
 	case len(c.flags.Name) == 0:
 		return errors.New("flag --name is required")
-	case len(c.flags.Password) == 0 && len(c.flags.Key) == 0:
+	case len(c.flags.PasswordPath) == 0 && len(c.flags.KeyPath) == 0:
 		return errors.New("one of --password or --key is required")
-	case len(c.flags.Password) > 0 && len(c.flags.Key) > 0:
+	case len(c.flags.PasswordPath) > 0 && len(c.flags.KeyPath) > 0:
 		return errors.New("only one of --password or --key is allowed")
 	}
 
@@ -67,10 +68,20 @@ func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid name: %v", err)
 	}
 
-	key := c.flags.Key
-	if len(key) == 0 {
+	var key []byte
+	if len(c.flags.KeyPath) > 0 {
 		var err error
-		key, err = e4crypto.DeriveSymKey(c.flags.Password)
+		key, err = ioutil.ReadFile(c.flags.KeyPath)
+		if err != nil {
+			return fmt.Errorf("failed to read symKey from file: %v", err)
+		}
+	} else {
+		var err error
+		password, err := ioutil.ReadFile(c.flags.PasswordPath)
+		if err != nil {
+			return fmt.Errorf("failed to read password from file: %v", err)
+		}
+		key, err = e4crypto.DeriveSymKey(string(password))
 		if err != nil {
 			return fmt.Errorf("failed to derive symKey from password: %v", err)
 		}
