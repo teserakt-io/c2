@@ -50,6 +50,8 @@ func main() {
 		defer logFile.Close()
 	}
 
+	logger = logger.WithField("application", "c2")
+
 	defer func() {
 		if r := recover(); r != nil {
 			logger.WithError(fmt.Errorf("%v", r)).Error("c2 panic")
