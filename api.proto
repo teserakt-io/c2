@@ -116,7 +116,7 @@ service C2 {
   }
 
   // Send a client pubkey to another client (pubkey mode only)
-  rpc SendClientPubkeyCommand(SendClientPubkeyCommandRequest) returns (SendClientPubkeyCommandResponse) {
+  rpc SendClientPubKey(SendClientPubKeyRequest) returns (SendClientPubKeyResponse) {
     option (google.api.http) = {
       post: "/e4/send-client-pubkey"
       body: "*"
@@ -232,11 +232,11 @@ message GetTopicsResponse {
   repeated string topics = 1;
 }
 
-message SendClientPubkeyCommandRequest {
+message SendClientPubKeyRequest {
   Client sourceClient = 1;
   Client targetClient = 2;
 }
-message SendClientPubkeyCommandResponse {}
+message SendClientPubKeyResponse {}
 
 message SubscribeToEventStreamRequest {}
 

@@ -13,8 +13,8 @@ require (
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/flynn-archive/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/golang/mock v1.3.1
-	github.com/golang/protobuf v1.3.2
-	github.com/grpc-ecosystem/grpc-gateway v1.12.1
+	github.com/golang/protobuf v1.3.4
+	github.com/grpc-ecosystem/grpc-gateway v1.13.0
 	github.com/jinzhu/gorm v1.9.10
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
@@ -26,7 +26,10 @@ require (
 	github.com/teserakt-io/serverlib v0.0.0-20190912131345-29a7b76ad87c
 	go.opencensus.io v0.22.1
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
-	google.golang.org/genproto v0.0.0-20190927181202-20e1ac93f88c
-	google.golang.org/grpc v1.24.0
+	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
+	golang.org/x/sys v0.0.0-20200302083256-062a44052db1 // indirect
+	google.golang.org/genproto v0.0.0-20200302123026-7795fca6ccb1
+	google.golang.org/grpc v1.27.1
 	gopkg.in/jcmturner/goidentity.v3 v3.0.0 // indirect
+	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
