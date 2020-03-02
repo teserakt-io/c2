@@ -328,7 +328,7 @@ func (s *grpcServer) CountTopics(ctx context.Context, req *pb.CountTopicsRequest
 	return &pb.CountTopicsResponse{Count: int64(count)}, nil
 }
 
-func (s *grpcServer) SendClientPubkeyCommand(ctx context.Context, req *pb.SendClientPubkeyCommandRequest) (*pb.SendClientPubkeyCommandResponse, error) {
+func (s *grpcServer) SendClientPubKey(ctx context.Context, req *pb.SendClientPubKeyRequest) (*pb.SendClientPubKeyResponse, error) {
 	if req.SourceClient == nil {
 		return nil, errors.New("source client name is required")
 	}
@@ -346,11 +346,11 @@ func (s *grpcServer) SendClientPubkeyCommand(ctx context.Context, req *pb.SendCl
 		return nil, grpcError(err)
 	}
 
-	if err := s.e4Service.SendClientPubkeyCommand(ctx, sourceClientID, targetClientID); err != nil {
+	if err := s.e4Service.SendClientPubKey(ctx, sourceClientID, targetClientID); err != nil {
 		return nil, grpcError(err)
 	}
 
-	return &pb.SendClientPubkeyCommandResponse{}, nil
+	return &pb.SendClientPubKeyResponse{}, nil
 }
 
 func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamRequest, srv pb.C2_SubscribeToEventStreamServer) error {

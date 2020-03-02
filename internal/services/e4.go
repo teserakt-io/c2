@@ -72,17 +72,27 @@ type E4 interface {
 	NewTopicClient(ctx context.Context, id []byte, topic string) error
 	RemoveTopicClient(ctx context.Context, id []byte, topic string) error
 
-	// > Counting topics per client, or clients per topic.
+	// Counting topics per client, or clients per topic.
 	CountTopicsForClient(ctx context.Context, id []byte) (int, error)
 	CountClientsForTopic(ctx context.Context, topic string) (int, error)
 
-	// > Retrieving clients per topic or topics per client
+	// Retrieving clients per topic or topics per client
 	GetTopicsRangeByClient(ctx context.Context, id []byte, offset, count int) ([]string, error)
 	GetClientsRangeByTopic(ctx context.Context, topic string, offset, count int) ([]IDNamePair, error)
 
-	// SendClientPubkeyCommand send the sourceClientID public key to targetClientID via a SetPubKeyCmd
-	// only when C2 is configured in pubkey mode, otherwise an error will be immediately returned.
-	SendClientPubkeyCommand(ctx context.Context, sourceClientID, targetClientID []byte) error
+	// SendClientPubKey send the sourceClientID public key to targetClientID via a SetPubKeyCmd.
+	// Only when C2 is configured in pubkey mode, otherwise an error will be immediately returned.
+	SendClientPubKey(ctx context.Context, sourceClientID, targetClientID []byte) error
+	// RemoveClientPubKey removes the sourceClientID public key from targetClientID via a RemovePubKeyCmd.
+	// Only when C2 is configured in pubkey mode, otherwise an error will be immediately returned.
+	RemoveClientPubKey(ctx context.Context, sourceClientID, targetClientID []byte) error
+	// ResetClientPubKeys removes all public keys stored on targetClientID via a ResetPubKeyCmd
+	// Only when C2 is configured in pubkey mode, otherwise an error will be immediately returned.
+	ResetClientPubKeys(ctx context.Context, targetClientID []byte) error
+	// SetC2Key generates a random C2 key pair and the public key is sent to all clients via a SetC2KeyCmd.
+	// The new key pair is then used by the C2 and replaces the previous one.
+	// Only when C2 is configured in pubkey mode, otherwise an error will be immediately returned.
+	SetC2Key(ctx context.Context) error
 }
 
 type e4impl struct {
@@ -692,8 +702,8 @@ func (s *e4impl) GetClientsRangeByTopic(ctx context.Context, topic string, offse
 	return idNamePairs, nil
 }
 
-func (s *e4impl) SendClientPubkeyCommand(ctx context.Context, sourceClientID, targetClientID []byte) error {
-	ctx, span := trace.StartSpan(ctx, "e4.SendClientPubkeyCommand")
+func (s *e4impl) SendClientPubKey(ctx context.Context, sourceClientID, targetClientID []byte) error {
+	ctx, span := trace.StartSpan(ctx, "e4.SendClientPubKey")
 	defer span.End()
 
 	logger := s.logger.WithFields(log.Fields{
@@ -743,6 +753,51 @@ func (s *e4impl) SendClientPubkeyCommand(ctx context.Context, sourceClientID, ta
 
 	logger.Info("success sending SetPubKey command")
 
+	return nil
+}
+
+func (s *e4impl) RemoveClientPubKey(ctx context.Context, sourceClientID, targetClientID []byte) error {
+	// ctx, span := trace.StartSpan(ctx, "e4.RemoveClientPubKey")
+	// defer span.End()
+
+	// logger := s.logger.WithFields(log.Fields{
+	// 	"sourceClientID": sourceClientID,
+	// 	"targetClientID": targetClientID,
+	// })
+
+	// if !s.e4Key.IsPubKeyMode() {
+	// 	logger.WithError(errors.New("e4Key is not a publicKey type")).Error("failed to remove public key")
+	// 	return ErrInvalidCryptoMode{}
+	// }
+
+	// sourceClient, err := s.db.GetClientByID(sourceClientID)
+	// if err != nil {
+	// 	logger.WithError(err).Error("failed to get source client")
+	// 	if models.IsErrRecordNotFound(err) {
+	// 		return ErrClientNotFound{}
+	// 	}
+	// 	return ErrInternal{}
+	// }
+
+	// targetClient, err := s.db.GetClientByID(targetClientID)
+	// if err != nil {
+	// 	logger.WithError(err).Error("failed to get target client")
+	// 	if models.IsErrRecordNotFound(err) {
+	// 		return ErrClientNotFound{}
+	// 	}
+	// 	return ErrInternal{}
+	// }
+
+	//s.commandFactory.CreateRemovePubKeyCommand()
+	// TODO
+	return nil
+}
+
+func (s *e4impl) ResetClientPubKeys(ctx context.Context, targetClientID []byte) error {
+	return nil
+}
+
+func (s *e4impl) SetC2Key(ctx context.Context) error {
 	return nil
 }
 

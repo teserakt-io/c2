@@ -1,8 +1,16 @@
 #!/bin/bash
 
-go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
-go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
-go get github.com/golang/protobuf/protoc-gen-go
+set -ex
+
+if [ -z $(which protoc-gen-grpc-gateway) ]; then
+    go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+fi
+if [ -z $(which protoc-gen-swagger) ]; then
+    go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+fi
+if [ -z $(which protoc-gen-go) ]; then
+    go get github.com/golang/protobuf/protoc-gen-go
+fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 

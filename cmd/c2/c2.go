@@ -39,7 +39,7 @@ func main() {
 	logger.Logger.SetReportCaller(true)
 	logger.Logger.SetFormatter(&log.JSONFormatter{})
 
-	logFileName := fmt.Sprintf("/var/log/e4_c2.log")
+	logFileName := "/var/log/e4_c2.log"
 	logFile, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
 	if err != nil {
 		fmt.Printf("[WARN] logs: unable to open file '%v' to write logs: %v\n", logFileName, err)
