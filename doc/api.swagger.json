@@ -359,6 +359,39 @@
         ]
       }
     },
+    "/e4/remove-client-pubkey": {
+      "post": {
+        "summary": "Remove a client pubkey from another client (pubkey mode only)",
+        "operationId": "RemoveClientPubKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbRemoveClientPubKeyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbRemoveClientPubKeyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
     "/e4/send-client-pubkey": {
       "post": {
         "summary": "Send a client pubkey to another client (pubkey mode only)",
@@ -738,6 +771,20 @@
       "type": "object"
     },
     "pbNewTopicResponse": {
+      "type": "object"
+    },
+    "pbRemoveClientPubKeyRequest": {
+      "type": "object",
+      "properties": {
+        "sourceClient": {
+          "$ref": "#/definitions/pbClient"
+        },
+        "targetClient": {
+          "$ref": "#/definitions/pbClient"
+        }
+      }
+    },
+    "pbRemoveClientPubKeyResponse": {
       "type": "object"
     },
     "pbRemoveClientResponse": {

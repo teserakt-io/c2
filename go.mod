@@ -12,7 +12,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/flynn-archive/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
-	github.com/golang/mock v1.3.1
+	github.com/golang/mock v1.4.1
 	github.com/golang/protobuf v1.3.4
 	github.com/grpc-ecosystem/grpc-gateway v1.13.0
 	github.com/jinzhu/gorm v1.9.10

@@ -353,6 +353,31 @@ func (s *grpcServer) SendClientPubKey(ctx context.Context, req *pb.SendClientPub
 	return &pb.SendClientPubKeyResponse{}, nil
 }
 
+func (s *grpcServer) RemoveClientPubKey(ctx context.Context, req *pb.RemoveClientPubKeyRequest) (*pb.RemoveClientPubKeyResponse, error) {
+	if req.SourceClient == nil {
+		return nil, errors.New("source client name is required")
+	}
+	if req.TargetClient == nil {
+		return nil, errors.New("target client name is required")
+	}
+
+	sourceClientID, err := validateE4NameOrIDPair(req.SourceClient.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	targetClientID, err := validateE4NameOrIDPair(req.TargetClient.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	if err := s.e4Service.RemoveClientPubKey(ctx, sourceClientID, targetClientID); err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.RemoveClientPubKeyResponse{}, nil
+}
+
 func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamRequest, srv pb.C2_SubscribeToEventStreamServer) error {
 	listener := events.NewListener(s.eventDispatcher)
 	defer listener.Close()

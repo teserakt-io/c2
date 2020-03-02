@@ -123,6 +123,14 @@ service C2 {
     };
   }
 
+  // Remove a client pubkey from another client (pubkey mode only)
+  rpc RemoveClientPubKey(RemoveClientPubKeyRequest) returns (RemoveClientPubKeyResponse) {
+    option (google.api.http) = {
+      post: "/e4/remove-client-pubkey"
+      body: "*"
+    };
+  }
+
   // Provide a stream on C2 system events, grpc only
   rpc SubscribeToEventStream(SubscribeToEventStreamRequest) returns (stream Event) {}
 }
@@ -237,6 +245,12 @@ message SendClientPubKeyRequest {
   Client targetClient = 2;
 }
 message SendClientPubKeyResponse {}
+
+message RemoveClientPubKeyRequest {
+  Client sourceClient = 1;
+  Client targetClient = 2;
+}
+message RemoveClientPubKeyResponse {}
 
 message SubscribeToEventStreamRequest {}
 

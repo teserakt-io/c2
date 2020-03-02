@@ -795,4 +795,38 @@ func TestE4(t *testing.T) {
 			t.Fatalf("failed to send pubkey command: %v", err)
 		}
 	})
+
+	t.Run("RemoveClientPubKey returns error when key does not support pubkey mode", func(t *testing.T) {
+		mockE4Key.EXPECT().IsPubKeyMode().Return(false)
+		err := service.RemoveClientPubKey(context.Background(), []byte("source"), []byte("target"))
+		want := ErrInvalidCryptoMode{}
+		if err != want {
+			t.Fatalf("got error %v, wanted %v", err, want)
+		}
+	})
+
+	t.Run("RemoveClientPubKey sends the expected command to the target client", func(t *testing.T) {
+		mockE4Key.EXPECT().IsPubKeyMode().Return(true)
+
+		sourceClient, _ := createTestClient(t, dbEncKey)
+		targetClient, clearTargetClientKey := createTestClient(t, dbEncKey)
+
+		mockCommand := commands.NewMockCommand(mockCtrl)
+		cmdPayload := []byte("protectedRemovePubKeyCommand")
+
+		gomock.InOrder(
+			mockDB.EXPECT().GetClientByID(sourceClient.E4ID).Return(sourceClient, nil),
+			mockDB.EXPECT().GetClientByID(targetClient.E4ID).Return(targetClient, nil),
+
+			mockCommandFactory.EXPECT().CreateRemovePubKeyCommand(sourceClient.Name).Return(mockCommand, nil),
+
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearTargetClientKey).Return(cmdPayload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload, targetClient.Topic(), protocols.QoSExactlyOnce).Return(nil),
+		)
+
+		err := service.RemoveClientPubKey(context.Background(), sourceClient.E4ID, targetClient.E4ID)
+		if err != nil {
+			t.Fatalf("failed to send pubkey command: %v", err)
+		}
+	})
 }

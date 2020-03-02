@@ -5,6 +5,8 @@ import (
 	reflect "reflect"
 	"testing"
 
+	"golang.org/x/crypto/ed25519"
+
 	e4 "github.com/teserakt-io/e4go"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 )
@@ -128,6 +130,73 @@ func TestFactory(t *testing.T) {
 			if err == nil {
 				t.Errorf("Expected an error, got nil")
 			}
+		}
+	})
+
+	t.Run("CreateSetPubKeyCommand creates the expected command", func(t *testing.T) {
+		expectedPubKey, _, err := ed25519.GenerateKey(nil)
+		if err != nil {
+			t.Fatalf("failed to generate pubkey: %v", err)
+		}
+
+		targetName := "targetClient"
+		expectedTargetClientID := e4crypto.HashIDAlias(targetName)
+
+		command, err := factory.CreateSetPubKeyCommand(expectedPubKey, targetName)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		assertCommandContains(t, command, e4.SetPubKey, append(expectedPubKey, expectedTargetClientID...))
+	})
+
+	t.Run("CreateSetPubKeyCommand handle errors", func(t *testing.T) {
+		edPubKey, _, err := ed25519.GenerateKey(nil)
+		if err != nil {
+			t.Fatalf("failed to generate pubkey: %v", err)
+		}
+
+		testDataset := []struct {
+			name       string
+			pubKey     []byte
+			targetName string
+		}{
+			{
+				name:       "invalid pubkey",
+				pubKey:     edPubKey[:len(edPubKey)-1],
+				targetName: "valid",
+			},
+			{
+				name:       "invalid target name",
+				pubKey:     edPubKey,
+				targetName: "",
+			},
+		}
+
+		for _, testData := range testDataset {
+			_, err := factory.CreateSetPubKeyCommand(testData.pubKey, testData.targetName)
+			if err == nil {
+				t.Errorf("CreateSetPubKeyCommand must fail with %s, got no error", testData.name)
+			}
+		}
+	})
+
+	t.Run("CreateRemovePubKeyCommand creates the expected command", func(t *testing.T) {
+		targetName := "targetClient"
+		expectedTargetClientID := e4crypto.HashIDAlias(targetName)
+
+		command, err := factory.CreateRemovePubKeyCommand(targetName)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		assertCommandContains(t, command, e4.RemovePubKey, expectedTargetClientID)
+	})
+
+	t.Run("CreateRemovePubKeyCommand handle errors", func(t *testing.T) {
+		_, err := factory.CreateRemovePubKeyCommand("")
+		if err == nil {
+			t.Errorf("Expected an error when calling CreateRemovePubKeyCommand with empty name")
 		}
 	})
 }

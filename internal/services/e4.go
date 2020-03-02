@@ -757,39 +757,50 @@ func (s *e4impl) SendClientPubKey(ctx context.Context, sourceClientID, targetCli
 }
 
 func (s *e4impl) RemoveClientPubKey(ctx context.Context, sourceClientID, targetClientID []byte) error {
-	// ctx, span := trace.StartSpan(ctx, "e4.RemoveClientPubKey")
-	// defer span.End()
+	ctx, span := trace.StartSpan(ctx, "e4.RemoveClientPubKey")
+	defer span.End()
 
-	// logger := s.logger.WithFields(log.Fields{
-	// 	"sourceClientID": sourceClientID,
-	// 	"targetClientID": targetClientID,
-	// })
+	logger := s.logger.WithFields(log.Fields{
+		"sourceClientID": sourceClientID,
+		"targetClientID": targetClientID,
+	})
 
-	// if !s.e4Key.IsPubKeyMode() {
-	// 	logger.WithError(errors.New("e4Key is not a publicKey type")).Error("failed to remove public key")
-	// 	return ErrInvalidCryptoMode{}
-	// }
+	if !s.e4Key.IsPubKeyMode() {
+		logger.WithError(errors.New("e4Key is not a publicKey type")).Error("failed to remove public key")
+		return ErrInvalidCryptoMode{}
+	}
 
-	// sourceClient, err := s.db.GetClientByID(sourceClientID)
-	// if err != nil {
-	// 	logger.WithError(err).Error("failed to get source client")
-	// 	if models.IsErrRecordNotFound(err) {
-	// 		return ErrClientNotFound{}
-	// 	}
-	// 	return ErrInternal{}
-	// }
+	sourceClient, err := s.db.GetClientByID(sourceClientID)
+	if err != nil {
+		logger.WithError(err).Error("failed to get source client")
+		if models.IsErrRecordNotFound(err) {
+			return ErrClientNotFound{}
+		}
+		return ErrInternal{}
+	}
 
-	// targetClient, err := s.db.GetClientByID(targetClientID)
-	// if err != nil {
-	// 	logger.WithError(err).Error("failed to get target client")
-	// 	if models.IsErrRecordNotFound(err) {
-	// 		return ErrClientNotFound{}
-	// 	}
-	// 	return ErrInternal{}
-	// }
+	targetClient, err := s.db.GetClientByID(targetClientID)
+	if err != nil {
+		logger.WithError(err).Error("failed to get target client")
+		if models.IsErrRecordNotFound(err) {
+			return ErrClientNotFound{}
+		}
+		return ErrInternal{}
+	}
 
-	//s.commandFactory.CreateRemovePubKeyCommand()
-	// TODO
+	cmd, err := s.commandFactory.CreateRemovePubKeyCommand(sourceClient.Name)
+	if err != nil {
+		logger.WithError(err).Error("failed to create RemovePubKey command")
+		return ErrInternal{}
+	}
+
+	if err := s.sendCommandToClient(ctx, cmd, targetClient); err != nil {
+		logger.WithError(err).Error("failed to send RemovePubKey command to target client")
+		return ErrInternal{}
+	}
+
+	logger.Info("success sending RemovePubKey command")
+
 	return nil
 }
 
