@@ -826,7 +826,30 @@ func TestE4(t *testing.T) {
 
 		err := service.RemoveClientPubKey(context.Background(), sourceClient.E4ID, targetClient.E4ID)
 		if err != nil {
-			t.Fatalf("failed to send pubkey command: %v", err)
+			t.Fatalf("failed to send RemovePubKey command: %v", err)
+		}
+	})
+
+	t.Run("ResetClientPubKeys sends the expected command to the target client", func(t *testing.T) {
+		mockE4Key.EXPECT().IsPubKeyMode().Return(true)
+
+		targetClient, clearTargetClientKey := createTestClient(t, dbEncKey)
+
+		mockCommand := commands.NewMockCommand(mockCtrl)
+		cmdPayload := []byte("protectedResetClientPubKeysCommand")
+
+		gomock.InOrder(
+			mockDB.EXPECT().GetClientByID(targetClient.E4ID).Return(targetClient, nil),
+
+			mockCommandFactory.EXPECT().CreateResetPubKeysCommand().Return(mockCommand, nil),
+
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearTargetClientKey).Return(cmdPayload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload, targetClient.Topic(), protocols.QoSExactlyOnce).Return(nil),
+		)
+
+		err := service.ResetClientPubKeys(context.Background(), targetClient.E4ID)
+		if err != nil {
+			t.Fatalf("failed to send ResetPubKeys command: %v", err)
 		}
 	})
 }

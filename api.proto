@@ -131,6 +131,13 @@ service C2 {
     };
   }
 
+  rpc ResetClientPubKeys(ResetClientPubKeysRequest) returns (ResetClientPubKeysResponse) {
+    option (google.api.http) = {
+      post: "/e4/reset-client-pubkeys"
+      body: "*"
+    };
+  }
+
   // Provide a stream on C2 system events, grpc only
   rpc SubscribeToEventStream(SubscribeToEventStreamRequest) returns (stream Event) {}
 }
@@ -251,6 +258,11 @@ message RemoveClientPubKeyRequest {
   Client targetClient = 2;
 }
 message RemoveClientPubKeyResponse {}
+
+message ResetClientPubKeysRequest {
+  Client targetClient = 1;
+}
+message ResetClientPubKeysResponse {}
 
 message SubscribeToEventStreamRequest {}
 

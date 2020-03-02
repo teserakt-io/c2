@@ -805,6 +805,40 @@ func (s *e4impl) RemoveClientPubKey(ctx context.Context, sourceClientID, targetC
 }
 
 func (s *e4impl) ResetClientPubKeys(ctx context.Context, targetClientID []byte) error {
+	ctx, span := trace.StartSpan(ctx, "e4.ResetClientPubKeys")
+	defer span.End()
+
+	logger := s.logger.WithFields(log.Fields{
+		"targetClientID": targetClientID,
+	})
+
+	if !s.e4Key.IsPubKeyMode() {
+		logger.WithError(errors.New("e4Key is not a publicKey type")).Error("failed to remove public key")
+		return ErrInvalidCryptoMode{}
+	}
+
+	targetClient, err := s.db.GetClientByID(targetClientID)
+	if err != nil {
+		logger.WithError(err).Error("failed to get target client")
+		if models.IsErrRecordNotFound(err) {
+			return ErrClientNotFound{}
+		}
+		return ErrInternal{}
+	}
+
+	cmd, err := s.commandFactory.CreateResetPubKeysCommand()
+	if err != nil {
+		logger.WithError(err).Error("failed to create ResetPubKeys command")
+		return ErrInternal{}
+	}
+
+	if err := s.sendCommandToClient(ctx, cmd, targetClient); err != nil {
+		logger.WithError(err).Error("failed to send ResetPubKeys command to target client")
+		return ErrInternal{}
+	}
+
+	logger.Info("success sending ResetPubKeys command")
+
 	return nil
 }
 

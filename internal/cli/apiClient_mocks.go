@@ -348,6 +348,26 @@ func (mr *MockC2ClientMockRecorder) RemoveClient(arg0, arg1 interface{}, arg2 ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveClient", reflect.TypeOf((*MockC2Client)(nil).RemoveClient), varargs...)
 }
 
+// RemoveClientPubKey mocks base method
+func (m *MockC2Client) RemoveClientPubKey(arg0 context.Context, arg1 *pb.RemoveClientPubKeyRequest, arg2 ...grpc.CallOption) (*pb.RemoveClientPubKeyResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RemoveClientPubKey", varargs...)
+	ret0, _ := ret[0].(*pb.RemoveClientPubKeyResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RemoveClientPubKey indicates an expected call of RemoveClientPubKey
+func (mr *MockC2ClientMockRecorder) RemoveClientPubKey(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveClientPubKey", reflect.TypeOf((*MockC2Client)(nil).RemoveClientPubKey), varargs...)
+}
+
 // RemoveTopic mocks base method
 func (m *MockC2Client) RemoveTopic(arg0 context.Context, arg1 *pb.RemoveTopicRequest, arg2 ...grpc.CallOption) (*pb.RemoveTopicResponse, error) {
 	m.ctrl.T.Helper()
@@ -406,6 +426,26 @@ func (mr *MockC2ClientMockRecorder) ResetClient(arg0, arg1 interface{}, arg2 ...
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetClient", reflect.TypeOf((*MockC2Client)(nil).ResetClient), varargs...)
+}
+
+// ResetClientPubKeys mocks base method
+func (m *MockC2Client) ResetClientPubKeys(arg0 context.Context, arg1 *pb.ResetClientPubKeysRequest, arg2 ...grpc.CallOption) (*pb.ResetClientPubKeysResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ResetClientPubKeys", varargs...)
+	ret0, _ := ret[0].(*pb.ResetClientPubKeysResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResetClientPubKeys indicates an expected call of ResetClientPubKeys
+func (mr *MockC2ClientMockRecorder) ResetClientPubKeys(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetClientPubKeys", reflect.TypeOf((*MockC2Client)(nil).ResetClientPubKeys), varargs...)
 }
 
 // SendClientPubKey mocks base method

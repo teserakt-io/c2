@@ -378,6 +378,23 @@ func (s *grpcServer) RemoveClientPubKey(ctx context.Context, req *pb.RemoveClien
 	return &pb.RemoveClientPubKeyResponse{}, nil
 }
 
+func (s *grpcServer) ResetClientPubKeys(ctx context.Context, req *pb.ResetClientPubKeysRequest) (*pb.ResetClientPubKeysResponse, error) {
+	if req.TargetClient == nil {
+		return nil, errors.New("target client name is required")
+	}
+
+	targetClientID, err := validateE4NameOrIDPair(req.TargetClient.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	if err := s.e4Service.ResetClientPubKeys(ctx, targetClientID); err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.ResetClientPubKeysResponse{}, nil
+}
+
 func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamRequest, srv pb.C2_SubscribeToEventStreamServer) error {
 	listener := events.NewListener(s.eventDispatcher)
 	defer listener.Close()

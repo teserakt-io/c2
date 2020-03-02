@@ -19,6 +19,7 @@ type Factory interface {
 	CreateSetTopicKeyCommand(topicHash, key []byte) (Command, error)
 	CreateSetPubKeyCommand(publicKey ed25519.PublicKey, clientName string) (Command, error)
 	CreateRemovePubKeyCommand(clientName string) (Command, error)
+	CreateResetPubKeysCommand() (Command, error)
 }
 
 type factory struct {
@@ -77,6 +78,15 @@ func (f *factory) CreateSetPubKeyCommand(publicKey ed25519.PublicKey, clientName
 
 func (f *factory) CreateRemovePubKeyCommand(clientName string) (Command, error) {
 	cmd, err := e4.CmdRemovePubKey(clientName)
+	if err != nil {
+		return nil, err
+	}
+
+	return e4Command(cmd), nil
+}
+
+func (f *factory) CreateResetPubKeysCommand() (Command, error) {
+	cmd, err := e4.CmdResetPubKeys()
 	if err != nil {
 		return nil, err
 	}

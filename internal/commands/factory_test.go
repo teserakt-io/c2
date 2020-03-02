@@ -199,4 +199,13 @@ func TestFactory(t *testing.T) {
 			t.Errorf("Expected an error when calling CreateRemovePubKeyCommand with empty name")
 		}
 	})
+
+	t.Run("CreateResetPubKeysCommand creates the expected command", func(t *testing.T) {
+		command, err := factory.CreateResetPubKeysCommand()
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		assertCommandContains(t, command, e4.ResetPubKeys, []byte{})
+	})
 }
