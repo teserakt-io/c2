@@ -22,7 +22,7 @@ type resetPubKeysCommandFlags struct {
 
 var _ cli.Command = (*resetPubKeysCommand)(nil)
 
-// NewResetPubKeysCommand returns a new command to send a client pubkey to another client
+// NewResetPubKeysCommand returns a new command to remove all pubkeys from a client
 func NewResetPubKeysCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 	resetPubKeysCommand := &resetPubKeysCommand{
 		c2ClientFactory: c2ClientFactory,

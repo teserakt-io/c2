@@ -46,6 +46,10 @@ import (
 // Having it too low will create too many queries, and too high will create too slow queries.
 var NewTopicBatchSize = 500
 
+// NewC2KeyBatchSize is the maximum number of clients pulled from the database at a time
+// when sending them the new C2 key.
+var NewC2KeyBatchSize = 500
+
 // IDNamePair stores an E4 client ID and names, omitting the key
 type IDNamePair struct {
 	ID   []byte
@@ -89,10 +93,10 @@ type E4 interface {
 	// ResetClientPubKeys removes all public keys stored on targetClientID via a ResetPubKeyCmd
 	// Only when C2 is configured in pubkey mode, otherwise an error will be immediately returned.
 	ResetClientPubKeys(ctx context.Context, targetClientID []byte) error
-	// SetC2Key generates a random C2 key pair and the public key is sent to all clients via a SetC2KeyCmd.
+	// NewC2Key generates a random C2 key pair and the public key is sent to all clients via a SetC2KeyCmd.
 	// The new key pair is then used by the C2 and replaces the previous one.
 	// Only when C2 is configured in pubkey mode, otherwise an error will be immediately returned.
-	SetC2Key(ctx context.Context) error
+	NewC2Key(ctx context.Context) error
 }
 
 type e4impl struct {
@@ -218,7 +222,7 @@ func (s *e4impl) NewTopicClient(ctx context.Context, id []byte, topic string) er
 		return ErrInternal{}
 	}
 
-	command, err := s.commandFactory.CreateSetTopicKeyCommand(topicKey.Hash(), clearTopicKey)
+	command, err := s.commandFactory.CreateSetTopicKeyCommand(topicKey.Topic, clearTopicKey)
 	if err != nil {
 		logger.WithError(err).Error("failed to create setTopicKey command")
 		return ErrInternal{}
@@ -270,7 +274,7 @@ func (s *e4impl) RemoveTopicClient(ctx context.Context, id []byte, topic string)
 		return ErrInternal{}
 	}
 
-	command, err := s.commandFactory.CreateRemoveTopicCommand(topicKey.Hash())
+	command, err := s.commandFactory.CreateRemoveTopicCommand(topicKey.Topic)
 	if err != nil {
 		logger.WithError(err).Error("failed to create removeTopic command")
 		return ErrInternal{}
@@ -361,7 +365,7 @@ func (s *e4impl) NewTopic(ctx context.Context, topic string) error {
 	}
 	logger.Info("insertTopicKey succeeded")
 
-	command, err := s.commandFactory.CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), key)
+	command, err := s.commandFactory.CreateSetTopicKeyCommand(topic, key)
 	if err != nil {
 		logger.WithError(err).Error("failed to create setTopicKey command")
 		if err := tx.Rollback(); err != nil {
@@ -842,7 +846,68 @@ func (s *e4impl) ResetClientPubKeys(ctx context.Context, targetClientID []byte) 
 	return nil
 }
 
-func (s *e4impl) SetC2Key(ctx context.Context) error {
+func (s *e4impl) NewC2Key(ctx context.Context) error {
+	ctx, span := trace.StartSpan(ctx, "e4.SetC2Key")
+	defer span.End()
+
+	logger := s.logger
+
+	if !s.e4Key.IsPubKeyMode() {
+		logger.WithError(errors.New("e4Key is not a publicKey type")).Error("failed to remove public key")
+		return ErrInvalidCryptoMode{}
+	}
+
+	publicC2Key, privateC2Key, err := crypto.RandomCurve25519Keys()
+	if err != nil {
+		logger.WithError(err).Error("failed to generate new curve25519 key")
+		return ErrInternal{}
+	}
+
+	newE4Key, err := crypto.NewE4PubKey(privateC2Key)
+	if err != nil {
+		logger.WithError(err).Error("failed to create new E4 key")
+		return ErrInternal{}
+	}
+
+	cmd, err := s.commandFactory.CreateSetC2KeyCommand(publicC2Key)
+	if err != nil {
+		logger.WithError(err).Error("failed to create SetC2Key command")
+		return ErrInternal{}
+	}
+
+	// If anything fail while dispatching the new key to clients, we just
+	// skip and logs either for the full batch on DB error, or for the client on broker error.
+	offset := 0
+	for {
+		logger := logger.WithFields(log.Fields{
+			"offset": offset,
+			"count":  NewC2KeyBatchSize,
+		})
+
+		clients, err := s.db.GetClientsRange(offset, NewC2KeyBatchSize)
+		if err != nil {
+			logger.WithError(err).Error("failed to fetch client batch from database")
+			continue
+		}
+
+		for _, client := range clients {
+			if err := s.sendCommandToClient(ctx, cmd, client); err != nil {
+				logger.WithError(err).WithField("client", client.E4ID).Error("failed to send SetC2Key command to client")
+				continue
+			}
+		}
+
+		if len(clients) < NewC2KeyBatchSize {
+			break
+		}
+
+		offset += NewC2KeyBatchSize
+	}
+
+	s.e4Key = newE4Key
+
+	logger.Info("success setting new C2 key")
+
 	return nil
 }
 

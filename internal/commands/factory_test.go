@@ -5,21 +5,12 @@ import (
 	reflect "reflect"
 	"testing"
 
+	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/ed25519"
 
 	e4 "github.com/teserakt-io/e4go"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 )
-
-func newTopicHash(t *testing.T) []byte {
-	hash := make([]byte, e4crypto.HashLen)
-	_, err := rand.Read(hash)
-	if err != nil {
-		t.Fatalf("Failed to generate topic hash: %v", err)
-	}
-
-	return hash
-}
 
 func newKey(t *testing.T) []byte {
 	key := make([]byte, e4crypto.KeyLen)
@@ -31,7 +22,7 @@ func newKey(t *testing.T) []byte {
 	return key
 }
 
-func assertCommandContains(t *testing.T, command Command, expectedType e4.Command, expectedContent []byte) {
+func assertCommandContains(t *testing.T, command Command, expectedType byte, expectedContent []byte) {
 	commandType, err := command.Type()
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
@@ -55,18 +46,18 @@ func TestFactory(t *testing.T) {
 	factory := NewFactory()
 
 	t.Run("CreateRemoveTopicCommand returns the expected command", func(t *testing.T) {
-		expectedTopicHash := newTopicHash(t)
-		command, err := factory.CreateRemoveTopicCommand(expectedTopicHash)
+		topic := "testTopic"
+		command, err := factory.CreateRemoveTopicCommand(topic)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
+		expectedTopicHash := e4crypto.HashTopic(topic)
 		assertCommandContains(t, command, e4.RemoveTopic, expectedTopicHash)
 	})
 
 	t.Run("CreateRemoveTopicCommand return an error with invalid topic", func(t *testing.T) {
-		invalidHash := []byte("invalid")
-		_, err := factory.CreateRemoveTopicCommand(invalidHash)
+		_, err := factory.CreateRemoveTopicCommand("")
 		if err == nil {
 			t.Errorf("Expected an error, got nil")
 		}
@@ -101,32 +92,45 @@ func TestFactory(t *testing.T) {
 	})
 
 	t.Run("CreateSetTopicKeyCommand creates the expected command", func(t *testing.T) {
-		expectedTopicHash := newTopicHash(t)
-		expectedKey := newKey(t)
+		topic := "testTopic"
 
-		command, err := factory.CreateSetTopicKeyCommand(expectedTopicHash, expectedKey)
+		expectedKey := newKey(t)
+		command, err := factory.CreateSetTopicKeyCommand(topic, expectedKey)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
+		expectedTopicHash := e4crypto.HashTopic(topic)
 		assertCommandContains(t, command, e4.SetTopicKey, append(expectedKey, expectedTopicHash...))
 	})
 
 	t.Run("CreateSetTopicKeyCommand with invalid topicHash or key returns errors", func(t *testing.T) {
 		validKey := newKey(t)
-		validTopicHash := newTopicHash(t)
+		validTopic := "testTopic"
 
-		invalidTopicHash := []byte("invalid-topic")
+		invalidTopic := ""
 		invalidKey := []byte("invalid-key")
 
-		testDataSet := [][][]byte{
-			[][]byte{validTopicHash, invalidKey},
-			[][]byte{invalidTopicHash, validKey},
-			[][]byte{invalidTopicHash, invalidKey},
+		testDataSet := []struct {
+			topic string
+			key   []byte
+		}{
+			{
+				topic: validTopic,
+				key:   invalidKey,
+			},
+			{
+				topic: invalidTopic,
+				key:   validKey,
+			},
+			{
+				topic: invalidTopic,
+				key:   invalidKey,
+			},
 		}
 
 		for _, testData := range testDataSet {
-			_, err := factory.CreateSetTopicKeyCommand(testData[0], testData[1])
+			_, err := factory.CreateSetTopicKeyCommand(testData.topic, testData.key)
 			if err == nil {
 				t.Errorf("Expected an error, got nil")
 			}
@@ -207,5 +211,31 @@ func TestFactory(t *testing.T) {
 		}
 
 		assertCommandContains(t, command, e4.ResetPubKeys, []byte{})
+	})
+
+	t.Run("CreateSetC2KeyCommand creates the expected command", func(t *testing.T) {
+		pubKey, err := curve25519.X25519(e4crypto.RandomKey(), curve25519.Basepoint)
+		if err != nil {
+			t.Errorf("failed to generate curve key: %v", err)
+		}
+
+		command, err := factory.CreateSetC2KeyCommand(pubKey)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		assertCommandContains(t, command, e4.SetC2Key, pubKey)
+	})
+
+	t.Run("CreateSetC2KeyCommand handle errors", func(t *testing.T) {
+		pubKey, err := curve25519.X25519(e4crypto.RandomKey(), curve25519.Basepoint)
+		if err != nil {
+			t.Errorf("failed to generate curve key: %v", err)
+		}
+
+		_, err = factory.CreateSetC2KeyCommand(pubKey[:len(pubKey)-1])
+		if err == nil {
+			t.Errorf("Expected an error when calling CreateRemovePubKeyCommand with empty name")
+		}
 	})
 }

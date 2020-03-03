@@ -138,6 +138,13 @@ service C2 {
     };
   }
 
+  rpc NewC2Key(NewC2KeyRequest) returns (NewC2KeyResponse) {
+    option (google.api.http) = {
+      post: "/e4/new-c2-key"
+      body: "*"
+    };
+  }
+
   // Provide a stream on C2 system events, grpc only
   rpc SubscribeToEventStream(SubscribeToEventStreamRequest) returns (stream Event) {}
 }
@@ -263,6 +270,11 @@ message ResetClientPubKeysRequest {
   Client targetClient = 1;
 }
 message ResetClientPubKeysResponse {}
+
+message NewC2KeyRequest {
+  bool force = 1; // ensure this doesn't run by just poking at the endpoint
+}
+message NewC2KeyResponse {}
 
 message SubscribeToEventStreamRequest {}
 

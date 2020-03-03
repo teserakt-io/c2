@@ -359,6 +359,38 @@
         ]
       }
     },
+    "/e4/new-c2-key": {
+      "post": {
+        "operationId": "NewC2Key",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbNewC2KeyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbNewC2KeyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
     "/e4/remove-client-pubkey": {
       "post": {
         "summary": "Remove a client pubkey from another client (pubkey mode only)",
@@ -772,6 +804,18 @@
           }
         }
       }
+    },
+    "pbNewC2KeyRequest": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "pbNewC2KeyResponse": {
+      "type": "object"
     },
     "pbNewClientKeyRequest": {
       "type": "object",

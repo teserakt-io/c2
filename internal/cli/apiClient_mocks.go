@@ -248,6 +248,26 @@ func (mr *MockC2ClientMockRecorder) GetTopicsForClient(arg0, arg1 interface{}, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopicsForClient", reflect.TypeOf((*MockC2Client)(nil).GetTopicsForClient), varargs...)
 }
 
+// NewC2Key mocks base method
+func (m *MockC2Client) NewC2Key(arg0 context.Context, arg1 *pb.NewC2KeyRequest, arg2 ...grpc.CallOption) (*pb.NewC2KeyResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "NewC2Key", varargs...)
+	ret0, _ := ret[0].(*pb.NewC2KeyResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NewC2Key indicates an expected call of NewC2Key
+func (mr *MockC2ClientMockRecorder) NewC2Key(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewC2Key", reflect.TypeOf((*MockC2Client)(nil).NewC2Key), varargs...)
+}
+
 // NewClient mocks base method
 func (m *MockC2Client) NewClient(arg0 context.Context, arg1 *pb.NewClientRequest, arg2 ...grpc.CallOption) (*pb.NewClientResponse, error) {
 	m.ctrl.T.Helper()

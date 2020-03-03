@@ -111,3 +111,14 @@ func (k *e4SymKey) RandomKey() (clientKey, c2StoredKey []byte, err error) {
 func (k *e4SymKey) IsPubKeyMode() bool {
 	return false
 }
+
+// RandomCurve25519Keys creates a new random Curve25519 key pair
+func RandomCurve25519Keys() (e4crypto.Curve25519PublicKey, e4crypto.Curve25519PrivateKey, error) {
+	privKey := e4crypto.RandomKey()
+	pubKey, err := curve25519.X25519(privKey, curve25519.Basepoint)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return pubKey, privKey, nil
+}

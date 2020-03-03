@@ -17,7 +17,7 @@ func TestE4PubKey(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	c2PublicCurveKey, c2PrivateCurveKey, err := e4crypto.RandomCurve25519Keys()
+	c2PublicCurveKey, c2PrivateCurveKey, err := RandomCurve25519Keys()
 	if err != nil {
 		t.Fatalf("failed to generate curve key: %v", err)
 	}

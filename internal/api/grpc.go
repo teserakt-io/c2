@@ -395,6 +395,18 @@ func (s *grpcServer) ResetClientPubKeys(ctx context.Context, req *pb.ResetClient
 	return &pb.ResetClientPubKeysResponse{}, nil
 }
 
+func (s *grpcServer) NewC2Key(ctx context.Context, req *pb.NewC2KeyRequest) (*pb.NewC2KeyResponse, error) {
+	if err := s.e4Service.NewC2Key(ctx); err != nil {
+		return nil, grpcError(err)
+	}
+
+	if !req.Force {
+		return nil, grpcError(errors.New("force is required to true to prevent accidental executions"))
+	}
+
+	return &pb.NewC2KeyResponse{}, nil
+}
+
 func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamRequest, srv pb.C2_SubscribeToEventStreamServer) error {
 	listener := events.NewListener(s.eventDispatcher)
 	defer listener.Close()

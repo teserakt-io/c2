@@ -2,8 +2,6 @@ package commands
 
 import (
 	"errors"
-
-	e4 "github.com/teserakt-io/e4go"
 )
 
 //go:generate mockgen -destination=command_mocks.go -package commands -self_package github.com/teserakt-io/c2/internal/commands github.com/teserakt-io/c2/internal/commands Command
@@ -15,7 +13,7 @@ var (
 
 // Command defines an interface for a protectable Commands
 type Command interface {
-	Type() (e4.Command, error)
+	Type() (byte, error)
 	Content() ([]byte, error)
 	Bytes() []byte
 }
@@ -24,12 +22,12 @@ type e4Command []byte
 
 var _ Command = (e4Command)(nil)
 
-func (c e4Command) Type() (e4.Command, error) {
+func (c e4Command) Type() (byte, error) {
 	if len(c) <= 0 {
 		return 0, ErrEmptyCommand
 	}
 
-	return e4.Command(c[0]), nil
+	return c[0], nil
 }
 
 func (c e4Command) Content() ([]byte, error) {

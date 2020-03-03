@@ -244,6 +244,8 @@ github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/teserakt-io/e4go v1.0.0 h1:ZY2W6+g+R1LEkaFBDENGDK9BZsx6J4YYku7vYGm7LPg=
 github.com/teserakt-io/e4go v1.0.0/go.mod h1:bjlI0SleFl2hOJfLfK95KLgv396rSQAyOByMwx2zhB8=
+github.com/teserakt-io/e4go v1.0.2-0.20200229065249-543cbd03e7e3 h1:V5vCdPw8s1RnySvQqwG4AV2cESjLvGI9Ng2jXCHlC8s=
+github.com/teserakt-io/e4go v1.0.2-0.20200229065249-543cbd03e7e3/go.mod h1:jySeDk4+rdKlbLgPCcXI92Gc75h/ygUBYnrj4fRlcxs=
 github.com/teserakt-io/serverlib v0.0.0-20190912131345-29a7b76ad87c h1:4VZwgi8DLRJIAqFtiaIDbl87NWyjMf3aBvZ4dpF2VKA=
 github.com/teserakt-io/serverlib v0.0.0-20190912131345-29a7b76ad87c/go.mod h1:Royi7lAJYr1NUXhN2qmqaKeHDMCxfw8XhFm9tyYFxbU=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=

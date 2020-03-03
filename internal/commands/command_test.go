@@ -3,8 +3,6 @@ package commands
 import (
 	reflect "reflect"
 	"testing"
-
-	e4 "github.com/teserakt-io/e4go"
 )
 
 func TestE4Command(t *testing.T) {
@@ -14,8 +12,8 @@ func TestE4Command(t *testing.T) {
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-		if cmdType != e4.Command(0x01) {
-			t.Errorf("Expected type to be %v, got %v", e4.Command(0x01), cmdType)
+		if cmdType != 0x01 {
+			t.Errorf("Expected type to be %v, got %v", 0x01, cmdType)
 		}
 	})
 
