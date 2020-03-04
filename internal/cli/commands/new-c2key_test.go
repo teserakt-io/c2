@@ -29,7 +29,7 @@ func TestNewC2Key(t *testing.T) {
 	c2ClientFactory.EXPECT().NewClient(gomock.Any()).AnyTimes().Return(c2Client, nil)
 
 	t.Run("Execute forward expected request to the c2Client when passing a name", func(t *testing.T) {
-		expectedRequest := &pb.NewC2KeyRequest{}
+		expectedRequest := &pb.NewC2KeyRequest{Force: true}
 
 		c2Client.EXPECT().NewC2Key(gomock.Any(), expectedRequest).Return(&pb.NewC2KeyResponse{}, nil)
 		c2Client.EXPECT().Close()

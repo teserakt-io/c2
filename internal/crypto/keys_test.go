@@ -2,7 +2,12 @@ package crypto
 
 import (
 	"bytes"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/ed25519"
@@ -22,7 +27,27 @@ func TestE4PubKey(t *testing.T) {
 		t.Fatalf("failed to generate curve key: %v", err)
 	}
 
-	e4Key, err := NewE4PubKey(c2PrivateCurveKey)
+	tmpKeyDir := filepath.Join(os.TempDir(), "test-e4key")
+	if err := os.Mkdir(tmpKeyDir, 0770); err != nil {
+		t.Fatalf("failed to create tmp key directory %s: %v", tmpKeyDir, err)
+	}
+	defer os.RemoveAll(tmpKeyDir)
+
+	keyFile, err := ioutil.TempFile(tmpKeyDir, "")
+	if err != nil {
+		t.Fatalf("failed to generate tmp file: %v", err)
+	}
+
+	n, err := keyFile.Write(c2PrivateCurveKey)
+	if err != nil {
+		t.Fatalf("failed to write key: %v", err)
+	}
+	if g, w := len(c2PrivateCurveKey), n; g != w {
+		t.Fatalf("invalid key write, got %d bytes, want %d", g, w)
+	}
+	defer keyFile.Close()
+
+	e4Key, err := NewE4PubKey(keyFile.Name())
 	if err != nil {
 		t.Fatalf("failed to create e4 pub key: %v", err)
 	}
@@ -86,7 +111,7 @@ func TestE4PubKey(t *testing.T) {
 
 	t.Run("IsPubKeyMode returns true", func(t *testing.T) {
 		if !e4Key.IsPubKeyMode() {
-			t.Fatalf("IsPubKeyMode with an e4PubKey must return true")
+			t.Fatal("IsPubKeyMode with an e4PubKey must return true")
 		}
 	})
 
@@ -97,7 +122,7 @@ func TestE4PubKey(t *testing.T) {
 		}
 
 		if bytes.Equal(privKey, pubKey) {
-			t.Fatalf("private and public key must not be equals")
+			t.Fatal("private and public key must not be equals")
 		}
 
 		privKey2, pubKey2, err := e4Key.RandomKey()
@@ -106,10 +131,69 @@ func TestE4PubKey(t *testing.T) {
 		}
 
 		if bytes.Equal(privKey, privKey2) {
-			t.Fatalf("successive private keys must not be equals")
+			t.Fatal("successive private keys must not be equals")
 		}
 		if bytes.Equal(pubKey, pubKey2) {
-			t.Fatalf("successive public keys must not be equals")
+			t.Fatal("successive public keys must not be equals")
+		}
+	})
+
+	t.Run("BackupAndRotateC2Key backups the current c2 key, generates a new one and saves it", func(t *testing.T) {
+		typedKey := e4Key.(*e4PubKey)
+		newPubKey, err := e4Key.BackupAndRotateC2Key()
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if bytes.Equal(typedKey.c2PrivKey, c2PrivateCurveKey) {
+			t.Fatal("c2 private key have not been modified")
+		}
+		if bytes.Equal(typedKey.c2PubKey, c2PublicCurveKey) {
+			t.Fatal("c2 public key have not been modified")
+		}
+		if bytes.Equal(newPubKey, c2PublicCurveKey) {
+			t.Fatal("invalid returned public key")
+		}
+
+		currentC2Key, err := ioutil.ReadFile(keyFile.Name())
+		if err != nil {
+			t.Fatalf("failed to read C2 key: %v", err)
+		}
+		if !bytes.Equal(currentC2Key, typedKey.c2PrivKey) {
+			t.Fatalf("c2 key file doesn't contains the new c2 key, got %v, want %v", currentC2Key, typedKey.c2PrivKey)
+		}
+
+		currentC2PubKey, err := curve25519.X25519(currentC2Key, curve25519.Basepoint)
+		if err != nil {
+			t.Fatalf("failed to X25519 current C2 key: %v", err)
+		}
+		if !bytes.Equal(currentC2PubKey, typedKey.c2PubKey) {
+			t.Fatalf("invalid C2 public key: got %v, want %v", currentC2PubKey, typedKey.c2PubKey)
+		}
+		if !bytes.Equal(currentC2PubKey, newPubKey) {
+			t.Fatalf("invalid returned public key: got %v, want %v", newPubKey, currentC2PubKey)
+		}
+
+		expectedBackupFileName := fmt.Sprintf("%s.%s.old", keyFile.Name(), time.Now().Format("20060102150405"))
+		oldKey, err := ioutil.ReadFile(expectedBackupFileName)
+		if err != nil {
+			t.Fatalf("failed to read old key: %v", err)
+		}
+
+		if !bytes.Equal(oldKey, c2PrivateCurveKey) {
+			t.Fatalf("invalid old C2 key backup: got %v, want %v", oldKey, c2PrivateCurveKey)
+		}
+
+		// Rerunning the key rotation within the same second must fail due to already existing backup file
+		if _, err := e4Key.BackupAndRotateC2Key(); err == nil {
+			t.Fatal("an error was expected  when rerunning the C2 key rotation with existing backup file")
+		}
+		failedRotationC2Key, err := ioutil.ReadFile(keyFile.Name())
+		if err != nil {
+			t.Fatalf("failed to read C2 key: %v", err)
+		}
+		if !bytes.Equal(failedRotationC2Key, currentC2Key) {
+			t.Fatalf("c2 key must not have been modified by a failed rotation. got %v, want %v", failedRotationC2Key, currentC2Key)
 		}
 	})
 }

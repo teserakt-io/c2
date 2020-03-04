@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -88,12 +87,11 @@ func TestE4(t *testing.T) {
 	mockE4Key := crypto.NewMockE4Key(mockCtrl)
 
 	logger := log.New()
-	logger.SetOutput(ioutil.Discard)
+	//	logger.SetOutput(ioutil.Discard)
 
 	dbEncKey := newKey(t)
 
 	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, mockEventDispatcher, mockEventFactory, mockE4Key, logger, dbEncKey)
-
 	t.Run("Validation works successfully", func(t *testing.T) {
 		names := []string{"test1", "testtest2", "e4test3", "test4", "test5"}
 
@@ -866,6 +864,8 @@ func TestE4(t *testing.T) {
 
 		mockE4Key.EXPECT().IsPubKeyMode().Return(true)
 
+		newC2PubKey := []byte("newC2PubKey")
+
 		mockCommand := commands.NewMockCommand(mockCtrl)
 		cmdPayload1 := []byte("setC2KeyCommand1")
 		cmdPayload2 := []byte("setC2KeyCommand2")
@@ -879,10 +879,10 @@ func TestE4(t *testing.T) {
 		clientsBatch2 := []models.Client{client3}
 
 		gomock.InOrder(
-			mockCommandFactory.EXPECT().CreateSetC2KeyCommand(gomock.Any()).Return(mockCommand, nil),
+			mockE4Key.EXPECT().BackupAndRotateC2Key().Return(newC2PubKey, nil),
+			mockCommandFactory.EXPECT().CreateSetC2KeyCommand(newC2PubKey).Return(mockCommand, nil),
 
 			mockDB.EXPECT().GetClientsRange(0, NewC2KeyBatchSize).Return(clientsBatch1, nil),
-
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClient1Key).Return(cmdPayload1, nil),
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload1, client1.Topic(), protocols.QoSExactlyOnce).Return(nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClient2Key).Return(cmdPayload2, nil),
@@ -896,15 +896,6 @@ func TestE4(t *testing.T) {
 		err := service.NewC2Key(context.Background())
 		if err != nil {
 			t.Fatalf("failed to set new C2 key: %v", err)
-		}
-
-		typedService, ok := service.(*e4impl)
-		if !ok {
-			t.Fatalf("failed to cast %T to *e4impl", service)
-		}
-
-		if reflect.DeepEqual(typedService.e4Key, mockE4Key) {
-			t.Fatal("expected e4Key to have been modified by NewC2Key call")
 		}
 	})
 }

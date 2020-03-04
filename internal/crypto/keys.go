@@ -3,7 +3,11 @@ package crypto
 //go:generate mockgen -destination=keys_mocks.go -package crypto -self_package github.com/teserakt-io/c2/internal/crypto github.com/teserakt-io/c2/internal/crypto E4Key
 
 import (
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"time"
 
 	"golang.org/x/crypto/ed25519"
 
@@ -28,22 +32,47 @@ type E4Key interface {
 	RandomKey() (clientKey, c2StoredKey []byte, err error)
 	// IsPubKeyMode returns true when the E4Key support pubkey mode, or false otherwise
 	IsPubKeyMode() bool
+	// BackupAndRotateC2Key updates the E4Key with a new C2 curve25519 key pair.
+	// It overwrite the current key file with it, after having saved the original one in a backup file.
+	// On error, the current key is not modified.
+	// It will fail if the given E4Key is not in pubKey mode.
+	BackupAndRotateC2Key() (e4crypto.Curve25519PublicKey, error)
 }
 
 type e4PubKey struct {
 	c2PrivKey e4crypto.Curve25519PrivateKey
+	c2PubKey  e4crypto.Curve25519PublicKey
+	keyPath   string
 }
 
 var _ E4Key = (*e4PubKey)(nil)
 
-// NewE4PubKey creates a new E4 Public key
-func NewE4PubKey(c2PrivKey e4crypto.Curve25519PrivateKey) (E4Key, error) {
-	if err := e4crypto.ValidateCurve25519PrivKey(c2PrivKey); err != nil {
+// NewE4PubKey creates a new E4 Public key, reading the private curve25519 key from the given path.
+func NewE4PubKey(keyPath string) (E4Key, error) {
+	keyFile, err := os.Open(keyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file %s: %v", keyPath, err)
+	}
+	defer keyFile.Close()
+
+	keyBytes, err := ioutil.ReadAll(keyFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read e4key from %s: %v", keyPath, err)
+	}
+
+	if err := e4crypto.ValidateCurve25519PrivKey(keyBytes); err != nil {
+		return nil, err
+	}
+
+	pubKey, err := curve25519.X25519(keyBytes, curve25519.Basepoint)
+	if err != nil {
 		return nil, err
 	}
 
 	return &e4PubKey{
-		c2PrivKey: c2PrivKey,
+		c2PrivKey: keyBytes,
+		c2PubKey:  pubKey,
+		keyPath:   keyPath,
 	}, nil
 }
 
@@ -71,6 +100,59 @@ func (k *e4PubKey) RandomKey() (clientKey, c2StoredKey []byte, err error) {
 	}
 
 	return privKey, pubKey, nil
+}
+
+func (k *e4PubKey) BackupAndRotateC2Key() (e4crypto.Curve25519PublicKey, error) {
+	if err := k.backupCurrentC2Key(); err != nil {
+		return nil, fmt.Errorf("failed to backup current C2 key: %v", err)
+	}
+
+	newC2Key := e4crypto.RandomKey()
+	newC2PubKey, err := curve25519.X25519(newC2Key, curve25519.Basepoint)
+	if err != nil {
+		return nil, err
+	}
+
+	keyFile, err := os.OpenFile(k.keyPath, os.O_TRUNC|os.O_WRONLY, 0600)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file %s: %v", k.keyPath, err)
+	}
+	defer keyFile.Close()
+
+	n, err := keyFile.Write(newC2Key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write new C2 key: %v", err)
+	}
+	if g, w := len(k.c2PrivKey), n; g != w {
+		return nil, fmt.Errorf("invalid write, got %d bytes, want %d", g, w)
+	}
+
+	k.c2PrivKey = newC2Key
+	k.c2PubKey = newC2PubKey
+
+	return newC2PubKey, nil
+}
+
+// backupCurrentC2Key writes the current C2 key into a backup file named after the current
+// key file, with a <YYYYMMDDHHmmSS>.old suffix appended. The current key file is left untouched.
+// An error is returned when the backup file already exists (meaning it can only be invoked once per seconds)
+func (k *e4PubKey) backupCurrentC2Key() error {
+	backupPath := fmt.Sprintf("%s.%s.old", k.keyPath, time.Now().Format("20060102150405"))
+	backupFile, err := os.OpenFile(backupPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to open file %s: %v", backupPath, err)
+	}
+	defer backupFile.Close()
+
+	n, err := backupFile.Write(k.c2PrivKey)
+	if err != nil {
+		return fmt.Errorf("failed to write backup key: %v", err)
+	}
+	if n != len(k.c2PrivKey) {
+		return fmt.Errorf("invalid write, want %d bytes, got %d", len(k.c2PrivKey), n)
+	}
+
+	return nil
 }
 
 func (k *e4PubKey) IsPubKeyMode() bool {
@@ -110,6 +192,10 @@ func (k *e4SymKey) RandomKey() (clientKey, c2StoredKey []byte, err error) {
 
 func (k *e4SymKey) IsPubKeyMode() bool {
 	return false
+}
+
+func (k *e4SymKey) BackupAndRotateC2Key() (e4crypto.Curve25519PublicKey, error) {
+	return nil, errors.New("not available in symkey mode")
 }
 
 // RandomCurve25519Keys creates a new random Curve25519 key pair

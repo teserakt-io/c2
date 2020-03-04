@@ -857,19 +857,13 @@ func (s *e4impl) NewC2Key(ctx context.Context) error {
 		return ErrInvalidCryptoMode{}
 	}
 
-	publicC2Key, privateC2Key, err := crypto.RandomCurve25519Keys()
+	newPublicC2Key, err := s.e4Key.BackupAndRotateC2Key()
 	if err != nil {
-		logger.WithError(err).Error("failed to generate new curve25519 key")
+		logger.WithError(err).Error("failed to backup and rotate new C2 key")
 		return ErrInternal{}
 	}
 
-	newE4Key, err := crypto.NewE4PubKey(privateC2Key)
-	if err != nil {
-		logger.WithError(err).Error("failed to create new E4 key")
-		return ErrInternal{}
-	}
-
-	cmd, err := s.commandFactory.CreateSetC2KeyCommand(publicC2Key)
+	cmd, err := s.commandFactory.CreateSetC2KeyCommand(newPublicC2Key)
 	if err != nil {
 		logger.WithError(err).Error("failed to create SetC2Key command")
 		return ErrInternal{}
@@ -895,6 +889,7 @@ func (s *e4impl) NewC2Key(ctx context.Context) error {
 				logger.WithError(err).WithField("client", client.E4ID).Error("failed to send SetC2Key command to client")
 				continue
 			}
+
 		}
 
 		if len(clients) < NewC2KeyBatchSize {
@@ -903,8 +898,6 @@ func (s *e4impl) NewC2Key(ctx context.Context) error {
 
 		offset += NewC2KeyBatchSize
 	}
-
-	s.e4Key = newE4Key
 
 	logger.Info("success setting new C2 key")
 
