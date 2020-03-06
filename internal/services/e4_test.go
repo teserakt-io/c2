@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -87,7 +88,7 @@ func TestE4(t *testing.T) {
 	mockE4Key := crypto.NewMockE4Key(mockCtrl)
 
 	logger := log.New()
-	//	logger.SetOutput(ioutil.Discard)
+	logger.SetOutput(ioutil.Discard)
 
 	dbEncKey := newKey(t)
 
@@ -878,8 +879,11 @@ func TestE4(t *testing.T) {
 		clientsBatch1 := []models.Client{client1, client2}
 		clientsBatch2 := []models.Client{client3}
 
+		mockC2Tx := crypto.NewMockC2KeyRotationTx(mockCtrl)
+		mockC2Tx.EXPECT().GetNewPublicKey().AnyTimes().Return(newC2PubKey)
+
 		gomock.InOrder(
-			mockE4Key.EXPECT().BackupAndRotateC2Key().Return(newC2PubKey, nil),
+			mockE4Key.EXPECT().NewC2KeyRotationTx().Return(mockC2Tx, nil),
 			mockCommandFactory.EXPECT().CreateSetC2KeyCommand(newC2PubKey).Return(mockCommand, nil),
 
 			mockDB.EXPECT().GetClientsRange(0, NewC2KeyBatchSize).Return(clientsBatch1, nil),
@@ -891,6 +895,8 @@ func TestE4(t *testing.T) {
 			mockDB.EXPECT().GetClientsRange(NewC2KeyBatchSize, NewC2KeyBatchSize).Return(clientsBatch2, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClient3Key).Return(cmdPayload3, nil),
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload3, client3.Topic(), protocols.QoSExactlyOnce).Return(nil),
+
+			mockC2Tx.EXPECT().Commit().Return(nil),
 		)
 
 		err := service.NewC2Key(context.Background())

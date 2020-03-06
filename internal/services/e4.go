@@ -857,15 +857,18 @@ func (s *e4impl) NewC2Key(ctx context.Context) error {
 		return ErrInvalidCryptoMode{}
 	}
 
-	newPublicC2Key, err := s.e4Key.BackupAndRotateC2Key()
+	tx, err := s.e4Key.NewC2KeyRotationTx()
 	if err != nil {
 		logger.WithError(err).Error("failed to backup and rotate new C2 key")
 		return ErrInternal{}
 	}
 
-	cmd, err := s.commandFactory.CreateSetC2KeyCommand(newPublicC2Key)
+	cmd, err := s.commandFactory.CreateSetC2KeyCommand(tx.GetNewPublicKey())
 	if err != nil {
 		logger.WithError(err).Error("failed to create SetC2Key command")
+		if err := tx.Rollback(); err != nil {
+			logger.WithError(err).Error("failed to rollback newC2Key transaction")
+		}
 		return ErrInternal{}
 	}
 
@@ -897,6 +900,14 @@ func (s *e4impl) NewC2Key(ctx context.Context) error {
 		}
 
 		offset += NewC2KeyBatchSize
+	}
+
+	if err := tx.Commit(); err != nil {
+		logger.WithError(err).Error("failed to commit C2 key transaction")
+		if err := tx.Rollback(); err != nil {
+			logger.WithError(err).Error("failed to rollback C2 key transaction")
+		}
+		return ErrInternal{}
 	}
 
 	logger.Info("success setting new C2 key")

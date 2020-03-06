@@ -18,16 +18,17 @@ require (
 	github.com/jinzhu/gorm v1.9.10
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
+	github.com/miscreant/miscreant.go v0.0.0-20200214223636-26d376326b75 // indirect
 	github.com/olivere/elastic v6.2.21+incompatible
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
-	github.com/teserakt-io/e4go v1.0.2-0.20200229065249-543cbd03e7e3
+	github.com/teserakt-io/e4go v1.0.2-0.20200305143804-b35ef1e4d653
 	github.com/teserakt-io/serverlib v0.0.0-20190912131345-29a7b76ad87c
 	go.opencensus.io v0.22.1
-	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
+	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
-	golang.org/x/sys v0.0.0-20200302083256-062a44052db1 // indirect
+	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
 	google.golang.org/genproto v0.0.0-20200302123026-7795fca6ccb1
 	google.golang.org/grpc v1.27.1
 	gopkg.in/jcmturner/goidentity.v3 v3.0.0 // indirect

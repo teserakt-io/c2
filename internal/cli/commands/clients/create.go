@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"golang.org/x/crypto/ed25519"
+
 	"github.com/spf13/cobra"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 
@@ -23,6 +25,7 @@ type createCommandFlags struct {
 	Name         string
 	PasswordPath string
 	KeyPath      string
+	Pubkey       bool
 }
 
 var _ cli.Command = (*createCommand)(nil)
@@ -44,6 +47,13 @@ func NewCreateCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 	cobraCmd.Flags().StringVar(&createCmd.flags.Name, "name", "", "The client name")
 	cobraCmd.Flags().StringVar(&createCmd.flags.KeyPath, "key", "", fmt.Sprintf("Filepath to a %d bytes key", e4crypto.KeyLen))
 	cobraCmd.Flags().StringVar(&createCmd.flags.PasswordPath, "password", "", "Filepath to a plaintext password file")
+	// TODO: instead of requiring a flag from the user.
+	// we could expose an endpoint on the C2 server like `getMode` indicating if the server is
+	// running in public key or symmetric key mode.
+	// This will allow to guess which password derivation function to use without requiring user input.
+	// For now if the user omit the mode and try to create a pubkey client, no errors can be returned.
+	// This will makes all the C2 commands sent to the client fail.
+	cobraCmd.Flags().BoolVar(&createCmd.flags.Pubkey, "pubkey", false, "Required if the C2 server is in pubkey mode")
 
 	createCmd.cobraCmd = cobraCmd
 
@@ -81,14 +91,30 @@ func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to read password from file: %v", err)
 		}
-		key, err = e4crypto.DeriveSymKey(string(password))
-		if err != nil {
-			return fmt.Errorf("failed to derive symKey from password: %v", err)
+
+		if c.flags.Pubkey {
+			privateKey, err := e4crypto.Ed25519PrivateKeyFromPassword(string(password))
+			if err != nil {
+				return fmt.Errorf("failed to derive ed25519 private key from password: %v", err)
+			}
+			publicKey := ed25519.PrivateKey(privateKey).Public()
+			key = publicKey.(ed25519.PublicKey)
+		} else {
+			key, err = e4crypto.DeriveSymKey(string(password))
+			if err != nil {
+				return fmt.Errorf("failed to derive symKey from password: %v", err)
+			}
 		}
 	}
 
-	if err := e4crypto.ValidateSymKey(key); err != nil {
-		return fmt.Errorf("invalid key: %v", err)
+	if c.flags.Pubkey {
+		if err := e4crypto.ValidateEd25519PubKey(key); err != nil {
+			return fmt.Errorf("invalid key: %v", err)
+		}
+	} else {
+		if err := e4crypto.ValidateSymKey(key); err != nil {
+			return fmt.Errorf("invalid key: %v", err)
+		}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

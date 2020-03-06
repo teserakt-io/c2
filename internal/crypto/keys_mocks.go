@@ -33,21 +33,6 @@ func (m *MockE4Key) EXPECT() *MockE4KeyMockRecorder {
 	return m.recorder
 }
 
-// BackupAndRotateC2Key mocks base method
-func (m *MockE4Key) BackupAndRotateC2Key() ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BackupAndRotateC2Key")
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// BackupAndRotateC2Key indicates an expected call of BackupAndRotateC2Key
-func (mr *MockE4KeyMockRecorder) BackupAndRotateC2Key() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BackupAndRotateC2Key", reflect.TypeOf((*MockE4Key)(nil).BackupAndRotateC2Key))
-}
-
 // IsPubKeyMode mocks base method
 func (m *MockE4Key) IsPubKeyMode() bool {
 	m.ctrl.T.Helper()
@@ -60,6 +45,21 @@ func (m *MockE4Key) IsPubKeyMode() bool {
 func (mr *MockE4KeyMockRecorder) IsPubKeyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPubKeyMode", reflect.TypeOf((*MockE4Key)(nil).IsPubKeyMode))
+}
+
+// NewC2KeyRotationTx mocks base method
+func (m *MockE4Key) NewC2KeyRotationTx() (C2KeyRotationTx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewC2KeyRotationTx")
+	ret0, _ := ret[0].(C2KeyRotationTx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NewC2KeyRotationTx indicates an expected call of NewC2KeyRotationTx
+func (mr *MockE4KeyMockRecorder) NewC2KeyRotationTx() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewC2KeyRotationTx", reflect.TypeOf((*MockE4Key)(nil).NewC2KeyRotationTx))
 }
 
 // ProtectCommand mocks base method

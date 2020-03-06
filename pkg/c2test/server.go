@@ -38,6 +38,7 @@ func (s *server) Start() error {
 	broker := fmt.Sprintf("E4C2_MQTT_BROKER=tcp://%s", s.mqttEndpoint)
 	esEnable := "E4C2_ES_ENABLE=false"
 	passphrase := "E4C2_DB_ENCRYPTION_PASSPHRASE=very_secure_testpass"
+	cryptoMode := "E4C2_CRYPTO_MODE=symkey"
 
 	fmt.Fprintf(os.Stderr, "Database set to %s\n", dbName)
 	fmt.Fprintf(os.Stderr, "Broker set to %s\n", broker)
@@ -48,6 +49,7 @@ func (s *server) Start() error {
 		broker,
 		esEnable,
 		passphrase,
+		cryptoMode,
 	}
 
 	s.cmd = exec.Command("bin/c2")
