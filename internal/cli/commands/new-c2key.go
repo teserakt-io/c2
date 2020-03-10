@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-
 	"github.com/teserakt-io/c2/internal/cli"
 	"github.com/teserakt-io/c2/pkg/pb"
 )

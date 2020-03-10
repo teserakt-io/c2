@@ -36,7 +36,6 @@ func (f *factory) CreateRemoveTopicCommand(topic string) (Command, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return e4Command(cmd), err
 }
 
@@ -45,7 +44,6 @@ func (f *factory) CreateResetTopicsCommand() (Command, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return e4Command(cmd), nil
 }
 
@@ -54,7 +52,6 @@ func (f *factory) CreateSetIDKeyCommand(key []byte) (Command, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return e4Command(cmd), nil
 }
 
@@ -63,7 +60,6 @@ func (f *factory) CreateSetTopicKeyCommand(topic string, key []byte) (Command, e
 	if err != nil {
 		return nil, err
 	}
-
 	return e4Command(cmd), nil
 }
 
@@ -72,7 +68,6 @@ func (f *factory) CreateSetPubKeyCommand(publicKey ed25519.PublicKey, clientName
 	if err != nil {
 		return nil, err
 	}
-
 	return e4Command(cmd), nil
 }
 
@@ -81,7 +76,6 @@ func (f *factory) CreateRemovePubKeyCommand(clientName string) (Command, error) 
 	if err != nil {
 		return nil, err
 	}
-
 	return e4Command(cmd), nil
 }
 
@@ -90,7 +84,6 @@ func (f *factory) CreateResetPubKeysCommand() (Command, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return e4Command(cmd), nil
 }
 
@@ -99,6 +92,5 @@ func (f *factory) CreateSetC2KeyCommand(c2PublicKey e4crypto.Curve25519PublicKey
 	if err != nil {
 		return nil, err
 	}
-
 	return e4Command(cmd), nil
 }

@@ -4,10 +4,8 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/teserakt-io/c2/pkg/pb"
-
 	"github.com/golang/mock/gomock"
-
+	"github.com/teserakt-io/c2/pkg/pb"
 	"github.com/teserakt-io/c2/internal/cli"
 )
 
