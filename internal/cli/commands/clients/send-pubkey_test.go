@@ -48,12 +48,12 @@ func TestSendPubKey(t *testing.T) {
 	t.Run("Execute forward expected request to the c2Client", func(t *testing.T) {
 		expectedSourceClientName := "testClient1"
 		expectedTargetClientName := "testClient2"
-		expectedRequest := &pb.SendClientPubkeyCommandRequest{
+		expectedRequest := &pb.SendClientPubKeyRequest{
 			SourceClient: &pb.Client{Name: expectedSourceClientName},
 			TargetClient: &pb.Client{Name: expectedTargetClientName},
 		}
 
-		c2Client.EXPECT().SendClientPubkeyCommand(gomock.Any(), expectedRequest).Return(&pb.SendClientPubkeyCommandResponse{}, nil)
+		c2Client.EXPECT().SendClientPubKey(gomock.Any(), expectedRequest).Return(&pb.SendClientPubKeyResponse{}, nil)
 		c2Client.EXPECT().Close()
 
 		cmd := newTestSendPubKeyCommand(c2ClientFactory)

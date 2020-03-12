@@ -65,17 +65,17 @@ func (c *sendPubKeyCommand) run(cmd *cobra.Command, args []string) error {
 	}
 	defer c2Client.Close()
 
-	req := &pb.SendClientPubkeyCommandRequest{
+	req := &pb.SendClientPubKeyRequest{
 		SourceClient: &pb.Client{Name: c.flags.SourceClientName},
 		TargetClient: &pb.Client{Name: c.flags.TargetClientName},
 	}
 
-	_, err = c2Client.SendClientPubkeyCommand(ctx, req)
+	_, err = c2Client.SendClientPubKey(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to reset client: %v", err)
 	}
 
-	c.CobraCmd().Printf("Client %s pubkey successfully sent to client %s\n", c.flags.SourceClientName, c.flags.TargetClientName)
+	c.CobraCmd().Printf("Command to set client %s pubkey successfully sent to client %s\n", c.flags.SourceClientName, c.flags.TargetClientName)
 
 	return nil
 }

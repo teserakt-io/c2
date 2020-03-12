@@ -756,16 +756,16 @@ func TestE4(t *testing.T) {
 		}
 	})
 
-	t.Run("SendClientPubkeyCommand returns error when key does not support pubkey mode", func(t *testing.T) {
+	t.Run("SendClientPubKey returns error when key does not support pubkey mode", func(t *testing.T) {
 		mockE4Key.EXPECT().IsPubKeyMode().Return(false)
-		err := service.SendClientPubkeyCommand(context.Background(), []byte("source"), []byte("target"))
+		err := service.SendClientPubKey(context.Background(), []byte("source"), []byte("target"))
 		want := ErrInvalidCryptoMode{}
 		if err != want {
 			t.Fatalf("got error %v, wanted %v", err, want)
 		}
 	})
 
-	t.Run("SendClientPubkeyCommand sends the expected command with a key supporting pubkey mode", func(t *testing.T) {
+	t.Run("SendClientPubKey sends the expected command with a key supporting pubkey mode", func(t *testing.T) {
 		mockE4Key.EXPECT().IsPubKeyMode().Return(true)
 
 		sourceClient, clearSourceClientKey := createTestClient(t, dbEncKey)
@@ -790,7 +790,7 @@ func TestE4(t *testing.T) {
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload, targetClient.Topic(), protocols.QoSExactlyOnce).Return(nil),
 		)
 
-		err := service.SendClientPubkeyCommand(context.Background(), sourceClient.E4ID, targetClient.E4ID)
+		err := service.SendClientPubKey(context.Background(), sourceClient.E4ID, targetClient.E4ID)
 		if err != nil {
 			t.Fatalf("failed to send pubkey command: %v", err)
 		}

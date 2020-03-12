@@ -10,7 +10,7 @@ type ErrClientNotFound struct {
 }
 
 func (e ErrClientNotFound) Error() string {
-	return fmt.Sprintf("could not find client record in database")
+	return "could not find client record in database"
 }
 
 // ErrTopicNotFound is a database error when a requested record cannot be found
@@ -19,7 +19,7 @@ type ErrTopicNotFound struct {
 }
 
 func (e ErrTopicNotFound) Error() string {
-	return fmt.Sprintf("could not find topic record in database")
+	return "could not find topic record in database"
 }
 
 // ErrInternal describe an internal error
