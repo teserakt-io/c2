@@ -12,6 +12,7 @@ type Client struct {
 	Name      string      `gorm:"unique_index;NOT NULL" sql:"size:256"`
 	Key       []byte      `gorm:"NOT NULL"`
 	TopicKeys []*TopicKey `gorm:"many2many:clients_topickeys;"`
+	Clients   []*Client   `gorm:"many2many:clients_clientkeys;association_jointable_foreignkey:clientkey_id"`
 }
 
 // TopicKey represents

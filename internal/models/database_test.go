@@ -61,7 +61,7 @@ func TestDBSQLite(t *testing.T) {
 
 func TestDBPostgres(t *testing.T) {
 	if os.Getenv("C2TEST_POSTGRES") == "" {
-		t.Skip("C2TEST_POSTGRES environment variable isn't set, skipping postgress tests")
+		t.Skip("C2TEST_POSTGRES environment variable isn't set, skipping postgres tests")
 	}
 
 	setup := func(t *testing.T) (Database, func()) {
@@ -74,7 +74,7 @@ func TestDBPostgres(t *testing.T) {
 			Username:         "e4_c2_test",
 			Password:         "teserakte4",
 			Schema:           "e4_c2_test_unit",
-			Logging:          true,
+			Logging:          false,
 		}
 
 		logger := log.New(os.Stdout, "", 0)
@@ -529,7 +529,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 	})
 
-	t.Run("Link with unkow records return errors", func(t *testing.T) {
+	t.Run("Link with unknown records return errors", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
@@ -680,6 +680,83 @@ func testDatabase(t *testing.T, setup setupFunc) {
 
 		if _, err := db.GetClientByID(clientID); !IsErrRecordNotFound(err) {
 			t.Fatalf("Rollback transaction: got error '%v' fetching client, want '%v' ", err, gorm.ErrRecordNotFound)
+		}
+	})
+
+	t.Run("LinkClient properly links a client to another", func(t *testing.T) {
+		db, tearDown := setup(t)
+		defer tearDown()
+
+		clientName1 := "client1"
+		clientID1 := e4crypto.HashIDAlias(clientName1)
+
+		clientName2 := "client2"
+		clientID2 := e4crypto.HashIDAlias(clientName2)
+		db.InsertClient(clientName1, clientID1, []byte("client1key"))
+		db.InsertClient(clientName2, clientID2, []byte("client2key"))
+
+		client1, err := db.GetClientByID(clientID1)
+		if err != nil {
+			t.Fatalf("failed to get client1: %v", err)
+		}
+		client2, err := db.GetClientByID(clientID2)
+		if err != nil {
+			t.Fatalf("failed to get client1: %v", err)
+		}
+
+		if err := db.LinkClient(client1, client2); err != nil {
+			t.Fatalf("failed to link clients: %v", err)
+		}
+
+		linked1Count, err := db.CountLinkedClients(clientID1)
+		if err != nil {
+			t.Fatalf("failed to count linked clients for client1: %v", err)
+		}
+		if linked1Count != 1 {
+			t.Fatalf("got %d linked clients, want %d", linked1Count, 1)
+		}
+
+		linked2Count, err := db.CountLinkedClients(clientID2)
+		if err != nil {
+			t.Fatalf("failed to count linked clients for client2: %v", err)
+		}
+		if linked2Count != 0 {
+			t.Fatalf("got %d linked clients, want %d", linked2Count, 0)
+		}
+
+		clients, err := db.GetLinkedClientsForClientByID(clientID1, 0, 10)
+		if err != nil {
+			t.Fatalf("failed to get clients for client: %v", err)
+		}
+
+		want := []Client{client2}
+		if !reflect.DeepEqual(clients, want) {
+			t.Fatalf("Invalid linked clients, got %#v, want %#v", clients, want)
+		}
+
+		clients2, err := db.GetLinkedClientsForClientByID(clientID2, 0, 10)
+		if err != nil {
+			t.Fatalf("failed to get clients for client: %v", err)
+		}
+		if g, w := len(clients2), 0; g != w {
+			t.Fatalf("Invalid linked clients count for client2, got %d, want %d", g, w)
+		}
+
+		if err := db.UnlinkClient(client1, client2); err != nil {
+			t.Fatalf("failed to unlink clients: %v", err)
+		}
+
+		clients, err = db.GetLinkedClientsForClientByID(clientID1, 0, 10)
+		if err != nil {
+			t.Fatalf("failed to get clients for client: %v", err)
+		}
+		if len(clients) != 0 {
+			t.Fatalf("expected no linked clients, got %d", len(clients))
+		}
+
+		// Unlinking not linked clients just do nothing
+		if err := db.UnlinkClient(client2, client1); err != nil {
+			t.Fatalf("failed to unlink clients: %v", err)
 		}
 	})
 }

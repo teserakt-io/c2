@@ -78,13 +78,23 @@ type Database interface {
 	LinkClientTopic(client Client, topicKey TopicKey) error
 	UnlinkClientTopic(client Client, topicKey TopicKey) error
 
-	// > Counting topics per client, or clients per topic.
+	// Counting topics per client, or clients per topic.
 	CountTopicsForClientByID(id []byte) (int, error)
 	CountClientsForTopic(topic string) (int, error)
 
-	// > Retrieving clients per topic or topics per client
+	// Retrieving clients per topic or topics per client
 	GetTopicsForClientByID(id []byte, offset int, count int) ([]TopicKey, error)
 	GetClientsForTopic(topic string, offset int, count int) ([]Client, error)
+
+	// Linking, removing client-client mappings:
+	LinkClient(client1 Client, client2 Client) error
+	UnlinkClient(client1 Client, client2 Client) error
+
+	// Counting client's linked clients
+	CountLinkedClients(id []byte) (int, error)
+
+	// Retrieving clients per client
+	GetLinkedClientsForClientByID(id []byte, offset int, count int) ([]Client, error)
 }
 
 type gormDB struct {
@@ -162,6 +172,30 @@ func (gdb *gormDB) Migrate() error {
 
 		if !exists {
 			if err := gdb.Connection().Exec("ALTER TABLE clients_topickeys ADD CONSTRAINT clients_topickeys_client_fk FOREIGN KEY(client_id) REFERENCES clients (id) ON DELETE CASCADE;").Error; err != nil {
+				return err
+			}
+		}
+
+		// Add foreign key on clientkeys client_id
+		exists, err = gdb.pgCheckConstraint("clients_clientkeys_client_fk", "clients_clientkeys")
+		if err != nil {
+			return err
+		}
+
+		if !exists {
+			if err := gdb.Connection().Exec("ALTER TABLE clients_clientkeys ADD CONSTRAINT clients_clientkeys_client_fk FOREIGN KEY(client_id) REFERENCES clients (id) ON DELETE CASCADE;").Error; err != nil {
+				return err
+			}
+		}
+
+		// Add foreign key on clientkeys clientkey_id
+		exists, err = gdb.pgCheckConstraint("clients_clientkeys_clientkey_fk", "clients_clientkeys")
+		if err != nil {
+			return err
+		}
+
+		if !exists {
+			if err := gdb.Connection().Exec("ALTER TABLE clients_clientkeys ADD CONSTRAINT clients_clientkeys_clientkey_fk FOREIGN KEY(clientkey_id) REFERENCES clients (id) ON DELETE CASCADE;").Error; err != nil {
 				return err
 			}
 		}
@@ -517,6 +551,67 @@ func (gdb *gormDB) GetClientsForTopic(topic string, offset int, count int) ([]Cl
 	}
 
 	if err := gdb.db.Model(&topickey).Order("name").Offset(offset).Limit(count).Related(&clients, "Clients").Error; err != nil {
+		return nil, err
+	}
+
+	return clients, nil
+}
+
+// LinkClient links client2 to client1, such as client2 will appears in client1 linked clients.
+// This link is uni directional, so LinkClients must be called twice, inverting its parameters for creating
+// a bidirectional link.
+func (gdb *gormDB) LinkClient(client1 Client, client2 Client) error {
+	if gdb.db.NewRecord(client1) {
+		return ErrClientNoPrimaryKey
+	}
+
+	if gdb.db.NewRecord(client2) {
+		return ErrClientNoPrimaryKey
+	}
+
+	if err := gdb.db.Model(&client1).Association("Clients").Append(&client2).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UnlinkClient remove the link between client1 and client2, such as client2 won't appear in client1 linked clients anymore.
+func (gdb *gormDB) UnlinkClient(client1 Client, client2 Client) error {
+	if gdb.db.NewRecord(client1) {
+		return ErrClientNoPrimaryKey
+	}
+
+	if gdb.db.NewRecord(client2) {
+		return ErrClientNoPrimaryKey
+	}
+
+	if err := gdb.db.Model(&client1).Association("Clients").Delete(&client2).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (gdb *gormDB) CountLinkedClients(id []byte) (int, error) {
+	var client Client
+	if err := gdb.db.Where(&Client{E4ID: id}).First(&client).Error; err != nil {
+		return 0, err
+	}
+
+	count := gdb.db.Model(&client).Association("Clients").Count()
+
+	return count, nil
+}
+
+func (gdb *gormDB) GetLinkedClientsForClientByID(id []byte, offset int, count int) ([]Client, error) {
+	var client Client
+	var clients []Client
+
+	if err := gdb.db.Where(&Client{E4ID: id}).First(&client).Error; err != nil {
+		return nil, err
+	}
+
+	if err := gdb.db.Model(&client).Order("name").Offset(offset).Limit(count).Related(&clients, "Clients").Error; err != nil {
 		return nil, err
 	}
 
