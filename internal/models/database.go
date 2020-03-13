@@ -87,8 +87,8 @@ type Database interface {
 	GetClientsForTopic(topic string, offset int, count int) ([]Client, error)
 
 	// Linking, removing client-client mappings:
-	LinkClient(client1 Client, client2 Client) error
-	UnlinkClient(client1 Client, client2 Client) error
+	LinkClient(source Client, target Client) error
+	UnlinkClient(source Client, target Client) error
 
 	// Counting client's linked clients
 	CountLinkedClients(id []byte) (int, error)
@@ -557,41 +557,42 @@ func (gdb *gormDB) GetClientsForTopic(topic string, offset int, count int) ([]Cl
 	return clients, nil
 }
 
-// LinkClient links client2 to client1, such as client2 will appears in client1 linked clients.
+// LinkClient links source client to target client, such as the source client will appears in the target linked clients.
 // This link is uni directional, so LinkClients must be called twice, inverting its parameters for creating
 // a bidirectional link.
-func (gdb *gormDB) LinkClient(client1 Client, client2 Client) error {
-	if gdb.db.NewRecord(client1) {
+func (gdb *gormDB) LinkClient(source Client, target Client) error {
+	if gdb.db.NewRecord(source) {
 		return ErrClientNoPrimaryKey
 	}
 
-	if gdb.db.NewRecord(client2) {
+	if gdb.db.NewRecord(target) {
 		return ErrClientNoPrimaryKey
 	}
 
-	if err := gdb.db.Model(&client1).Association("Clients").Append(&client2).Error; err != nil {
+	if err := gdb.db.Model(&target).Association("Clients").Append(&source).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// UnlinkClient remove the link between client1 and client2, such as client2 won't appear in client1 linked clients anymore.
-func (gdb *gormDB) UnlinkClient(client1 Client, client2 Client) error {
-	if gdb.db.NewRecord(client1) {
+// UnlinkClient remove the link between source and target, such as source client won't appear in target linked clients anymore.
+func (gdb *gormDB) UnlinkClient(source Client, target Client) error {
+	if gdb.db.NewRecord(source) {
 		return ErrClientNoPrimaryKey
 	}
 
-	if gdb.db.NewRecord(client2) {
+	if gdb.db.NewRecord(target) {
 		return ErrClientNoPrimaryKey
 	}
 
-	if err := gdb.db.Model(&client1).Association("Clients").Delete(&client2).Error; err != nil {
+	if err := gdb.db.Model(&target).Association("Clients").Delete(&source).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
+
 func (gdb *gormDB) CountLinkedClients(id []byte) (int, error) {
 	var client Client
 	if err := gdb.db.Where(&Client{E4ID: id}).First(&client).Error; err != nil {

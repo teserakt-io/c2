@@ -85,8 +85,8 @@ type E4 interface {
 	GetClientsRangeByTopic(ctx context.Context, topic string, offset, count int) ([]IDNamePair, error)
 
 	// Clients linking / unlinking / counting linked
-	LinkClient(ctx context.Context, id1, id2 []byte) error
-	UnlinkClient(ctx context.Context, id1, id2 []byte) error
+	LinkClient(ctx context.Context, sourceClientID, targetClientID []byte) error
+	UnlinkClient(ctx context.Context, sourceClientID, targetClientID []byte) error
 	CountLinkedClients(ctx context.Context, id []byte) (int, error)
 	GetLinkedClients(ctx context.Context, id []byte, offset, count int) ([]IDNamePair, error)
 
@@ -712,33 +712,33 @@ func (s *e4impl) GetClientsRangeByTopic(ctx context.Context, topic string, offse
 	return idNamePairs, nil
 }
 
-func (s *e4impl) LinkClient(ctx context.Context, id1, id2 []byte) error {
+func (s *e4impl) LinkClient(ctx context.Context, sourceClientID, targetClientID []byte) error {
 	_, span := trace.StartSpan(ctx, "e4.LinkClient")
 	defer span.End()
 
 	logger := s.logger.WithFields(log.Fields{
-		"client1": prettyID(id1),
-		"client2": prettyID(id2),
+		"sourceClientID": prettyID(sourceClientID),
+		"targetClientID": prettyID(targetClientID),
 	})
 
-	client1, err := s.db.GetClientByID(id1)
+	sourceClient, err := s.db.GetClientByID(sourceClientID)
 	if err != nil {
-		logger.WithError(err).Error("failed to retrieve client1")
+		logger.WithError(err).Error("failed to retrieve sourceClient")
 		if models.IsErrRecordNotFound(err) {
 			return ErrClientNotFound{}
 		}
 		return ErrInternal{}
 	}
-	client2, err := s.db.GetClientByID(id2)
+	targetClient, err := s.db.GetClientByID(targetClientID)
 	if err != nil {
-		logger.WithError(err).Error("failed to retrieve client2")
+		logger.WithError(err).Error("failed to retrieve targetClient")
 		if models.IsErrRecordNotFound(err) {
 			return ErrClientNotFound{}
 		}
 		return ErrInternal{}
 	}
 
-	if err := s.db.LinkClient(client1, client2); err != nil {
+	if err := s.db.LinkClient(sourceClient, targetClient); err != nil {
 		logger.WithError(err).Error("failed to link clients")
 		return ErrInternal{}
 	}
@@ -747,33 +747,33 @@ func (s *e4impl) LinkClient(ctx context.Context, id1, id2 []byte) error {
 
 	return nil
 }
-func (s *e4impl) UnlinkClient(ctx context.Context, id1, id2 []byte) error {
+func (s *e4impl) UnlinkClient(ctx context.Context, sourceClientID, targetClientID []byte) error {
 	_, span := trace.StartSpan(ctx, "e4.UnlinkClient")
 	defer span.End()
 
 	logger := s.logger.WithFields(log.Fields{
-		"client1": prettyID(id1),
-		"client2": prettyID(id2),
+		"sourceClient": prettyID(sourceClientID),
+		"targetClient": prettyID(targetClientID),
 	})
 
-	client1, err := s.db.GetClientByID(id1)
+	sourceClient, err := s.db.GetClientByID(sourceClientID)
 	if err != nil {
-		logger.WithError(err).Error("failed to retrieve client1")
+		logger.WithError(err).Error("failed to retrieve sourceClient")
 		if models.IsErrRecordNotFound(err) {
 			return ErrClientNotFound{}
 		}
 		return ErrInternal{}
 	}
-	client2, err := s.db.GetClientByID(id2)
+	targetClient, err := s.db.GetClientByID(targetClientID)
 	if err != nil {
-		logger.WithError(err).Error("failed to retrieve client2")
+		logger.WithError(err).Error("failed to retrieve targetClient")
 		if models.IsErrRecordNotFound(err) {
 			return ErrClientNotFound{}
 		}
 		return ErrInternal{}
 	}
 
-	if err := s.db.UnlinkClient(client1, client2); err != nil {
+	if err := s.db.UnlinkClient(sourceClient, targetClient); err != nil {
 		logger.WithError(err).Error("failed to unlink clients")
 		return ErrInternal{}
 	}

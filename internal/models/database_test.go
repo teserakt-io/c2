@@ -687,66 +687,66 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		clientName1 := "client1"
-		clientID1 := e4crypto.HashIDAlias(clientName1)
+		sourceClientName := "client1"
+		sourceClientID := e4crypto.HashIDAlias(sourceClientName)
 
-		clientName2 := "client2"
-		clientID2 := e4crypto.HashIDAlias(clientName2)
-		db.InsertClient(clientName1, clientID1, []byte("client1key"))
-		db.InsertClient(clientName2, clientID2, []byte("client2key"))
+		targetClientName := "client2"
+		targetClientID := e4crypto.HashIDAlias(targetClientName)
+		db.InsertClient(sourceClientName, sourceClientID, []byte("client1key"))
+		db.InsertClient(targetClientName, targetClientID, []byte("client2key"))
 
-		client1, err := db.GetClientByID(clientID1)
+		sourceClient, err := db.GetClientByID(sourceClientID)
 		if err != nil {
-			t.Fatalf("failed to get client1: %v", err)
+			t.Fatalf("failed to get sourceClient: %v", err)
 		}
-		client2, err := db.GetClientByID(clientID2)
+		targetClient, err := db.GetClientByID(targetClientID)
 		if err != nil {
-			t.Fatalf("failed to get client1: %v", err)
+			t.Fatalf("failed to get sourceClient: %v", err)
 		}
 
-		if err := db.LinkClient(client1, client2); err != nil {
+		if err := db.LinkClient(sourceClient, targetClient); err != nil {
 			t.Fatalf("failed to link clients: %v", err)
 		}
 
-		linked1Count, err := db.CountLinkedClients(clientID1)
+		linked1Count, err := db.CountLinkedClients(targetClientID)
 		if err != nil {
-			t.Fatalf("failed to count linked clients for client1: %v", err)
+			t.Fatalf("failed to count linked clients for sourceClient: %v", err)
 		}
 		if linked1Count != 1 {
 			t.Fatalf("got %d linked clients, want %d", linked1Count, 1)
 		}
 
-		linked2Count, err := db.CountLinkedClients(clientID2)
+		linked2Count, err := db.CountLinkedClients(sourceClientID)
 		if err != nil {
-			t.Fatalf("failed to count linked clients for client2: %v", err)
+			t.Fatalf("failed to count linked clients for targetClient: %v", err)
 		}
 		if linked2Count != 0 {
 			t.Fatalf("got %d linked clients, want %d", linked2Count, 0)
 		}
 
-		clients, err := db.GetLinkedClientsForClientByID(clientID1, 0, 10)
+		clients, err := db.GetLinkedClientsForClientByID(targetClientID, 0, 10)
 		if err != nil {
 			t.Fatalf("failed to get clients for client: %v", err)
 		}
 
-		want := []Client{client2}
+		want := []Client{sourceClient}
 		if !reflect.DeepEqual(clients, want) {
 			t.Fatalf("Invalid linked clients, got %#v, want %#v", clients, want)
 		}
 
-		clients2, err := db.GetLinkedClientsForClientByID(clientID2, 0, 10)
+		clients2, err := db.GetLinkedClientsForClientByID(sourceClientID, 0, 10)
 		if err != nil {
 			t.Fatalf("failed to get clients for client: %v", err)
 		}
 		if g, w := len(clients2), 0; g != w {
-			t.Fatalf("Invalid linked clients count for client2, got %d, want %d", g, w)
+			t.Fatalf("Invalid linked clients count for targetClient, got %d, want %d", g, w)
 		}
 
-		if err := db.UnlinkClient(client1, client2); err != nil {
+		if err := db.UnlinkClient(sourceClient, targetClient); err != nil {
 			t.Fatalf("failed to unlink clients: %v", err)
 		}
 
-		clients, err = db.GetLinkedClientsForClientByID(clientID1, 0, 10)
+		clients, err = db.GetLinkedClientsForClientByID(sourceClientID, 0, 10)
 		if err != nil {
 			t.Fatalf("failed to get clients for client: %v", err)
 		}
@@ -755,7 +755,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 
 		// Unlinking not linked clients just do nothing
-		if err := db.UnlinkClient(client2, client1); err != nil {
+		if err := db.UnlinkClient(targetClient, sourceClient); err != nil {
 			t.Fatalf("failed to unlink clients: %v", err)
 		}
 	})
