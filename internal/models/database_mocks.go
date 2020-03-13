@@ -107,21 +107,6 @@ func (mr *MockDatabaseMockRecorder) CountClients() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountClients", reflect.TypeOf((*MockDatabase)(nil).CountClients))
 }
 
-// CountClientsForClient mocks base method
-func (m *MockDatabase) CountClientsForClient(arg0 []byte) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountClientsForClient", arg0)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountClientsForClient indicates an expected call of CountClientsForClient
-func (mr *MockDatabaseMockRecorder) CountClientsForClient(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountClientsForClient", reflect.TypeOf((*MockDatabase)(nil).CountClientsForClient), arg0)
-}
-
 // CountClientsForTopic mocks base method
 func (m *MockDatabase) CountClientsForTopic(arg0 string) (int, error) {
 	m.ctrl.T.Helper()
@@ -135,6 +120,21 @@ func (m *MockDatabase) CountClientsForTopic(arg0 string) (int, error) {
 func (mr *MockDatabaseMockRecorder) CountClientsForTopic(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountClientsForTopic", reflect.TypeOf((*MockDatabase)(nil).CountClientsForTopic), arg0)
+}
+
+// CountLinkedClients mocks base method
+func (m *MockDatabase) CountLinkedClients(arg0 []byte) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountLinkedClients", arg0)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountLinkedClients indicates an expected call of CountLinkedClients
+func (mr *MockDatabaseMockRecorder) CountLinkedClients(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLinkedClients", reflect.TypeOf((*MockDatabase)(nil).CountLinkedClients), arg0)
 }
 
 // CountTopicKeys mocks base method
@@ -255,21 +255,6 @@ func (mr *MockDatabaseMockRecorder) GetClientByID(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClientByID", reflect.TypeOf((*MockDatabase)(nil).GetClientByID), arg0)
 }
 
-// GetClientsForClientByID mocks base method
-func (m *MockDatabase) GetClientsForClientByID(arg0 []byte, arg1, arg2 int) ([]Client, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetClientsForClientByID", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]Client)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetClientsForClientByID indicates an expected call of GetClientsForClientByID
-func (mr *MockDatabaseMockRecorder) GetClientsForClientByID(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClientsForClientByID", reflect.TypeOf((*MockDatabase)(nil).GetClientsForClientByID), arg0, arg1, arg2)
-}
-
 // GetClientsForTopic mocks base method
 func (m *MockDatabase) GetClientsForTopic(arg0 string, arg1, arg2 int) ([]Client, error) {
 	m.ctrl.T.Helper()
@@ -298,6 +283,21 @@ func (m *MockDatabase) GetClientsRange(arg0, arg1 int) ([]Client, error) {
 func (mr *MockDatabaseMockRecorder) GetClientsRange(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClientsRange", reflect.TypeOf((*MockDatabase)(nil).GetClientsRange), arg0, arg1)
+}
+
+// GetLinkedClientsForClientByID mocks base method
+func (m *MockDatabase) GetLinkedClientsForClientByID(arg0 []byte, arg1, arg2 int) ([]Client, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLinkedClientsForClientByID", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]Client)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLinkedClientsForClientByID indicates an expected call of GetLinkedClientsForClientByID
+func (mr *MockDatabaseMockRecorder) GetLinkedClientsForClientByID(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLinkedClientsForClientByID", reflect.TypeOf((*MockDatabase)(nil).GetLinkedClientsForClientByID), arg0, arg1, arg2)
 }
 
 // GetTopicKey mocks base method
@@ -373,18 +373,18 @@ func (mr *MockDatabaseMockRecorder) InsertTopicKey(arg0, arg1 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertTopicKey", reflect.TypeOf((*MockDatabase)(nil).InsertTopicKey), arg0, arg1)
 }
 
-// LinkClientClient mocks base method
-func (m *MockDatabase) LinkClientClient(arg0, arg1 Client) error {
+// LinkClient mocks base method
+func (m *MockDatabase) LinkClient(arg0, arg1 Client) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LinkClientClient", arg0, arg1)
+	ret := m.ctrl.Call(m, "LinkClient", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// LinkClientClient indicates an expected call of LinkClientClient
-func (mr *MockDatabaseMockRecorder) LinkClientClient(arg0, arg1 interface{}) *gomock.Call {
+// LinkClient indicates an expected call of LinkClient
+func (mr *MockDatabaseMockRecorder) LinkClient(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkClientClient", reflect.TypeOf((*MockDatabase)(nil).LinkClientClient), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkClient", reflect.TypeOf((*MockDatabase)(nil).LinkClient), arg0, arg1)
 }
 
 // LinkClientTopic mocks base method
@@ -429,18 +429,18 @@ func (mr *MockDatabaseMockRecorder) Rollback() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Rollback", reflect.TypeOf((*MockDatabase)(nil).Rollback))
 }
 
-// UnlinkClientClient mocks base method
-func (m *MockDatabase) UnlinkClientClient(arg0, arg1 Client) error {
+// UnlinkClient mocks base method
+func (m *MockDatabase) UnlinkClient(arg0, arg1 Client) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnlinkClientClient", arg0, arg1)
+	ret := m.ctrl.Call(m, "UnlinkClient", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UnlinkClientClient indicates an expected call of UnlinkClientClient
-func (mr *MockDatabaseMockRecorder) UnlinkClientClient(arg0, arg1 interface{}) *gomock.Call {
+// UnlinkClient indicates an expected call of UnlinkClient
+func (mr *MockDatabaseMockRecorder) UnlinkClient(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlinkClientClient", reflect.TypeOf((*MockDatabase)(nil).UnlinkClientClient), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlinkClient", reflect.TypeOf((*MockDatabase)(nil).UnlinkClient), arg0, arg1)
 }
 
 // UnlinkClientTopic mocks base method
