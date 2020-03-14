@@ -25,6 +25,7 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 	resetPubKeysCommand := NewResetPubKeysCommand(c2ClientFactory)
 	linkClientCommand := NewLinkClientCommand(c2ClientFactory)
 	unlinkClientCommand := NewUnlinkClientCommand(c2ClientFactory)
+	listLinkedClientsCommand := NewListLinkedClientsCommand(c2ClientFactory)
 
 	cmd := &rootCommand{}
 	cobraCmd := &cobra.Command{
@@ -44,6 +45,7 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 		resetPubKeysCommand.CobraCmd(),
 		linkClientCommand.CobraCmd(),
 		unlinkClientCommand.CobraCmd(),
+		listLinkedClientsCommand.CobraCmd(),
 	)
 
 	cmd.cobraCmd = cobraCmd
