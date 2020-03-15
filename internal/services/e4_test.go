@@ -488,6 +488,8 @@ func TestE4(t *testing.T) {
 			t.Fatalf("failed to encrypt new key: %v", err)
 		}
 
+		mockE4Key.EXPECT().IsPubKeyMode().Return(false)
+
 		gomock.InOrder(
 			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
 			mockE4Key.EXPECT().RandomKey().Return(clientKey, c2StoredKey, nil),
@@ -495,6 +497,58 @@ func TestE4(t *testing.T) {
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClientKey).Return(commandPayload, nil),
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
 			mockDB.EXPECT().InsertClient(client.Name, client.E4ID, protectedC2StoredKey),
+		)
+
+		if err := service.NewClientKey(ctx, client.E4ID); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("NewClientKey send the new pubkey to linked clients in pubkey mode", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		client, clearClientKey := createTestClient(t, dbEncKey)
+
+		mockCommand := commands.NewMockCommand(mockCtrl)
+		commandPayload := []byte("command-payload")
+		mockSetPubKeyCommand := commands.NewMockCommand(mockCtrl)
+		setPubKeyCommandPayload1 := []byte("set-pubkey1")
+		setPubKeyCommandPayload2 := []byte("set-pubkey2")
+
+		clientKey := []byte("clientKey")
+		c2StoredKey := []byte("c2StoredKey")
+		protectedC2StoredKey, err := e4crypto.Encrypt(dbEncKey, nil, c2StoredKey)
+		if err != nil {
+			t.Fatalf("failed to encrypt new key: %v", err)
+		}
+
+		linkedClient1, linkedClient1ClearKey := createTestClient(t, dbEncKey)
+		linkedClient2, linkedClient2ClearKey := createTestClient(t, dbEncKey)
+
+		linkedClients := []models.Client{linkedClient1, linkedClient2}
+
+		mockE4Key.EXPECT().IsPubKeyMode().Return(true)
+
+		gomock.InOrder(
+			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
+			mockE4Key.EXPECT().RandomKey().Return(clientKey, c2StoredKey, nil),
+			mockCommandFactory.EXPECT().CreateSetIDKeyCommand(clientKey).Return(mockCommand, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClientKey).Return(commandPayload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
+			mockDB.EXPECT().InsertClient(client.Name, client.E4ID, protectedC2StoredKey),
+			// Gomock fail to compare []byte arguments so we check it ourselves
+			mockCommandFactory.EXPECT().CreateSetPubKeyCommand(gomock.Any(), client.Name).DoAndReturn(func(key []byte, name string) (commands.Command, error) {
+				if !bytes.Equal(key, c2StoredKey) {
+					t.Fatalf("invalid public key, got %v, want %v", key, c2StoredKey)
+				}
+				return mockSetPubKeyCommand, nil
+			}),
+			mockDB.EXPECT().GetLinkedClientsForClientByID(client.E4ID, 0, GetLinkedClientsBatchSize).Return(linkedClients, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockSetPubKeyCommand, linkedClient1ClearKey).Return(setPubKeyCommandPayload1, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), setPubKeyCommandPayload1, linkedClient1.Topic(), protocols.QoSExactlyOnce),
+			mockE4Key.EXPECT().ProtectCommand(mockSetPubKeyCommand, linkedClient2ClearKey).Return(setPubKeyCommandPayload2, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), setPubKeyCommandPayload2, linkedClient2.Topic(), protocols.QoSExactlyOnce),
 		)
 
 		if err := service.NewClientKey(ctx, client.E4ID); err != nil {

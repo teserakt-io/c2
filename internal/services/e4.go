@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 
+	"golang.org/x/crypto/ed25519"
+
 	log "github.com/sirupsen/logrus"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 	"go.opencensus.io/trace"
@@ -49,6 +51,10 @@ var NewTopicBatchSize = 500
 // NewC2KeyBatchSize is the maximum number of clients pulled from the database at a time
 // when sending them the new C2 key.
 var NewC2KeyBatchSize = 500
+
+// GetLinkedClientsBatchSize is the maximum number of clients pulled from the database at a time
+// when sending them the new client pubkey.
+var GetLinkedClientsBatchSize = 500
 
 // IDNamePair stores an E4 client ID and names, omitting the key
 type IDNamePair struct {
@@ -529,7 +535,52 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 		logger.WithError(err).Error("insertClient failed")
 		return ErrInternal{}
 	}
+
+	// PubKey mode requires to send the new public key to linked clients
+	if s.e4Key.IsPubKeyMode() {
+		s.sendNewPubKeyToLinkedClients(ctx, client, c2StoredKey)
+	}
+
 	logger.Info("succeeded")
+
+	return nil
+}
+
+func (s *e4impl) sendNewPubKeyToLinkedClients(ctx context.Context, client models.Client, newPubKey ed25519.PublicKey) error {
+	ctx, span := trace.StartSpan(ctx, "e4.sendNewPubKeyToLinkedClients")
+	defer span.End()
+
+	logger := s.logger.WithField("id", prettyID(client.E4ID))
+
+	cmd, err := s.commandFactory.CreateSetPubKeyCommand(newPubKey, client.Name)
+	if err != nil {
+		logger.WithError(err).Error("failed to create setPubKey command")
+		return ErrInternal{}
+	}
+
+	offset := 0
+	for {
+		linkedClients, err := s.db.GetLinkedClientsForClientByID(client.E4ID, offset, GetLinkedClientsBatchSize)
+		if err != nil {
+			logger.WithError(err).Error("failed to retrieve linked clients")
+			continue
+		}
+
+		for _, linkedClient := range linkedClients {
+			if err := s.sendCommandToClient(ctx, cmd, linkedClient); err != nil {
+				logger.WithField("linkedClient", prettyID(linkedClient.E4ID)).
+					WithError(err).
+					Error("failed to send new client public key to linked client")
+				continue
+			}
+		}
+
+		if len(linkedClients) < GetLinkedClientsBatchSize {
+			break
+		}
+
+		offset += GetLinkedClientsBatchSize
+	}
 
 	return nil
 }
