@@ -13,7 +13,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	log "github.com/sirupsen/logrus"
-	e4 "github.com/teserakt-io/e4go"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 
 	"github.com/teserakt-io/c2/internal/commands"
@@ -94,7 +93,6 @@ func TestE4(t *testing.T) {
 	dbEncKey := newKey(t)
 
 	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, mockEventDispatcher, mockEventFactory, mockE4Key, logger, dbEncKey)
-
 	t.Run("Validation works successfully", func(t *testing.T) {
 		names := []string{"test1", "testtest2", "e4test3", "test4", "test5"}
 
@@ -189,7 +187,7 @@ func TestE4(t *testing.T) {
 			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
 			mockDB.EXPECT().GetTopicKey(topicKey.Topic).Return(topicKey, nil),
 
-			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(topicKey.Hash(), clearTopicKey).Return(mockCommand, nil),
+			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(topicKey.Topic, clearTopicKey).Return(mockCommand, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClientKey).Return(commandPayload, nil),
 
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
@@ -226,7 +224,7 @@ func TestE4(t *testing.T) {
 			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
 			mockDB.EXPECT().GetTopicKey(topicKey.Topic).Return(topicKey, nil),
 
-			mockCommandFactory.EXPECT().CreateRemoveTopicCommand(topicKey.Hash()).Return(mockCommand, nil),
+			mockCommandFactory.EXPECT().CreateRemoveTopicCommand(topicKey.Topic).Return(mockCommand, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearIDKey).Return(commandPayload, nil),
 
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
@@ -272,7 +270,7 @@ func TestE4(t *testing.T) {
 		topic := "topic"
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
-		mockCommand.EXPECT().Type().AnyTimes().Return(e4.Command(1), nil)
+		mockCommand.EXPECT().Type().AnyTimes().Return(byte(1), nil)
 
 		mockTx := models.NewMockDatabase(mockCtrl)
 
@@ -280,7 +278,7 @@ func TestE4(t *testing.T) {
 			mockPubSubClient.EXPECT().ValidateTopic(topic).Return(nil),
 			mockDB.EXPECT().BeginTx(gomock.Any(), gomock.Any()).Return(mockTx, nil),
 			mockTx.EXPECT().InsertTopicKey(topic, gomock.Any()),
-			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), gomock.Any()).Return(mockCommand, nil),
+			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(topic, gomock.Any()).Return(mockCommand, nil),
 			mockTx.EXPECT().CountClientsForTopic(topic).Return(0, nil),
 			mockTx.EXPECT().CommitTx(),
 
@@ -316,14 +314,14 @@ func TestE4(t *testing.T) {
 		topic := "topic"
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
-		mockCommand.EXPECT().Type().AnyTimes().Return(e4.Command(1), nil)
+		mockCommand.EXPECT().Type().AnyTimes().Return(byte(1), nil)
 
 		mockTx := models.NewMockDatabase(mockCtrl)
 		gomock.InOrder(
 			mockPubSubClient.EXPECT().ValidateTopic(topic).Return(nil),
 			mockDB.EXPECT().BeginTx(gomock.Any(), gomock.Any()).Return(mockTx, nil),
 			mockTx.EXPECT().InsertTopicKey(topic, gomock.Any()),
-			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), gomock.Any()).Return(mockCommand, nil),
+			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(topic, gomock.Any()).Return(mockCommand, nil),
 			mockTx.EXPECT().CountClientsForTopic(topic).Return(totalClients, nil),
 			mockTx.EXPECT().CommitTx(),
 
@@ -371,14 +369,14 @@ func TestE4(t *testing.T) {
 		topic := "topic"
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
-		mockCommand.EXPECT().Type().AnyTimes().Return(e4.Command(1), nil)
+		mockCommand.EXPECT().Type().AnyTimes().Return(byte(1), nil)
 
 		mockTx := models.NewMockDatabase(mockCtrl)
 		gomock.InOrder(
 			mockPubSubClient.EXPECT().ValidateTopic(topic).Return(nil),
 			mockDB.EXPECT().BeginTx(gomock.Any(), gomock.Any()).Return(mockTx, nil),
 			mockTx.EXPECT().InsertTopicKey(topic, gomock.Any()),
-			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), gomock.Any()).Return(mockCommand, nil),
+			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(topic, gomock.Any()).Return(mockCommand, nil),
 			mockTx.EXPECT().CountClientsForTopic(topic).Return(totalClients, nil),
 			mockTx.EXPECT().CommitTx(),
 
@@ -426,14 +424,14 @@ func TestE4(t *testing.T) {
 		topic := "topic"
 
 		mockCommand := commands.NewMockCommand(mockCtrl)
-		mockCommand.EXPECT().Type().AnyTimes().Return(e4.Command(1), nil)
+		mockCommand.EXPECT().Type().AnyTimes().Return(byte(1), nil)
 
 		mockTx := models.NewMockDatabase(mockCtrl)
 		gomock.InOrder(
 			mockPubSubClient.EXPECT().ValidateTopic(topic).Return(nil),
 			mockDB.EXPECT().BeginTx(gomock.Any(), gomock.Any()).Return(mockTx, nil),
 			mockTx.EXPECT().InsertTopicKey(topic, gomock.Any()),
-			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(e4crypto.HashTopic(topic), gomock.Any()).Return(mockCommand, nil),
+			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(topic, gomock.Any()).Return(mockCommand, nil),
 			mockTx.EXPECT().CountClientsForTopic(topic).Return(totalClients, nil),
 			mockTx.EXPECT().CommitTx(),
 
@@ -793,6 +791,117 @@ func TestE4(t *testing.T) {
 		err := service.SendClientPubKey(context.Background(), sourceClient.E4ID, targetClient.E4ID)
 		if err != nil {
 			t.Fatalf("failed to send pubkey command: %v", err)
+		}
+	})
+
+	t.Run("RemoveClientPubKey returns error when key does not support pubkey mode", func(t *testing.T) {
+		mockE4Key.EXPECT().IsPubKeyMode().Return(false)
+		err := service.RemoveClientPubKey(context.Background(), []byte("source"), []byte("target"))
+		want := ErrInvalidCryptoMode{}
+		if err != want {
+			t.Fatalf("got error %v, wanted %v", err, want)
+		}
+	})
+
+	t.Run("RemoveClientPubKey sends the expected command to the target client", func(t *testing.T) {
+		mockE4Key.EXPECT().IsPubKeyMode().Return(true)
+
+		sourceClient, _ := createTestClient(t, dbEncKey)
+		targetClient, clearTargetClientKey := createTestClient(t, dbEncKey)
+
+		mockCommand := commands.NewMockCommand(mockCtrl)
+		cmdPayload := []byte("protectedRemovePubKeyCommand")
+
+		gomock.InOrder(
+			mockDB.EXPECT().GetClientByID(sourceClient.E4ID).Return(sourceClient, nil),
+			mockDB.EXPECT().GetClientByID(targetClient.E4ID).Return(targetClient, nil),
+
+			mockCommandFactory.EXPECT().CreateRemovePubKeyCommand(sourceClient.Name).Return(mockCommand, nil),
+
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearTargetClientKey).Return(cmdPayload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload, targetClient.Topic(), protocols.QoSExactlyOnce).Return(nil),
+		)
+
+		err := service.RemoveClientPubKey(context.Background(), sourceClient.E4ID, targetClient.E4ID)
+		if err != nil {
+			t.Fatalf("failed to send RemovePubKey command: %v", err)
+		}
+	})
+
+	t.Run("ResetClientPubKeys sends the expected command to the target client", func(t *testing.T) {
+		mockE4Key.EXPECT().IsPubKeyMode().Return(true)
+
+		targetClient, clearTargetClientKey := createTestClient(t, dbEncKey)
+
+		mockCommand := commands.NewMockCommand(mockCtrl)
+		cmdPayload := []byte("protectedResetClientPubKeysCommand")
+
+		gomock.InOrder(
+			mockDB.EXPECT().GetClientByID(targetClient.E4ID).Return(targetClient, nil),
+
+			mockCommandFactory.EXPECT().CreateResetPubKeysCommand().Return(mockCommand, nil),
+
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearTargetClientKey).Return(cmdPayload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload, targetClient.Topic(), protocols.QoSExactlyOnce).Return(nil),
+		)
+
+		err := service.ResetClientPubKeys(context.Background(), targetClient.E4ID)
+		if err != nil {
+			t.Fatalf("failed to send ResetPubKeys command: %v", err)
+		}
+	})
+
+	t.Run("NewC2Keys returns error when key does not support pubkey mode", func(t *testing.T) {
+		mockE4Key.EXPECT().IsPubKeyMode().Return(false)
+		err := service.NewC2Key(context.Background())
+		want := ErrInvalidCryptoMode{}
+		if err != want {
+			t.Fatalf("got error %v, wanted %v", err, want)
+		}
+	})
+
+	t.Run("NewC2Keys send a new C2 public key to all clients", func(t *testing.T) {
+		NewC2KeyBatchSize = 2
+
+		mockE4Key.EXPECT().IsPubKeyMode().Return(true)
+
+		newC2PubKey := []byte("newC2PubKey")
+
+		mockCommand := commands.NewMockCommand(mockCtrl)
+		cmdPayload1 := []byte("setC2KeyCommand1")
+		cmdPayload2 := []byte("setC2KeyCommand2")
+		cmdPayload3 := []byte("setC2KeyCommand3")
+
+		client1, clearClient1Key := createTestClient(t, dbEncKey)
+		client2, clearClient2Key := createTestClient(t, dbEncKey)
+		client3, clearClient3Key := createTestClient(t, dbEncKey)
+
+		clientsBatch1 := []models.Client{client1, client2}
+		clientsBatch2 := []models.Client{client3}
+
+		mockC2Tx := crypto.NewMockC2KeyRotationTx(mockCtrl)
+		mockC2Tx.EXPECT().GetNewPublicKey().AnyTimes().Return(newC2PubKey)
+
+		gomock.InOrder(
+			mockE4Key.EXPECT().NewC2KeyRotationTx().Return(mockC2Tx, nil),
+			mockCommandFactory.EXPECT().CreateSetC2KeyCommand(newC2PubKey).Return(mockCommand, nil),
+
+			mockDB.EXPECT().GetClientsRange(0, NewC2KeyBatchSize).Return(clientsBatch1, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClient1Key).Return(cmdPayload1, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload1, client1.Topic(), protocols.QoSExactlyOnce).Return(nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClient2Key).Return(cmdPayload2, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload2, client2.Topic(), protocols.QoSExactlyOnce).Return(nil),
+
+			mockDB.EXPECT().GetClientsRange(NewC2KeyBatchSize, NewC2KeyBatchSize).Return(clientsBatch2, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClient3Key).Return(cmdPayload3, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload3, client3.Topic(), protocols.QoSExactlyOnce).Return(nil),
+
+			mockC2Tx.EXPECT().Commit().Return(nil),
+		)
+
+		err := service.NewC2Key(context.Background())
+		if err != nil {
+			t.Fatalf("failed to set new C2 key: %v", err)
 		}
 	})
 }

@@ -3,8 +3,6 @@ package commands
 //go:generate mockgen -destination=factory_mocks.go -package commands -self_package github.com/teserakt-io/c2/internal/commands github.com/teserakt-io/c2/internal/commands Factory
 
 import (
-	"fmt"
-
 	"golang.org/x/crypto/ed25519"
 
 	e4 "github.com/teserakt-io/e4go"
@@ -13,11 +11,14 @@ import (
 
 // Factory defines interface able to create e4 Commands
 type Factory interface {
-	CreateRemoveTopicCommand(topichash []byte) (Command, error)
+	CreateRemoveTopicCommand(topic string) (Command, error)
 	CreateResetTopicsCommand() (Command, error)
 	CreateSetIDKeyCommand(key []byte) (Command, error)
-	CreateSetTopicKeyCommand(topicHash, key []byte) (Command, error)
+	CreateSetTopicKeyCommand(topic string, key []byte) (Command, error)
 	CreateSetPubKeyCommand(publicKey ed25519.PublicKey, clientName string) (Command, error)
+	CreateRemovePubKeyCommand(clientName string) (Command, error)
+	CreateResetPubKeysCommand() (Command, error)
+	CreateSetC2KeyCommand(c2PublicKey e4crypto.Curve25519PublicKey) (Command, error)
 }
 
 type factory struct {
@@ -30,39 +31,36 @@ func NewFactory() Factory {
 	return &factory{}
 }
 
-func (f *factory) CreateRemoveTopicCommand(topichash []byte) (Command, error) {
-	if err := e4crypto.ValidateTopicHash(topichash); err != nil {
-		return nil, fmt.Errorf("invalid topic hash for RemoveTopic: %v", err)
+func (f *factory) CreateRemoveTopicCommand(topic string) (Command, error) {
+	cmd, err := e4.CmdRemoveTopic(topic)
+	if err != nil {
+		return nil, err
 	}
-
-	cmd := e4.RemoveTopic
-	return e4Command(append([]byte{cmd.ToByte()}, topichash...)), nil
+	return e4Command(cmd), err
 }
 
 func (f *factory) CreateResetTopicsCommand() (Command, error) {
-	cmd := e4.ResetTopics
-	return e4Command([]byte{cmd.ToByte()}), nil
+	cmd, err := e4.CmdResetTopics()
+	if err != nil {
+		return nil, err
+	}
+	return e4Command(cmd), nil
 }
 
 func (f *factory) CreateSetIDKeyCommand(key []byte) (Command, error) {
-	if err := e4crypto.ValidateSymKey(key); err != nil {
-		return nil, fmt.Errorf("invalid key for SetIdKey: %v", err)
+	cmd, err := e4.CmdSetIDKey(key)
+	if err != nil {
+		return nil, err
 	}
-
-	cmd := e4.SetIDKey
-	return e4Command(append([]byte{cmd.ToByte()}, key...)), nil
+	return e4Command(cmd), nil
 }
 
-func (f *factory) CreateSetTopicKeyCommand(topicHash, key []byte) (Command, error) {
-	if err := e4crypto.ValidateSymKey(key); err != nil {
-		return nil, fmt.Errorf("invalid key for SetTopicKey: %v", err)
+func (f *factory) CreateSetTopicKeyCommand(topic string, key []byte) (Command, error) {
+	cmd, err := e4.CmdSetTopicKey(key, topic)
+	if err != nil {
+		return nil, err
 	}
-	if err := e4crypto.ValidateTopicHash(topicHash); err != nil {
-		return nil, fmt.Errorf("invalid topic hash for SetTopicKey: %v", err)
-	}
-
-	cmd := e4.SetTopicKey
-	return e4Command(append(append([]byte{cmd.ToByte()}, key...), topicHash...)), nil
+	return e4Command(cmd), nil
 }
 
 func (f *factory) CreateSetPubKeyCommand(publicKey ed25519.PublicKey, clientName string) (Command, error) {
@@ -70,6 +68,29 @@ func (f *factory) CreateSetPubKeyCommand(publicKey ed25519.PublicKey, clientName
 	if err != nil {
 		return nil, err
 	}
+	return e4Command(cmd), nil
+}
 
+func (f *factory) CreateRemovePubKeyCommand(clientName string) (Command, error) {
+	cmd, err := e4.CmdRemovePubKey(clientName)
+	if err != nil {
+		return nil, err
+	}
+	return e4Command(cmd), nil
+}
+
+func (f *factory) CreateResetPubKeysCommand() (Command, error) {
+	cmd, err := e4.CmdResetPubKeys()
+	if err != nil {
+		return nil, err
+	}
+	return e4Command(cmd), nil
+}
+
+func (f *factory) CreateSetC2KeyCommand(c2PublicKey e4crypto.Curve25519PublicKey) (Command, error) {
+	cmd, err := e4.CmdSetC2Key(c2PublicKey)
+	if err != nil {
+		return nil, err
+	}
 	return e4Command(cmd), nil
 }

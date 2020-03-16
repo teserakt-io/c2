@@ -359,6 +359,103 @@
         ]
       }
     },
+    "/e4/new-c2-key": {
+      "post": {
+        "operationId": "NewC2Key",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbNewC2KeyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbNewC2KeyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/remove-client-pubkey": {
+      "post": {
+        "summary": "Remove a client pubkey from another client (pubkey mode only)",
+        "operationId": "RemoveClientPubKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbRemoveClientPubKeyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbRemoveClientPubKeyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/reset-client-pubkeys": {
+      "post": {
+        "operationId": "ResetClientPubKeys",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbResetClientPubKeysResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbResetClientPubKeysRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
     "/e4/send-client-pubkey": {
       "post": {
         "summary": "Send a client pubkey to another client (pubkey mode only)",
@@ -708,6 +805,18 @@
         }
       }
     },
+    "pbNewC2KeyRequest": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "pbNewC2KeyResponse": {
+      "type": "object"
+    },
     "pbNewClientKeyRequest": {
       "type": "object",
       "properties": {
@@ -740,6 +849,20 @@
     "pbNewTopicResponse": {
       "type": "object"
     },
+    "pbRemoveClientPubKeyRequest": {
+      "type": "object",
+      "properties": {
+        "sourceClient": {
+          "$ref": "#/definitions/pbClient"
+        },
+        "targetClient": {
+          "$ref": "#/definitions/pbClient"
+        }
+      }
+    },
+    "pbRemoveClientPubKeyResponse": {
+      "type": "object"
+    },
     "pbRemoveClientResponse": {
       "type": "object"
     },
@@ -747,6 +870,17 @@
       "type": "object"
     },
     "pbRemoveTopicResponse": {
+      "type": "object"
+    },
+    "pbResetClientPubKeysRequest": {
+      "type": "object",
+      "properties": {
+        "targetClient": {
+          "$ref": "#/definitions/pbClient"
+        }
+      }
+    },
+    "pbResetClientPubKeysResponse": {
       "type": "object"
     },
     "pbResetClientResponse": {

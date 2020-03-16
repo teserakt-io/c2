@@ -353,6 +353,60 @@ func (s *grpcServer) SendClientPubKey(ctx context.Context, req *pb.SendClientPub
 	return &pb.SendClientPubKeyResponse{}, nil
 }
 
+func (s *grpcServer) RemoveClientPubKey(ctx context.Context, req *pb.RemoveClientPubKeyRequest) (*pb.RemoveClientPubKeyResponse, error) {
+	if req.SourceClient == nil {
+		return nil, errors.New("source client name is required")
+	}
+	if req.TargetClient == nil {
+		return nil, errors.New("target client name is required")
+	}
+
+	sourceClientID, err := validateE4NameOrIDPair(req.SourceClient.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	targetClientID, err := validateE4NameOrIDPair(req.TargetClient.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	if err := s.e4Service.RemoveClientPubKey(ctx, sourceClientID, targetClientID); err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.RemoveClientPubKeyResponse{}, nil
+}
+
+func (s *grpcServer) ResetClientPubKeys(ctx context.Context, req *pb.ResetClientPubKeysRequest) (*pb.ResetClientPubKeysResponse, error) {
+	if req.TargetClient == nil {
+		return nil, errors.New("target client name is required")
+	}
+
+	targetClientID, err := validateE4NameOrIDPair(req.TargetClient.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	if err := s.e4Service.ResetClientPubKeys(ctx, targetClientID); err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.ResetClientPubKeysResponse{}, nil
+}
+
+func (s *grpcServer) NewC2Key(ctx context.Context, req *pb.NewC2KeyRequest) (*pb.NewC2KeyResponse, error) {
+	if err := s.e4Service.NewC2Key(ctx); err != nil {
+		return nil, grpcError(err)
+	}
+
+	if !req.Force {
+		return nil, grpcError(errors.New("force is required to true to prevent accidental executions"))
+	}
+
+	return &pb.NewC2KeyResponse{}, nil
+}
+
 func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamRequest, srv pb.C2_SubscribeToEventStreamServer) error {
 	listener := events.NewListener(s.eventDispatcher)
 	defer listener.Close()

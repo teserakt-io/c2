@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -ex
-
 if [ -z $(which protoc-gen-grpc-gateway) ]; then
     go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 fi

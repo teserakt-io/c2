@@ -6,7 +6,6 @@ package commands
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	e4go "github.com/teserakt-io/e4go"
 	reflect "reflect"
 )
 
@@ -63,10 +62,10 @@ func (mr *MockCommandMockRecorder) Content() *gomock.Call {
 }
 
 // Type mocks base method
-func (m *MockCommand) Type() (e4go.Command, error) {
+func (m *MockCommand) Type() (byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Type")
-	ret0, _ := ret[0].(e4go.Command)
+	ret0, _ := ret[0].(byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

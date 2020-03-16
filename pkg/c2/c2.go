@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	stdlog "log"
 	"os"
 	"os/signal"
@@ -67,17 +66,7 @@ func New(logger log.FieldLogger, cfg config.Config) (*C2, error) {
 		e4Key = crypto.NewE4SymKey()
 		logger.Info("initialized E4Key in symmetric key mode")
 	case config.PubKey:
-		keyFile, err := os.Open(cfg.Crypto.C2PrivateKeyPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open file %s: %v", cfg.Crypto.C2PrivateKeyPath, err)
-		}
-		defer keyFile.Close()
-		keyBytes, err := ioutil.ReadAll(keyFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read e4key from %s: %v", cfg.Crypto.C2PrivateKeyPath, err)
-		}
-
-		e4Key, err = crypto.NewE4PubKey(keyBytes)
+		e4Key, err = crypto.NewE4PubKey(cfg.Crypto.C2PrivateKeyPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create E4PubKey: %v", err)
 		}

@@ -3,19 +3,18 @@ package commands
 import (
 	reflect "reflect"
 	"testing"
-
-	e4 "github.com/teserakt-io/e4go"
 )
 
 func TestE4Command(t *testing.T) {
 	t.Run("Type returns the expected e4.Command", func(t *testing.T) {
-		cmd := e4Command([]byte{0x01})
+		cmdID := byte(0x01)
+		cmd := e4Command([]byte{cmdID})
 		cmdType, err := cmd.Type()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-		if cmdType != e4.Command(0x01) {
-			t.Errorf("Expected type to be %v, got %v", e4.Command(0x01), cmdType)
+		if g, w := cmdType, cmdID; g != w {
+			t.Errorf("Invalid type, got %v, want %v", g, w)
 		}
 	})
 
@@ -28,7 +27,8 @@ func TestE4Command(t *testing.T) {
 	})
 
 	t.Run("Content with no content check", func(t *testing.T) {
-		cmd := e4Command([]byte{0x01})
+		cmdID := byte(0x01)
+		cmd := e4Command([]byte{cmdID})
 
 		content, err := cmd.Content()
 		if err != nil {
@@ -42,14 +42,15 @@ func TestE4Command(t *testing.T) {
 	})
 
 	t.Run("Content returns the expected content", func(t *testing.T) {
-		cmd := e4Command([]byte{0x01, 0x02, 0x03})
+		cmdID := byte(0x01)
+		expectedContent := []byte{0x02, 0x03}
+		cmd := e4Command(append([]byte{cmdID}, expectedContent...))
 
 		content, err := cmd.Content()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		expectedContent := []byte{0x02, 0x03}
 		if reflect.DeepEqual(content, expectedContent) == false {
 			t.Errorf("Expected content to be %v, got %v", expectedContent, content)
 		}

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/crypto/ed25519"
+
 	"github.com/golang/mock/gomock"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 
@@ -40,6 +42,17 @@ func createTempFile(t *testing.T, content []byte) (*os.File, func()) {
 
 func TestCreate(t *testing.T) {
 	expectedPassword := "veryLongSecretPassword"
+
+	edPrivKey, err := e4crypto.Ed25519PrivateKeyFromPassword(expectedPassword)
+	if err != nil {
+		t.Fatalf("failed to create ed25519 private key from password: %v", err)
+	}
+
+	edPubKey := ed25519.PrivateKey(edPrivKey).Public().(ed25519.PublicKey)
+	if err != nil {
+		t.Fatalf("failed to derive symKey: %v", err)
+	}
+
 	validPasswordFile, cleanup := createTempFile(t, []byte(expectedPassword))
 	defer cleanup()
 	validKeyFile, cleanup := createTempFile(t, e4crypto.RandomKey())
@@ -114,6 +127,27 @@ func TestCreate(t *testing.T) {
 		cmd := newTestCreateCommand(c2ClientFactory)
 		cmd.CobraCmd().Flags().Set("name", expectedClientName)
 		cmd.CobraCmd().Flags().Set("password", validPasswordFile.Name())
+		err = cmd.CobraCmd().Execute()
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Execute forward expected request to the c2Client when passing a password in pubkey mode", func(t *testing.T) {
+		expectedClientName := "testClient1"
+
+		expectedRequest := &pb.NewClientRequest{
+			Client: &pb.Client{Name: expectedClientName},
+			Key:    edPubKey,
+		}
+
+		c2Client.EXPECT().NewClient(gomock.Any(), expectedRequest).Return(&pb.NewClientResponse{}, nil)
+		c2Client.EXPECT().Close()
+
+		cmd := newTestCreateCommand(c2ClientFactory)
+		cmd.CobraCmd().Flags().Set("name", expectedClientName)
+		cmd.CobraCmd().Flags().Set("password", validPasswordFile.Name())
+		cmd.CobraCmd().Flags().Set("pubkey", "1")
 		err = cmd.CobraCmd().Execute()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)

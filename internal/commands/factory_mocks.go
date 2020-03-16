@@ -33,8 +33,23 @@ func (m *MockFactory) EXPECT() *MockFactoryMockRecorder {
 	return m.recorder
 }
 
+// CreateRemovePubKeyCommand mocks base method
+func (m *MockFactory) CreateRemovePubKeyCommand(arg0 string) (Command, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateRemovePubKeyCommand", arg0)
+	ret0, _ := ret[0].(Command)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateRemovePubKeyCommand indicates an expected call of CreateRemovePubKeyCommand
+func (mr *MockFactoryMockRecorder) CreateRemovePubKeyCommand(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRemovePubKeyCommand", reflect.TypeOf((*MockFactory)(nil).CreateRemovePubKeyCommand), arg0)
+}
+
 // CreateRemoveTopicCommand mocks base method
-func (m *MockFactory) CreateRemoveTopicCommand(arg0 []byte) (Command, error) {
+func (m *MockFactory) CreateRemoveTopicCommand(arg0 string) (Command, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateRemoveTopicCommand", arg0)
 	ret0, _ := ret[0].(Command)
@@ -46,6 +61,21 @@ func (m *MockFactory) CreateRemoveTopicCommand(arg0 []byte) (Command, error) {
 func (mr *MockFactoryMockRecorder) CreateRemoveTopicCommand(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRemoveTopicCommand", reflect.TypeOf((*MockFactory)(nil).CreateRemoveTopicCommand), arg0)
+}
+
+// CreateResetPubKeysCommand mocks base method
+func (m *MockFactory) CreateResetPubKeysCommand() (Command, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateResetPubKeysCommand")
+	ret0, _ := ret[0].(Command)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateResetPubKeysCommand indicates an expected call of CreateResetPubKeysCommand
+func (mr *MockFactoryMockRecorder) CreateResetPubKeysCommand() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateResetPubKeysCommand", reflect.TypeOf((*MockFactory)(nil).CreateResetPubKeysCommand))
 }
 
 // CreateResetTopicsCommand mocks base method
@@ -61,6 +91,21 @@ func (m *MockFactory) CreateResetTopicsCommand() (Command, error) {
 func (mr *MockFactoryMockRecorder) CreateResetTopicsCommand() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateResetTopicsCommand", reflect.TypeOf((*MockFactory)(nil).CreateResetTopicsCommand))
+}
+
+// CreateSetC2KeyCommand mocks base method
+func (m *MockFactory) CreateSetC2KeyCommand(arg0 []byte) (Command, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSetC2KeyCommand", arg0)
+	ret0, _ := ret[0].(Command)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSetC2KeyCommand indicates an expected call of CreateSetC2KeyCommand
+func (mr *MockFactoryMockRecorder) CreateSetC2KeyCommand(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSetC2KeyCommand", reflect.TypeOf((*MockFactory)(nil).CreateSetC2KeyCommand), arg0)
 }
 
 // CreateSetIDKeyCommand mocks base method
@@ -94,7 +139,7 @@ func (mr *MockFactoryMockRecorder) CreateSetPubKeyCommand(arg0, arg1 interface{}
 }
 
 // CreateSetTopicKeyCommand mocks base method
-func (m *MockFactory) CreateSetTopicKeyCommand(arg0, arg1 []byte) (Command, error) {
+func (m *MockFactory) CreateSetTopicKeyCommand(arg0 string, arg1 []byte) (Command, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSetTopicKeyCommand", arg0, arg1)
 	ret0, _ := ret[0].(Command)

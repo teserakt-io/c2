@@ -47,6 +47,21 @@ func (mr *MockE4KeyMockRecorder) IsPubKeyMode() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPubKeyMode", reflect.TypeOf((*MockE4Key)(nil).IsPubKeyMode))
 }
 
+// NewC2KeyRotationTx mocks base method
+func (m *MockE4Key) NewC2KeyRotationTx() (C2KeyRotationTx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewC2KeyRotationTx")
+	ret0, _ := ret[0].(C2KeyRotationTx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NewC2KeyRotationTx indicates an expected call of NewC2KeyRotationTx
+func (mr *MockE4KeyMockRecorder) NewC2KeyRotationTx() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewC2KeyRotationTx", reflect.TypeOf((*MockE4Key)(nil).NewC2KeyRotationTx))
+}
+
 // ProtectCommand mocks base method
 func (m *MockE4Key) ProtectCommand(arg0 commands.Command, arg1 []byte) ([]byte, error) {
 	m.ctrl.T.Helper()

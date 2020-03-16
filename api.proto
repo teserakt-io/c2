@@ -123,6 +123,28 @@ service C2 {
     };
   }
 
+  // Remove a client pubkey from another client (pubkey mode only)
+  rpc RemoveClientPubKey(RemoveClientPubKeyRequest) returns (RemoveClientPubKeyResponse) {
+    option (google.api.http) = {
+      post: "/e4/remove-client-pubkey"
+      body: "*"
+    };
+  }
+
+  rpc ResetClientPubKeys(ResetClientPubKeysRequest) returns (ResetClientPubKeysResponse) {
+    option (google.api.http) = {
+      post: "/e4/reset-client-pubkeys"
+      body: "*"
+    };
+  }
+
+  rpc NewC2Key(NewC2KeyRequest) returns (NewC2KeyResponse) {
+    option (google.api.http) = {
+      post: "/e4/new-c2-key"
+      body: "*"
+    };
+  }
+
   // Provide a stream on C2 system events, grpc only
   rpc SubscribeToEventStream(SubscribeToEventStreamRequest) returns (stream Event) {}
 }
@@ -237,6 +259,22 @@ message SendClientPubKeyRequest {
   Client targetClient = 2;
 }
 message SendClientPubKeyResponse {}
+
+message RemoveClientPubKeyRequest {
+  Client sourceClient = 1;
+  Client targetClient = 2;
+}
+message RemoveClientPubKeyResponse {}
+
+message ResetClientPubKeysRequest {
+  Client targetClient = 1;
+}
+message ResetClientPubKeysResponse {}
+
+message NewC2KeyRequest {
+  bool force = 1; // ensure this doesn't run by just poking at the endpoint
+}
+message NewC2KeyResponse {}
 
 message SubscribeToEventStreamRequest {}
 

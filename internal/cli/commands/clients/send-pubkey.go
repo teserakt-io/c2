@@ -21,7 +21,7 @@ type sendPubKeyCommandFlags struct {
 	TargetClientName string
 }
 
-var _ cli.Command = (*resetCommand)(nil)
+var _ cli.Command = (*sendPubKeyCommand)(nil)
 
 // NewSendPubKeyCommand returns a new command to send a client pubkey to another client
 func NewSendPubKeyCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
@@ -72,7 +72,7 @@ func (c *sendPubKeyCommand) run(cmd *cobra.Command, args []string) error {
 
 	_, err = c2Client.SendClientPubKey(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to reset client: %v", err)
+		return fmt.Errorf("failed to send set public key command: %v", err)
 	}
 
 	c.CobraCmd().Printf("Command to set client %s pubkey successfully sent to client %s\n", c.flags.SourceClientName, c.flags.TargetClientName)
