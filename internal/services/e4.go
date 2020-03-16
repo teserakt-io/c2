@@ -538,7 +538,10 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 
 	// PubKey mode requires to send the new public key to linked clients
 	if s.e4Key.IsPubKeyMode() {
-		s.sendNewPubKeyToLinkedClients(ctx, client, c2StoredKey)
+		if err := s.sendNewPubKeyToLinkedClients(ctx, client, c2StoredKey); err != nil {
+			logger.WithError(err).Error("failed to send new pubkey to linked clients")
+			return ErrInternal{}
+		}
 	}
 
 	logger.Info("succeeded")
@@ -554,8 +557,7 @@ func (s *e4impl) sendNewPubKeyToLinkedClients(ctx context.Context, client models
 
 	cmd, err := s.commandFactory.CreateSetPubKeyCommand(newPubKey, client.Name)
 	if err != nil {
-		logger.WithError(err).Error("failed to create setPubKey command")
-		return ErrInternal{}
+		return err
 	}
 
 	offset := 0
