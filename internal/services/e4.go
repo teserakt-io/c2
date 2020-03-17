@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/teserakt-io/c2/internal/config"
+
 	"golang.org/x/crypto/ed25519"
 
 	log "github.com/sirupsen/logrus"
@@ -120,6 +122,7 @@ type e4impl struct {
 	logger          log.FieldLogger
 	eventDispatcher events.Dispatcher
 	eventFactory    events.Factory
+	cfg             config.CryptoCfg
 }
 
 var _ E4 = (*e4impl)(nil)
@@ -134,6 +137,7 @@ func NewE4(
 	e4Key crypto.E4Key,
 	logger log.FieldLogger,
 	dbEncKey []byte,
+	cfg config.CryptoCfg,
 ) E4 {
 	return &e4impl{
 		db:              db,
@@ -144,6 +148,7 @@ func NewE4(
 		e4Key:           e4Key,
 		logger:          logger,
 		dbEncKey:        dbEncKey,
+		cfg:             cfg,
 	}
 }
 
@@ -537,7 +542,7 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 	}
 
 	// PubKey mode requires to send the new public key to linked clients
-	if s.e4Key.IsPubKeyMode() {
+	if s.cfg.NewClientKeySendPubkey && s.e4Key.IsPubKeyMode() {
 		if err := s.sendNewPubKeyToLinkedClients(ctx, client, c2StoredKey); err != nil {
 			logger.WithError(err).Error("failed to send new pubkey to linked clients")
 			return ErrInternal{}
@@ -557,11 +562,15 @@ func (s *e4impl) sendNewPubKeyToLinkedClients(ctx context.Context, client models
 
 	cmd, err := s.commandFactory.CreateSetPubKeyCommand(newPubKey, client.Name)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create SetPubKey command: %v", err)
 	}
 
-	offset := 0
-	for {
+	linkedClientsCount, err := s.db.CountLinkedClients(client.E4ID)
+	if err != nil {
+		return fmt.Errorf("failed to get client count: %v", err)
+	}
+
+	for offset := 0; offset < linkedClientsCount; offset += GetLinkedClientsBatchSize {
 		linkedClients, err := s.db.GetLinkedClientsForClientByID(client.E4ID, offset, GetLinkedClientsBatchSize)
 		if err != nil {
 			logger.WithError(err).Error("failed to retrieve linked clients")
@@ -576,12 +585,6 @@ func (s *e4impl) sendNewPubKeyToLinkedClients(ctx context.Context, client models
 				continue
 			}
 		}
-
-		if len(linkedClients) < GetLinkedClientsBatchSize {
-			break
-		}
-
-		offset += GetLinkedClientsBatchSize
 	}
 
 	return nil

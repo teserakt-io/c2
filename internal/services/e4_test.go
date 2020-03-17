@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/teserakt-io/c2/internal/config"
+
 	"github.com/golang/mock/gomock"
 	log "github.com/sirupsen/logrus"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
@@ -92,7 +94,11 @@ func TestE4(t *testing.T) {
 
 	dbEncKey := newKey(t)
 
-	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, mockEventDispatcher, mockEventFactory, mockE4Key, logger, dbEncKey)
+	cfg := config.CryptoCfg{
+		NewClientKeySendPubkey: true,
+	}
+
+	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, mockEventDispatcher, mockEventFactory, mockE4Key, logger, dbEncKey, cfg)
 	t.Run("Validation works successfully", func(t *testing.T) {
 		names := []string{"test1", "testtest2", "e4test3", "test4", "test5"}
 
@@ -544,6 +550,7 @@ func TestE4(t *testing.T) {
 				}
 				return mockSetPubKeyCommand, nil
 			}),
+			mockDB.EXPECT().CountLinkedClients(client.E4ID).Return(2, nil),
 			mockDB.EXPECT().GetLinkedClientsForClientByID(client.E4ID, 0, GetLinkedClientsBatchSize).Return(linkedClients, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockSetPubKeyCommand, linkedClient1ClearKey).Return(setPubKeyCommandPayload1, nil),
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), setPubKeyCommandPayload1, linkedClient1.Topic(), protocols.QoSExactlyOnce),
