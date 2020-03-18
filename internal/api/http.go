@@ -15,7 +15,6 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/teserakt-io/c2/internal/config"
-	"github.com/teserakt-io/c2/internal/services"
 	"github.com/teserakt-io/c2/pkg/pb"
 )
 
@@ -25,7 +24,6 @@ type HTTPServer interface {
 }
 
 type httpServer struct {
-	e4Service    services.E4
 	logger       log.FieldLogger
 	cfg          config.HTTPServerCfg
 	grpcCertPath string
@@ -34,9 +32,8 @@ type httpServer struct {
 var _ HTTPServer = (*httpServer)(nil)
 
 // NewHTTPServer creates a new http server for C2
-func NewHTTPServer(scfg config.HTTPServerCfg, grpcCertPath string, e4Service services.E4, logger log.FieldLogger) HTTPServer {
+func NewHTTPServer(scfg config.HTTPServerCfg, grpcCertPath string, logger log.FieldLogger) HTTPServer {
 	return &httpServer{
-		e4Service:    e4Service,
 		logger:       logger,
 		cfg:          scfg,
 		grpcCertPath: grpcCertPath,
