@@ -6,9 +6,10 @@
 ###############################################################
 ## supported modes are: symkey, pubkey
 crypto-mode: pubkey
-# path to the private key file (for pubkey mode only)
-crypto-c2-private-key: c2key
-
+## path to the private key file (for pubkey mode only)
+crypto-c2-private-key: c2_curve25519
+## enabled / disable sending the new generated pubkey to linked clients (pubkey mode only)
+crypto-new-client-key-send-pubkeys: true
 
 # MQTT settings
 ###############################################################

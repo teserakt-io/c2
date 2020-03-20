@@ -328,6 +328,101 @@ func (s *grpcServer) CountTopics(ctx context.Context, req *pb.CountTopicsRequest
 	return &pb.CountTopicsResponse{Count: int64(count)}, nil
 }
 
+func (s *grpcServer) LinkClient(ctx context.Context, req *pb.LinkClientRequest) (*pb.LinkClientResponse, error) {
+	if req.SourceClient == nil {
+		return nil, errors.New("source client name is required")
+	}
+	if req.TargetClient == nil {
+		return nil, errors.New("target client name is required")
+	}
+
+	sourceClientID, err := validateE4NameOrIDPair(req.SourceClient.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	targetClientID, err := validateE4NameOrIDPair(req.TargetClient.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	if err := s.e4Service.LinkClient(ctx, sourceClientID, targetClientID); err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.LinkClientResponse{}, nil
+}
+
+func (s *grpcServer) UnlinkClient(ctx context.Context, req *pb.UnlinkClientRequest) (*pb.UnlinkClientResponse, error) {
+	if req.SourceClient == nil {
+		return nil, errors.New("source client name is required")
+	}
+	if req.TargetClient == nil {
+		return nil, errors.New("target client name is required")
+	}
+
+	sourceClientID, err := validateE4NameOrIDPair(req.SourceClient.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	targetClientID, err := validateE4NameOrIDPair(req.TargetClient.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	if err := s.e4Service.UnlinkClient(ctx, sourceClientID, targetClientID); err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.UnlinkClientResponse{}, nil
+}
+
+func (s *grpcServer) CountLinkedClients(ctx context.Context, req *pb.CountLinkedClientsRequest) (*pb.CountLinkedClientsResponse, error) {
+	if req.Client == nil {
+		return nil, ErrClientRequired
+	}
+
+	id, err := validateE4NameOrIDPair(req.Client.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	count, err := s.e4Service.CountLinkedClients(ctx, id)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.CountLinkedClientsResponse{
+		Count: int64(count),
+	}, nil
+}
+
+func (s *grpcServer) GetLinkedClients(ctx context.Context, req *pb.GetLinkedClientsRequest) (*pb.GetLinkedClientsResponse, error) {
+	if req.Client == nil {
+		return nil, ErrClientRequired
+	}
+
+	id, err := validateE4NameOrIDPair(req.Client.Name, nil)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	linkedPairs, err := s.e4Service.GetLinkedClients(ctx, id, int(req.Offset), int(req.Count))
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	pbClients := make([]*pb.Client, 0, len(linkedPairs))
+	for _, pair := range linkedPairs {
+		pbClients = append(pbClients, &pb.Client{Name: pair.Name})
+	}
+
+	return &pb.GetLinkedClientsResponse{
+		Clients: pbClients,
+	}, nil
+}
+
 func (s *grpcServer) SendClientPubKey(ctx context.Context, req *pb.SendClientPubKeyRequest) (*pb.SendClientPubKeyResponse, error) {
 	if req.SourceClient == nil {
 		return nil, errors.New("source client name is required")

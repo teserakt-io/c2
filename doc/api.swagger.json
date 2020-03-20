@@ -149,6 +149,80 @@
         ]
       }
     },
+    "/e4/client/{client.name}/link": {
+      "get": {
+        "operationId": "GetLinkedClients",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbGetLinkedClientsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "client.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/client/{client.name}/link/count": {
+      "get": {
+        "operationId": "CountLinkedClients",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCountLinkedClientsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "client.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
     "/e4/client/{client.name}/topic/{topic}": {
       "delete": {
         "summary": "Remove a topic / client association",
@@ -287,6 +361,80 @@
         "parameters": [
           {
             "name": "client.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/client/{targetClient.name}/link/{sourceClient.name}": {
+      "post": {
+        "summary": "Create a link between client2 and client1",
+        "operationId": "LinkClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbLinkClientResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "targetClient.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sourceClient.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/client/{targetClient.name}/unlink/{sourceClient.name}": {
+      "delete": {
+        "summary": "Remove a link between client2 and client1",
+        "operationId": "UnlinkClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbUnlinkClientResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "targetClient.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sourceClient.name",
             "in": "path",
             "required": true,
             "type": "string"
@@ -715,6 +863,15 @@
         }
       }
     },
+    "pbCountLinkedClientsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "pbCountTopicsForClientResponse": {
       "type": "object",
       "properties": {
@@ -783,6 +940,17 @@
         }
       }
     },
+    "pbGetLinkedClientsResponse": {
+      "type": "object",
+      "properties": {
+        "clients": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbClient"
+          }
+        }
+      }
+    },
     "pbGetTopicsForClientResponse": {
       "type": "object",
       "properties": {
@@ -804,6 +972,9 @@
           }
         }
       }
+    },
+    "pbLinkClientResponse": {
+      "type": "object"
     },
     "pbNewC2KeyRequest": {
       "type": "object",
@@ -898,6 +1069,9 @@
       }
     },
     "pbSendClientPubKeyResponse": {
+      "type": "object"
+    },
+    "pbUnlinkClientResponse": {
       "type": "object"
     },
     "protobufAny": {

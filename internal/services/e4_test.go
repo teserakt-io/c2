@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/teserakt-io/c2/internal/config"
+
 	"github.com/golang/mock/gomock"
 	log "github.com/sirupsen/logrus"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
@@ -92,7 +94,11 @@ func TestE4(t *testing.T) {
 
 	dbEncKey := newKey(t)
 
-	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, mockEventDispatcher, mockEventFactory, mockE4Key, logger, dbEncKey)
+	cfg := config.CryptoCfg{
+		NewClientKeySendPubkey: true,
+	}
+
+	service := NewE4(mockDB, mockPubSubClient, mockCommandFactory, mockEventDispatcher, mockEventFactory, mockE4Key, logger, dbEncKey, cfg)
 	t.Run("Validation works successfully", func(t *testing.T) {
 		names := []string{"test1", "testtest2", "e4test3", "test4", "test5"}
 
@@ -488,6 +494,8 @@ func TestE4(t *testing.T) {
 			t.Fatalf("failed to encrypt new key: %v", err)
 		}
 
+		mockE4Key.EXPECT().IsPubKeyMode().Return(false)
+
 		gomock.InOrder(
 			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
 			mockE4Key.EXPECT().RandomKey().Return(clientKey, c2StoredKey, nil),
@@ -495,6 +503,59 @@ func TestE4(t *testing.T) {
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClientKey).Return(commandPayload, nil),
 			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
 			mockDB.EXPECT().InsertClient(client.Name, client.E4ID, protectedC2StoredKey),
+		)
+
+		if err := service.NewClientKey(ctx, client.E4ID); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("NewClientKey send the new pubkey to linked clients in pubkey mode", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		client, clearClientKey := createTestClient(t, dbEncKey)
+
+		mockCommand := commands.NewMockCommand(mockCtrl)
+		commandPayload := []byte("command-payload")
+		mockSetPubKeyCommand := commands.NewMockCommand(mockCtrl)
+		setPubKeyCommandPayload1 := []byte("set-pubkey1")
+		setPubKeyCommandPayload2 := []byte("set-pubkey2")
+
+		clientKey := []byte("clientKey")
+		c2StoredKey := []byte("c2StoredKey")
+		protectedC2StoredKey, err := e4crypto.Encrypt(dbEncKey, nil, c2StoredKey)
+		if err != nil {
+			t.Fatalf("failed to encrypt new key: %v", err)
+		}
+
+		linkedClient1, linkedClient1ClearKey := createTestClient(t, dbEncKey)
+		linkedClient2, linkedClient2ClearKey := createTestClient(t, dbEncKey)
+
+		linkedClients := []models.Client{linkedClient1, linkedClient2}
+
+		mockE4Key.EXPECT().IsPubKeyMode().Return(true)
+
+		gomock.InOrder(
+			mockDB.EXPECT().GetClientByID(client.E4ID).Return(client, nil),
+			mockE4Key.EXPECT().RandomKey().Return(clientKey, c2StoredKey, nil),
+			mockCommandFactory.EXPECT().CreateSetIDKeyCommand(clientKey).Return(mockCommand, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClientKey).Return(commandPayload, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
+			mockDB.EXPECT().InsertClient(client.Name, client.E4ID, protectedC2StoredKey),
+			// Gomock fail to compare []byte arguments so we check it ourselves
+			mockCommandFactory.EXPECT().CreateSetPubKeyCommand(gomock.Any(), client.Name).DoAndReturn(func(key []byte, name string) (commands.Command, error) {
+				if !bytes.Equal(key, c2StoredKey) {
+					t.Fatalf("invalid public key, got %v, want %v", key, c2StoredKey)
+				}
+				return mockSetPubKeyCommand, nil
+			}),
+			mockDB.EXPECT().CountLinkedClients(client.E4ID).Return(2, nil),
+			mockDB.EXPECT().GetLinkedClientsForClientByID(client.E4ID, 0, GetLinkedClientsBatchSize).Return(linkedClients, nil),
+			mockE4Key.EXPECT().ProtectCommand(mockSetPubKeyCommand, linkedClient1ClearKey).Return(setPubKeyCommandPayload1, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), setPubKeyCommandPayload1, linkedClient1.Topic(), protocols.QoSExactlyOnce),
+			mockE4Key.EXPECT().ProtectCommand(mockSetPubKeyCommand, linkedClient2ClearKey).Return(setPubKeyCommandPayload2, nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), setPubKeyCommandPayload2, linkedClient2.Topic(), protocols.QoSExactlyOnce),
 		)
 
 		if err := service.NewClientKey(ctx, client.E4ID); err != nil {
@@ -751,6 +812,86 @@ func TestE4(t *testing.T) {
 
 		if c != expectedCount {
 			t.Errorf("Expected count to be %d, got %d", expectedCount, c)
+		}
+	})
+
+	t.Run("LinkClient properly links clients together", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		client1, _ := createTestClient(t, dbEncKey)
+		client2, _ := createTestClient(t, dbEncKey)
+
+		gomock.InOrder(
+			mockDB.EXPECT().GetClientByID(client1.E4ID).Return(client1, nil),
+			mockDB.EXPECT().GetClientByID(client2.E4ID).Return(client2, nil),
+			mockDB.EXPECT().LinkClient(client1, client2).Return(nil),
+		)
+
+		if err := service.LinkClient(ctx, client1.E4ID, client2.E4ID); err != nil {
+			t.Fatalf("failed to link clients: %v", err)
+		}
+	})
+
+	t.Run("UnlinkClient properly unlink clients", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		client1, _ := createTestClient(t, dbEncKey)
+		client2, _ := createTestClient(t, dbEncKey)
+
+		gomock.InOrder(
+			mockDB.EXPECT().GetClientByID(client1.E4ID).Return(client1, nil),
+			mockDB.EXPECT().GetClientByID(client2.E4ID).Return(client2, nil),
+			mockDB.EXPECT().UnlinkClient(client1, client2).Return(nil),
+		)
+
+		if err := service.UnlinkClient(ctx, client1.E4ID, client2.E4ID); err != nil {
+			t.Fatalf("failed to link clients: %v", err)
+		}
+	})
+
+	t.Run("CountLinkedClients return the expected client count", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		client1, _ := createTestClient(t, dbEncKey)
+
+		expectedCount := 42
+		mockDB.EXPECT().CountLinkedClients(client1.E4ID).Return(expectedCount, nil)
+		count, err := service.CountLinkedClients(ctx, client1.E4ID)
+		if err != nil {
+			t.Fatalf("failed to link clients: %v", err)
+		}
+		if count != expectedCount {
+			t.Fatalf("invalid count, got %d, want %d", count, expectedCount)
+		}
+	})
+
+	t.Run("GetLinkedClients returns the linked clients", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		client1, _ := createTestClient(t, dbEncKey)
+		client2, _ := createTestClient(t, dbEncKey)
+		client3, _ := createTestClient(t, dbEncKey)
+
+		expectedPairs := []IDNamePair{
+			IDNamePair{ID: client2.E4ID, Name: client2.Name},
+			IDNamePair{ID: client3.E4ID, Name: client3.Name},
+		}
+		expectedOffset := 1
+		expectedCount := 2
+
+		mockDB.EXPECT().GetLinkedClientsForClientByID(client1.E4ID, expectedOffset, expectedCount).Return([]models.Client{client2, client3}, nil)
+
+		pairs, err := service.GetLinkedClients(ctx, client1.E4ID, expectedOffset, expectedCount)
+		if err != nil {
+			t.Fatalf("failed to link clients: %v", err)
+		}
+
+		if !reflect.DeepEqual(pairs, expectedPairs) {
+			t.Fatalf("invalid linked pairs returned, got %#v, want %#v", pairs, expectedPairs)
 		}
 	})
 

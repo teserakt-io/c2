@@ -47,6 +47,7 @@ func (cfg *Config) ViperCfgFields() []slibcfg.ViperCfgField {
 	return []slibcfg.ViperCfgField{
 		{&cfg.Crypto.mode, "crypto-mode", slibcfg.ViperString, "symkey", "E4C2_CRYPTO_MODE"},
 		{&cfg.Crypto.C2PrivateKeyPath, "crypto-c2-private-key", slibcfg.ViperRelativePath, "", "E4C2_CRYPTO_KEY"},
+		{&cfg.Crypto.NewClientKeySendPubkey, "crypto-new-client-key-send-pubkeys", slibcfg.ViperBool, true, ""},
 
 		{&cfg.GRPC.Addr, "grpc-host-port", slibcfg.ViperString, "0.0.0.0:5555", "E4C2_GRPC_HOST_PORT"},
 		{&cfg.GRPC.Cert, "grpc-cert", slibcfg.ViperRelativePath, "", "E4C2_GRPC_CERT"},
@@ -154,11 +155,12 @@ const (
 
 // CryptoCfg holds the crypto configuration
 type CryptoCfg struct {
-	mode             string
-	C2PrivateKeyPath string
+	mode                   string
+	C2PrivateKeyPath       string
+	NewClientKeySendPubkey bool
 }
 
-// CryptoMode returns configued mode as CryptoMode
+// CryptoMode returns configured mode as CryptoMode
 func (c CryptoCfg) CryptoMode() CryptoMode {
 	return CryptoMode(c.mode)
 }

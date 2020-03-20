@@ -115,6 +115,32 @@ service C2 {
     };
   }
 
+  // Create a client-client link between on a target client
+  rpc LinkClient(LinkClientRequest) returns (LinkClientResponse) {
+    option (google.api.http) = {
+      post: "/e4/client/{targetClient.name}/link/{sourceClient.name}"
+    };
+  }
+
+  // Remove a client-client link on a target client
+  rpc UnlinkClient(UnlinkClientRequest) returns (UnlinkClientResponse) {
+    option (google.api.http) = {
+      delete: "/e4/client/{targetClient.name}/unlink/{sourceClient.name}"
+    };
+  }
+
+  rpc CountLinkedClients(CountLinkedClientsRequest) returns (CountLinkedClientsResponse) {
+    option (google.api.http) = {
+      get: "/e4/client/{client.name}/link/count"
+    };
+  }
+
+  rpc GetLinkedClients(GetLinkedClientsRequest) returns (GetLinkedClientsResponse) {
+    option (google.api.http) = {
+      get: "/e4/client/{client.name}/link"
+    };
+  }
+
   // Send a client pubkey to another client (pubkey mode only)
   rpc SendClientPubKey(SendClientPubKeyRequest) returns (SendClientPubKeyResponse) {
     option (google.api.http) = {
@@ -252,6 +278,33 @@ message GetTopicsRequest {
 }
 message GetTopicsResponse {
   repeated string topics = 1;
+}
+
+message LinkClientRequest {
+  Client sourceClient = 1;
+  Client targetClient = 2;
+}
+message LinkClientResponse {}
+
+message UnlinkClientRequest {
+  Client sourceClient = 1;
+  Client targetClient = 2;
+}
+message UnlinkClientResponse {}
+
+message CountLinkedClientsRequest {
+  Client client = 1;
+}
+message CountLinkedClientsResponse {
+  int64 count = 1;
+}
+message GetLinkedClientsRequest {
+  Client client = 1;
+  int64 offset = 2;
+  int64 count = 3;
+}
+message GetLinkedClientsResponse {
+  repeated Client clients = 1;
 }
 
 message SendClientPubKeyRequest {

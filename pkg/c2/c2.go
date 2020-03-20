@@ -153,6 +153,7 @@ func New(logger log.FieldLogger, cfg config.Config) (*C2, error) {
 		e4Key,
 		logger.WithField("protocol", "e4"),
 		dbEncKey,
+		cfg.Crypto,
 	)
 
 	// initialize Observability

@@ -8,6 +8,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/teserakt-io/c2/internal/config"
+
+	"golang.org/x/crypto/ed25519"
+
 	log "github.com/sirupsen/logrus"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 	"go.opencensus.io/trace"
@@ -50,6 +54,10 @@ var NewTopicBatchSize = 500
 // when sending them the new C2 key.
 var NewC2KeyBatchSize = 500
 
+// GetLinkedClientsBatchSize is the maximum number of clients pulled from the database at a time
+// when sending them the new client pubkey.
+var GetLinkedClientsBatchSize = 500
+
 // IDNamePair stores an E4 client ID and names, omitting the key
 type IDNamePair struct {
 	ID   []byte
@@ -84,6 +92,12 @@ type E4 interface {
 	GetTopicsRangeByClient(ctx context.Context, id []byte, offset, count int) ([]string, error)
 	GetClientsRangeByTopic(ctx context.Context, topic string, offset, count int) ([]IDNamePair, error)
 
+	// Clients linking / unlinking / counting linked
+	LinkClient(ctx context.Context, sourceClientID, targetClientID []byte) error
+	UnlinkClient(ctx context.Context, sourceClientID, targetClientID []byte) error
+	CountLinkedClients(ctx context.Context, id []byte) (int, error)
+	GetLinkedClients(ctx context.Context, id []byte, offset, count int) ([]IDNamePair, error)
+
 	// SendClientPubKey send the sourceClientID public key to targetClientID via a SetPubKeyCmd.
 	// Only when C2 is configured in pubkey mode, otherwise an error will be immediately returned.
 	SendClientPubKey(ctx context.Context, sourceClientID, targetClientID []byte) error
@@ -108,6 +122,7 @@ type e4impl struct {
 	logger          log.FieldLogger
 	eventDispatcher events.Dispatcher
 	eventFactory    events.Factory
+	cfg             config.CryptoCfg
 }
 
 var _ E4 = (*e4impl)(nil)
@@ -122,6 +137,7 @@ func NewE4(
 	e4Key crypto.E4Key,
 	logger log.FieldLogger,
 	dbEncKey []byte,
+	cfg config.CryptoCfg,
 ) E4 {
 	return &e4impl{
 		db:              db,
@@ -132,6 +148,7 @@ func NewE4(
 		e4Key:           e4Key,
 		logger:          logger,
 		dbEncKey:        dbEncKey,
+		cfg:             cfg,
 	}
 }
 
@@ -523,7 +540,52 @@ func (s *e4impl) NewClientKey(ctx context.Context, id []byte) error {
 		logger.WithError(err).Error("insertClient failed")
 		return ErrInternal{}
 	}
+
+	// PubKey mode requires to send the new public key to linked clients
+	if s.cfg.NewClientKeySendPubkey && s.e4Key.IsPubKeyMode() {
+		if err := s.sendNewPubKeyToLinkedClients(ctx, client, c2StoredKey); err != nil {
+			logger.WithError(err).Error("failed to send new pubkey to linked clients")
+			return ErrInternal{}
+		}
+	}
+
 	logger.Info("succeeded")
+
+	return nil
+}
+
+func (s *e4impl) sendNewPubKeyToLinkedClients(ctx context.Context, client models.Client, newPubKey ed25519.PublicKey) error {
+	ctx, span := trace.StartSpan(ctx, "e4.sendNewPubKeyToLinkedClients")
+	defer span.End()
+
+	logger := s.logger.WithField("id", prettyID(client.E4ID))
+
+	cmd, err := s.commandFactory.CreateSetPubKeyCommand(newPubKey, client.Name)
+	if err != nil {
+		return fmt.Errorf("failed to create SetPubKey command: %v", err)
+	}
+
+	linkedClientsCount, err := s.db.CountLinkedClients(client.E4ID)
+	if err != nil {
+		return fmt.Errorf("failed to get client count: %v", err)
+	}
+
+	for offset := 0; offset < linkedClientsCount; offset += GetLinkedClientsBatchSize {
+		linkedClients, err := s.db.GetLinkedClientsForClientByID(client.E4ID, offset, GetLinkedClientsBatchSize)
+		if err != nil {
+			logger.WithError(err).Error("failed to retrieve linked clients")
+			continue
+		}
+
+		for _, linkedClient := range linkedClients {
+			if err := s.sendCommandToClient(ctx, cmd, linkedClient); err != nil {
+				logger.WithField("linkedClient", prettyID(linkedClient.E4ID)).
+					WithError(err).
+					Error("failed to send new client public key to linked client")
+				continue
+			}
+		}
+	}
 
 	return nil
 }
@@ -692,6 +754,126 @@ func (s *e4impl) GetClientsRangeByTopic(ctx context.Context, topic string, offse
 		logger.WithError(err).Error("failed to get clients for topic")
 		if models.IsErrRecordNotFound(err) {
 			return nil, ErrTopicNotFound{}
+		}
+		return nil, ErrInternal{}
+	}
+
+	idNamePairs := make([]IDNamePair, 0, len(clients))
+	for _, client := range clients {
+		idNamePairs = append(idNamePairs, IDNamePair{ID: client.E4ID, Name: client.Name})
+	}
+
+	logger.WithField("total", len(idNamePairs)).Info("succeeded")
+
+	return idNamePairs, nil
+}
+
+func (s *e4impl) LinkClient(ctx context.Context, sourceClientID, targetClientID []byte) error {
+	_, span := trace.StartSpan(ctx, "e4.LinkClient")
+	defer span.End()
+
+	logger := s.logger.WithFields(log.Fields{
+		"sourceClientID": prettyID(sourceClientID),
+		"targetClientID": prettyID(targetClientID),
+	})
+
+	sourceClient, err := s.db.GetClientByID(sourceClientID)
+	if err != nil {
+		logger.WithError(err).Error("failed to retrieve sourceClient")
+		if models.IsErrRecordNotFound(err) {
+			return ErrClientNotFound{}
+		}
+		return ErrInternal{}
+	}
+	targetClient, err := s.db.GetClientByID(targetClientID)
+	if err != nil {
+		logger.WithError(err).Error("failed to retrieve targetClient")
+		if models.IsErrRecordNotFound(err) {
+			return ErrClientNotFound{}
+		}
+		return ErrInternal{}
+	}
+
+	if err := s.db.LinkClient(sourceClient, targetClient); err != nil {
+		logger.WithError(err).Error("failed to link clients")
+		return ErrInternal{}
+	}
+
+	logger.Info("succeeded")
+
+	return nil
+}
+func (s *e4impl) UnlinkClient(ctx context.Context, sourceClientID, targetClientID []byte) error {
+	_, span := trace.StartSpan(ctx, "e4.UnlinkClient")
+	defer span.End()
+
+	logger := s.logger.WithFields(log.Fields{
+		"sourceClient": prettyID(sourceClientID),
+		"targetClient": prettyID(targetClientID),
+	})
+
+	sourceClient, err := s.db.GetClientByID(sourceClientID)
+	if err != nil {
+		logger.WithError(err).Error("failed to retrieve sourceClient")
+		if models.IsErrRecordNotFound(err) {
+			return ErrClientNotFound{}
+		}
+		return ErrInternal{}
+	}
+	targetClient, err := s.db.GetClientByID(targetClientID)
+	if err != nil {
+		logger.WithError(err).Error("failed to retrieve targetClient")
+		if models.IsErrRecordNotFound(err) {
+			return ErrClientNotFound{}
+		}
+		return ErrInternal{}
+	}
+
+	if err := s.db.UnlinkClient(sourceClient, targetClient); err != nil {
+		logger.WithError(err).Error("failed to unlink clients")
+		return ErrInternal{}
+	}
+
+	logger.Info("succeeded")
+
+	return nil
+}
+func (s *e4impl) CountLinkedClients(ctx context.Context, id []byte) (int, error) {
+	_, span := trace.StartSpan(ctx, "e4.UnlinkClient")
+	defer span.End()
+
+	logger := s.logger.WithFields(log.Fields{
+		"client": prettyID(id),
+	})
+
+	count, err := s.db.CountLinkedClients(id)
+	if err != nil {
+		logger.WithError(err).Error("failed to count linked clients")
+		if models.IsErrRecordNotFound(err) {
+			return 0, ErrClientNotFound{}
+		}
+		return 0, ErrInternal{}
+	}
+
+	logger.WithField("total", count).Info("succeeded")
+
+	return count, nil
+}
+func (s *e4impl) GetLinkedClients(ctx context.Context, id []byte, offset, count int) ([]IDNamePair, error) {
+	_, span := trace.StartSpan(ctx, "e4.GetClientsRangeByTopic")
+	defer span.End()
+
+	logger := s.logger.WithFields(log.Fields{
+		"client": prettyID(id),
+		"offset": offset,
+		"count":  count,
+	})
+
+	clients, err := s.db.GetLinkedClientsForClientByID(id, offset, count)
+	if err != nil {
+		logger.WithError(err).Error("failed to get linked clients")
+		if models.IsErrRecordNotFound(err) {
+			return nil, ErrClientNotFound{}
 		}
 		return nil, ErrInternal{}
 	}

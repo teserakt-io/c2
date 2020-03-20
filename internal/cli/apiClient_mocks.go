@@ -128,6 +128,26 @@ func (mr *MockC2ClientMockRecorder) CountClientsForTopic(arg0, arg1 interface{},
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountClientsForTopic", reflect.TypeOf((*MockC2Client)(nil).CountClientsForTopic), varargs...)
 }
 
+// CountLinkedClients mocks base method
+func (m *MockC2Client) CountLinkedClients(arg0 context.Context, arg1 *pb.CountLinkedClientsRequest, arg2 ...grpc.CallOption) (*pb.CountLinkedClientsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CountLinkedClients", varargs...)
+	ret0, _ := ret[0].(*pb.CountLinkedClientsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountLinkedClients indicates an expected call of CountLinkedClients
+func (mr *MockC2ClientMockRecorder) CountLinkedClients(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLinkedClients", reflect.TypeOf((*MockC2Client)(nil).CountLinkedClients), varargs...)
+}
+
 // CountTopics mocks base method
 func (m *MockC2Client) CountTopics(arg0 context.Context, arg1 *pb.CountTopicsRequest, arg2 ...grpc.CallOption) (*pb.CountTopicsResponse, error) {
 	m.ctrl.T.Helper()
@@ -208,6 +228,26 @@ func (mr *MockC2ClientMockRecorder) GetClientsForTopic(arg0, arg1 interface{}, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClientsForTopic", reflect.TypeOf((*MockC2Client)(nil).GetClientsForTopic), varargs...)
 }
 
+// GetLinkedClients mocks base method
+func (m *MockC2Client) GetLinkedClients(arg0 context.Context, arg1 *pb.GetLinkedClientsRequest, arg2 ...grpc.CallOption) (*pb.GetLinkedClientsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetLinkedClients", varargs...)
+	ret0, _ := ret[0].(*pb.GetLinkedClientsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLinkedClients indicates an expected call of GetLinkedClients
+func (mr *MockC2ClientMockRecorder) GetLinkedClients(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLinkedClients", reflect.TypeOf((*MockC2Client)(nil).GetLinkedClients), varargs...)
+}
+
 // GetTopics mocks base method
 func (m *MockC2Client) GetTopics(arg0 context.Context, arg1 *pb.GetTopicsRequest, arg2 ...grpc.CallOption) (*pb.GetTopicsResponse, error) {
 	m.ctrl.T.Helper()
@@ -246,6 +286,26 @@ func (mr *MockC2ClientMockRecorder) GetTopicsForClient(arg0, arg1 interface{}, a
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopicsForClient", reflect.TypeOf((*MockC2Client)(nil).GetTopicsForClient), varargs...)
+}
+
+// LinkClient mocks base method
+func (m *MockC2Client) LinkClient(arg0 context.Context, arg1 *pb.LinkClientRequest, arg2 ...grpc.CallOption) (*pb.LinkClientResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "LinkClient", varargs...)
+	ret0, _ := ret[0].(*pb.LinkClientResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LinkClient indicates an expected call of LinkClient
+func (mr *MockC2ClientMockRecorder) LinkClient(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkClient", reflect.TypeOf((*MockC2Client)(nil).LinkClient), varargs...)
 }
 
 // NewC2Key mocks base method
@@ -506,4 +566,24 @@ func (mr *MockC2ClientMockRecorder) SubscribeToEventStream(arg0, arg1 interface{
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeToEventStream", reflect.TypeOf((*MockC2Client)(nil).SubscribeToEventStream), varargs...)
+}
+
+// UnlinkClient mocks base method
+func (m *MockC2Client) UnlinkClient(arg0 context.Context, arg1 *pb.UnlinkClientRequest, arg2 ...grpc.CallOption) (*pb.UnlinkClientResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UnlinkClient", varargs...)
+	ret0, _ := ret[0].(*pb.UnlinkClientResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UnlinkClient indicates an expected call of UnlinkClient
+func (mr *MockC2ClientMockRecorder) UnlinkClient(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlinkClient", reflect.TypeOf((*MockC2Client)(nil).UnlinkClient), varargs...)
 }
