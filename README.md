@@ -1,3 +1,8 @@
+![alt text](logo.png)
+
+[![GoDoc][godoc-image]][godoc-url] ![Go](https://github.com/teserakt-io/c2/workflows/Go/badge.svg?branch=develop)
+
+
 # c2
 
 C2 back-end application, with gRPC server (for CLI) and HTTP server (for web UI).
@@ -24,18 +29,25 @@ This will start the MQTT broker (VerneMQ), Elasticsearch, Kibana, Prometheus, Ja
 
 ### Run from Docker image
 
-The CI automatically pushes docker images of C2 and C2CLI after each successful builds and for each branches.
+The C2 and C2 cli applications can be built in lightweight docker containers, with the requirement of having CGO disabled.
 
-List of available C2 and C2CLI images: https://console.cloud.google.com/gcr/images/teserakt-dev/EU/c2?project=teserakt-dev&authuser=1&gcrImageListsize=30
+To build the docker images, just run:
+
+```
+# Build the c2 and c2cli binaries
+CGO_ENABLED=0 ./scripts/build.sh
+# Build docker images c2:devel and c2cli:devel
+./scripts/docker-build.sh
+```
 
 #### Start C2
 
 ```
 # Replace <BRANCH_NAME> with the actual branch you want to pull the image from, like master, or devel, or tag...
-docker run -it --rm  --name c2 -v $(pwd)/configs:/opt/e4/configs -p 5555:5555 -p 8888:8888 eu.gcr.io/teserakt-dev/c2:<BRANCH_NAME>
+docker run -it --rm  --name c2 -v $(pwd)/configs:/opt/e4/configs -p 5555:5555 -p 8888:8888 c2:<BRANCH_NAME>
 ```
 
-It just require a volume to the configs folder (Depending on your configuration, you may also need to get another volumes for the certificate and keys if they're not in the configs folder) and the ports for the GRPC and HTTP api (which can be independently removed if not used)
+It requires a volume to the configs folder (Depending on your configuration, you may also need to get another volumes for the certificate and keys if they're not in the configs folder) and the ports for the GRPC and HTTP api (which can be independently removed if not used)
 
 #### Start C2Cli
 ```
@@ -44,7 +56,7 @@ docker run -it --rm \
     -v $(pwd)/configs/c2-cert.pem:/opt/c2/c2-cert.pem \
     -e C2_API_ENDPOINT=c2:5555 \
     -e C2_API_CERT=/opt/c2/c2-cert.pem \
-    eu.gcr.io/teserakt-dev/c2cli:<BRANCH_NAME> <command>
+    c2cli:<BRANCH_NAME> <command>
 ```
 
 It requires a valid certificate C2 certificate. Both server endpoint and certificate path can be specified with the `-e` flag.
@@ -64,18 +76,9 @@ openssl req  -nodes -newkey rsa:2048 -keyout configs/c2-key.pem -x509 -sha256 -d
 The default configuration should work out of the box.
 
 - Build with `scripts/build.sh`.
-- Test with `scripts/test.sh`.
+- Test with `scripts/unittest.sh`.
+- Run functional tests with `docker-compose up -d && ./scripts/test.sh`.
 - Release with `scripts/release.sh` (in branch master only).
 
-
-# GCP registry
-
-CI will automatically build Docker images for all branches. To be able to pull them, you must first login to the GCP registry.
-For this you first need to configure Docker to be able to authenticate on GCP:
-
-```
-# Make sure your current active config points to teserakt-dev project
-gcloud auth configure-docker
-```
-
-From here, you are able to `docker pull eu.gcr.io/teserakt-dev/<image>:<version>`
+[godoc-image]: https://godoc.org/github.com/teserakt-io/c2?status.svg
+[godoc-url]: https://godoc.org/github.com/teserakt-io/c2
