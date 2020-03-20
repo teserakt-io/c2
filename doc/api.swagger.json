@@ -373,7 +373,7 @@
     },
     "/e4/client/{targetClient.name}/link/{sourceClient.name}": {
       "post": {
-        "summary": "Create a link between client2 and client1",
+        "summary": "Create a client-client link between on a target client",
         "operationId": "LinkClient",
         "responses": {
           "200": {
@@ -410,7 +410,7 @@
     },
     "/e4/client/{targetClient.name}/unlink/{sourceClient.name}": {
       "delete": {
-        "summary": "Remove a link between client2 and client1",
+        "summary": "Remove a client-client link on a target client",
         "operationId": "UnlinkClient",
         "responses": {
           "200": {
