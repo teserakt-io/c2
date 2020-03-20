@@ -40,6 +40,8 @@ CGO_ENABLED=0 ./scripts/build.sh
 ./scripts/docker-build.sh
 ```
 
+Note that sqlite database isn't supported in docker as it requires CGO.
+
 #### Start C2
 
 ```
