@@ -5,7 +5,7 @@
 # Crypto settings
 ###############################################################
 ## supported modes are: symkey, pubkey
-crypto-mode: pubkey
+crypto-mode: symkey
 ## path to the private key file (for pubkey mode only)
 crypto-c2-private-key: c2_curve25519
 ## enabled / disable sending the new generated pubkey to linked clients (pubkey mode only)
