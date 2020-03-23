@@ -7,6 +7,14 @@
 
 C2 back-end application, with gRPC server (for CLI) and HTTP server (for web UI).
 
+A command line client is provided under `./bin/c2cli` to interact with the server.
+
+The C2 server does provide endpoints to manage `clients` and `topics` keys, as well as `client-client` and `client-topic` relations.
+Also, the C2 allows to publish E4 commands to the MQTT broker, allowing to control the managed clients' state, such as `NewClientKey`, or `ResetTopics` for example.
+A complete list of available endpoints is available in the [api.proto](./api.proto) file.
+
+For more details, you can check the [doc](./doc) folder.
+
 ## Running C2
 
 ### Start the services
