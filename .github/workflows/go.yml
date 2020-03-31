@@ -59,16 +59,3 @@ jobs:
           CGO_ENABLED: 0
         with:
           project: ${{ matrix.project }}
-
-      - uses: teserakt-io/gh-actions/docker-build@master
-        if: matrix.buildOS == 'linux' # Only build image for linux
-        with:
-          branch: ${{ github.ref }}
-          docker_build_args: "--build-arg binary_path=./${{ steps.build.outputs.binary-path }}"
-          image_name: "${{ matrix.project }}"
-          dockerfile: "./docker/c2/Dockerfile"
-          dockerfile_target: "${{ matrix.project }}"
-          registry_endpoint: "eu.gcr.io"
-          registry_name: "${{ secrets.GCR_PROJECT }}"
-          registry_username: _json_key
-          registry_password: ${{ secrets.GCR_TOKEN }}

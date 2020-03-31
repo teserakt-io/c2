@@ -2257,9 +2257,9 @@ type C2Client interface {
 	CountTopics(ctx context.Context, in *CountTopicsRequest, opts ...grpc.CallOption) (*CountTopicsResponse, error)
 	// Retrieve paginated topics
 	GetTopics(ctx context.Context, in *GetTopicsRequest, opts ...grpc.CallOption) (*GetTopicsResponse, error)
-	// Create a link between client2 and client1
+	// Create a client-client link between on a target client
 	LinkClient(ctx context.Context, in *LinkClientRequest, opts ...grpc.CallOption) (*LinkClientResponse, error)
-	// Remove a link between client2 and client1
+	// Remove a client-client link on a target client
 	UnlinkClient(ctx context.Context, in *UnlinkClientRequest, opts ...grpc.CallOption) (*UnlinkClientResponse, error)
 	CountLinkedClients(ctx context.Context, in *CountLinkedClientsRequest, opts ...grpc.CallOption) (*CountLinkedClientsResponse, error)
 	GetLinkedClients(ctx context.Context, in *GetLinkedClientsRequest, opts ...grpc.CallOption) (*GetLinkedClientsResponse, error)
@@ -2563,9 +2563,9 @@ type C2Server interface {
 	CountTopics(context.Context, *CountTopicsRequest) (*CountTopicsResponse, error)
 	// Retrieve paginated topics
 	GetTopics(context.Context, *GetTopicsRequest) (*GetTopicsResponse, error)
-	// Create a link between client2 and client1
+	// Create a client-client link between on a target client
 	LinkClient(context.Context, *LinkClientRequest) (*LinkClientResponse, error)
-	// Remove a link between client2 and client1
+	// Remove a client-client link on a target client
 	UnlinkClient(context.Context, *UnlinkClientRequest) (*UnlinkClientResponse, error)
 	CountLinkedClients(context.Context, *CountLinkedClientsRequest) (*CountLinkedClientsResponse, error)
 	GetLinkedClients(context.Context, *GetLinkedClientsRequest) (*GetLinkedClientsResponse, error)

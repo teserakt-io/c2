@@ -16,8 +16,8 @@ if [ -z "$E4_GIT_COMMIT" ]; then
     E4_GIT_COMMIT=$(git rev-list -1 HEAD)
 fi
 
-LINKS=$(ldd ${DIR}/../bin/c2 | grep "not a dynamic executable")
-if [ -z "${LINKS}" ]; then
+LINKS=$(ldd ${DIR}/../bin/c2 2>/dev/null)
+if [ ! -z "${LINKS}" ]; then
     echo "c2 is not a static binary, please rebuild it with CGO_ENABLED=0"
     exit 1
 fi
@@ -33,8 +33,8 @@ docker build \
     -f "${DIR}/../docker/c2/Dockerfile" \
     "${DIR}/../"
 
-LINKS=$(ldd ${DIR}/../bin/c2cli | grep "not a dynamic executable")
-if [ -z "${LINKS}" ]; then
+LINKS=$(ldd ${DIR}/../bin/c2cli 2>/dev/null)
+if [ ! -z "${LINKS}" ]; then
     echo "c2cli is not a static binary, please rebuild it with CGO_ENABLED=0"
     exit 1
 fi
