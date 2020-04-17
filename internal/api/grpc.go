@@ -505,12 +505,12 @@ func (s *grpcServer) ResetClientPubKeys(ctx context.Context, req *pb.ResetClient
 }
 
 func (s *grpcServer) NewC2Key(ctx context.Context, req *pb.NewC2KeyRequest) (*pb.NewC2KeyResponse, error) {
-	if err := s.e4Service.NewC2Key(ctx); err != nil {
-		return nil, grpcError(err)
-	}
-
 	if !req.Force {
 		return nil, grpcError(errors.New("force is required to true to prevent accidental executions"))
+	}
+
+	if err := s.e4Service.NewC2Key(ctx); err != nil {
+		return nil, grpcError(err)
 	}
 
 	return &pb.NewC2KeyResponse{}, nil
