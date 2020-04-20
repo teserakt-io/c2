@@ -99,8 +99,8 @@ func TestProtectMessage(t *testing.T) {
 		}
 
 		b64ProtectedMessage := base64.StdEncoding.EncodeToString(protectedMessage)
-		if string(output.Bytes()) != b64ProtectedMessage {
-			t.Fatalf("invalid ouput, got %s, want %s", string(output.Bytes()), b64ProtectedMessage)
+		if output.String() != b64ProtectedMessage {
+			t.Fatalf("invalid ouput, got %s, want %s", output.String(), b64ProtectedMessage)
 		}
 	})
 }

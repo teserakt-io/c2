@@ -1114,7 +1114,7 @@ func (s *e4impl) NewC2Key(ctx context.Context) error {
 }
 
 func (s *e4impl) ProtectMessage(ctx context.Context, topic string, data []byte) ([]byte, error) {
-	ctx, span := trace.StartSpan(ctx, "e4.ProtectMessage")
+	_, span := trace.StartSpan(ctx, "e4.ProtectMessage")
 	defer span.End()
 
 	logger := s.logger.WithFields(log.Fields{
