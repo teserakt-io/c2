@@ -1059,4 +1059,24 @@ func TestE4(t *testing.T) {
 			t.Fatalf("failed to set new C2 key: %v", err)
 		}
 	})
+
+	t.Run("ProtectMessage protect a message with a topic key", func(t *testing.T) {
+		topic, clearTopicKey := createTestTopicKey(t, dbEncKey)
+		expectedClearData := []byte("clear-data")
+		expectedProtectedData, err := e4crypto.ProtectSymKey(expectedClearData, clearTopicKey)
+		if err != nil {
+			t.Fatalf("failed to protect test payload: %v", err)
+		}
+
+		mockDB.EXPECT().GetTopicKey(topic.Topic).Return(topic, nil)
+
+		protectedData, err := service.ProtectMessage(context.Background(), topic.Topic, expectedClearData)
+		if err != nil {
+			t.Fatalf("failed to protect message: %v", err)
+		}
+
+		if !bytes.Equal(protectedData, expectedProtectedData) {
+			t.Fatalf("invalid protected data, got %x, want %x", protectedData, expectedProtectedData)
+		}
+	})
 }

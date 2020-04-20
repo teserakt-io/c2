@@ -539,6 +539,38 @@
         ]
       }
     },
+    "/e4/protect-message": {
+      "post": {
+        "operationId": "ProtectMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbProtectMessageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbProtectMessageRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
     "/e4/remove-client-pubkey": {
       "post": {
         "summary": "Remove a client pubkey from another client (pubkey mode only)",
@@ -1019,6 +1051,30 @@
     },
     "pbNewTopicResponse": {
       "type": "object"
+    },
+    "pbProtectMessageRequest": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "binaryData": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "pbProtectMessageResponse": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "protectedBinaryData": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
     },
     "pbRemoveClientPubKeyRequest": {
       "type": "object",

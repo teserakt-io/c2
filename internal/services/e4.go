@@ -125,6 +125,8 @@ type E4 interface {
 	// The new key pair is then used by the C2 and replaces the previous one.
 	// Only when C2 is configured in pubkey mode, otherwise an error will be immediately returned.
 	NewC2Key(ctx context.Context) error
+	// ProtectMessage protects the given data with the given topic's key.
+	ProtectMessage(ctx context.Context, topic string, data []byte) ([]byte, error)
 }
 
 type e4impl struct {
@@ -1109,6 +1111,41 @@ func (s *e4impl) NewC2Key(ctx context.Context) error {
 	logger.Info("success setting new C2 key")
 
 	return nil
+}
+
+func (s *e4impl) ProtectMessage(ctx context.Context, topic string, data []byte) ([]byte, error) {
+	ctx, span := trace.StartSpan(ctx, "e4.ProtectMessage")
+	defer span.End()
+
+	logger := s.logger.WithFields(log.Fields{
+		"topic":  topic,
+		"msgLen": len(data),
+	})
+
+	topicKey, err := s.db.GetTopicKey(topic)
+	if err != nil {
+		logger.WithError(err).Error("failed to get topic")
+		if models.IsErrRecordNotFound(err) {
+			return nil, ErrTopicNotFound{}
+		}
+		return nil, ErrInternal{}
+	}
+
+	clearTopicKey, err := topicKey.DecryptKey(s.dbEncKey)
+	if err != nil {
+		logger.WithError(err).Error("failed to decrypt topic key")
+		return nil, ErrInternal{}
+	}
+
+	protected, err := e4crypto.ProtectSymKey(data, clearTopicKey)
+	if err != nil {
+		logger.WithError(err).Error("failed to protect message")
+		return nil, ErrInternal{}
+	}
+
+	logger.Info("success protecting message")
+
+	return protected, nil
 }
 
 func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Command, client models.Client) error {

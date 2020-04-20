@@ -423,6 +423,26 @@ func (mr *MockC2ClientMockRecorder) NewTopicClient(arg0, arg1 interface{}, arg2 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewTopicClient", reflect.TypeOf((*MockC2Client)(nil).NewTopicClient), varargs...)
 }
 
+// ProtectMessage mocks base method
+func (m *MockC2Client) ProtectMessage(arg0 context.Context, arg1 *pb.ProtectMessageRequest, arg2 ...grpc.CallOption) (*pb.ProtectMessageResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ProtectMessage", varargs...)
+	ret0, _ := ret[0].(*pb.ProtectMessageResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProtectMessage indicates an expected call of ProtectMessage
+func (mr *MockC2ClientMockRecorder) ProtectMessage(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProtectMessage", reflect.TypeOf((*MockC2Client)(nil).ProtectMessage), varargs...)
+}
+
 // RemoveClient mocks base method
 func (m *MockC2Client) RemoveClient(arg0 context.Context, arg1 *pb.RemoveClientRequest, arg2 ...grpc.CallOption) (*pb.RemoveClientResponse, error) {
 	m.ctrl.T.Helper()

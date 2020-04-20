@@ -185,6 +185,14 @@ service C2 {
     };
   }
 
+  // ProtectMessage returns base64 encoded data, representing the input data protected with the input topic key.
+  rpc ProtectMessage(ProtectMessageRequest) returns (ProtectMessageResponse) {
+    option (google.api.http) = {
+      post: "/e4/protect-message"
+      body: "*"
+    };
+  }
+
   // Provide a stream on C2 system events, grpc only
   rpc SubscribeToEventStream(SubscribeToEventStreamRequest) returns (stream Event) {}
 }
@@ -342,6 +350,15 @@ message NewC2KeyRequest {
   bool force = 1; // ensure this doesn't run by just poking at the endpoint
 }
 message NewC2KeyResponse {}
+
+message ProtectMessageRequest {
+  string topic = 1;
+  bytes binaryData = 2;
+}
+message ProtectMessageResponse {
+  string topic = 1;
+  bytes protectedBinaryData = 2;
+}
 
 message SubscribeToEventStreamRequest {}
 
