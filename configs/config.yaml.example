@@ -29,6 +29,14 @@ kafka-enabled: false
 ## space separated list of available brokers: host1:port1 host2:port2
 kafka-brokers: localhost:9092
 
+# GCP settings
+###############################################################
+gcp-enabled: false
+gcp-project-id: "teserakt-dev"
+gcp-region: "europe-west1"
+gcp-registry-id: "testRegistry"
+gcp-command-subfolder: "e4"
+
 # Database settings
 ###############################################################
 ## supported types are sqlite3 and postgres

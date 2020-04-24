@@ -143,6 +143,8 @@ func New(logger log.FieldLogger, cfg config.Config) (*C2, error) {
 	case cfg.Kafka.Enabled:
 		pubSubClient = protocols.NewKafkaPubSubClient(cfg.Kafka, logger.WithField("protocol", "kafka"), monitor)
 		logger.Info("Kafka client created")
+	case cfg.GCP.Enabled:
+		pubSubClient = protocols.NewGCPClient(cfg.GCP, logger.WithField("protocol", "gcp"))
 	default:
 		return nil, errors.New("no pubSub client enabled from configuration, cannot start c2 without one")
 	}

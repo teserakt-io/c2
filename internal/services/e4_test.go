@@ -210,7 +210,7 @@ func TestE4(t *testing.T) {
 			mockCommandFactory.EXPECT().CreateSetTopicKeyCommand(topicKey.Topic, clearTopicKey).Return(mockCommand, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClientKey).Return(commandPayload, nil),
 
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client, protocols.QoSExactlyOnce),
 
 			mockDB.EXPECT().LinkClientTopic(client, topicKey),
 
@@ -247,7 +247,7 @@ func TestE4(t *testing.T) {
 			mockCommandFactory.EXPECT().CreateRemoveTopicCommand(topicKey.Topic).Return(mockCommand, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearIDKey).Return(commandPayload, nil),
 
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client, protocols.QoSExactlyOnce),
 
 			mockDB.EXPECT().UnlinkClientTopic(client, topicKey),
 
@@ -275,7 +275,7 @@ func TestE4(t *testing.T) {
 			mockCommandFactory.EXPECT().CreateResetTopicsCommand().Return(mockCommand, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearIDKey).Return(commandPayload, nil),
 
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client, protocols.QoSExactlyOnce),
 		)
 
 		if err := service.ResetClient(ctx, client.E4ID); err != nil {
@@ -347,16 +347,16 @@ func TestE4(t *testing.T) {
 
 			mockDB.EXPECT().GetClientsForTopic(topic, 0, NewTopicBatchSize).Return(clientsBatch1, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client11Key).Return(client11Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client11Payload, client11.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client11Payload, client11, protocols.QoSExactlyOnce),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client12Key).Return(client12Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client12Payload, client12.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client12Payload, client12, protocols.QoSExactlyOnce),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client13Key).Return(client13Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client13Payload, client13.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client13Payload, client13, protocols.QoSExactlyOnce),
 			mockDB.EXPECT().GetClientsForTopic(topic, NewTopicBatchSize, NewTopicBatchSize).Return(clientsBatch2, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client21Key).Return(client21Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client21Payload, client21.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client21Payload, client21, protocols.QoSExactlyOnce),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client22Key).Return(client22Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client22Payload, client22.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client22Payload, client22, protocols.QoSExactlyOnce),
 			mockPubSubClient.EXPECT().SubscribeToTopic(gomock.Any(), topic),
 		)
 
@@ -402,16 +402,16 @@ func TestE4(t *testing.T) {
 
 			mockDB.EXPECT().GetClientsForTopic(topic, 0, NewTopicBatchSize).Return(clientsBatch1, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client11Key).Return(client11Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client11Payload, client11.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client11Payload, client11, protocols.QoSExactlyOnce),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client12Key).Return(client12Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client12Payload, client12.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client12Payload, client12, protocols.QoSExactlyOnce),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client13Key).Return(client13Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client13Payload, client13.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client13Payload, client13, protocols.QoSExactlyOnce),
 			mockDB.EXPECT().GetClientsForTopic(topic, NewTopicBatchSize, NewTopicBatchSize).Return(clientsBatch2, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client21Key).Return(client21Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client21Payload, client21.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client21Payload, client21, protocols.QoSExactlyOnce),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client22Key).Return(client22Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client22Payload, client22.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client22Payload, client22, protocols.QoSExactlyOnce),
 			mockPubSubClient.EXPECT().SubscribeToTopic(gomock.Any(), topic),
 		)
 
@@ -458,16 +458,16 @@ func TestE4(t *testing.T) {
 			mockDB.EXPECT().GetClientsForTopic(topic, 0, NewTopicBatchSize).Return(clientsBatch1, nil),
 
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client11Key).Return(client11Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client11Payload, client11.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client11Payload, client11, protocols.QoSExactlyOnce),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client12Key).Return(client12Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client12Payload, client12.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client12Payload, client12, protocols.QoSExactlyOnce),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client13Key).Return(client13Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client13Payload, client13.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client13Payload, client13, protocols.QoSExactlyOnce),
 			mockDB.EXPECT().GetClientsForTopic(topic, NewTopicBatchSize, NewTopicBatchSize).Return(clientsBatch2, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client21Key).Return(client21Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client21Payload, client21.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client21Payload, client21, protocols.QoSExactlyOnce),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, client22Key).Return(client22Payload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), client22Payload, client22.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), client22Payload, client22, protocols.QoSExactlyOnce),
 			mockPubSubClient.EXPECT().SubscribeToTopic(gomock.Any(), topic),
 		)
 
@@ -515,7 +515,7 @@ func TestE4(t *testing.T) {
 			mockE4Key.EXPECT().RandomKey().Return(clientKey, c2StoredKey, nil),
 			mockCommandFactory.EXPECT().CreateSetIDKeyCommand(clientKey).Return(mockCommand, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClientKey).Return(commandPayload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client, protocols.QoSExactlyOnce),
 			mockDB.EXPECT().InsertClient(client.Name, client.E4ID, protectedC2StoredKey),
 		)
 
@@ -555,7 +555,7 @@ func TestE4(t *testing.T) {
 			mockE4Key.EXPECT().RandomKey().Return(clientKey, c2StoredKey, nil),
 			mockCommandFactory.EXPECT().CreateSetIDKeyCommand(clientKey).Return(mockCommand, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClientKey).Return(commandPayload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), commandPayload, client, protocols.QoSExactlyOnce),
 			mockDB.EXPECT().InsertClient(client.Name, client.E4ID, protectedC2StoredKey),
 			// Gomock fail to compare []byte arguments so we check it ourselves
 			mockCommandFactory.EXPECT().CreateSetPubKeyCommand(gomock.Any(), client.Name).DoAndReturn(func(key []byte, name string) (commands.Command, error) {
@@ -567,9 +567,9 @@ func TestE4(t *testing.T) {
 			mockDB.EXPECT().CountLinkedClients(client.E4ID).Return(2, nil),
 			mockDB.EXPECT().GetLinkedClientsForClientByID(client.E4ID, 0, GetLinkedClientsBatchSize).Return(linkedClients, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockSetPubKeyCommand, linkedClient1ClearKey).Return(setPubKeyCommandPayload1, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), setPubKeyCommandPayload1, linkedClient1.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), setPubKeyCommandPayload1, linkedClient1, protocols.QoSExactlyOnce),
 			mockE4Key.EXPECT().ProtectCommand(mockSetPubKeyCommand, linkedClient2ClearKey).Return(setPubKeyCommandPayload2, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), setPubKeyCommandPayload2, linkedClient2.Topic(), protocols.QoSExactlyOnce),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), setPubKeyCommandPayload2, linkedClient2, protocols.QoSExactlyOnce),
 		)
 
 		if err := service.NewClientKey(ctx, client.E4ID); err != nil {
@@ -940,7 +940,7 @@ func TestE4(t *testing.T) {
 			}),
 
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearTargetClientKey).Return(cmdPayload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload, targetClient.Topic(), protocols.QoSExactlyOnce).Return(nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload, targetClient, protocols.QoSExactlyOnce).Return(nil),
 		)
 
 		err := service.SendClientPubKey(context.Background(), sourceClient.E4ID, targetClient.E4ID)
@@ -974,7 +974,7 @@ func TestE4(t *testing.T) {
 			mockCommandFactory.EXPECT().CreateRemovePubKeyCommand(sourceClient.Name).Return(mockCommand, nil),
 
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearTargetClientKey).Return(cmdPayload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload, targetClient.Topic(), protocols.QoSExactlyOnce).Return(nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload, targetClient, protocols.QoSExactlyOnce).Return(nil),
 		)
 
 		err := service.RemoveClientPubKey(context.Background(), sourceClient.E4ID, targetClient.E4ID)
@@ -997,7 +997,7 @@ func TestE4(t *testing.T) {
 			mockCommandFactory.EXPECT().CreateResetPubKeysCommand().Return(mockCommand, nil),
 
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearTargetClientKey).Return(cmdPayload, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload, targetClient.Topic(), protocols.QoSExactlyOnce).Return(nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload, targetClient, protocols.QoSExactlyOnce).Return(nil),
 		)
 
 		err := service.ResetClientPubKeys(context.Background(), targetClient.E4ID)
@@ -1043,13 +1043,13 @@ func TestE4(t *testing.T) {
 
 			mockDB.EXPECT().GetClientsRange(0, NewC2KeyBatchSize).Return(clientsBatch1, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClient1Key).Return(cmdPayload1, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload1, client1.Topic(), protocols.QoSExactlyOnce).Return(nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload1, client1, protocols.QoSExactlyOnce).Return(nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClient2Key).Return(cmdPayload2, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload2, client2.Topic(), protocols.QoSExactlyOnce).Return(nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload2, client2, protocols.QoSExactlyOnce).Return(nil),
 
 			mockDB.EXPECT().GetClientsRange(NewC2KeyBatchSize, NewC2KeyBatchSize).Return(clientsBatch2, nil),
 			mockE4Key.EXPECT().ProtectCommand(mockCommand, clearClient3Key).Return(cmdPayload3, nil),
-			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload3, client3.Topic(), protocols.QoSExactlyOnce).Return(nil),
+			mockPubSubClient.EXPECT().Publish(gomock.Any(), cmdPayload3, client3, protocols.QoSExactlyOnce).Return(nil),
 
 			mockC2Tx.EXPECT().Commit().Return(nil),
 		)

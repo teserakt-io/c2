@@ -26,6 +26,8 @@ import (
 
 	"github.com/teserakt-io/c2/internal/analytics"
 	"github.com/teserakt-io/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/models"
+	e4 "github.com/teserakt-io/e4go"
 )
 
 func TestKafkaPubSubClient(t *testing.T) {
@@ -138,9 +140,13 @@ func TestKafkaPubSubClient(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		expectedTopic1 := "topic1"
-		expectedTopic2 := "topic2"
-		expectedTopic3 := "topic3"
+		client1 := models.Client{E4ID: []byte("client1")}
+		client2 := models.Client{E4ID: []byte("client2")}
+		client3 := models.Client{E4ID: []byte("client3")}
+
+		expectedTopic1 := e4.TopicForID(client1.E4ID)
+		expectedTopic2 := e4.TopicForID(client2.E4ID)
+		expectedTopic3 := e4.TopicForID(client3.E4ID)
 
 		expectedMessage1 := []byte("message_1")
 		expectedMessage2 := []byte("message_2")
@@ -181,16 +187,16 @@ func TestKafkaPubSubClient(t *testing.T) {
 		mockMonitor.EXPECT().OnMessage(gomock.Any(), expectedLoggedMessage3)
 		mockMonitor.EXPECT().OnMessage(gomock.Any(), expectedLoggedMessage4)
 
-		if err := kafkaClient.Publish(ctx, expectedMessage1, expectedTopic1, byte(0)); err != nil {
+		if err := kafkaClient.Publish(ctx, expectedMessage1, client1, byte(0)); err != nil {
 			t.Errorf("failed to publish, expected no error, got %v", err)
 		}
-		if err := kafkaClient.Publish(ctx, expectedMessage2, expectedTopic2, byte(0)); err != nil {
+		if err := kafkaClient.Publish(ctx, expectedMessage2, client2, byte(0)); err != nil {
 			t.Errorf("failed to publish, expected no error, got %v", err)
 		}
-		if err := kafkaClient.Publish(ctx, expectedMessage3, expectedTopic3, byte(0)); err != nil {
+		if err := kafkaClient.Publish(ctx, expectedMessage3, client3, byte(0)); err != nil {
 			t.Errorf("failed to publish, expected no error, got %v", err)
 		}
-		if err := kafkaClient.Publish(ctx, expectedMessage4, expectedTopic3, byte(0)); err != nil {
+		if err := kafkaClient.Publish(ctx, expectedMessage4, client3, byte(0)); err != nil {
 			t.Errorf("failed to publish, expected no error, got %v", err)
 		}
 

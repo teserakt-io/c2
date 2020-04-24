@@ -22,15 +22,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/teserakt-io/c2/internal/config"
-
+	log "github.com/sirupsen/logrus"
+	"go.opencensus.io/trace"
 	"golang.org/x/crypto/ed25519"
 
-	log "github.com/sirupsen/logrus"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
-	"go.opencensus.io/trace"
 
 	"github.com/teserakt-io/c2/internal/commands"
+	"github.com/teserakt-io/c2/internal/config"
 	"github.com/teserakt-io/c2/internal/crypto"
 	"github.com/teserakt-io/c2/internal/events"
 	"github.com/teserakt-io/c2/internal/models"
@@ -1162,7 +1161,7 @@ func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Comma
 		return fmt.Errorf("failed to protect command: %v", err)
 	}
 
-	return s.pubSubClient.Publish(ctx, payload, client.Topic(), protocols.QoSExactlyOnce)
+	return s.pubSubClient.Publish(ctx, payload, client, protocols.QoSExactlyOnce)
 }
 
 // IsErrRecordNotFound indicate whenever error is a RecordNotFound error

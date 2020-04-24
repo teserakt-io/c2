@@ -22,6 +22,7 @@ package protocols
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	models "github.com/teserakt-io/c2/internal/models"
 	reflect "reflect"
 )
 
@@ -77,7 +78,7 @@ func (mr *MockPubSubClientMockRecorder) Disconnect() *gomock.Call {
 }
 
 // Publish mocks base method
-func (m *MockPubSubClient) Publish(arg0 context.Context, arg1 []byte, arg2 string, arg3 byte) error {
+func (m *MockPubSubClient) Publish(arg0 context.Context, arg1 []byte, arg2 models.Client, arg3 byte) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Publish", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)

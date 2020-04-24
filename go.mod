@@ -3,6 +3,7 @@ module github.com/teserakt-io/c2
 go 1.12
 
 require (
+	cloud.google.com/go v0.38.0
 	contrib.go.opencensus.io/exporter/ocagent v0.6.0
 	github.com/Shopify/sarama v1.23.1
 	github.com/abiosoft/ishell v2.0.0+incompatible
@@ -29,7 +30,9 @@ require (
 	go.opencensus.io v0.22.1
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
+	google.golang.org/api v0.7.0
 	google.golang.org/genproto v0.0.0-20200302123026-7795fca6ccb1
 	google.golang.org/grpc v1.27.1
 	gopkg.in/jcmturner/goidentity.v3 v3.0.0 // indirect

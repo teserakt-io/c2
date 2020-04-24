@@ -27,6 +27,8 @@ import (
 
 	"github.com/teserakt-io/c2/internal/analytics"
 	"github.com/teserakt-io/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/models"
+	e4 "github.com/teserakt-io/e4go"
 )
 
 type kafkaPubSubClient struct {
@@ -182,9 +184,11 @@ func (c *kafkaPubSubClient) UnsubscribeFromTopic(ctx context.Context, topic stri
 	return nil
 }
 
-func (c *kafkaPubSubClient) Publish(ctx context.Context, payload []byte, topic string, qos byte) error {
+func (c *kafkaPubSubClient) Publish(ctx context.Context, payload []byte, client models.Client, qos byte) error {
 	_, span := trace.StartSpan(ctx, "kafka.Publish")
 	defer span.End()
+
+	topic := e4.TopicForID(client.E4ID)
 
 	logger := c.logger.WithField("topic", topic)
 

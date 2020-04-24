@@ -25,12 +25,15 @@ import (
 	"time"
 	"unicode/utf8"
 
+	e4 "github.com/teserakt-io/e4go"
+
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"go.opencensus.io/trace"
 
 	"github.com/teserakt-io/c2/internal/analytics"
 	"github.com/teserakt-io/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/models"
 )
 
 var (
@@ -235,9 +238,11 @@ func (c *mqttPubSubClient) UnsubscribeFromTopic(ctx context.Context, topic strin
 	return nil
 }
 
-func (c *mqttPubSubClient) Publish(ctx context.Context, payload []byte, topic string, qos byte) error {
+func (c *mqttPubSubClient) Publish(ctx context.Context, payload []byte, client models.Client, qos byte) error {
 	_, span := trace.StartSpan(ctx, "mqtt.Publish")
 	defer span.End()
+
+	topic := e4.TopicForID(client.E4ID)
 
 	logger := c.logger.WithFields(log.Fields{
 		"topic": topic,
