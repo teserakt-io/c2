@@ -622,3 +622,23 @@ func (mr *MockC2ClientMockRecorder) UnlinkClient(arg0, arg1 interface{}, arg2 ..
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlinkClient", reflect.TypeOf((*MockC2Client)(nil).UnlinkClient), varargs...)
 }
+
+// UnprotectMessage mocks base method
+func (m *MockC2Client) UnprotectMessage(arg0 context.Context, arg1 *pb.UnprotectMessageRequest, arg2 ...grpc.CallOption) (*pb.UnprotectMessageResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UnprotectMessage", varargs...)
+	ret0, _ := ret[0].(*pb.UnprotectMessageResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UnprotectMessage indicates an expected call of UnprotectMessage
+func (mr *MockC2ClientMockRecorder) UnprotectMessage(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnprotectMessage", reflect.TypeOf((*MockC2Client)(nil).UnprotectMessage), varargs...)
+}

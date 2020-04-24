@@ -532,6 +532,22 @@ func (s *grpcServer) ProtectMessage(ctx context.Context, req *pb.ProtectMessageR
 	}, nil
 }
 
+func (s *grpcServer) UnprotectMessage(ctx context.Context, req *pb.UnprotectMessageRequest) (*pb.UnprotectMessageResponse, error) {
+	if len(req.ProtectedBinaryData) == 0 {
+		return nil, errors.New("protected binary data cannot be empty")
+	}
+
+	binaryData, err := s.e4Service.UnprotectMessage(ctx, req.Topic, req.ProtectedBinaryData)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &pb.UnprotectMessageResponse{
+		Topic:      req.Topic,
+		BinaryData: binaryData,
+	}, nil
+}
+
 func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamRequest, srv pb.C2_SubscribeToEventStreamServer) error {
 	listener := events.NewListener(s.eventDispatcher)
 	defer listener.Close()

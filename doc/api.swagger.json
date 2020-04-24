@@ -541,6 +541,7 @@
     },
     "/e4/protect-message": {
       "post": {
+        "summary": "ProtectMessage returns base64 encoded data, representing the input data protected with the input topic key.",
         "operationId": "ProtectMessage",
         "responses": {
           "200": {
@@ -866,6 +867,39 @@
           "C2"
         ]
       }
+    },
+    "/e4/unprotect-message": {
+      "post": {
+        "summary": "UnprotectMessage returns base64 encoded data, representing the input data unprotected with the input topic key.",
+        "operationId": "UnprotectMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbUnprotectMessageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbUnprotectMessageRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
     }
   },
   "definitions": {
@@ -1129,6 +1163,30 @@
     },
     "pbUnlinkClientResponse": {
       "type": "object"
+    },
+    "pbUnprotectMessageRequest": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "protectedBinaryData": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "pbUnprotectMessageResponse": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "binaryData": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
     },
     "protobufAny": {
       "type": "object",

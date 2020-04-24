@@ -1079,4 +1079,24 @@ func TestE4(t *testing.T) {
 			t.Fatalf("invalid protected data, got %x, want %x", protectedData, expectedProtectedData)
 		}
 	})
+
+	t.Run("UnprotectMessage unprotect a message with a topic key", func(t *testing.T) {
+		topic, clearTopicKey := createTestTopicKey(t, dbEncKey)
+		expectedClearData := []byte("clear-data")
+		expectedProtectedData, err := e4crypto.ProtectSymKey(expectedClearData, clearTopicKey)
+		if err != nil {
+			t.Fatalf("failed to protect test payload: %v", err)
+		}
+
+		mockDB.EXPECT().GetTopicKey(topic.Topic).Return(topic, nil)
+
+		clearData, err := service.UnprotectMessage(context.Background(), topic.Topic, expectedProtectedData)
+		if err != nil {
+			t.Fatalf("failed to protect message: %v", err)
+		}
+
+		if !bytes.Equal(clearData, expectedClearData) {
+			t.Fatalf("invalid clear data, got %x, want %x", clearData, expectedClearData)
+		}
+	})
 }
