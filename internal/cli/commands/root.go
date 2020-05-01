@@ -49,6 +49,9 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 
 	newC2KeyCommand := NewNewC2KeyCommand(c2ClientFactory)
 
+	protectMessageCommand := NewProtectMessageCommand(c2ClientFactory)
+	unprotectMessageCommand := NewUnprotectMessageCommand(c2ClientFactory)
+
 	// TODO: disabled for now as it need a fair bit of polish before being usable
 	//interactiveCmd := NewInteractiveCommand(rootCmd, version)
 	completionCmd := NewCompletionCommand(rootCmd)
@@ -86,6 +89,9 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 		eventsCommand.CobraCmd(),
 
 		newC2KeyCommand.CobraCmd(),
+
+		protectMessageCommand.CobraCmd(),
+		unprotectMessageCommand.CobraCmd(),
 
 		// TODO: disabled for now as it need a fair bit of polish before being usable
 		//interactiveCmd.CobraCmd(),

@@ -151,6 +151,7 @@
     },
     "/e4/client/{client.name}/link": {
       "get": {
+        "summary": "Retrieve clients linked to the given client",
         "operationId": "GetLinkedClients",
         "responses": {
           "200": {
@@ -195,6 +196,7 @@
     },
     "/e4/client/{client.name}/link/count": {
       "get": {
+        "summary": "Count clients linked to the given client",
         "operationId": "CountLinkedClients",
         "responses": {
           "200": {
@@ -509,6 +511,7 @@
     },
     "/e4/new-c2-key": {
       "post": {
+        "summary": "Generate a new C2 key",
         "operationId": "NewC2Key",
         "responses": {
           "200": {
@@ -531,6 +534,39 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/pbNewC2KeyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/protect-message": {
+      "post": {
+        "summary": "ProtectMessage returns base64 encoded data, representing the input data protected with the input topic key.",
+        "operationId": "ProtectMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbProtectMessageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbProtectMessageRequest"
             }
           }
         ],
@@ -574,6 +610,7 @@
     },
     "/e4/reset-client-pubkeys": {
       "post": {
+        "summary": "Remove all pubkeys from a client",
         "operationId": "ResetClientPubKeys",
         "responses": {
           "200": {
@@ -834,6 +871,39 @@
           "C2"
         ]
       }
+    },
+    "/e4/unprotect-message": {
+      "post": {
+        "summary": "UnprotectMessage returns base64 encoded data, representing the input data unprotected with the input topic key.",
+        "operationId": "UnprotectMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbUnprotectMessageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbUnprotectMessageRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
     }
   },
   "definitions": {
@@ -1020,6 +1090,30 @@
     "pbNewTopicResponse": {
       "type": "object"
     },
+    "pbProtectMessageRequest": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "binaryData": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "pbProtectMessageResponse": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "protectedBinaryData": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
     "pbRemoveClientPubKeyRequest": {
       "type": "object",
       "properties": {
@@ -1073,6 +1167,30 @@
     },
     "pbUnlinkClientResponse": {
       "type": "object"
+    },
+    "pbUnprotectMessageRequest": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "protectedBinaryData": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "pbUnprotectMessageResponse": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "binaryData": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
     },
     "protobufAny": {
       "type": "object",

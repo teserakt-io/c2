@@ -40,6 +40,7 @@ type Config struct {
 
 	MQTT  MQTTCfg
 	Kafka KafkaCfg
+	GCP   GCPCfg
 
 	DB DBCfg
 
@@ -82,6 +83,12 @@ func (cfg *Config) ViperCfgFields() []slibcfg.ViperCfgField {
 
 		{&cfg.Kafka.Enabled, "kafka-enabled", slibcfg.ViperBool, false, "E4C2_KAFKA_ENABLED"},
 		{&cfg.Kafka.Brokers, "kafka-brokers", slibcfg.ViperStringSlice, "", ""},
+
+		{&cfg.GCP.Enabled, "gcp-enabled", slibcfg.ViperBool, false, "E4C2_GCP_ENABLED"},
+		{&cfg.GCP.ProjectID, "gcp-project-id", slibcfg.ViperString, "", ""},
+		{&cfg.GCP.Region, "gcp-region", slibcfg.ViperString, "", ""},
+		{&cfg.GCP.RegistryID, "gcp-registry-id", slibcfg.ViperString, "", ""},
+		{&cfg.GCP.CommandSubFolder, "gcp-command-subfolder", slibcfg.ViperString, "e4", ""},
 
 		{&cfg.DB.Logging, "db-logging", slibcfg.ViperBool, false, ""},
 		{&cfg.DB.Type, "db-type", slibcfg.ViperDBType, "", "E4C2_DB_TYPE"},
@@ -134,6 +141,15 @@ type MQTTCfg struct {
 type KafkaCfg struct {
 	Enabled bool
 	Brokers []string
+}
+
+// GCPCfg holds configuration for GCP IoT Core
+type GCPCfg struct {
+	Enabled          bool
+	ProjectID        string
+	Region           string
+	RegistryID       string
+	CommandSubFolder string
 }
 
 // DBCfg holds configuration for databases

@@ -26,6 +26,8 @@ import (
 
 	"github.com/teserakt-io/c2/internal/analytics"
 	"github.com/teserakt-io/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/models"
+	e4 "github.com/teserakt-io/e4go"
 )
 
 func TestMQTTPubSubClient(t *testing.T) {
@@ -359,7 +361,10 @@ func TestMQTTPubSubClient(t *testing.T) {
 		defer cancel()
 
 		expectedPayload := []byte("payload")
-		expectedTopic := "topic1"
+
+		client := models.Client{E4ID: []byte("client1")}
+		expectedTopic := e4.TopicForID(client.E4ID)
+
 		expectedQos := QoSExactlyOnce
 
 		mockToken := NewMockMQTTToken(mockCtrl)
@@ -368,7 +373,7 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Publish(expectedTopic, expectedQos, true, string(expectedPayload)).Return(mockToken)
 
-		err := pubSubClient.Publish(ctx, expectedPayload, expectedTopic, expectedQos)
+		err := pubSubClient.Publish(ctx, expectedPayload, client, expectedQos)
 		if err != nil {
 			t.Errorf("Expected error to be nil, got %v", err)
 		}
@@ -379,7 +384,10 @@ func TestMQTTPubSubClient(t *testing.T) {
 		defer cancel()
 
 		expectedPayload := []byte("payload")
-		expectedTopic := "topic1"
+
+		client := models.Client{E4ID: []byte("client1")}
+		expectedTopic := e4.TopicForID(client.E4ID)
+
 		expectedQos := QoSExactlyOnce
 
 		mockToken := NewMockMQTTToken(mockCtrl)
@@ -387,7 +395,7 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Publish(expectedTopic, expectedQos, true, string(expectedPayload)).Return(mockToken)
 
-		err := pubSubClient.Publish(ctx, expectedPayload, expectedTopic, expectedQos)
+		err := pubSubClient.Publish(ctx, expectedPayload, client, expectedQos)
 		if err != ErrMQTTTimeout {
 			t.Errorf("Expected error to be %v, got %v", ErrMQTTTimeout, err)
 		}
@@ -398,7 +406,10 @@ func TestMQTTPubSubClient(t *testing.T) {
 		defer cancel()
 
 		expectedPayload := []byte("payload")
-		expectedTopic := "topic1"
+
+		client := models.Client{E4ID: []byte("client1")}
+		expectedTopic := e4.TopicForID(client.E4ID)
+
 		expectedQos := QoSExactlyOnce
 
 		mockToken := NewMockMQTTToken(mockCtrl)
@@ -409,7 +420,7 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Publish(expectedTopic, expectedQos, true, string(expectedPayload)).Return(mockToken)
 
-		err := pubSubClient.Publish(ctx, expectedPayload, expectedTopic, expectedQos)
+		err := pubSubClient.Publish(ctx, expectedPayload, client, expectedQos)
 		if err != expectedError {
 			t.Errorf("Expected error to be %v, got %v", expectedError, err)
 		}

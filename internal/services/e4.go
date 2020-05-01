@@ -22,15 +22,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/teserakt-io/c2/internal/config"
-
+	log "github.com/sirupsen/logrus"
+	"go.opencensus.io/trace"
 	"golang.org/x/crypto/ed25519"
 
-	log "github.com/sirupsen/logrus"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
-	"go.opencensus.io/trace"
 
 	"github.com/teserakt-io/c2/internal/commands"
+	"github.com/teserakt-io/c2/internal/config"
 	"github.com/teserakt-io/c2/internal/crypto"
 	"github.com/teserakt-io/c2/internal/events"
 	"github.com/teserakt-io/c2/internal/models"
@@ -125,6 +124,10 @@ type E4 interface {
 	// The new key pair is then used by the C2 and replaces the previous one.
 	// Only when C2 is configured in pubkey mode, otherwise an error will be immediately returned.
 	NewC2Key(ctx context.Context) error
+	// ProtectMessage protects the given data with the given topic's key.
+	ProtectMessage(ctx context.Context, topic string, data []byte) ([]byte, error)
+	// UnprotectMessage unprotect the given data with the given topic's key.
+	UnprotectMessage(ctx context.Context, topic string, data []byte) ([]byte, error)
 }
 
 type e4impl struct {
@@ -1111,6 +1114,78 @@ func (s *e4impl) NewC2Key(ctx context.Context) error {
 	return nil
 }
 
+func (s *e4impl) ProtectMessage(ctx context.Context, topic string, data []byte) ([]byte, error) {
+	_, span := trace.StartSpan(ctx, "e4.ProtectMessage")
+	defer span.End()
+
+	logger := s.logger.WithFields(log.Fields{
+		"topic":  topic,
+		"msgLen": len(data),
+	})
+
+	topicKey, err := s.db.GetTopicKey(topic)
+	if err != nil {
+		logger.WithError(err).Error("failed to get topic")
+		if models.IsErrRecordNotFound(err) {
+			return nil, ErrTopicNotFound{}
+		}
+		return nil, ErrInternal{}
+	}
+
+	clearTopicKey, err := topicKey.DecryptKey(s.dbEncKey)
+	if err != nil {
+		logger.WithError(err).Error("failed to decrypt topic key")
+		return nil, ErrInternal{}
+	}
+
+	// TODO handle pubkeys case too
+	protected, err := e4crypto.ProtectSymKey(data, clearTopicKey)
+	if err != nil {
+		logger.WithError(err).Error("failed to protect message")
+		return nil, ErrInternal{}
+	}
+
+	logger.Info("success protecting message")
+
+	return protected, nil
+}
+
+func (s *e4impl) UnprotectMessage(ctx context.Context, topic string, data []byte) ([]byte, error) {
+	_, span := trace.StartSpan(ctx, "e4.UnprotectMessage")
+	defer span.End()
+
+	logger := s.logger.WithFields(log.Fields{
+		"topic":  topic,
+		"msgLen": len(data),
+	})
+
+	topicKey, err := s.db.GetTopicKey(topic)
+	if err != nil {
+		logger.WithError(err).Error("failed to get topic")
+		if models.IsErrRecordNotFound(err) {
+			return nil, ErrTopicNotFound{}
+		}
+		return nil, ErrInternal{}
+	}
+
+	clearTopicKey, err := topicKey.DecryptKey(s.dbEncKey)
+	if err != nil {
+		logger.WithError(err).Error("failed to decrypt topic key")
+		return nil, ErrInternal{}
+	}
+
+	// TODO handle pubkeys case too
+	clear, err := e4crypto.UnprotectSymKey(data, clearTopicKey)
+	if err != nil {
+		logger.WithError(err).Error("failed to unprotect message")
+		return nil, ErrInternal{}
+	}
+
+	logger.Info("success unprotecting message")
+
+	return clear, nil
+}
+
 func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Command, client models.Client) error {
 	ctx, span := trace.StartSpan(ctx, "e4.sendCommandToClient")
 	defer span.End()
@@ -1125,7 +1200,7 @@ func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Comma
 		return fmt.Errorf("failed to protect command: %v", err)
 	}
 
-	return s.pubSubClient.Publish(ctx, payload, client.Topic(), protocols.QoSExactlyOnce)
+	return s.pubSubClient.Publish(ctx, payload, client, protocols.QoSExactlyOnce)
 }
 
 // IsErrRecordNotFound indicate whenever error is a RecordNotFound error

@@ -15,7 +15,6 @@
 package models
 
 import (
-	e4 "github.com/teserakt-io/e4go"
 	e4crypto "github.com/teserakt-io/e4go/crypto"
 )
 
@@ -60,9 +59,4 @@ func (i Client) DecryptKey(dbEncKey []byte) ([]byte, error) {
 	}
 
 	return key, nil
-}
-
-// Topic returns the E4 Topic for the current Client
-func (i Client) Topic() string {
-	return e4.TopicForID(i.E4ID)
 }

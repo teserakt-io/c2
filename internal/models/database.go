@@ -507,7 +507,7 @@ func (gdb *gormDB) UnlinkClientTopic(client Client, topicKey TopicKey) error {
 	if err := tx.Where(&TopicKey{ID: topicKey.ID}).First(&topicKey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			tx.Rollback()
-			return errors.New("Topic appears to have been deleted, this is just an unlink")
+			return errors.New("topic appears to have been deleted, this is just an unlink")
 		}
 		return err
 	}
