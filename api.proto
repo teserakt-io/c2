@@ -143,12 +143,14 @@ service C2 {
     };
   }
 
+  // Count clients linked to the given client
   rpc CountLinkedClients(CountLinkedClientsRequest) returns (CountLinkedClientsResponse) {
     option (google.api.http) = {
       get: "/e4/client/{client.name}/link/count"
     };
   }
 
+  // Retrieve clients linked to the given client
   rpc GetLinkedClients(GetLinkedClientsRequest) returns (GetLinkedClientsResponse) {
     option (google.api.http) = {
       get: "/e4/client/{client.name}/link"
@@ -171,6 +173,7 @@ service C2 {
     };
   }
 
+  // Remove all pubkeys from a client
   rpc ResetClientPubKeys(ResetClientPubKeysRequest) returns (ResetClientPubKeysResponse) {
     option (google.api.http) = {
       post: "/e4/reset-client-pubkeys"
@@ -178,6 +181,7 @@ service C2 {
     };
   }
 
+  // Generate a new C2 key
   rpc NewC2Key(NewC2KeyRequest) returns (NewC2KeyResponse) {
     option (google.api.http) = {
       post: "/e4/new-c2-key"

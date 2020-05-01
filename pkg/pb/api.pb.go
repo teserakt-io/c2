@@ -2461,13 +2461,17 @@ type C2Client interface {
 	LinkClient(ctx context.Context, in *LinkClientRequest, opts ...grpc.CallOption) (*LinkClientResponse, error)
 	// Remove a client-client link on a target client
 	UnlinkClient(ctx context.Context, in *UnlinkClientRequest, opts ...grpc.CallOption) (*UnlinkClientResponse, error)
+	// Count clients linked to the given client
 	CountLinkedClients(ctx context.Context, in *CountLinkedClientsRequest, opts ...grpc.CallOption) (*CountLinkedClientsResponse, error)
+	// Retrieve clients linked to the given client
 	GetLinkedClients(ctx context.Context, in *GetLinkedClientsRequest, opts ...grpc.CallOption) (*GetLinkedClientsResponse, error)
 	// Send a client pubkey to another client (pubkey mode only)
 	SendClientPubKey(ctx context.Context, in *SendClientPubKeyRequest, opts ...grpc.CallOption) (*SendClientPubKeyResponse, error)
 	// Remove a client pubkey from another client (pubkey mode only)
 	RemoveClientPubKey(ctx context.Context, in *RemoveClientPubKeyRequest, opts ...grpc.CallOption) (*RemoveClientPubKeyResponse, error)
+	// Remove all pubkeys from a client
 	ResetClientPubKeys(ctx context.Context, in *ResetClientPubKeysRequest, opts ...grpc.CallOption) (*ResetClientPubKeysResponse, error)
+	// Generate a new C2 key
 	NewC2Key(ctx context.Context, in *NewC2KeyRequest, opts ...grpc.CallOption) (*NewC2KeyResponse, error)
 	// ProtectMessage returns base64 encoded data, representing the input data protected with the input topic key.
 	ProtectMessage(ctx context.Context, in *ProtectMessageRequest, opts ...grpc.CallOption) (*ProtectMessageResponse, error)
@@ -2789,13 +2793,17 @@ type C2Server interface {
 	LinkClient(context.Context, *LinkClientRequest) (*LinkClientResponse, error)
 	// Remove a client-client link on a target client
 	UnlinkClient(context.Context, *UnlinkClientRequest) (*UnlinkClientResponse, error)
+	// Count clients linked to the given client
 	CountLinkedClients(context.Context, *CountLinkedClientsRequest) (*CountLinkedClientsResponse, error)
+	// Retrieve clients linked to the given client
 	GetLinkedClients(context.Context, *GetLinkedClientsRequest) (*GetLinkedClientsResponse, error)
 	// Send a client pubkey to another client (pubkey mode only)
 	SendClientPubKey(context.Context, *SendClientPubKeyRequest) (*SendClientPubKeyResponse, error)
 	// Remove a client pubkey from another client (pubkey mode only)
 	RemoveClientPubKey(context.Context, *RemoveClientPubKeyRequest) (*RemoveClientPubKeyResponse, error)
+	// Remove all pubkeys from a client
 	ResetClientPubKeys(context.Context, *ResetClientPubKeysRequest) (*ResetClientPubKeysResponse, error)
+	// Generate a new C2 key
 	NewC2Key(context.Context, *NewC2KeyRequest) (*NewC2KeyResponse, error)
 	// ProtectMessage returns base64 encoded data, representing the input data protected with the input topic key.
 	ProtectMessage(context.Context, *ProtectMessageRequest) (*ProtectMessageResponse, error)

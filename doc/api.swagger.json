@@ -151,6 +151,7 @@
     },
     "/e4/client/{client.name}/link": {
       "get": {
+        "summary": "Retrieve clients linked to the given client",
         "operationId": "GetLinkedClients",
         "responses": {
           "200": {
@@ -195,6 +196,7 @@
     },
     "/e4/client/{client.name}/link/count": {
       "get": {
+        "summary": "Count clients linked to the given client",
         "operationId": "CountLinkedClients",
         "responses": {
           "200": {
@@ -509,6 +511,7 @@
     },
     "/e4/new-c2-key": {
       "post": {
+        "summary": "Generate a new C2 key",
         "operationId": "NewC2Key",
         "responses": {
           "200": {
@@ -607,6 +610,7 @@
     },
     "/e4/reset-client-pubkeys": {
       "post": {
+        "summary": "Remove all pubkeys from a client",
         "operationId": "ResetClientPubKeys",
         "responses": {
           "200": {
