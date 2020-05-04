@@ -15,6 +15,8 @@
 package commands
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/teserakt-io/c2/internal/cli"
@@ -101,6 +103,9 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 	)
 
 	cobraCmd.SetVersionTemplate(`{{printf "%s" .Version}}`)
+
+	cobraCmd.SetOut(os.Stdout)
+	cobraCmd.SetErr(os.Stderr)
 
 	rootCmd.cobraCmd = cobraCmd
 
