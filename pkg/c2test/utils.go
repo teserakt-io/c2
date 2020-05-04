@@ -1,3 +1,17 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package c2test
 
 import (
@@ -6,10 +20,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"strings"
 
-	e4 "gitlab.com/teserakt/e4common"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 )
 
 // TestClient provides a representation of an id-key pair.
@@ -97,7 +112,7 @@ func NewTestClient() (*TestClient, error) {
 		return nil, err
 	}
 	t.Name = name
-	t.ID = e4.HashIDAlias(name)
+	t.ID = e4crypto.HashIDAlias(name)
 	t.Key = key
 	return t, nil
 }
@@ -140,7 +155,7 @@ func NewTestTopic(topickeygen bool) (*TestTopic, error) {
 // GenerateName generates a random name beginning clientname-%s
 // it is used to make random-looking names for devices for test purposes.
 func GenerateName() (string, error) {
-	somebytes := [e4.IDLen]byte{}
+	somebytes := [e4crypto.IDLen]byte{}
 	_, err := rand.Read(somebytes[:])
 	if err != nil {
 		return "", err
@@ -153,18 +168,18 @@ func GenerateName() (string, error) {
 // GenerateID generates a random ID that is e4.IDLen bytes
 // in length, using a CSPRNG
 func GenerateID() ([]byte, error) {
-	idbytes := [e4.IDLen]byte{}
-	_, err := rand.Read(idbytes[:])
+	idBytes := [e4crypto.IDLen]byte{}
+	_, err := rand.Read(idBytes[:])
 	if err != nil {
 		return nil, err
 	}
-	return idbytes[:], nil
+	return idBytes[:], nil
 }
 
 // GenerateKey generates a random key that is e4.KeyLen bytes
 // in length, using a CSPRNG
 func GenerateKey() ([]byte, error) {
-	keybytes := [e4.KeyLen]byte{}
+	keybytes := [e4crypto.KeyLen]byte{}
 	_, err := rand.Read(keybytes[:])
 	if err != nil {
 		return nil, err
@@ -183,5 +198,8 @@ func GenerateTopic() (string, error) {
 	tCleaned1 := strings.Replace(tCandidate, "+", "", -1)
 	tCleaned2 := strings.Replace(tCleaned1, "/", "", -1)
 	tCleaned3 := strings.Replace(tCleaned2, "=", "", -1)
-	return tCleaned3[0:32], nil
+
+	len := int(math.Min(float64(len(tCleaned3)), 32))
+
+	return tCleaned3[0:len], nil
 }

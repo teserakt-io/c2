@@ -1,16 +1,33 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package protocols
 
 import (
 	"context"
 	"errors"
+	"io/ioutil"
 	"testing"
 	"time"
 
-	"github.com/go-kit/kit/log"
 	"github.com/golang/mock/gomock"
+	log "github.com/sirupsen/logrus"
 
-	"gitlab.com/teserakt/c2/internal/analytics"
-	"gitlab.com/teserakt/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/analytics"
+	"github.com/teserakt-io/c2/internal/config"
+	"github.com/teserakt-io/c2/internal/models"
+	e4 "github.com/teserakt-io/e4go"
 )
 
 func TestMQTTPubSubClient(t *testing.T) {
@@ -32,10 +49,13 @@ func TestMQTTPubSubClient(t *testing.T) {
 	expectedTimeout := 10 * time.Millisecond
 	expectedDisconnectTimeout := uint(1000)
 
+	logger := log.New()
+	logger.SetOutput(ioutil.Discard)
+
 	pubSubClient := &mqttPubSubClient{
 		mqtt:              mockMQTTClient,
 		config:            config,
-		logger:            log.NewNopLogger(),
+		logger:            logger,
 		monitor:           mockMonitor,
 		waitTimeout:       expectedTimeout,
 		disconnectTimeout: expectedDisconnectTimeout,
@@ -341,7 +361,10 @@ func TestMQTTPubSubClient(t *testing.T) {
 		defer cancel()
 
 		expectedPayload := []byte("payload")
-		expectedTopic := "topic1"
+
+		client := models.Client{E4ID: []byte("client1")}
+		expectedTopic := e4.TopicForID(client.E4ID)
+
 		expectedQos := QoSExactlyOnce
 
 		mockToken := NewMockMQTTToken(mockCtrl)
@@ -350,7 +373,7 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Publish(expectedTopic, expectedQos, true, string(expectedPayload)).Return(mockToken)
 
-		err := pubSubClient.Publish(ctx, expectedPayload, expectedTopic, expectedQos)
+		err := pubSubClient.Publish(ctx, expectedPayload, client, expectedQos)
 		if err != nil {
 			t.Errorf("Expected error to be nil, got %v", err)
 		}
@@ -361,7 +384,10 @@ func TestMQTTPubSubClient(t *testing.T) {
 		defer cancel()
 
 		expectedPayload := []byte("payload")
-		expectedTopic := "topic1"
+
+		client := models.Client{E4ID: []byte("client1")}
+		expectedTopic := e4.TopicForID(client.E4ID)
+
 		expectedQos := QoSExactlyOnce
 
 		mockToken := NewMockMQTTToken(mockCtrl)
@@ -369,7 +395,7 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Publish(expectedTopic, expectedQos, true, string(expectedPayload)).Return(mockToken)
 
-		err := pubSubClient.Publish(ctx, expectedPayload, expectedTopic, expectedQos)
+		err := pubSubClient.Publish(ctx, expectedPayload, client, expectedQos)
 		if err != ErrMQTTTimeout {
 			t.Errorf("Expected error to be %v, got %v", ErrMQTTTimeout, err)
 		}
@@ -380,7 +406,10 @@ func TestMQTTPubSubClient(t *testing.T) {
 		defer cancel()
 
 		expectedPayload := []byte("payload")
-		expectedTopic := "topic1"
+
+		client := models.Client{E4ID: []byte("client1")}
+		expectedTopic := e4.TopicForID(client.E4ID)
+
 		expectedQos := QoSExactlyOnce
 
 		mockToken := NewMockMQTTToken(mockCtrl)
@@ -391,9 +420,31 @@ func TestMQTTPubSubClient(t *testing.T) {
 
 		mockMQTTClient.EXPECT().Publish(expectedTopic, expectedQos, true, string(expectedPayload)).Return(mockToken)
 
-		err := pubSubClient.Publish(ctx, expectedPayload, expectedTopic, expectedQos)
+		err := pubSubClient.Publish(ctx, expectedPayload, client, expectedQos)
 		if err != expectedError {
 			t.Errorf("Expected error to be %v, got %v", expectedError, err)
+		}
+	})
+
+	t.Run("ValidateTopic properly filter out invalid topics", func(t *testing.T) {
+		testData := map[string]error{
+			"/mqtt/topic": nil,
+			"mqttTopic":   nil,
+			"mqtt/$SYS":   nil,
+			"mqtt/123":    nil,
+			"#":           ErrInvalidTopic,
+			"/mqtt/#":     ErrInvalidTopic,
+			"/mqtt/+":     ErrInvalidTopic,
+			"+":           ErrInvalidTopic,
+			"$SYS":        ErrInvalidTopic,
+			"$SYS/foo":    ErrInvalidTopic,
+		}
+
+		for topic, want := range testData {
+			got := pubSubClient.ValidateTopic(topic)
+			if got != want {
+				t.Errorf("got error '%v', want '%v' when validating topic %s", got, want, topic)
+			}
 		}
 	})
 }

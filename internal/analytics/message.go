@@ -1,3 +1,17 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package analytics
 
 import (
@@ -33,12 +47,9 @@ func LooksEncrypted(data []byte) bool {
 	for i := range data[:16] {
 		counter[int(data[i])]++
 	}
-	if len(counter) < 10 {
-		return false
-	}
-	// if encrypted, fails with low prob
 
-	return true
+	// if encrypted, fails with low prob
+	return len(counter) >= 10
 }
 
 // LooksCompressed indicate whenever given data looks compressed or not

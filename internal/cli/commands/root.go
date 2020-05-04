@@ -1,11 +1,25 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package commands
 
 import (
 	"github.com/spf13/cobra"
 
-	"gitlab.com/teserakt/c2/internal/cli"
-	"gitlab.com/teserakt/c2/internal/cli/commands/clients"
-	"gitlab.com/teserakt/c2/internal/cli/commands/topics"
+	"github.com/teserakt-io/c2/internal/cli"
+	"github.com/teserakt-io/c2/internal/cli/commands/clients"
+	"github.com/teserakt-io/c2/internal/cli/commands/topics"
 )
 
 type rootCommandFlags struct {
@@ -18,7 +32,7 @@ type rootCommand struct {
 	flags    rootCommandFlags
 }
 
-var _ cli.Command = &rootCommand{}
+var _ cli.Command = (*rootCommand)(nil)
 
 // NewRootCommand creates and configure a new cli root command
 func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Command {
@@ -30,7 +44,13 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 	countCommand := NewCountCommand(c2ClientFactory)
 	attachCommand := NewAttachCommand(c2ClientFactory)
 	detachCommand := NewDetachCommand(c2ClientFactory)
-	messageCommand := NewMessageCommand(c2ClientFactory)
+
+	eventsCommand := NewEventsCommand(c2ClientFactory)
+
+	newC2KeyCommand := NewNewC2KeyCommand(c2ClientFactory)
+
+	protectMessageCommand := NewProtectMessageCommand(c2ClientFactory)
+	unprotectMessageCommand := NewUnprotectMessageCommand(c2ClientFactory)
 
 	// TODO: disabled for now as it need a fair bit of polish before being usable
 	//interactiveCmd := NewInteractiveCommand(rootCmd, version)
@@ -65,7 +85,13 @@ func NewRootCommand(c2ClientFactory cli.APIClientFactory, version string) cli.Co
 		countCommand.CobraCmd(),
 		attachCommand.CobraCmd(),
 		detachCommand.CobraCmd(),
-		messageCommand.CobraCmd(),
+
+		eventsCommand.CobraCmd(),
+
+		newC2KeyCommand.CobraCmd(),
+
+		protectMessageCommand.CobraCmd(),
+		unprotectMessageCommand.CobraCmd(),
 
 		// TODO: disabled for now as it need a fair bit of polish before being usable
 		//interactiveCmd.CobraCmd(),

@@ -1,6 +1,19 @@
+![alt text](logo.png)
+
+[![GoDoc][godoc-image]][godoc-url] ![Go](https://github.com/teserakt-io/c2/workflows/Go/badge.svg?branch=develop)
+
+
 # c2
 
 C2 back-end application, with gRPC server (for CLI) and HTTP server (for web UI).
+
+A command line client is provided under `./bin/c2cli` to interact with the server.
+
+The C2 server does provide endpoints to manage `clients` and `topics` keys, as well as `client-client` and `client-topic` relations.
+Also, the C2 allows to publish E4 commands to the MQTT broker, allowing to control the managed clients' state, such as `NewClientKey`, or `ResetTopics` for example.
+A complete list of available endpoints is available in the [api.proto](./api.proto) file.
+
+For more details, you can check the [doc](./doc) folder.
 
 ## Running C2
 
@@ -12,29 +25,39 @@ docker-compose up -d
 ./bin/c2
 ```
 
-This will boot up MQTT broker, ELK, prometheus, jaeger and oc-agent and then start up C2.
+This will start the MQTT broker (VerneMQ), Elasticsearch, Kibana, Prometheus, Jaeger, the OpenCensus Agent, and then start up C2.
 
 ### Services list
 
-- [http://localhost:9200]: elasticsearch endpoint
-- [http://localhost:5601]: kibana UI
-- [http://localhost:16686]: jaeger UI
+- [http://localhost:9200]: Elasticsearch endpoint
+- [http://localhost:5601]: Kibana UI
+- [http://localhost:16686]: Jaeger UI
 - [http://localhost:9999]: zPages
-- [http://localhost:9090]: prometheus UI
+- [http://localhost:9090]: Prometheus UI
 
-### Run from docker image
+### Run from Docker image
 
-The CI automatically push docker images of C2 and C2Cli after each successfull builds and for each branches.
+The C2 and C2 cli applications can be built in lightweight docker containers, with the requirement of having CGO disabled.
 
-List of available C2 and C2Cli images: https://gitlab.com/Teserakt/c2/container_registry
+To build the docker images, just run:
+
+```
+# Build the c2 and c2cli binaries
+CGO_ENABLED=0 ./scripts/build.sh
+# Build docker images c2:devel and c2cli:devel
+./scripts/docker-build.sh
+```
+
+Note that sqlite database isn't supported in docker as it requires CGO.
 
 #### Start C2
+
 ```
 # Replace <BRANCH_NAME> with the actual branch you want to pull the image from, like master, or devel, or tag...
-docker run -it --rm  --name c2 -v $(pwd)/configs:/opt/e4/configs -p 5555:5555 -p 8888:8888 registry.gitlab.com/teserakt/c2:<BRANCH_NAME>
+docker run -it --rm  --name c2 -v $(pwd)/configs:/opt/e4/configs -p 5555:5555 -p 8888:8888 c2:<BRANCH_NAME>
 ```
 
-It just require a volume to the configs folder (Depending on your configuration, you may also need to get another volumes for the certificate and keys if they're not in the configs folder) and the ports for the GRPC and HTTP api (which can be independantly removed if not used)
+It requires a volume to the configs folder (Depending on your configuration, you may also need to get another volumes for the certificate and keys if they're not in the configs folder) and the ports for the GRPC and HTTP api (which can be independently removed if not used)
 
 #### Start C2Cli
 ```
@@ -43,7 +66,7 @@ docker run -it --rm \
     -v $(pwd)/configs/c2-cert.pem:/opt/c2/c2-cert.pem \
     -e C2_API_ENDPOINT=c2:5555 \
     -e C2_API_CERT=/opt/c2/c2-cert.pem \
-    registry.gitlab.com/teserakt/c2/c2cli:<BRANCH_NAME> <command>
+    c2cli:<BRANCH_NAME> <command>
 ```
 
 It requires a valid certificate C2 certificate. Both server endpoint and certificate path can be specified with the `-e` flag.
@@ -63,56 +86,9 @@ openssl req  -nodes -newkey rsa:2048 -keyout configs/c2-key.pem -x509 -sha256 -d
 The default configuration should work out of the box.
 
 - Build with `scripts/build.sh`.
-- Test with `scripts/test.sh`.
+- Test with `scripts/unittest.sh`.
+- Run functional tests with `docker-compose up -d && ./scripts/test.sh`.
 - Release with `scripts/release.sh` (in branch master only).
 
-
-# Gitlab registry
-
-CI will auto build docker images for devel branch. To be able to pull them, you must firstr login to the gitlab registry.
-For this you first need to generate a personnal access token on gitlab, with the `api` scope:
-- https://gitlab.com/profile/personal_access_tokens
-
-Prior to use the `docker login` command, we need to configure the docker daemon to use a secret store. Otherwise tokens will get stored in clear in configuration file. (see https://docs.docker.com/engine/reference/commandline/login/#credentials-store for full reference)
-
-First, install the docker-credential-helpers (the install instructions from their README are outdated, so you can follow those instead...):
-```
-go get github.com/docker/docker-credential-helpers...
-cd $GOPATH/src/github.com/docker/docker-credential-helpers/
-# for DBus
-make secretservice
-# for OSX keychain
-make osxkeychain
-cp bin/* $GOPATH/bin/
-```
-
-Create or append to `.docker/config.json`:
-
-*DBus secret service:*
-```
-"credsStore": "secretservice",
-```
-*OSX keychain:*
-```
-"credsStore": "osxkeychain",
-```
-
-If you're already logged to a docker registry, remember to run `docker logout` first.
-From here, run
-```
-docker login registry.gitlab.com
-```
-and enter your gitlab email and the personnal token as password.
-It should display `Login Succeeded`. You can check it didn't stored clear password with:
-```
-cat .docker/config.json
-# It should have:
-# "auths": {
-#		"registry.gitlab.com": {}
-# }
-# If wrong, it will show:
-# "auths": {
-#		"registry.gitlab.com": {"auth": "<b64 string with username/password>"}
-# }
-# Logout, check config & helpers installation, and retry login again
-```
+[godoc-image]: https://godoc.org/github.com/teserakt-io/c2?status.svg
+[godoc-url]: https://godoc.org/github.com/teserakt-io/c2

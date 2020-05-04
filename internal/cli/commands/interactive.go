@@ -1,3 +1,17 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package commands
 
 import (
@@ -8,7 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"gitlab.com/teserakt/c2/internal/cli"
+	"github.com/teserakt-io/c2/internal/cli"
 )
 
 const (
@@ -31,7 +45,7 @@ type ishellCmdAdder interface {
 	AddCmd(*ishell.Cmd)
 }
 
-var _ cli.Command = &interactiveCommand{}
+var _ cli.Command = (*interactiveCommand)(nil)
 
 // NewInteractiveCommand returns a command enabling interactive mode
 func NewInteractiveCommand(rootCommand cli.Command, version string) cli.Command {
@@ -96,7 +110,6 @@ func (c *interactiveCommand) addCobraCommands(ishellCmd ishellCmdAdder, cobraCmd
 
 		if !cobraCmd.HasSubCommands() {
 			subIshellCmd.Func = func(ctx *ishell.Context) {
-
 				args := ctx.RawArgs
 				cobraCmd.Flags().VisitAll(func(f *pflag.Flag) {
 					ctx.SetPrompt(fmt.Sprintf("%s (%s - default: \"%s\") ? ", f.Name, f.Value.Type(), f.DefValue))

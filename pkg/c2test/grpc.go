@@ -1,3 +1,17 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package c2test
 
 import (
@@ -5,7 +19,7 @@ import (
 	"errors"
 	"fmt"
 
-	"gitlab.com/teserakt/c2/pkg/pb"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 // GRPCApi tests the GRPC api of the C2
@@ -119,7 +133,7 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 			Name:     "M2M Find Added Topic",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test M2M Find Added Topic: Incorrect topic returned, returned body is %s", clientTopics),
+			Error:    fmt.Errorf("test M2M Find Added Topic: Incorrect topic returned, returned body is %s", clientTopics),
 		}
 		return
 	}
@@ -163,7 +177,7 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 			Name:     "Test M2M Doesn't Show Removed Topic",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test M2M Doesn't Show Removed Topic: Topics found, returned body is %s", clientTopics),
+			Error:    fmt.Errorf("test M2M Doesn't Show Removed Topic: Topics found, returned body is %s", clientTopics),
 		}
 		return
 	}
@@ -189,13 +203,12 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 	_, err = grpcClient.RemoveTopic(ctx, &pb.RemoveTopicRequest{
 		Topic: testTopics[0].TopicName,
 	})
-	//bresult, ok = result.(bool)
 	if err == nil {
 		resChan <- TestResult{
 			Name:     "Check double remove fails",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Double remove should report an error via the API and did not"),
+			Error:    fmt.Errorf("double remove should report an error via the API and did not"),
 		}
 		return
 	}
@@ -222,7 +235,7 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 			Name:     "Test Fetch Topics",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test Fetch Topics: Incorrect number of returned topics, returned body is %s", clientTopics),
+			Error:    fmt.Errorf("test Fetch Topics: Incorrect number of returned topics, returned body is %s", clientTopics),
 		}
 		return
 	}
@@ -240,7 +253,7 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 				Name:     "Test Fetch Topics",
 				Result:   false,
 				Critical: true,
-				Error:    fmt.Errorf("Test Fetch Topics: Created topic %s not found, topics are %s", testtopic, clientTopics),
+				Error:    fmt.Errorf("test Fetch Topics: Created topic %s not found, topics are %s", testtopic, clientTopics),
 			}
 			return
 		}
@@ -251,7 +264,7 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 	getClientsResp, err := grpcClient.GetClients(ctx, &pb.GetClientsRequest{Count: 10})
 	if err != nil {
 		if err == nil {
-			err = errors.New("Type mismatch")
+			err = errors.New("type mismatch")
 		}
 		resChan <- TestResult{
 			Name:     "Test Fetch Clients",
@@ -268,7 +281,7 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 			Name:     "Test Fetch Clients",
 			Result:   false,
 			Critical: true,
-			Error:    fmt.Errorf("Test Fetch Clients: Incorrect number of returned clients, returned body is %s", clients),
+			Error:    fmt.Errorf("test Fetch Clients: Incorrect number of returned clients, returned body is %s", clients),
 		}
 		return
 	}
@@ -286,7 +299,7 @@ func GRPCApi(ctx context.Context, resChan chan<- TestResult, grpcClient pb.C2Cli
 				Name:     "Test Fetch Client",
 				Result:   false,
 				Critical: true,
-				Error:    fmt.Errorf("Test Fetch Client: Client s%s not found, clients are %s", testclient, clients),
+				Error:    fmt.Errorf("test Fetch Client: Client s%s not found, clients are %s", testclient, clients),
 			}
 			return
 		}

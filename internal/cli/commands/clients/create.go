@@ -1,15 +1,32 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package clients
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
+
+	"golang.org/x/crypto/ed25519"
 
 	"github.com/spf13/cobra"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 
-	"gitlab.com/teserakt/c2/internal/cli"
-	"gitlab.com/teserakt/c2/pkg/pb"
-	e4 "gitlab.com/teserakt/e4common"
+	"github.com/teserakt-io/c2/internal/cli"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 type createCommand struct {
@@ -19,12 +36,13 @@ type createCommand struct {
 }
 
 type createCommandFlags struct {
-	Name     string
-	Password string
-	Key      []byte
+	Name         string
+	PasswordPath string
+	KeyPath      string
+	Pubkey       bool
 }
 
-var _ cli.Command = &createCommand{}
+var _ cli.Command = (*createCommand)(nil)
 
 // NewCreateCommand returns a new command to create clients
 func NewCreateCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
@@ -35,14 +53,21 @@ func NewCreateCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 	cobraCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Creates a new client",
-		Long:  fmt.Sprintf("Creates a new client, require an unique name, and either a password or a %d bytes hexadecimal key", e4.KeyLenHex),
+		Long:  fmt.Sprintf("Creates a new client, require an unique name, and a file containing either a password or a %d bytes key", e4crypto.KeyLen),
 		RunE:  createCmd.run,
 	}
 
 	cobraCmd.Flags().SortFlags = false
 	cobraCmd.Flags().StringVar(&createCmd.flags.Name, "name", "", "The client name")
-	cobraCmd.Flags().BytesHexVar(&createCmd.flags.Key, "key", nil, fmt.Sprintf("The client %d bytes hexadecimal key", e4.KeyLenHex))
-	cobraCmd.Flags().StringVar(&createCmd.flags.Password, "password", "", "The client password")
+	cobraCmd.Flags().StringVar(&createCmd.flags.KeyPath, "key", "", fmt.Sprintf("Filepath to a %d bytes key", e4crypto.KeyLen))
+	cobraCmd.Flags().StringVar(&createCmd.flags.PasswordPath, "password", "", "Filepath to a plaintext password file")
+	// TODO: instead of requiring a flag from the user.
+	// we could expose an endpoint on the C2 server like `getMode` indicating if the server is
+	// running in public key or symmetric key mode.
+	// This will allow to guess which password derivation function to use without requiring user input.
+	// For now if the user omit the mode and try to create a pubkey client, no errors can be returned.
+	// This will makes all the C2 commands sent to the client fail.
+	cobraCmd.Flags().BoolVar(&createCmd.flags.Pubkey, "pubkey", false, "Required if the C2 server is in pubkey mode")
 
 	createCmd.cobraCmd = cobraCmd
 
@@ -57,23 +82,53 @@ func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 	switch {
 	case len(c.flags.Name) == 0:
 		return errors.New("flag --name is required")
-	case len(c.flags.Password) == 0 && len(c.flags.Key) == 0:
+	case len(c.flags.PasswordPath) == 0 && len(c.flags.KeyPath) == 0:
 		return errors.New("one of --password or --key is required")
-	case len(c.flags.Password) > 0 && len(c.flags.Key) > 0:
+	case len(c.flags.PasswordPath) > 0 && len(c.flags.KeyPath) > 0:
 		return errors.New("only one of --password or --key is allowed")
 	}
 
-	if err := e4.IsValidName(c.flags.Name); err != nil {
+	if err := e4crypto.ValidateName(c.flags.Name); err != nil {
 		return fmt.Errorf("invalid name: %v", err)
 	}
 
-	key := c.flags.Key
-	if len(key) == 0 {
-		key = e4.HashPwd(c.flags.Password)
+	var key []byte
+	if len(c.flags.KeyPath) > 0 {
+		var err error
+		key, err = ioutil.ReadFile(c.flags.KeyPath)
+		if err != nil {
+			return fmt.Errorf("failed to read symKey from file: %v", err)
+		}
+	} else {
+		var err error
+		password, err := ioutil.ReadFile(c.flags.PasswordPath)
+		if err != nil {
+			return fmt.Errorf("failed to read password from file: %v", err)
+		}
+
+		if c.flags.Pubkey {
+			privateKey, err := e4crypto.Ed25519PrivateKeyFromPassword(string(password))
+			if err != nil {
+				return fmt.Errorf("failed to derive ed25519 private key from password: %v", err)
+			}
+			publicKey := ed25519.PrivateKey(privateKey).Public()
+			key = publicKey.(ed25519.PublicKey)
+		} else {
+			key, err = e4crypto.DeriveSymKey(string(password))
+			if err != nil {
+				return fmt.Errorf("failed to derive symKey from password: %v", err)
+			}
+		}
 	}
 
-	if err := e4.IsValidKey(key); err != nil {
-		return fmt.Errorf("invalid key: %v", err)
+	if c.flags.Pubkey {
+		if err := e4crypto.ValidateEd25519PubKey(key); err != nil {
+			return fmt.Errorf("invalid key: %v", err)
+		}
+	} else {
+		if err := e4crypto.ValidateSymKey(key); err != nil {
+			return fmt.Errorf("invalid key: %v", err)
+		}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

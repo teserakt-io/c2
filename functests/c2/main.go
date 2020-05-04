@@ -1,3 +1,17 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -7,7 +21,7 @@ import (
 	"os"
 	"time"
 
-	"gitlab.com/teserakt/c2/pkg/c2test"
+	"github.com/teserakt-io/c2/pkg/c2test"
 )
 
 // variables set at build time
@@ -31,13 +45,14 @@ func runTest(errorChan chan<- error, testFunc func()) {
 
 	s := time.Now()
 	testFunc()
-	fmt.Fprintf(os.Stderr, "Finished test suite (took %s)\n", time.Now().Sub(s))
+
+	fmt.Fprintf(os.Stderr, "Finished test suite (took %s)\n", time.Since(s))
 
 	errorChan <- nil
 }
 
 func main() {
-	fmt.Printf("E4: C2 functionnal tests - version %s-%s\n", buildDate, gitCommit)
+	fmt.Printf("E4: C2 functional tests - version %s-%s\n", buildDate, gitCommit)
 	fmt.Println("Copyright (c) Teserakt AG, 2018-2019")
 
 	var exitCode = 0

@@ -2,10 +2,14 @@
 # C2 configuration file, to be edited manually
 ###############################################################
 
-# Other settings
+# Crypto settings
 ###############################################################
-## in non-prod, allow sqlite, use 100% sampling rate, etc.
-production: false
+## supported modes are: symkey, pubkey
+crypto-mode: symkey
+## path to the private key file (for pubkey mode only)
+crypto-c2-private-key: c2_curve25519
+## enabled / disable sending the new generated pubkey to linked clients (pubkey mode only)
+crypto-new-client-key-send-pubkeys: true
 
 # MQTT settings
 ###############################################################
@@ -25,6 +29,14 @@ kafka-enabled: false
 ## space separated list of available brokers: host1:port1 host2:port2
 kafka-brokers: localhost:9092
 
+# GCP settings
+###############################################################
+gcp-enabled: false
+gcp-project-id: "teserakt-dev"
+gcp-region: "europe-west1"
+gcp-registry-id: "testRegistry"
+gcp-command-subfolder: "e4"
+
 # Database settings
 ###############################################################
 ## supported types are sqlite3 and postgres
@@ -41,8 +53,8 @@ db-file: /tmp/e4c2test.sqlite
 db-host: localhost
 ## db name
 db-database: e4
-## passphrase used to derive the key to encrypt keys in the db
-db-encryption-passphrase: meh
+## passphrase used to derive the key to encrypt keys in the db. Min 16 characters
+db-encryption-passphrase: very_secure_pass
 ## TLS connection: enabled || selfsigned || insecure
 db-secure-connection: enabled
 # Postgres database schema
@@ -74,13 +86,18 @@ http-key: c2-key.pem
 es-enable: true
 ## space separated list of available elasticsearch severs: http://host1:port1 http://host2:port2
 es-urls: http://127.0.0.1:9200
-## enable C2 logs forwarding to elasticsearch
-es-c2-logging-enable: true
-## name of the elasticSearch index for C2 logs. The indexes will be created daily like so: <name>-YYYY.MM.DD
-## ( /!\ changing it imply to update the kibana dashboards to use the new name)
-es-c2-logging-index: logs
 ## enable broker messages logging to elasticsearch
 es-message-logging-enable: true
 ## name of the elasticSearch index for messages. The indexes will be created daily like so: <name>-YYYY.MM.DD
 ## ( /!\ changing it imply to update the kibana dashboards to use the new name)
 es-message-logging-index: messages
+
+# OpenCensus settings
+###############################################################
+oc-agent-addr: localhost:55678
+oc-sample-all: true
+
+# Logging config
+###############################################################
+# Available levels: trace | debug | info | warn | error | fatal | panic
+log-level: debug

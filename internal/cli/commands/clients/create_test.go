@@ -1,16 +1,32 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package clients
 
 import (
 	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
-	"gitlab.com/teserakt/c2/pkg/pb"
-	e4 "gitlab.com/teserakt/e4common"
+	"golang.org/x/crypto/ed25519"
 
 	"github.com/golang/mock/gomock"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
 
-	"gitlab.com/teserakt/c2/internal/cli"
+	"github.com/teserakt-io/c2/internal/cli"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 func newTestCreateCommand(clientFactory cli.APIClientFactory) cli.Command {
@@ -21,7 +37,45 @@ func newTestCreateCommand(clientFactory cli.APIClientFactory) cli.Command {
 	return cmd
 }
 
+func createTempFile(t *testing.T, content []byte) (*os.File, func()) {
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "")
+	if err != nil {
+		t.Fatalf("failed to create temporary file: %v", err)
+	}
+
+	_, err = tmpFile.Write(content)
+	if err != nil {
+		t.Fatalf("failed to write content into file: %v", err)
+	}
+
+	return tmpFile, func() {
+		tmpFile.Close()
+		os.Remove(tmpFile.Name())
+	}
+}
+
 func TestCreate(t *testing.T) {
+	expectedPassword := "veryLongSecretPassword"
+
+	edPrivKey, err := e4crypto.Ed25519PrivateKeyFromPassword(expectedPassword)
+	if err != nil {
+		t.Fatalf("failed to create ed25519 private key from password: %v", err)
+	}
+
+	edPubKey := ed25519.PrivateKey(edPrivKey).Public().(ed25519.PublicKey)
+	if err != nil {
+		t.Fatalf("failed to derive symKey: %v", err)
+	}
+
+	validPasswordFile, cleanup := createTempFile(t, []byte(expectedPassword))
+	defer cleanup()
+	validKeyFile, cleanup := createTempFile(t, e4crypto.RandomKey())
+	defer cleanup()
+	invalidPasswordFile, cleanup := createTempFile(t, []byte("tooShort"))
+	defer cleanup()
+	invalidKeyFile, cleanup := createTempFile(t, e4crypto.RandomKey()[:e4crypto.KeyLen-1])
+	defer cleanup()
+
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -41,18 +95,18 @@ func TestCreate(t *testing.T) {
 			// Both password and key
 			map[string]string{
 				"name":     "testClient1",
-				"key":      "6162636465",
-				"password": "testPassword",
+				"key":      validKeyFile.Name(),
+				"password": validPasswordFile.Name(),
 			},
 			// Invalid key
 			map[string]string{
 				"name": "testClient1",
-				"key":  "6162636465",
+				"key":  invalidKeyFile.Name(),
 			},
 			// Invalid name - too long
 			map[string]string{
-				"name":     strings.Repeat("a", e4.NameMaxLen+1),
-				"password": "testPassword",
+				"name":     strings.Repeat("a", e4crypto.NameMaxLen+1),
+				"password": invalidPasswordFile.Name(),
 			},
 		}
 
@@ -70,10 +124,15 @@ func TestCreate(t *testing.T) {
 
 	t.Run("Execute forward expected request to the c2Client when passing a password", func(t *testing.T) {
 		expectedClientName := "testClient1"
-		expectedPassword := "testPassword"
+
+		k, err := e4crypto.DeriveSymKey(expectedPassword)
+		if err != nil {
+			t.Fatalf("failed to derive symKey: %v", err)
+		}
+
 		expectedRequest := &pb.NewClientRequest{
 			Client: &pb.Client{Name: expectedClientName},
-			Key:    e4.HashPwd(expectedPassword),
+			Key:    k,
 		}
 
 		c2Client.EXPECT().NewClient(gomock.Any(), expectedRequest).Return(&pb.NewClientResponse{}, nil)
@@ -81,8 +140,29 @@ func TestCreate(t *testing.T) {
 
 		cmd := newTestCreateCommand(c2ClientFactory)
 		cmd.CobraCmd().Flags().Set("name", expectedClientName)
-		cmd.CobraCmd().Flags().Set("password", expectedPassword)
-		err := cmd.CobraCmd().Execute()
+		cmd.CobraCmd().Flags().Set("password", validPasswordFile.Name())
+		err = cmd.CobraCmd().Execute()
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Execute forward expected request to the c2Client when passing a password in pubkey mode", func(t *testing.T) {
+		expectedClientName := "testClient1"
+
+		expectedRequest := &pb.NewClientRequest{
+			Client: &pb.Client{Name: expectedClientName},
+			Key:    edPubKey,
+		}
+
+		c2Client.EXPECT().NewClient(gomock.Any(), expectedRequest).Return(&pb.NewClientResponse{}, nil)
+		c2Client.EXPECT().Close()
+
+		cmd := newTestCreateCommand(c2ClientFactory)
+		cmd.CobraCmd().Flags().Set("name", expectedClientName)
+		cmd.CobraCmd().Flags().Set("password", validPasswordFile.Name())
+		cmd.CobraCmd().Flags().Set("pubkey", "1")
+		err = cmd.CobraCmd().Execute()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}

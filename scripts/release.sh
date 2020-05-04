@@ -33,6 +33,17 @@ OUTDIR=$OUTDIR GOOS=linux GOARCH=amd64 ./scripts/xbuild.sh
 OUTDIR=$OUTDIR GOOS=darwin GOARCH=amd64 ./scripts/xbuild.sh
 OUTDIR=$OUTDIR GOOS=windows GOARCH=amd64 ./scripts/xbuild.sh
 
+# Check for dynamic binaries on linux
+LINUX_BINARIES=$(find $OUTDIR/linux_amd64 -type f -executable)
+for bin in $LINUX_BINARIES; do 
+    if [[ $(echo $(ldd $bin) | grep -c "\.so") -gt 1 ]]; then 
+        echo "Build failed. Dynamic executable created on linux."
+        exit -1
+    else
+        echo "$bin is a static binary."
+    fi
+done
+
 mkdir -p $OUTDIR/configs/
 
 cp -v configs/config.yaml.example $OUTDIR/configs/

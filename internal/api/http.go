@@ -1,3 +1,17 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package api
 
 import (
@@ -7,16 +21,15 @@ import (
 	"net"
 	"net/http"
 
-	"gitlab.com/teserakt/c2/internal/config"
-	"gitlab.com/teserakt/c2/internal/services"
-	"gitlab.com/teserakt/c2/pkg/pb"
-
-	"github.com/go-kit/kit/log"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	log "github.com/sirupsen/logrus"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/plugin/ochttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	"github.com/teserakt-io/c2/internal/config"
+	"github.com/teserakt-io/c2/pkg/pb"
 )
 
 // HTTPServer defines methods available on a C2 HTTP server
@@ -25,23 +38,19 @@ type HTTPServer interface {
 }
 
 type httpServer struct {
-	e4Service    services.E4
-	logger       log.Logger
+	logger       log.FieldLogger
 	cfg          config.HTTPServerCfg
 	grpcCertPath string
-	isProd       bool
 }
 
-var _ HTTPServer = &httpServer{}
+var _ HTTPServer = (*httpServer)(nil)
 
 // NewHTTPServer creates a new http server for C2
-func NewHTTPServer(scfg config.HTTPServerCfg, grpcCertPath string, isProd bool, e4Service services.E4, logger log.Logger) HTTPServer {
+func NewHTTPServer(scfg config.HTTPServerCfg, grpcCertPath string, logger log.FieldLogger) HTTPServer {
 	return &httpServer{
-		e4Service:    e4Service,
 		logger:       logger,
 		cfg:          scfg,
 		grpcCertPath: grpcCertPath,
-		isProd:       isProd,
 	}
 }
 
@@ -72,7 +81,7 @@ func (s *httpServer) ListenAndServe(ctx context.Context) error {
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(creds), grpc.WithStatsHandler(&ocgrpc.ClientHandler{})}
 	err = pb.RegisterC2HandlerFromEndpoint(ctx, httpMux, s.cfg.GRPCAddr, opts)
 	if err != nil {
-		return fmt.Errorf("failed to register http listener : %v", err)
+		return fmt.Errorf("failed to register http listener: %v", err)
 	}
 
 	och := &ochttp.Handler{Handler: httpMux}
@@ -81,18 +90,18 @@ func (s *httpServer) ListenAndServe(ctx context.Context) error {
 		Addr:         s.cfg.Addr,
 		Handler:      och,
 		TLSConfig:    tlsConfig,
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
 	var lc net.ListenConfig
 	lis, err := lc.Listen(ctx, "tcp", s.cfg.Addr)
 	if err != nil {
-		s.logger.Log("msg", "failed to listen", "error", err)
+		s.logger.WithError(err).Error("failed to listen")
 
 		return err
 	}
 
-	s.logger.Log("msg", "starting http listener", "addr", s.cfg.Addr)
+	s.logger.WithField("addr", s.cfg.Addr).Info("starting http listener")
 
 	return apiServer.ServeTLS(lis, s.cfg.Cert, s.cfg.Key)
 }

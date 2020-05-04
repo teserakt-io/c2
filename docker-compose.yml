@@ -1,22 +1,16 @@
-version: '3.7'
+version: "3.7"
 
 services:
-
   vernemq:
     image: erlio/docker-vernemq
     ports:
       - "127.0.0.1:1883:1883"
     environment:
       - DOCKER_VERNEMQ_ALLOW_ANONYMOUS=on
-
-  # hivemq:
-  #   image: hivemq/hivemq3
-  #   ports:
-  #     - "127.0.0.1:1883:1883"
+      - DOCKER_VERNEMQ_ACCEPT_EULA=yes
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ELKTAG}
-    container_name: e4-elasticsearch
     environment:
       - bootstrap.memory_lock=true
       # avoid error: max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]
@@ -25,42 +19,24 @@ services:
     ports:
       - 127.0.0.1:9200:9200
     ulimits:
+      nproc: 65535
       memlock:
         soft: -1
         hard: -1
-    cap_add:
-      - ALL
     volumes:
       - esdata1:/usr/share/elasticsearch/data
-    networks:
-      - e4monitoring
 
   kibana:
     image: docker.elastic.co/kibana/kibana:${ELKTAG}
-    container_name: e4-kibana
-    environment:
-      SERVER_HOST: 0.0.0.0
-      SERVER_NAME: e4-kibana
-      ELASTICSEARCH_URL: http://elasticsearch:9200
-      ELASTICSEARCH_USERNAME: elastic
-      ELASTICSEARCH_HOST: elasticsearch
-      ELASTICSEARCH_PORT: 9200
-      KIBANA_PWD: KIBANA_PWD=changeme
     ports:
       - 127.0.0.1:5601:5601
-    volumes:
-      - ./configs/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
     ulimits:
       nproc: 65535
       memlock:
         soft: -1
         hard: -1
-    cap_add:
-      - ALL
     depends_on:
       - elasticsearch
-    networks:
-      - e4monitoring
 
   prometheus:
     image: prom/prometheus
@@ -70,30 +46,25 @@ services:
       - ./configs/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
     depends_on:
       - oc-agent
-    networks:
-      - e4monitoring
 
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
-      - 127.0.0.1:16686:16686
-    networks:
-      - e4monitoring
+      - "127.0.0.1:16686:16686"
 
   oc-agent:
-    build: docker/ocagent
+    image: omnition/opencensus-agent:0.1.11
     ports:
       - 127.0.0.1:9999:9999 # expose zPages (from custom port defined in configs/ocagent.yaml)
       - 127.0.0.1:55678:55678
     volumes:
       - ./configs/ocagent.yaml:/etc/ocagent/config.yaml:ro
+    command: "-c /etc/ocagent/config.yaml"
     depends_on:
       - jaeger
-    networks:
-      - e4monitoring
 
   postgres:
-    image: postgres:alpine
+    image: postgres:11-alpine
     environment:
       # Must be same as in configs/config.yaml#db-password
       - POSTGRES_PASSWORD=teserakte4
@@ -105,33 +76,30 @@ services:
       - 127.0.0.1:5432:5432
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./schema/postgres/init_docker.sql:/docker-entrypoint-initdb.d/init_docker.sql:ro
 
-  zookeeper:
-    image: zookeeper
-    ports:
-      - 127.0.0.1:2181:2181
-
-  kafka:
-    image: confluentinc/cp-kafka:5.2.1
-    ports:
-      - 127.0.0.1:9092:9092
-    environment:
-      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka:19092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
-      KAFKA_BROKER_ID: 1
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
-    volumes:
-      - kafkadata1:/var/lib/kafka/data
-    depends_on:
-      - zookeeper
+  # zookeeper:
+  #   image: zookeeper
+  #   ports:
+  #     - 127.0.0.1:2181:2181
+  # kafka:
+  #   image: confluentinc/cp-kafka:5.2.1
+  #   ports:
+  #     - 127.0.0.1:9092:9092
+  #   environment:
+  #     KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka:19092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+  #     KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  #     KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+  #     KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+  #   volumes:
+  #     - kafkadata1:/var/lib/kafka/data
+  #   depends_on:
+  #     - zookeeper
 
 volumes:
   esdata1:
   postgres-data:
-  kafkadata1:
-
-networks:
-  e4monitoring:
+  # kafkadata1:

@@ -1,10 +1,24 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package config
 
 import (
 	"errors"
 	"fmt"
 
-	libconfig "gitlab.com/teserakt/serverlib/config"
+	slibcfg "github.com/teserakt-io/serverlib/config"
 )
 
 var (
@@ -37,6 +51,8 @@ var (
 	ErrIndexNameRequired = errors.New("index name is required")
 	// ErrGRPCAddrRequired is returned when the http-grpc-host-port is empty but required
 	ErrGRPCAddrRequired = errors.New("http-grpc-host-port is required")
+	// ErrInvalidCryptoMode is returned when the provided crypto mode is unknown
+	ErrInvalidCryptoMode = errors.New("crypto-mode is invalid")
 )
 
 // Validate check Config and returns an error if anything is invalid
@@ -58,11 +74,15 @@ func (c Config) Validate() error {
 	}
 
 	if err := c.Kafka.Validate(); err != nil {
-		return fmt.Errorf("Kafka configuration validation error: %v", err)
+		return fmt.Errorf("kafka configuration validation error: %v", err)
 	}
 
 	if err := c.DB.Validate(); err != nil {
 		return fmt.Errorf("DB configuration validation error: %v", err)
+	}
+
+	if err := c.Crypto.Validate(); err != nil {
+		return fmt.Errorf("crypto configuration validation error: %v", err)
 	}
 
 	return nil
@@ -109,10 +129,6 @@ func (c ESCfg) Validate() error {
 		return ErrAtLeastOneURLRequired
 	}
 
-	if c.IsC2LoggingEnabled() && len(c.C2LogsIndexName) == 0 {
-		return ErrIndexNameRequired
-	}
-
 	if c.IsMessageLoggingEnabled() && len(c.MessageIndexName) == 0 {
 		return ErrIndexNameRequired
 	}
@@ -132,9 +148,9 @@ func (c DBCfg) Validate() error {
 	}
 
 	switch c.Type {
-	case libconfig.DBTypePostgres:
+	case slibcfg.DBTypePostgres:
 		return c.validatePostgres()
-	case libconfig.DBTypeSQLite:
+	case slibcfg.DBTypeSQLite:
 		return c.validateSQLite()
 	default:
 		return ErrUnsupportedDBType
@@ -162,9 +178,9 @@ func (c DBCfg) validatePostgres() error {
 		return ErrNoSchema
 	}
 
-	if c.SecureConnection != libconfig.DBSecureConnectionEnabled &&
-		c.SecureConnection != libconfig.DBSecureConnectionSelfSigned &&
-		c.SecureConnection != libconfig.DBSecureConnectionInsecure {
+	if c.SecureConnection != slibcfg.DBSecureConnectionEnabled &&
+		c.SecureConnection != slibcfg.DBSecureConnectionSelfSigned &&
+		c.SecureConnection != slibcfg.DBSecureConnectionInsecure {
 		return ErrInvalidSecureConnection
 	}
 
@@ -174,6 +190,22 @@ func (c DBCfg) validatePostgres() error {
 func (c DBCfg) validateSQLite() error {
 	if len(c.File) == 0 {
 		return ErrNoDBFile
+	}
+
+	return nil
+}
+
+// Validate checks CryptoCfg and returns an error if anything is invalid
+func (c CryptoCfg) Validate() error {
+	switch c.CryptoMode() {
+	case SymKey:
+		return nil
+	case PubKey:
+		if len(c.C2PrivateKeyPath) == 0 {
+			return ErrNoKey
+		}
+	default:
+		return ErrInvalidCryptoMode
 	}
 
 	return nil

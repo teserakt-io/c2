@@ -1,10 +1,24 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package config
 
 import (
 	"fmt"
 	"testing"
 
-	slibcfg "gitlab.com/teserakt/serverlib/config"
+	slibcfg "github.com/teserakt-io/serverlib/config"
 )
 
 func TestDBCfg(t *testing.T) {
@@ -13,6 +27,7 @@ func TestDBCfg(t *testing.T) {
 		expectedHost := "some/host:port"
 		expectedUsername := "username"
 		expectedPassword := "password"
+		expectedSchema := "schema"
 
 		cfg := DBCfg{
 			Type:     slibcfg.DBTypePostgres,
@@ -20,14 +35,16 @@ func TestDBCfg(t *testing.T) {
 			Host:     expectedHost,
 			Username: expectedUsername,
 			Password: expectedPassword,
+			Schema:   expectedSchema,
 		}
 
 		expectedConnectionString := fmt.Sprintf(
-			"host=%s dbname=%s user=%s password=%s %s",
+			"host=%s dbname=%s user=%s password=%s search_path=%s %s",
 			expectedHost,
 			expectedDatabase,
 			expectedUsername,
 			expectedPassword,
+			expectedSchema,
 			slibcfg.PostgresSSLModeFull,
 		)
 
@@ -63,7 +80,7 @@ func TestDBCfg(t *testing.T) {
 
 	t.Run("ConnectionString returns an error on unsupported DB type", func(t *testing.T) {
 		cfg := DBCfg{
-			Type: slibcfg.DBType("unknow"),
+			Type: slibcfg.DBType("unknown"),
 		}
 
 		_, err := cfg.ConnectionString()

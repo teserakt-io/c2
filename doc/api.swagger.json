@@ -25,6 +25,12 @@
             "schema": {
               "$ref": "#/definitions/pbRemoveClientResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
           }
         },
         "parameters": [
@@ -47,6 +53,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/pbNewClientResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -79,6 +91,12 @@
             "schema": {
               "$ref": "#/definitions/pbResetClientResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
           }
         },
         "parameters": [
@@ -101,6 +119,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/pbNewClientKeyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -125,6 +149,82 @@
         ]
       }
     },
+    "/e4/client/{client.name}/link": {
+      "get": {
+        "summary": "Retrieve clients linked to the given client",
+        "operationId": "GetLinkedClients",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbGetLinkedClientsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "client.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/client/{client.name}/link/count": {
+      "get": {
+        "summary": "Count clients linked to the given client",
+        "operationId": "CountLinkedClients",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCountLinkedClientsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "client.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
     "/e4/client/{client.name}/topic/{topic}": {
       "delete": {
         "summary": "Remove a topic / client association",
@@ -134,6 +234,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/pbRemoveTopicClientResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -163,6 +269,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/pbNewTopicClientResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -194,6 +306,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/pbGetTopicsForClientResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -234,11 +352,91 @@
             "schema": {
               "$ref": "#/definitions/pbCountTopicsForClientResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
           }
         },
         "parameters": [
           {
             "name": "client.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/client/{targetClient.name}/link/{sourceClient.name}": {
+      "post": {
+        "summary": "Create a client-client link between on a target client",
+        "operationId": "LinkClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbLinkClientResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "targetClient.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sourceClient.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/client/{targetClient.name}/unlink/{sourceClient.name}": {
+      "delete": {
+        "summary": "Remove a client-client link on a target client",
+        "operationId": "UnlinkClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbUnlinkClientResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "targetClient.name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sourceClient.name",
             "in": "path",
             "required": true,
             "type": "string"
@@ -258,6 +456,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/pbGetClientsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -292,6 +496,12 @@
             "schema": {
               "$ref": "#/definitions/pbCountClientsResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
           }
         },
         "tags": [
@@ -299,15 +509,21 @@
         ]
       }
     },
-    "/e4/message": {
+    "/e4/new-c2-key": {
       "post": {
-        "summary": "Send a message on a topic",
-        "operationId": "SendMessage",
+        "summary": "Generate a new C2 key",
+        "operationId": "NewC2Key",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbSendMessageResponse"
+              "$ref": "#/definitions/pbNewC2KeyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -317,7 +533,139 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/pbSendMessageRequest"
+              "$ref": "#/definitions/pbNewC2KeyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/protect-message": {
+      "post": {
+        "summary": "ProtectMessage returns base64 encoded data, representing the input data protected with the input topic key.",
+        "operationId": "ProtectMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbProtectMessageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbProtectMessageRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/remove-client-pubkey": {
+      "post": {
+        "summary": "Remove a client pubkey from another client (pubkey mode only)",
+        "operationId": "RemoveClientPubKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbRemoveClientPubKeyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbRemoveClientPubKeyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/reset-client-pubkeys": {
+      "post": {
+        "summary": "Remove all pubkeys from a client",
+        "operationId": "ResetClientPubKeys",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbResetClientPubKeysResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbResetClientPubKeysRequest"
+            }
+          }
+        ],
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/send-client-pubkey": {
+      "post": {
+        "summary": "Send a client pubkey to another client (pubkey mode only)",
+        "operationId": "SendClientPubKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbSendClientPubKeyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbSendClientPubKeyRequest"
             }
           }
         ],
@@ -335,6 +683,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/pbRemoveTopicResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -358,6 +712,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/pbNewTopicResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -383,6 +743,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/pbGetClientsForTopicResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -423,6 +789,12 @@
             "schema": {
               "$ref": "#/definitions/pbCountClientsForTopicResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
           }
         },
         "parameters": [
@@ -447,6 +819,12 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/pbGetTopicsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -481,8 +859,47 @@
             "schema": {
               "$ref": "#/definitions/pbCountTopicsResponse"
             }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
           }
         },
+        "tags": [
+          "C2"
+        ]
+      }
+    },
+    "/e4/unprotect-message": {
+      "post": {
+        "summary": "UnprotectMessage returns base64 encoded data, representing the input data unprotected with the input topic key.",
+        "operationId": "UnprotectMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbUnprotectMessageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbUnprotectMessageRequest"
+            }
+          }
+        ],
         "tags": [
           "C2"
         ]
@@ -516,6 +933,15 @@
         }
       }
     },
+    "pbCountLinkedClientsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "pbCountTopicsForClientResponse": {
       "type": "object",
       "properties": {
@@ -534,6 +960,34 @@
         }
       }
     },
+    "pbEvent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/pbEventType"
+        },
+        "source": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Hold the time where event is sent"
+        }
+      }
+    },
+    "pbEventType": {
+      "type": "string",
+      "enum": [
+        "UNDEFINED",
+        "CLIENT_SUBSCRIBED",
+        "CLIENT_UNSUBSCRIBED"
+      ],
+      "default": "UNDEFINED"
+    },
     "pbGetClientsForTopicResponse": {
       "type": "object",
       "properties": {
@@ -546,6 +1000,17 @@
       }
     },
     "pbGetClientsResponse": {
+      "type": "object",
+      "properties": {
+        "clients": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbClient"
+          }
+        }
+      }
+    },
+    "pbGetLinkedClientsResponse": {
       "type": "object",
       "properties": {
         "clients": {
@@ -577,6 +1042,21 @@
           }
         }
       }
+    },
+    "pbLinkClientResponse": {
+      "type": "object"
+    },
+    "pbNewC2KeyRequest": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "pbNewC2KeyResponse": {
+      "type": "object"
     },
     "pbNewClientKeyRequest": {
       "type": "object",
@@ -610,6 +1090,44 @@
     "pbNewTopicResponse": {
       "type": "object"
     },
+    "pbProtectMessageRequest": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "binaryData": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "pbProtectMessageResponse": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "protectedBinaryData": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "pbRemoveClientPubKeyRequest": {
+      "type": "object",
+      "properties": {
+        "sourceClient": {
+          "$ref": "#/definitions/pbClient"
+        },
+        "targetClient": {
+          "$ref": "#/definitions/pbClient"
+        }
+      }
+    },
+    "pbRemoveClientPubKeyResponse": {
+      "type": "object"
+    },
     "pbRemoveClientResponse": {
       "type": "object"
     },
@@ -619,22 +1137,121 @@
     "pbRemoveTopicResponse": {
       "type": "object"
     },
+    "pbResetClientPubKeysRequest": {
+      "type": "object",
+      "properties": {
+        "targetClient": {
+          "$ref": "#/definitions/pbClient"
+        }
+      }
+    },
+    "pbResetClientPubKeysResponse": {
+      "type": "object"
+    },
     "pbResetClientResponse": {
       "type": "object"
     },
-    "pbSendMessageRequest": {
+    "pbSendClientPubKeyRequest": {
+      "type": "object",
+      "properties": {
+        "sourceClient": {
+          "$ref": "#/definitions/pbClient"
+        },
+        "targetClient": {
+          "$ref": "#/definitions/pbClient"
+        }
+      }
+    },
+    "pbSendClientPubKeyResponse": {
+      "type": "object"
+    },
+    "pbUnlinkClientResponse": {
+      "type": "object"
+    },
+    "pbUnprotectMessageRequest": {
       "type": "object",
       "properties": {
         "topic": {
           "type": "string"
         },
-        "message": {
-          "type": "string"
+        "protectedBinaryData": {
+          "type": "string",
+          "format": "byte"
         }
       }
     },
-    "pbSendMessageResponse": {
-      "type": "object"
+    "pbUnprotectMessageResponse": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "binaryData": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        },
+        "value": {
+          "type": "string",
+          "format": "byte",
+          "description": "Must be a valid serialized protocol buffer of the above specified type."
+        }
+      },
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := ptypes.MarshalAny(foo)\n     ...\n     foo := \u0026pb.Foo{}\n     if err := ptypes.UnmarshalAny(any, foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "runtimeStreamError": {
+      "type": "object",
+      "properties": {
+        "grpc_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "http_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "http_status": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
     }
   }
 }

@@ -1,9 +1,25 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package models
 
-//go:generate mockgen -destination=database_mocks.go -package models -self_package gitlab.com/teserakt/c2/internal/models gitlab.com/teserakt/c2/internal/models Database
+//go:generate mockgen -copyright_file ../../doc/COPYRIGHT_TEMPLATE.txt -destination=database_mocks.go -package models -self_package github.com/teserakt-io/c2/internal/models github.com/teserakt-io/c2/internal/models Database
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -17,8 +33,9 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	// _ "github.com/jinzhu/gorm/dialects/mssql"
 
-	"gitlab.com/teserakt/c2/internal/config"
-	e4 "gitlab.com/teserakt/e4common"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
+
+	"github.com/teserakt-io/c2/internal/config"
 )
 
 // QueryLimit defines the maximum number of records returned
@@ -49,6 +66,11 @@ type Database interface {
 	Connection() *gorm.DB
 	Migrate() error
 
+	// Transaction management
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (Database, error)
+	CommitTx() error
+	Rollback() error
+
 	// Client Only Manipulation
 	InsertClient(name string, id, protectedkey []byte) error
 	GetClientByID(id []byte) (Client, error)
@@ -70,13 +92,23 @@ type Database interface {
 	LinkClientTopic(client Client, topicKey TopicKey) error
 	UnlinkClientTopic(client Client, topicKey TopicKey) error
 
-	// > Counting topics per client, or clients per topic.
+	// Counting topics per client, or clients per topic.
 	CountTopicsForClientByID(id []byte) (int, error)
 	CountClientsForTopic(topic string) (int, error)
 
-	// > Retrieving clients per topic or topics per client
+	// Retrieving clients per topic or topics per client
 	GetTopicsForClientByID(id []byte, offset int, count int) ([]TopicKey, error)
 	GetClientsForTopic(topic string, offset int, count int) ([]Client, error)
+
+	// Linking, removing client-client mappings:
+	LinkClient(source Client, target Client) error
+	UnlinkClient(source Client, target Client) error
+
+	// Counting client's linked clients
+	CountLinkedClients(id []byte) (int, error)
+
+	// Retrieving clients per client
+	GetLinkedClientsForClientByID(id []byte, offset int, count int) ([]Client, error)
 }
 
 type gormDB struct {
@@ -85,7 +117,7 @@ type gormDB struct {
 	logger *log.Logger
 }
 
-var _ Database = &gormDB{}
+var _ Database = (*gormDB)(nil)
 
 // NewDB creates a new database
 func NewDB(config config.DBCfg, logger *log.Logger) (Database, error) {
@@ -119,8 +151,6 @@ func (gdb *gormDB) Migrate() error {
 	case DBDialectSQLite:
 		// Enable foreign key support for sqlite3
 		gdb.Connection().Exec("PRAGMA foreign_keys = ON")
-	case DBDialectPostgres:
-		gdb.Connection().Exec(fmt.Sprintf("SET search_path TO %s;", gdb.config.Schema))
 	}
 
 	result := gdb.Connection().AutoMigrate(
@@ -159,6 +189,30 @@ func (gdb *gormDB) Migrate() error {
 				return err
 			}
 		}
+
+		// Add foreign key on clientkeys client_id
+		exists, err = gdb.pgCheckConstraint("clients_clientkeys_client_fk", "clients_clientkeys")
+		if err != nil {
+			return err
+		}
+
+		if !exists {
+			if err := gdb.Connection().Exec("ALTER TABLE clients_clientkeys ADD CONSTRAINT clients_clientkeys_client_fk FOREIGN KEY(client_id) REFERENCES clients (id) ON DELETE CASCADE;").Error; err != nil {
+				return err
+			}
+		}
+
+		// Add foreign key on clientkeys clientkey_id
+		exists, err = gdb.pgCheckConstraint("clients_clientkeys_clientkey_fk", "clients_clientkeys")
+		if err != nil {
+			return err
+		}
+
+		if !exists {
+			if err := gdb.Connection().Exec("ALTER TABLE clients_clientkeys ADD CONSTRAINT clients_clientkeys_clientkey_fk FOREIGN KEY(clientkey_id) REFERENCES clients (id) ON DELETE CASCADE;").Error; err != nil {
+				return err
+			}
+		}
 	}
 
 	gdb.logger.Println("Database Migration Finished.")
@@ -167,10 +221,10 @@ func (gdb *gormDB) Migrate() error {
 }
 
 // pgCheckConstraint probe the db to check if a foreign key with `name` exists on `table`
-// This method only support postgres dialect and will return an error otherwise.
+// This method only support Postgres dialect and will return an error otherwise.
 func (gdb *gormDB) pgCheckConstraint(name, table string) (bool, error) {
 	if gdb.config.Type != DBDialectPostgres {
-		return false, errors.New("invalid db dialect, only postgres is supported")
+		return false, errors.New("invalid db dialect, only Postgres is supported")
 	}
 
 	type constraintCounter struct {
@@ -199,13 +253,13 @@ func (gdb *gormDB) InsertClient(name string, id, protectedkey []byte) error {
 	// based functions.
 	// If the name is known, we must have H(name)==ID. Enforce this here:
 	if name != "" {
-		idtest := e4.HashIDAlias(name)
-		if bytes.Equal(id, idtest) == false {
+		idTest := e4crypto.HashIDAlias(name)
+		if !bytes.Equal(id, idTest) {
 			return errors.New("H(Name) != E4ID, refusing to create or update client")
 		}
 	} else {
-		if len(id) != e4.IDLen {
-			return fmt.Errorf("ID Length invalid: got %d, expected %d", len(id), e4.IDLen)
+		if len(id) != e4crypto.IDLen {
+			return fmt.Errorf("ID Length invalid: got %d, expected %d", len(id), e4crypto.IDLen)
 		}
 	}
 
@@ -256,7 +310,7 @@ func (gdb *gormDB) GetClientByID(id []byte) (Client, error) {
 	}
 
 	if !bytes.Equal(id, client.E4ID) {
-		return Client{}, errors.New("Internal error: struct not populated but GORM indicated success")
+		return Client{}, errors.New("internal error: struct not populated but GORM indicated success")
 	}
 
 	return client, nil
@@ -271,7 +325,7 @@ func (gdb *gormDB) GetTopicKey(topic string) (TopicKey, error) {
 	}
 
 	if strings.Compare(topickey.Topic, topic) != 0 {
-		return TopicKey{}, errors.New("Internal error: struct not populated but GORM indicated success")
+		return TopicKey{}, errors.New("internal error: struct not populated but GORM indicated success")
 	}
 
 	return topickey, nil
@@ -286,7 +340,7 @@ func (gdb *gormDB) DeleteClientByID(id []byte) error {
 
 	// safety check:
 	if !bytes.Equal(client.E4ID, id) {
-		return errors.New("Single record not populated correctly; preventing whole DB delete")
+		return errors.New("single record not populated correctly; preventing whole DB delete")
 	}
 
 	tx := gdb.db.Begin()
@@ -311,7 +365,7 @@ func (gdb *gormDB) DeleteTopicKey(topic string) error {
 	}
 
 	if topicKey.Topic != topic {
-		return errors.New("Single record not populated correctly; preventing whole DB delete")
+		return errors.New("single record not populated correctly; preventing whole DB delete")
 	}
 
 	tx := gdb.db.Begin()
@@ -453,7 +507,7 @@ func (gdb *gormDB) UnlinkClientTopic(client Client, topicKey TopicKey) error {
 	if err := tx.Where(&TopicKey{ID: topicKey.ID}).First(&topicKey).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			tx.Rollback()
-			return errors.New("Topic appears to have been deleted, this is just an unlink")
+			return errors.New("topic appears to have been deleted, this is just an unlink")
 		}
 		return err
 	}
@@ -465,7 +519,6 @@ func (gdb *gormDB) UnlinkClientTopic(client Client, topicKey TopicKey) error {
 }
 
 func (gdb *gormDB) GetTopicsForClientByID(id []byte, offset int, count int) ([]TopicKey, error) {
-
 	var client Client
 	var topickeys []TopicKey
 
@@ -474,7 +527,6 @@ func (gdb *gormDB) GetTopicsForClientByID(id []byte, offset int, count int) ([]T
 	}
 
 	if err := gdb.db.Model(&client).Order("topic").Offset(offset).Limit(count).Related(&topickeys, "TopicKeys").Error; err != nil {
-
 		return nil, err
 	}
 
@@ -493,7 +545,6 @@ func (gdb *gormDB) CountClientsForTopic(topic string) (int, error) {
 }
 
 func (gdb *gormDB) CountTopicsForClientByID(id []byte) (int, error) {
-
 	var client Client
 
 	if err := gdb.db.Where(&Client{E4ID: id}).First(&client).Error; err != nil {
@@ -506,7 +557,6 @@ func (gdb *gormDB) CountTopicsForClientByID(id []byte) (int, error) {
 }
 
 func (gdb *gormDB) GetClientsForTopic(topic string, offset int, count int) ([]Client, error) {
-
 	var topickey TopicKey
 	var clients []Client
 
@@ -519,6 +569,89 @@ func (gdb *gormDB) GetClientsForTopic(topic string, offset int, count int) ([]Cl
 	}
 
 	return clients, nil
+}
+
+// LinkClient links source client to target client, such as the source client will appears in the target linked clients.
+// This link is uni directional, so LinkClients must be called twice, inverting its parameters for creating
+// a bidirectional link.
+func (gdb *gormDB) LinkClient(source Client, target Client) error {
+	if gdb.db.NewRecord(source) {
+		return ErrClientNoPrimaryKey
+	}
+
+	if gdb.db.NewRecord(target) {
+		return ErrClientNoPrimaryKey
+	}
+
+	if err := gdb.db.Model(&target).Association("Clients").Append(&source).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UnlinkClient remove the link between source and target, such as source client won't appear in target linked clients anymore.
+func (gdb *gormDB) UnlinkClient(source Client, target Client) error {
+	if gdb.db.NewRecord(source) {
+		return ErrClientNoPrimaryKey
+	}
+
+	if gdb.db.NewRecord(target) {
+		return ErrClientNoPrimaryKey
+	}
+
+	if err := gdb.db.Model(&target).Association("Clients").Delete(&source).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (gdb *gormDB) CountLinkedClients(id []byte) (int, error) {
+	var client Client
+	if err := gdb.db.Where(&Client{E4ID: id}).First(&client).Error; err != nil {
+		return 0, err
+	}
+
+	count := gdb.db.Model(&client).Association("Clients").Count()
+
+	return count, nil
+}
+
+func (gdb *gormDB) GetLinkedClientsForClientByID(id []byte, offset int, count int) ([]Client, error) {
+	var client Client
+	var clients []Client
+
+	if err := gdb.db.Where(&Client{E4ID: id}).First(&client).Error; err != nil {
+		return nil, err
+	}
+
+	if err := gdb.db.Model(&client).Order("name").Offset(offset).Limit(count).Related(&clients, "Clients").Error; err != nil {
+		return nil, err
+	}
+
+	return clients, nil
+}
+
+func (gdb *gormDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (Database, error) {
+	db := gdb.db.BeginTx(ctx, opts)
+	if db.Error != nil {
+		return nil, db.Error
+	}
+
+	return &gormDB{
+		logger: gdb.logger,
+		config: gdb.config,
+		db:     db,
+	}, nil
+}
+
+func (gdb *gormDB) CommitTx() error {
+	return gdb.db.Commit().Error
+}
+
+func (gdb *gormDB) Rollback() error {
+	return gdb.db.Rollback().Error
 }
 
 // IsErrRecordNotFound indicate whenever the err is a gorm.RecordNotFound error

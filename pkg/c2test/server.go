@@ -1,3 +1,17 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package c2test
 
 import (
@@ -20,7 +34,7 @@ type server struct {
 	cmd          *exec.Cmd
 }
 
-var _ Server = &server{}
+var _ Server = (*server)(nil)
 
 // NewServer creates a new C2 server to use for testing
 func NewServer(mqttEndpoint string) Server {
@@ -33,17 +47,24 @@ func NewServer(mqttEndpoint string) Server {
 // Start will launch a C2 server and wait for it to be online
 func (s *server) Start() error {
 	// Start C2 server
-	DBNAME := fmt.Sprintf("E4C2_DB_FILE=%s", s.dbPath)
-	BROKER := fmt.Sprintf("E4C2_MQTT_BROKER=tcp://%s", s.mqttEndpoint)
-	ESENABLE := "E4C2_ES_ENABLE=false"
+	dbType := "E4C2_DB_TYPE=sqlite3"
+	dbName := fmt.Sprintf("E4C2_DB_FILE=%s", s.dbPath)
+	broker := fmt.Sprintf("E4C2_MQTT_BROKER=tcp://%s", s.mqttEndpoint)
+	esEnable := "E4C2_ES_ENABLE=false"
+	passphrase := "E4C2_DB_ENCRYPTION_PASSPHRASE=very_secure_testpass"
+	cryptoMode := "E4C2_CRYPTO_MODE=symkey"
 
-	fmt.Fprintf(os.Stderr, "Database set to %s\n", DBNAME)
-	fmt.Fprintf(os.Stderr, "Broker set to %s\n", BROKER)
+	fmt.Fprintf(os.Stderr, "Database set to %s\n", dbName)
+	fmt.Fprintf(os.Stderr, "Broker set to %s\n", broker)
 
-	env := []string{"E4C2_DB_TYPE=sqlite3"}
-	env = append(env, DBNAME)
-	env = append(env, BROKER)
-	env = append(env, ESENABLE)
+	env := []string{
+		dbType,
+		dbName,
+		broker,
+		esEnable,
+		passphrase,
+		cryptoMode,
+	}
 
 	s.cmd = exec.Command("bin/c2")
 	s.cmd.Env = append(os.Environ(), env...)

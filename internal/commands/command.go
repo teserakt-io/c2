@@ -1,11 +1,24 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package commands
 
 import (
 	"errors"
-	e4 "gitlab.com/teserakt/e4common"
 )
 
-//go:generate mockgen -destination=command_mocks.go -package commands -self_package gitlab.com/teserakt/c2/internal/commands gitlab.com/teserakt/c2/internal/commands Command
+//go:generate mockgen -copyright_file ../../doc/COPYRIGHT_TEMPLATE.txt -destination=command_mocks.go -package commands -self_package github.com/teserakt-io/c2/internal/commands github.com/teserakt-io/c2/internal/commands Command
 
 var (
 	// ErrEmptyCommand is returned when trying to access content of an empty command
@@ -14,21 +27,21 @@ var (
 
 // Command defines an interface for a protectable Commands
 type Command interface {
-	Protect(key []byte) ([]byte, error)
-	Type() (e4.Command, error)
+	Type() (byte, error)
 	Content() ([]byte, error)
+	Bytes() []byte
 }
 
 type e4Command []byte
 
-var _ Command = e4Command{}
+var _ Command = (e4Command)(nil)
 
-func (c e4Command) Type() (e4.Command, error) {
+func (c e4Command) Type() (byte, error) {
 	if len(c) <= 0 {
 		return 0, ErrEmptyCommand
 	}
 
-	return e4.Command(c[0]), nil
+	return c[0], nil
 }
 
 func (c e4Command) Content() ([]byte, error) {
@@ -39,7 +52,6 @@ func (c e4Command) Content() ([]byte, error) {
 	return c[1:], nil
 }
 
-// Protect returns an encrypoted command payload with the given key
-func (c e4Command) Protect(key []byte) ([]byte, error) {
-	return e4.Protect(c, key)
+func (c e4Command) Bytes() []byte {
+	return c
 }

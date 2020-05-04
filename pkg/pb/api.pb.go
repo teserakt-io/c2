@@ -7,6 +7,7 @@ import (
 	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/options"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
@@ -25,6 +26,34 @@ var _ = math.Inf
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
+
+type EventType int32
+
+const (
+	EventType_UNDEFINED           EventType = 0
+	EventType_CLIENT_SUBSCRIBED   EventType = 1
+	EventType_CLIENT_UNSUBSCRIBED EventType = 2
+)
+
+var EventType_name = map[int32]string{
+	0: "UNDEFINED",
+	1: "CLIENT_SUBSCRIBED",
+	2: "CLIENT_UNSUBSCRIBED",
+}
+
+var EventType_value = map[string]int32{
+	"UNDEFINED":           0,
+	"CLIENT_SUBSCRIBED":   1,
+	"CLIENT_UNSUBSCRIBED": 2,
+}
+
+func (x EventType) String() string {
+	return proto.EnumName(EventType_name, int32(x))
+}
+
+func (EventType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{0}
+}
 
 type Client struct {
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -1305,85 +1334,915 @@ func (m *GetTopicsResponse) GetTopics() []string {
 	return nil
 }
 
-type SendMessageRequest struct {
-	Topic                string   `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
-	Message              string   `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+type LinkClientRequest struct {
+	SourceClient         *Client  `protobuf:"bytes,1,opt,name=sourceClient,proto3" json:"sourceClient,omitempty"`
+	TargetClient         *Client  `protobuf:"bytes,2,opt,name=targetClient,proto3" json:"targetClient,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SendMessageRequest) Reset()         { *m = SendMessageRequest{} }
-func (m *SendMessageRequest) String() string { return proto.CompactTextString(m) }
-func (*SendMessageRequest) ProtoMessage()    {}
-func (*SendMessageRequest) Descriptor() ([]byte, []int) {
+func (m *LinkClientRequest) Reset()         { *m = LinkClientRequest{} }
+func (m *LinkClientRequest) String() string { return proto.CompactTextString(m) }
+func (*LinkClientRequest) ProtoMessage()    {}
+func (*LinkClientRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_00212fb1f9d3bf1c, []int{33}
 }
 
-func (m *SendMessageRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SendMessageRequest.Unmarshal(m, b)
+func (m *LinkClientRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LinkClientRequest.Unmarshal(m, b)
 }
-func (m *SendMessageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SendMessageRequest.Marshal(b, m, deterministic)
+func (m *LinkClientRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LinkClientRequest.Marshal(b, m, deterministic)
 }
-func (m *SendMessageRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SendMessageRequest.Merge(m, src)
+func (m *LinkClientRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LinkClientRequest.Merge(m, src)
 }
-func (m *SendMessageRequest) XXX_Size() int {
-	return xxx_messageInfo_SendMessageRequest.Size(m)
+func (m *LinkClientRequest) XXX_Size() int {
+	return xxx_messageInfo_LinkClientRequest.Size(m)
 }
-func (m *SendMessageRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_SendMessageRequest.DiscardUnknown(m)
+func (m *LinkClientRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_LinkClientRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SendMessageRequest proto.InternalMessageInfo
+var xxx_messageInfo_LinkClientRequest proto.InternalMessageInfo
 
-func (m *SendMessageRequest) GetTopic() string {
+func (m *LinkClientRequest) GetSourceClient() *Client {
+	if m != nil {
+		return m.SourceClient
+	}
+	return nil
+}
+
+func (m *LinkClientRequest) GetTargetClient() *Client {
+	if m != nil {
+		return m.TargetClient
+	}
+	return nil
+}
+
+type LinkClientResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *LinkClientResponse) Reset()         { *m = LinkClientResponse{} }
+func (m *LinkClientResponse) String() string { return proto.CompactTextString(m) }
+func (*LinkClientResponse) ProtoMessage()    {}
+func (*LinkClientResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{34}
+}
+
+func (m *LinkClientResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LinkClientResponse.Unmarshal(m, b)
+}
+func (m *LinkClientResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LinkClientResponse.Marshal(b, m, deterministic)
+}
+func (m *LinkClientResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LinkClientResponse.Merge(m, src)
+}
+func (m *LinkClientResponse) XXX_Size() int {
+	return xxx_messageInfo_LinkClientResponse.Size(m)
+}
+func (m *LinkClientResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_LinkClientResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LinkClientResponse proto.InternalMessageInfo
+
+type UnlinkClientRequest struct {
+	SourceClient         *Client  `protobuf:"bytes,1,opt,name=sourceClient,proto3" json:"sourceClient,omitempty"`
+	TargetClient         *Client  `protobuf:"bytes,2,opt,name=targetClient,proto3" json:"targetClient,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *UnlinkClientRequest) Reset()         { *m = UnlinkClientRequest{} }
+func (m *UnlinkClientRequest) String() string { return proto.CompactTextString(m) }
+func (*UnlinkClientRequest) ProtoMessage()    {}
+func (*UnlinkClientRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{35}
+}
+
+func (m *UnlinkClientRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UnlinkClientRequest.Unmarshal(m, b)
+}
+func (m *UnlinkClientRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UnlinkClientRequest.Marshal(b, m, deterministic)
+}
+func (m *UnlinkClientRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UnlinkClientRequest.Merge(m, src)
+}
+func (m *UnlinkClientRequest) XXX_Size() int {
+	return xxx_messageInfo_UnlinkClientRequest.Size(m)
+}
+func (m *UnlinkClientRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UnlinkClientRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UnlinkClientRequest proto.InternalMessageInfo
+
+func (m *UnlinkClientRequest) GetSourceClient() *Client {
+	if m != nil {
+		return m.SourceClient
+	}
+	return nil
+}
+
+func (m *UnlinkClientRequest) GetTargetClient() *Client {
+	if m != nil {
+		return m.TargetClient
+	}
+	return nil
+}
+
+type UnlinkClientResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *UnlinkClientResponse) Reset()         { *m = UnlinkClientResponse{} }
+func (m *UnlinkClientResponse) String() string { return proto.CompactTextString(m) }
+func (*UnlinkClientResponse) ProtoMessage()    {}
+func (*UnlinkClientResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{36}
+}
+
+func (m *UnlinkClientResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UnlinkClientResponse.Unmarshal(m, b)
+}
+func (m *UnlinkClientResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UnlinkClientResponse.Marshal(b, m, deterministic)
+}
+func (m *UnlinkClientResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UnlinkClientResponse.Merge(m, src)
+}
+func (m *UnlinkClientResponse) XXX_Size() int {
+	return xxx_messageInfo_UnlinkClientResponse.Size(m)
+}
+func (m *UnlinkClientResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UnlinkClientResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UnlinkClientResponse proto.InternalMessageInfo
+
+type CountLinkedClientsRequest struct {
+	Client               *Client  `protobuf:"bytes,1,opt,name=client,proto3" json:"client,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CountLinkedClientsRequest) Reset()         { *m = CountLinkedClientsRequest{} }
+func (m *CountLinkedClientsRequest) String() string { return proto.CompactTextString(m) }
+func (*CountLinkedClientsRequest) ProtoMessage()    {}
+func (*CountLinkedClientsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{37}
+}
+
+func (m *CountLinkedClientsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CountLinkedClientsRequest.Unmarshal(m, b)
+}
+func (m *CountLinkedClientsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CountLinkedClientsRequest.Marshal(b, m, deterministic)
+}
+func (m *CountLinkedClientsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CountLinkedClientsRequest.Merge(m, src)
+}
+func (m *CountLinkedClientsRequest) XXX_Size() int {
+	return xxx_messageInfo_CountLinkedClientsRequest.Size(m)
+}
+func (m *CountLinkedClientsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CountLinkedClientsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CountLinkedClientsRequest proto.InternalMessageInfo
+
+func (m *CountLinkedClientsRequest) GetClient() *Client {
+	if m != nil {
+		return m.Client
+	}
+	return nil
+}
+
+type CountLinkedClientsResponse struct {
+	Count                int64    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CountLinkedClientsResponse) Reset()         { *m = CountLinkedClientsResponse{} }
+func (m *CountLinkedClientsResponse) String() string { return proto.CompactTextString(m) }
+func (*CountLinkedClientsResponse) ProtoMessage()    {}
+func (*CountLinkedClientsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{38}
+}
+
+func (m *CountLinkedClientsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CountLinkedClientsResponse.Unmarshal(m, b)
+}
+func (m *CountLinkedClientsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CountLinkedClientsResponse.Marshal(b, m, deterministic)
+}
+func (m *CountLinkedClientsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CountLinkedClientsResponse.Merge(m, src)
+}
+func (m *CountLinkedClientsResponse) XXX_Size() int {
+	return xxx_messageInfo_CountLinkedClientsResponse.Size(m)
+}
+func (m *CountLinkedClientsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CountLinkedClientsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CountLinkedClientsResponse proto.InternalMessageInfo
+
+func (m *CountLinkedClientsResponse) GetCount() int64 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
+}
+
+type GetLinkedClientsRequest struct {
+	Client               *Client  `protobuf:"bytes,1,opt,name=client,proto3" json:"client,omitempty"`
+	Offset               int64    `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	Count                int64    `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetLinkedClientsRequest) Reset()         { *m = GetLinkedClientsRequest{} }
+func (m *GetLinkedClientsRequest) String() string { return proto.CompactTextString(m) }
+func (*GetLinkedClientsRequest) ProtoMessage()    {}
+func (*GetLinkedClientsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{39}
+}
+
+func (m *GetLinkedClientsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetLinkedClientsRequest.Unmarshal(m, b)
+}
+func (m *GetLinkedClientsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetLinkedClientsRequest.Marshal(b, m, deterministic)
+}
+func (m *GetLinkedClientsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetLinkedClientsRequest.Merge(m, src)
+}
+func (m *GetLinkedClientsRequest) XXX_Size() int {
+	return xxx_messageInfo_GetLinkedClientsRequest.Size(m)
+}
+func (m *GetLinkedClientsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetLinkedClientsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetLinkedClientsRequest proto.InternalMessageInfo
+
+func (m *GetLinkedClientsRequest) GetClient() *Client {
+	if m != nil {
+		return m.Client
+	}
+	return nil
+}
+
+func (m *GetLinkedClientsRequest) GetOffset() int64 {
+	if m != nil {
+		return m.Offset
+	}
+	return 0
+}
+
+func (m *GetLinkedClientsRequest) GetCount() int64 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
+}
+
+type GetLinkedClientsResponse struct {
+	Clients              []*Client `protobuf:"bytes,1,rep,name=clients,proto3" json:"clients,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *GetLinkedClientsResponse) Reset()         { *m = GetLinkedClientsResponse{} }
+func (m *GetLinkedClientsResponse) String() string { return proto.CompactTextString(m) }
+func (*GetLinkedClientsResponse) ProtoMessage()    {}
+func (*GetLinkedClientsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{40}
+}
+
+func (m *GetLinkedClientsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetLinkedClientsResponse.Unmarshal(m, b)
+}
+func (m *GetLinkedClientsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetLinkedClientsResponse.Marshal(b, m, deterministic)
+}
+func (m *GetLinkedClientsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetLinkedClientsResponse.Merge(m, src)
+}
+func (m *GetLinkedClientsResponse) XXX_Size() int {
+	return xxx_messageInfo_GetLinkedClientsResponse.Size(m)
+}
+func (m *GetLinkedClientsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetLinkedClientsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetLinkedClientsResponse proto.InternalMessageInfo
+
+func (m *GetLinkedClientsResponse) GetClients() []*Client {
+	if m != nil {
+		return m.Clients
+	}
+	return nil
+}
+
+type SendClientPubKeyRequest struct {
+	SourceClient         *Client  `protobuf:"bytes,1,opt,name=sourceClient,proto3" json:"sourceClient,omitempty"`
+	TargetClient         *Client  `protobuf:"bytes,2,opt,name=targetClient,proto3" json:"targetClient,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SendClientPubKeyRequest) Reset()         { *m = SendClientPubKeyRequest{} }
+func (m *SendClientPubKeyRequest) String() string { return proto.CompactTextString(m) }
+func (*SendClientPubKeyRequest) ProtoMessage()    {}
+func (*SendClientPubKeyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{41}
+}
+
+func (m *SendClientPubKeyRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SendClientPubKeyRequest.Unmarshal(m, b)
+}
+func (m *SendClientPubKeyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SendClientPubKeyRequest.Marshal(b, m, deterministic)
+}
+func (m *SendClientPubKeyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SendClientPubKeyRequest.Merge(m, src)
+}
+func (m *SendClientPubKeyRequest) XXX_Size() int {
+	return xxx_messageInfo_SendClientPubKeyRequest.Size(m)
+}
+func (m *SendClientPubKeyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SendClientPubKeyRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SendClientPubKeyRequest proto.InternalMessageInfo
+
+func (m *SendClientPubKeyRequest) GetSourceClient() *Client {
+	if m != nil {
+		return m.SourceClient
+	}
+	return nil
+}
+
+func (m *SendClientPubKeyRequest) GetTargetClient() *Client {
+	if m != nil {
+		return m.TargetClient
+	}
+	return nil
+}
+
+type SendClientPubKeyResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SendClientPubKeyResponse) Reset()         { *m = SendClientPubKeyResponse{} }
+func (m *SendClientPubKeyResponse) String() string { return proto.CompactTextString(m) }
+func (*SendClientPubKeyResponse) ProtoMessage()    {}
+func (*SendClientPubKeyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{42}
+}
+
+func (m *SendClientPubKeyResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SendClientPubKeyResponse.Unmarshal(m, b)
+}
+func (m *SendClientPubKeyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SendClientPubKeyResponse.Marshal(b, m, deterministic)
+}
+func (m *SendClientPubKeyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SendClientPubKeyResponse.Merge(m, src)
+}
+func (m *SendClientPubKeyResponse) XXX_Size() int {
+	return xxx_messageInfo_SendClientPubKeyResponse.Size(m)
+}
+func (m *SendClientPubKeyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SendClientPubKeyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SendClientPubKeyResponse proto.InternalMessageInfo
+
+type RemoveClientPubKeyRequest struct {
+	SourceClient         *Client  `protobuf:"bytes,1,opt,name=sourceClient,proto3" json:"sourceClient,omitempty"`
+	TargetClient         *Client  `protobuf:"bytes,2,opt,name=targetClient,proto3" json:"targetClient,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RemoveClientPubKeyRequest) Reset()         { *m = RemoveClientPubKeyRequest{} }
+func (m *RemoveClientPubKeyRequest) String() string { return proto.CompactTextString(m) }
+func (*RemoveClientPubKeyRequest) ProtoMessage()    {}
+func (*RemoveClientPubKeyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{43}
+}
+
+func (m *RemoveClientPubKeyRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RemoveClientPubKeyRequest.Unmarshal(m, b)
+}
+func (m *RemoveClientPubKeyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RemoveClientPubKeyRequest.Marshal(b, m, deterministic)
+}
+func (m *RemoveClientPubKeyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RemoveClientPubKeyRequest.Merge(m, src)
+}
+func (m *RemoveClientPubKeyRequest) XXX_Size() int {
+	return xxx_messageInfo_RemoveClientPubKeyRequest.Size(m)
+}
+func (m *RemoveClientPubKeyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RemoveClientPubKeyRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RemoveClientPubKeyRequest proto.InternalMessageInfo
+
+func (m *RemoveClientPubKeyRequest) GetSourceClient() *Client {
+	if m != nil {
+		return m.SourceClient
+	}
+	return nil
+}
+
+func (m *RemoveClientPubKeyRequest) GetTargetClient() *Client {
+	if m != nil {
+		return m.TargetClient
+	}
+	return nil
+}
+
+type RemoveClientPubKeyResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RemoveClientPubKeyResponse) Reset()         { *m = RemoveClientPubKeyResponse{} }
+func (m *RemoveClientPubKeyResponse) String() string { return proto.CompactTextString(m) }
+func (*RemoveClientPubKeyResponse) ProtoMessage()    {}
+func (*RemoveClientPubKeyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{44}
+}
+
+func (m *RemoveClientPubKeyResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RemoveClientPubKeyResponse.Unmarshal(m, b)
+}
+func (m *RemoveClientPubKeyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RemoveClientPubKeyResponse.Marshal(b, m, deterministic)
+}
+func (m *RemoveClientPubKeyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RemoveClientPubKeyResponse.Merge(m, src)
+}
+func (m *RemoveClientPubKeyResponse) XXX_Size() int {
+	return xxx_messageInfo_RemoveClientPubKeyResponse.Size(m)
+}
+func (m *RemoveClientPubKeyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RemoveClientPubKeyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RemoveClientPubKeyResponse proto.InternalMessageInfo
+
+type ResetClientPubKeysRequest struct {
+	TargetClient         *Client  `protobuf:"bytes,1,opt,name=targetClient,proto3" json:"targetClient,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ResetClientPubKeysRequest) Reset()         { *m = ResetClientPubKeysRequest{} }
+func (m *ResetClientPubKeysRequest) String() string { return proto.CompactTextString(m) }
+func (*ResetClientPubKeysRequest) ProtoMessage()    {}
+func (*ResetClientPubKeysRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{45}
+}
+
+func (m *ResetClientPubKeysRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ResetClientPubKeysRequest.Unmarshal(m, b)
+}
+func (m *ResetClientPubKeysRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ResetClientPubKeysRequest.Marshal(b, m, deterministic)
+}
+func (m *ResetClientPubKeysRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResetClientPubKeysRequest.Merge(m, src)
+}
+func (m *ResetClientPubKeysRequest) XXX_Size() int {
+	return xxx_messageInfo_ResetClientPubKeysRequest.Size(m)
+}
+func (m *ResetClientPubKeysRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResetClientPubKeysRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResetClientPubKeysRequest proto.InternalMessageInfo
+
+func (m *ResetClientPubKeysRequest) GetTargetClient() *Client {
+	if m != nil {
+		return m.TargetClient
+	}
+	return nil
+}
+
+type ResetClientPubKeysResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ResetClientPubKeysResponse) Reset()         { *m = ResetClientPubKeysResponse{} }
+func (m *ResetClientPubKeysResponse) String() string { return proto.CompactTextString(m) }
+func (*ResetClientPubKeysResponse) ProtoMessage()    {}
+func (*ResetClientPubKeysResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{46}
+}
+
+func (m *ResetClientPubKeysResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ResetClientPubKeysResponse.Unmarshal(m, b)
+}
+func (m *ResetClientPubKeysResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ResetClientPubKeysResponse.Marshal(b, m, deterministic)
+}
+func (m *ResetClientPubKeysResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResetClientPubKeysResponse.Merge(m, src)
+}
+func (m *ResetClientPubKeysResponse) XXX_Size() int {
+	return xxx_messageInfo_ResetClientPubKeysResponse.Size(m)
+}
+func (m *ResetClientPubKeysResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResetClientPubKeysResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResetClientPubKeysResponse proto.InternalMessageInfo
+
+type NewC2KeyRequest struct {
+	Force                bool     `protobuf:"varint,1,opt,name=force,proto3" json:"force,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NewC2KeyRequest) Reset()         { *m = NewC2KeyRequest{} }
+func (m *NewC2KeyRequest) String() string { return proto.CompactTextString(m) }
+func (*NewC2KeyRequest) ProtoMessage()    {}
+func (*NewC2KeyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{47}
+}
+
+func (m *NewC2KeyRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NewC2KeyRequest.Unmarshal(m, b)
+}
+func (m *NewC2KeyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NewC2KeyRequest.Marshal(b, m, deterministic)
+}
+func (m *NewC2KeyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NewC2KeyRequest.Merge(m, src)
+}
+func (m *NewC2KeyRequest) XXX_Size() int {
+	return xxx_messageInfo_NewC2KeyRequest.Size(m)
+}
+func (m *NewC2KeyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_NewC2KeyRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NewC2KeyRequest proto.InternalMessageInfo
+
+func (m *NewC2KeyRequest) GetForce() bool {
+	if m != nil {
+		return m.Force
+	}
+	return false
+}
+
+type NewC2KeyResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NewC2KeyResponse) Reset()         { *m = NewC2KeyResponse{} }
+func (m *NewC2KeyResponse) String() string { return proto.CompactTextString(m) }
+func (*NewC2KeyResponse) ProtoMessage()    {}
+func (*NewC2KeyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{48}
+}
+
+func (m *NewC2KeyResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NewC2KeyResponse.Unmarshal(m, b)
+}
+func (m *NewC2KeyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NewC2KeyResponse.Marshal(b, m, deterministic)
+}
+func (m *NewC2KeyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NewC2KeyResponse.Merge(m, src)
+}
+func (m *NewC2KeyResponse) XXX_Size() int {
+	return xxx_messageInfo_NewC2KeyResponse.Size(m)
+}
+func (m *NewC2KeyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_NewC2KeyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NewC2KeyResponse proto.InternalMessageInfo
+
+type ProtectMessageRequest struct {
+	Topic                string   `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
+	BinaryData           []byte   `protobuf:"bytes,2,opt,name=binaryData,proto3" json:"binaryData,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ProtectMessageRequest) Reset()         { *m = ProtectMessageRequest{} }
+func (m *ProtectMessageRequest) String() string { return proto.CompactTextString(m) }
+func (*ProtectMessageRequest) ProtoMessage()    {}
+func (*ProtectMessageRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{49}
+}
+
+func (m *ProtectMessageRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ProtectMessageRequest.Unmarshal(m, b)
+}
+func (m *ProtectMessageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ProtectMessageRequest.Marshal(b, m, deterministic)
+}
+func (m *ProtectMessageRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProtectMessageRequest.Merge(m, src)
+}
+func (m *ProtectMessageRequest) XXX_Size() int {
+	return xxx_messageInfo_ProtectMessageRequest.Size(m)
+}
+func (m *ProtectMessageRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProtectMessageRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProtectMessageRequest proto.InternalMessageInfo
+
+func (m *ProtectMessageRequest) GetTopic() string {
 	if m != nil {
 		return m.Topic
 	}
 	return ""
 }
 
-func (m *SendMessageRequest) GetMessage() string {
+func (m *ProtectMessageRequest) GetBinaryData() []byte {
 	if m != nil {
-		return m.Message
+		return m.BinaryData
 	}
-	return ""
+	return nil
 }
 
-type SendMessageResponse struct {
+type ProtectMessageResponse struct {
+	Topic                string   `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
+	ProtectedBinaryData  []byte   `protobuf:"bytes,2,opt,name=protectedBinaryData,proto3" json:"protectedBinaryData,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SendMessageResponse) Reset()         { *m = SendMessageResponse{} }
-func (m *SendMessageResponse) String() string { return proto.CompactTextString(m) }
-func (*SendMessageResponse) ProtoMessage()    {}
-func (*SendMessageResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{34}
+func (m *ProtectMessageResponse) Reset()         { *m = ProtectMessageResponse{} }
+func (m *ProtectMessageResponse) String() string { return proto.CompactTextString(m) }
+func (*ProtectMessageResponse) ProtoMessage()    {}
+func (*ProtectMessageResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{50}
 }
 
-func (m *SendMessageResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SendMessageResponse.Unmarshal(m, b)
+func (m *ProtectMessageResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ProtectMessageResponse.Unmarshal(m, b)
 }
-func (m *SendMessageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SendMessageResponse.Marshal(b, m, deterministic)
+func (m *ProtectMessageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ProtectMessageResponse.Marshal(b, m, deterministic)
 }
-func (m *SendMessageResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SendMessageResponse.Merge(m, src)
+func (m *ProtectMessageResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProtectMessageResponse.Merge(m, src)
 }
-func (m *SendMessageResponse) XXX_Size() int {
-	return xxx_messageInfo_SendMessageResponse.Size(m)
+func (m *ProtectMessageResponse) XXX_Size() int {
+	return xxx_messageInfo_ProtectMessageResponse.Size(m)
 }
-func (m *SendMessageResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_SendMessageResponse.DiscardUnknown(m)
+func (m *ProtectMessageResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProtectMessageResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SendMessageResponse proto.InternalMessageInfo
+var xxx_messageInfo_ProtectMessageResponse proto.InternalMessageInfo
+
+func (m *ProtectMessageResponse) GetTopic() string {
+	if m != nil {
+		return m.Topic
+	}
+	return ""
+}
+
+func (m *ProtectMessageResponse) GetProtectedBinaryData() []byte {
+	if m != nil {
+		return m.ProtectedBinaryData
+	}
+	return nil
+}
+
+type UnprotectMessageRequest struct {
+	Topic                string   `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
+	ProtectedBinaryData  []byte   `protobuf:"bytes,2,opt,name=protectedBinaryData,proto3" json:"protectedBinaryData,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *UnprotectMessageRequest) Reset()         { *m = UnprotectMessageRequest{} }
+func (m *UnprotectMessageRequest) String() string { return proto.CompactTextString(m) }
+func (*UnprotectMessageRequest) ProtoMessage()    {}
+func (*UnprotectMessageRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{51}
+}
+
+func (m *UnprotectMessageRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UnprotectMessageRequest.Unmarshal(m, b)
+}
+func (m *UnprotectMessageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UnprotectMessageRequest.Marshal(b, m, deterministic)
+}
+func (m *UnprotectMessageRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UnprotectMessageRequest.Merge(m, src)
+}
+func (m *UnprotectMessageRequest) XXX_Size() int {
+	return xxx_messageInfo_UnprotectMessageRequest.Size(m)
+}
+func (m *UnprotectMessageRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UnprotectMessageRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UnprotectMessageRequest proto.InternalMessageInfo
+
+func (m *UnprotectMessageRequest) GetTopic() string {
+	if m != nil {
+		return m.Topic
+	}
+	return ""
+}
+
+func (m *UnprotectMessageRequest) GetProtectedBinaryData() []byte {
+	if m != nil {
+		return m.ProtectedBinaryData
+	}
+	return nil
+}
+
+type UnprotectMessageResponse struct {
+	Topic                string   `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
+	BinaryData           []byte   `protobuf:"bytes,2,opt,name=binaryData,proto3" json:"binaryData,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *UnprotectMessageResponse) Reset()         { *m = UnprotectMessageResponse{} }
+func (m *UnprotectMessageResponse) String() string { return proto.CompactTextString(m) }
+func (*UnprotectMessageResponse) ProtoMessage()    {}
+func (*UnprotectMessageResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{52}
+}
+
+func (m *UnprotectMessageResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UnprotectMessageResponse.Unmarshal(m, b)
+}
+func (m *UnprotectMessageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UnprotectMessageResponse.Marshal(b, m, deterministic)
+}
+func (m *UnprotectMessageResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UnprotectMessageResponse.Merge(m, src)
+}
+func (m *UnprotectMessageResponse) XXX_Size() int {
+	return xxx_messageInfo_UnprotectMessageResponse.Size(m)
+}
+func (m *UnprotectMessageResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UnprotectMessageResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UnprotectMessageResponse proto.InternalMessageInfo
+
+func (m *UnprotectMessageResponse) GetTopic() string {
+	if m != nil {
+		return m.Topic
+	}
+	return ""
+}
+
+func (m *UnprotectMessageResponse) GetBinaryData() []byte {
+	if m != nil {
+		return m.BinaryData
+	}
+	return nil
+}
+
+type SubscribeToEventStreamRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SubscribeToEventStreamRequest) Reset()         { *m = SubscribeToEventStreamRequest{} }
+func (m *SubscribeToEventStreamRequest) String() string { return proto.CompactTextString(m) }
+func (*SubscribeToEventStreamRequest) ProtoMessage()    {}
+func (*SubscribeToEventStreamRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{53}
+}
+
+func (m *SubscribeToEventStreamRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SubscribeToEventStreamRequest.Unmarshal(m, b)
+}
+func (m *SubscribeToEventStreamRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SubscribeToEventStreamRequest.Marshal(b, m, deterministic)
+}
+func (m *SubscribeToEventStreamRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubscribeToEventStreamRequest.Merge(m, src)
+}
+func (m *SubscribeToEventStreamRequest) XXX_Size() int {
+	return xxx_messageInfo_SubscribeToEventStreamRequest.Size(m)
+}
+func (m *SubscribeToEventStreamRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubscribeToEventStreamRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubscribeToEventStreamRequest proto.InternalMessageInfo
+
+type Event struct {
+	Type   EventType `protobuf:"varint,1,opt,name=type,proto3,enum=pb.EventType" json:"type,omitempty"`
+	Source string    `protobuf:"bytes,2,opt,name=source,proto3" json:"source,omitempty"`
+	Target string    `protobuf:"bytes,3,opt,name=target,proto3" json:"target,omitempty"`
+	// Hold the time where event is sent
+	Timestamp            *timestamp.Timestamp `protobuf:"bytes,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *Event) Reset()         { *m = Event{} }
+func (m *Event) String() string { return proto.CompactTextString(m) }
+func (*Event) ProtoMessage()    {}
+func (*Event) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{54}
+}
+
+func (m *Event) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Event.Unmarshal(m, b)
+}
+func (m *Event) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Event.Marshal(b, m, deterministic)
+}
+func (m *Event) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Event.Merge(m, src)
+}
+func (m *Event) XXX_Size() int {
+	return xxx_messageInfo_Event.Size(m)
+}
+func (m *Event) XXX_DiscardUnknown() {
+	xxx_messageInfo_Event.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Event proto.InternalMessageInfo
+
+func (m *Event) GetType() EventType {
+	if m != nil {
+		return m.Type
+	}
+	return EventType_UNDEFINED
+}
+
+func (m *Event) GetSource() string {
+	if m != nil {
+		return m.Source
+	}
+	return ""
+}
+
+func (m *Event) GetTarget() string {
+	if m != nil {
+		return m.Target
+	}
+	return ""
+}
+
+func (m *Event) GetTimestamp() *timestamp.Timestamp {
+	if m != nil {
+		return m.Timestamp
+	}
+	return nil
+}
 
 func init() {
+	proto.RegisterEnum("pb.EventType", EventType_name, EventType_value)
 	proto.RegisterType((*Client)(nil), "pb.Client")
 	proto.RegisterType((*NewClientRequest)(nil), "pb.NewClientRequest")
 	proto.RegisterType((*NewClientResponse)(nil), "pb.NewClientResponse")
@@ -1417,87 +2276,150 @@ func init() {
 	proto.RegisterType((*CountTopicsResponse)(nil), "pb.CountTopicsResponse")
 	proto.RegisterType((*GetTopicsRequest)(nil), "pb.GetTopicsRequest")
 	proto.RegisterType((*GetTopicsResponse)(nil), "pb.GetTopicsResponse")
-	proto.RegisterType((*SendMessageRequest)(nil), "pb.SendMessageRequest")
-	proto.RegisterType((*SendMessageResponse)(nil), "pb.SendMessageResponse")
+	proto.RegisterType((*LinkClientRequest)(nil), "pb.LinkClientRequest")
+	proto.RegisterType((*LinkClientResponse)(nil), "pb.LinkClientResponse")
+	proto.RegisterType((*UnlinkClientRequest)(nil), "pb.UnlinkClientRequest")
+	proto.RegisterType((*UnlinkClientResponse)(nil), "pb.UnlinkClientResponse")
+	proto.RegisterType((*CountLinkedClientsRequest)(nil), "pb.CountLinkedClientsRequest")
+	proto.RegisterType((*CountLinkedClientsResponse)(nil), "pb.CountLinkedClientsResponse")
+	proto.RegisterType((*GetLinkedClientsRequest)(nil), "pb.GetLinkedClientsRequest")
+	proto.RegisterType((*GetLinkedClientsResponse)(nil), "pb.GetLinkedClientsResponse")
+	proto.RegisterType((*SendClientPubKeyRequest)(nil), "pb.SendClientPubKeyRequest")
+	proto.RegisterType((*SendClientPubKeyResponse)(nil), "pb.SendClientPubKeyResponse")
+	proto.RegisterType((*RemoveClientPubKeyRequest)(nil), "pb.RemoveClientPubKeyRequest")
+	proto.RegisterType((*RemoveClientPubKeyResponse)(nil), "pb.RemoveClientPubKeyResponse")
+	proto.RegisterType((*ResetClientPubKeysRequest)(nil), "pb.ResetClientPubKeysRequest")
+	proto.RegisterType((*ResetClientPubKeysResponse)(nil), "pb.ResetClientPubKeysResponse")
+	proto.RegisterType((*NewC2KeyRequest)(nil), "pb.NewC2KeyRequest")
+	proto.RegisterType((*NewC2KeyResponse)(nil), "pb.NewC2KeyResponse")
+	proto.RegisterType((*ProtectMessageRequest)(nil), "pb.ProtectMessageRequest")
+	proto.RegisterType((*ProtectMessageResponse)(nil), "pb.ProtectMessageResponse")
+	proto.RegisterType((*UnprotectMessageRequest)(nil), "pb.UnprotectMessageRequest")
+	proto.RegisterType((*UnprotectMessageResponse)(nil), "pb.UnprotectMessageResponse")
+	proto.RegisterType((*SubscribeToEventStreamRequest)(nil), "pb.SubscribeToEventStreamRequest")
+	proto.RegisterType((*Event)(nil), "pb.Event")
 }
 
-func init() { proto.RegisterFile("api.proto", fileDescriptor_00212fb1f9d3bf1c) }
+func init() {
+	proto.RegisterFile("api.proto", fileDescriptor_00212fb1f9d3bf1c)
+}
 
 var fileDescriptor_00212fb1f9d3bf1c = []byte{
-	// 1013 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x57, 0xdb, 0x8e, 0xdb, 0x54,
-	0x14, 0x95, 0x13, 0x48, 0x9b, 0x9d, 0xb4, 0x24, 0x3b, 0x97, 0x71, 0x3c, 0xd3, 0x36, 0x35, 0x97,
-	0x8e, 0xd2, 0x4e, 0xdc, 0xa6, 0x23, 0x91, 0xe6, 0x89, 0xe9, 0x54, 0x80, 0x04, 0x54, 0xc5, 0x54,
-	0x08, 0x24, 0x10, 0x78, 0xc2, 0x99, 0x28, 0x30, 0x63, 0x9b, 0xb1, 0xdb, 0x51, 0x55, 0x2a, 0xa1,
-	0x3e, 0xf1, 0x0c, 0x9f, 0xc6, 0x2f, 0xf0, 0x03, 0xfc, 0x01, 0xf2, 0x3e, 0xe7, 0x38, 0xe7, 0xf8,
-	0x12, 0x1a, 0xe8, 0x53, 0xe2, 0x73, 0x59, 0x6b, 0xed, 0xe5, 0x3d, 0x7b, 0x4d, 0xa0, 0xee, 0x85,
-	0xcb, 0x71, 0x78, 0x16, 0xc4, 0x01, 0x56, 0xc2, 0x23, 0x6b, 0x67, 0x11, 0x04, 0x8b, 0x13, 0xe6,
-	0x78, 0xe1, 0xd2, 0xf1, 0x7c, 0x3f, 0x88, 0xbd, 0x78, 0x19, 0xf8, 0x11, 0x3f, 0x61, 0xdd, 0xa2,
-	0x8f, 0xf9, 0xde, 0x82, 0xf9, 0x7b, 0xd1, 0xb9, 0xb7, 0x58, 0xb0, 0x33, 0x27, 0x08, 0xe9, 0x44,
-	0xfe, 0xb4, 0xbd, 0x03, 0xb5, 0xc3, 0x93, 0x25, 0xf3, 0x63, 0x44, 0x78, 0xc3, 0xf7, 0x4e, 0x99,
-	0x69, 0x0c, 0x8d, 0xdd, 0xba, 0x4b, 0xdf, 0xed, 0x8f, 0xa1, 0xf5, 0x90, 0x9d, 0xf3, 0x03, 0x2e,
-	0xfb, 0xf9, 0x09, 0x8b, 0x62, 0xb4, 0xa1, 0x36, 0xa7, 0x05, 0x3a, 0xd9, 0x98, 0xc0, 0x38, 0x3c,
-	0x1a, 0x8b, 0x23, 0x62, 0x07, 0x5b, 0x50, 0xfd, 0x89, 0x3d, 0x33, 0x2b, 0x43, 0x63, 0xb7, 0xe9,
-	0x26, 0x5f, 0xed, 0x0e, 0xb4, 0x15, 0xa4, 0x28, 0x0c, 0xfc, 0x88, 0xd9, 0xf7, 0xa0, 0xe3, 0xb2,
-	0xd3, 0xe0, 0x29, 0xdb, 0x98, 0xc1, 0xee, 0x43, 0x57, 0xbf, 0x2a, 0x20, 0x3f, 0x87, 0xde, 0x43,
-	0x76, 0xfe, 0x38, 0x08, 0x97, 0xf3, 0xcd, 0x65, 0x77, 0xe1, 0xcd, 0x38, 0xb9, 0x49, 0xc2, 0xeb,
-	0x2e, 0x7f, 0xb0, 0x4d, 0xe8, 0x67, 0x21, 0x05, 0xd9, 0x63, 0x30, 0xb9, 0x88, 0xd7, 0xca, 0xb7,
-	0x0d, 0x83, 0x02, 0x54, 0x41, 0x39, 0x05, 0x74, 0x59, 0xc4, 0xe2, 0xcd, 0x1d, 0xeb, 0x25, 0x66,
-	0x2b, 0x37, 0x05, 0xe0, 0x0d, 0x78, 0x4b, 0x56, 0x27, 0xd1, 0x52, 0x59, 0x86, 0x2a, 0x0b, 0xa9,
-	0x17, 0xc4, 0x41, 0x71, 0x79, 0x94, 0xa8, 0x49, 0xa5, 0xae, 0xbf, 0xdf, 0x93, 0x2f, 0x5b, 0x87,
-	0xb8, 0x07, 0x9d, 0xb4, 0x31, 0x3e, 0x61, 0xcf, 0x36, 0xec, 0x01, 0xfd, 0xaa, 0x80, 0x3c, 0x80,
-	0xed, 0xc3, 0xe0, 0x89, 0x1f, 0x13, 0x51, 0xf4, 0x61, 0x70, 0xb6, 0xb9, 0x59, 0xfb, 0xb0, 0x53,
-	0x0c, 0xc1, 0x29, 0x92, 0x12, 0xe7, 0xc9, 0x3e, 0x41, 0x54, 0x5d, 0xfe, 0x60, 0x9f, 0xc2, 0xe0,
-	0x23, 0xf6, 0x3f, 0x68, 0xb1, 0x0f, 0xb5, 0xe0, 0xf8, 0x38, 0x62, 0x31, 0x75, 0x44, 0xd5, 0x15,
-	0x4f, 0x2b, 0xba, 0xaa, 0x4a, 0xb7, 0x0f, 0x56, 0x11, 0x9d, 0x90, 0xd8, 0x87, 0x1a, 0x19, 0x1f,
-	0x99, 0xc6, 0xb0, 0xba, 0x5b, 0x77, 0xc5, 0x93, 0x7d, 0x57, 0xb8, 0xc3, 0x8f, 0x27, 0x17, 0x5f,
-	0xe1, 0xe5, 0x49, 0x3f, 0x72, 0x97, 0xd6, 0xfa, 0xf1, 0x1d, 0xf9, 0xb1, 0x09, 0xd1, 0x86, 0x0e,
-	0xdc, 0x27, 0x07, 0xca, 0x44, 0xbd, 0x03, 0x17, 0xb8, 0xaf, 0xdc, 0x02, 0xdd, 0x72, 0xb9, 0x95,
-	0xf4, 0xa5, 0x5a, 0x9a, 0x90, 0x67, 0xdf, 0x82, 0xae, 0xbe, 0xbc, 0xb6, 0xd2, 0x03, 0x68, 0xaf,
-	0x84, 0xc8, 0x0a, 0x57, 0xb5, 0x18, 0xc5, 0xb5, 0x54, 0x54, 0x88, 0x19, 0xa0, 0x0a, 0xb1, 0x51,
-	0x0d, 0x5d, 0x40, 0xa5, 0x5d, 0x65, 0x09, 0x37, 0x45, 0x65, 0x72, 0x75, 0x6d, 0x05, 0x1f, 0x40,
-	0x2b, 0x6d, 0xa6, 0xff, 0x56, 0xc0, 0x4d, 0xf2, 0x20, 0x43, 0x56, 0xd6, 0x85, 0x0f, 0x00, 0xbf,
-	0x60, 0xfe, 0x0f, 0x9f, 0xb1, 0x28, 0xf2, 0x16, 0x6c, 0x7d, 0x4f, 0x98, 0x70, 0xe1, 0x94, 0x9f,
-	0x13, 0x83, 0x52, 0x3e, 0x26, 0xef, 0x4e, 0x43, 0xe1, 0xa4, 0x93, 0xbf, 0x2f, 0x41, 0xe5, 0x70,
-	0x82, 0xdf, 0x42, 0x3d, 0x9d, 0x0f, 0xd8, 0x4d, 0x7c, 0xcb, 0x86, 0x99, 0xd5, 0xcb, 0xac, 0x8a,
-	0x09, 0xf2, 0xf6, 0xcb, 0x3f, 0xff, 0xfa, 0xa3, 0x72, 0xc5, 0x36, 0x1d, 0xb6, 0xef, 0x70, 0x93,
-	0x9d, 0xe7, 0xfc, 0x73, 0x9c, 0x04, 0xe3, 0x8b, 0x99, 0x31, 0xc2, 0x39, 0x34, 0xd5, 0x08, 0xc2,
-	0xad, 0x04, 0xab, 0x20, 0xcf, 0x2c, 0x33, 0xbf, 0x21, 0x78, 0x86, 0xc4, 0x63, 0x8d, 0x4a, 0x79,
-	0xf0, 0x7b, 0x68, 0x28, 0x53, 0x1b, 0xfb, 0x1c, 0x2a, 0x1b, 0x00, 0xd6, 0x56, 0x6e, 0x5d, 0x67,
-	0xb0, 0xca, 0x19, 0x8e, 0xa1, 0xa9, 0x4e, 0x51, 0x5e, 0x46, 0xc1, 0x48, 0xe6, 0x65, 0x14, 0x0e,
-	0x5c, 0x61, 0xd7, 0x64, 0xad, 0x5d, 0x8f, 0xe0, 0xa2, 0xcc, 0x0f, 0xec, 0x08, 0x28, 0x75, 0x20,
-	0x58, 0x5d, 0x7d, 0x51, 0x60, 0x0f, 0x08, 0xbb, 0x63, 0xb7, 0x13, 0x6c, 0xea, 0x07, 0xe7, 0x39,
-	0x7d, 0xbc, 0xc0, 0xaf, 0x13, 0x6f, 0xd2, 0x44, 0x91, 0xde, 0x64, 0xe3, 0xc8, 0xda, 0xca, 0xad,
-	0xeb, 0xd0, 0xa3, 0x02, 0xe8, 0x73, 0xb8, 0xac, 0x67, 0x3e, 0x0e, 0x54, 0x75, 0xba, 0xf9, 0x56,
-	0xd1, 0x96, 0xe0, 0x18, 0x13, 0xc7, 0xae, 0xf5, 0x5e, 0x99, 0x35, 0x19, 0xe2, 0x5f, 0x0d, 0x68,
-	0xe7, 0xd2, 0x1f, 0x77, 0x32, 0x25, 0xe8, 0xfc, 0x57, 0x4a, 0x76, 0x75, 0x09, 0xa3, 0x57, 0x95,
-	0xf0, 0x9b, 0x21, 0x46, 0x5f, 0x26, 0x59, 0xf0, 0x1a, 0x8d, 0x9e, 0xf2, 0x64, 0xb5, 0x86, 0xe5,
-	0x07, 0x84, 0x96, 0x3d, 0xd2, 0x72, 0x03, 0xdf, 0x5d, 0xaf, 0x25, 0x72, 0x68, 0xa4, 0xe0, 0x2f,
-	0x34, 0x13, 0xb3, 0x3a, 0xa8, 0xde, 0xd2, 0xa0, 0xb5, 0xae, 0x96, 0x6d, 0xcb, 0xff, 0x78, 0x48,
-	0xc3, 0x75, 0xbc, 0xf6, 0x2f, 0x1a, 0xf0, 0xa5, 0xa1, 0x67, 0x80, 0x0c, 0x18, 0xc5, 0x88, 0xe2,
-	0x6c, 0x53, 0x8c, 0x28, 0xc9, 0x26, 0x5d, 0x84, 0xe6, 0xbf, 0x90, 0x24, 0x2d, 0x78, 0xaa, 0xc6,
-	0x42, 0xaa, 0x40, 0x5a, 0x50, 0xc2, 0x7f, 0xb5, 0x6c, 0x5b, 0xb0, 0x5f, 0x27, 0xf6, 0x6d, 0x1c,
-	0x94, 0xb2, 0xe3, 0x37, 0xd0, 0x54, 0x0b, 0xe0, 0x63, 0xa1, 0x20, 0x28, 0xf9, 0x58, 0x28, 0x8a,
-	0x4a, 0xf9, 0xf7, 0x85, 0xed, 0x95, 0xd1, 0xb2, 0xaa, 0x47, 0x00, 0x2b, 0x79, 0xd8, 0xd3, 0xe5,
-	0x4a, 0xe4, 0x7e, 0x76, 0x59, 0xe0, 0x76, 0x08, 0xf7, 0x12, 0x36, 0x14, 0x5c, 0xfc, 0x0a, 0x1a,
-	0x4a, 0xe7, 0xf1, 0x61, 0x90, 0xcf, 0x44, 0x6b, 0x2b, 0xb7, 0x2e, 0x40, 0x4d, 0x02, 0x45, 0x6c,
-	0xa5, 0x96, 0x48, 0xad, 0x9f, 0x42, 0x3d, 0xed, 0x26, 0x1e, 0x23, 0xd9, 0xa0, 0xb4, 0x7a, 0x99,
-	0x55, 0x81, 0x89, 0x84, 0xd9, 0x44, 0x58, 0x61, 0xe2, 0x97, 0xd0, 0x50, 0x22, 0x8b, 0xeb, 0xcc,
-	0x27, 0x21, 0xd7, 0x59, 0x90, 0x6d, 0x76, 0x9f, 0x30, 0x5b, 0x36, 0x15, 0x2f, 0x72, 0x70, 0x66,
-	0x8c, 0xee, 0x3f, 0xf8, 0xfd, 0xe0, 0x00, 0x2f, 0x42, 0x6d, 0x3e, 0xd9, 0xf3, 0xc2, 0xa5, 0x75,
-	0xf9, 0xce, 0xe4, 0xfd, 0xf1, 0xed, 0xf1, 0xed, 0xf1, 0x9d, 0xd9, 0x74, 0x3a, 0x9d, 0x8e, 0x8c,
-	0xca, 0xa4, 0xe5, 0x85, 0xe1, 0xc9, 0x72, 0x4e, 0x3f, 0xff, 0x9c, 0x1f, 0xa3, 0xc0, 0x9f, 0xe5,
-	0x56, 0x8e, 0x6a, 0xf4, 0xab, 0xf0, 0xee, 0x3f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x7e, 0x95, 0x95,
-	0xdc, 0x72, 0x0e, 0x00, 0x00,
+	// 1673 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x59, 0xfb, 0x73, 0xd3, 0xc6,
+	0x16, 0x46, 0x09, 0xe4, 0xe2, 0x93, 0x90, 0xeb, 0xac, 0x9f, 0x51, 0x9c, 0x97, 0x80, 0x81, 0xeb,
+	0x60, 0x3b, 0x18, 0x66, 0x48, 0x72, 0xe7, 0x0e, 0xe4, 0x05, 0x97, 0x57, 0x26, 0x75, 0x92, 0x99,
+	0xfe, 0x40, 0x07, 0x64, 0xb3, 0xf1, 0xb8, 0x89, 0x25, 0xd5, 0x92, 0x49, 0xdd, 0xc0, 0x4c, 0xa7,
+	0x8f, 0x69, 0x7f, 0x6e, 0xfb, 0x9f, 0xf5, 0x5f, 0xe8, 0x1f, 0xd2, 0xd9, 0xb3, 0x2b, 0x79, 0x25,
+	0xaf, 0x0c, 0xa6, 0xaf, 0x9f, 0x1c, 0xed, 0xae, 0xbe, 0xef, 0x3b, 0x67, 0xcf, 0xae, 0xce, 0x07,
+	0x90, 0x30, 0x9d, 0x56, 0xd9, 0xe9, 0xd8, 0x9e, 0x4d, 0xc6, 0x9c, 0xba, 0x5e, 0x68, 0xda, 0x76,
+	0xf3, 0x94, 0x56, 0x4c, 0xa7, 0x55, 0x31, 0x2d, 0xcb, 0xf6, 0x4c, 0xaf, 0x65, 0x5b, 0x2e, 0x5f,
+	0xa1, 0xdf, 0xc2, 0x9f, 0x46, 0xa9, 0x49, 0xad, 0x92, 0x7b, 0x66, 0x36, 0x9b, 0xb4, 0x53, 0xb1,
+	0x1d, 0x5c, 0xa1, 0x58, 0xbd, 0x28, 0xb0, 0xf0, 0xa9, 0xde, 0x3d, 0xae, 0x78, 0xad, 0x36, 0x75,
+	0x3d, 0xb3, 0xed, 0xf0, 0x05, 0x46, 0x01, 0x26, 0xb6, 0x4f, 0x5b, 0xd4, 0xf2, 0x08, 0x81, 0x8b,
+	0x96, 0xd9, 0xa6, 0x79, 0x6d, 0x49, 0xbb, 0x99, 0xa8, 0xe1, 0xdf, 0xc6, 0xff, 0x21, 0xb9, 0x47,
+	0xcf, 0xf8, 0x82, 0x1a, 0xfd, 0xa2, 0x4b, 0x5d, 0x8f, 0x18, 0x30, 0xd1, 0xc0, 0x01, 0x5c, 0x39,
+	0x59, 0x85, 0xb2, 0x53, 0x2f, 0x8b, 0x25, 0x62, 0x86, 0x24, 0x61, 0xfc, 0x84, 0xf6, 0xf2, 0x63,
+	0x4b, 0xda, 0xcd, 0xa9, 0x1a, 0xfb, 0xd3, 0x48, 0xc1, 0x8c, 0x84, 0xe4, 0x3a, 0xb6, 0xe5, 0x52,
+	0x63, 0x1d, 0x52, 0x35, 0xda, 0xb6, 0xdf, 0xd0, 0x91, 0x19, 0x8c, 0x2c, 0xa4, 0xc3, 0xaf, 0x0a,
+	0xc8, 0x4f, 0x20, 0xb3, 0x47, 0xcf, 0x0e, 0x6d, 0xa7, 0xd5, 0x18, 0x5d, 0x76, 0x1a, 0x2e, 0x79,
+	0xec, 0x4d, 0x14, 0x9e, 0xa8, 0xf1, 0x07, 0x23, 0x0f, 0xd9, 0x28, 0xa4, 0x20, 0x3b, 0x84, 0x3c,
+	0x17, 0xf1, 0xa7, 0xf2, 0xcd, 0xc1, 0xac, 0x02, 0x55, 0x50, 0xae, 0x01, 0xa9, 0x51, 0x97, 0x7a,
+	0xa3, 0x67, 0x2c, 0xc3, 0x92, 0x2d, 0xbd, 0x29, 0x00, 0x6f, 0xc0, 0xbf, 0xfd, 0xe8, 0x7c, 0xb4,
+	0x40, 0x96, 0x26, 0xcb, 0x22, 0x58, 0x0b, 0x62, 0xa1, 0x78, 0xb9, 0xc8, 0xd4, 0x04, 0x52, 0x87,
+	0xbf, 0x9f, 0xf1, 0x37, 0x3b, 0x0c, 0xb1, 0x0e, 0xa9, 0xa0, 0x30, 0x9e, 0xd2, 0xde, 0x88, 0x35,
+	0x10, 0x7e, 0x55, 0x40, 0x6e, 0xc2, 0xdc, 0xb6, 0xdd, 0xb5, 0x3c, 0x24, 0x72, 0x1f, 0xda, 0x9d,
+	0xd1, 0x93, 0x75, 0x17, 0x0a, 0x6a, 0x08, 0x4e, 0xc1, 0x42, 0x6c, 0xb0, 0x79, 0x84, 0x18, 0xaf,
+	0xf1, 0x07, 0xa3, 0x0d, 0xb3, 0x8f, 0xe8, 0x1f, 0xa0, 0x25, 0x59, 0x98, 0xb0, 0x8f, 0x8f, 0x5d,
+	0xea, 0x61, 0x45, 0x8c, 0xd7, 0xc4, 0x53, 0x9f, 0x6e, 0x5c, 0xa6, 0xbb, 0x0b, 0xba, 0x8a, 0x4e,
+	0x48, 0xcc, 0xc2, 0x04, 0x26, 0xde, 0xcd, 0x6b, 0x4b, 0xe3, 0x37, 0x13, 0x35, 0xf1, 0x64, 0xdc,
+	0x11, 0xd9, 0xe1, 0xcb, 0xd9, 0x8b, 0x1f, 0xb0, 0x79, 0x7e, 0x3e, 0x06, 0x5e, 0x1a, 0x9a, 0x8f,
+	0x97, 0x98, 0x8f, 0x51, 0x88, 0x46, 0xcc, 0xc0, 0x16, 0x66, 0x20, 0x4e, 0xd4, 0x35, 0xf8, 0x17,
+	0xcf, 0x2b, 0x4f, 0x41, 0x38, 0xe5, 0xfe, 0x14, 0xab, 0x4b, 0x39, 0x34, 0x21, 0xcf, 0xb8, 0x05,
+	0xe9, 0xf0, 0xf0, 0xd0, 0x48, 0x37, 0x61, 0xa6, 0x2f, 0xc4, 0x8f, 0xb0, 0x1f, 0x8b, 0xa6, 0x8e,
+	0x65, 0x4c, 0x86, 0xd8, 0x00, 0x22, 0x43, 0x8c, 0x14, 0x43, 0x1a, 0x88, 0x54, 0xae, 0x7e, 0x08,
+	0x2b, 0x22, 0x32, 0x7f, 0x74, 0x68, 0x04, 0x0f, 0x20, 0x19, 0x14, 0xd3, 0xc7, 0x05, 0xb0, 0x82,
+	0x39, 0x88, 0x90, 0xc5, 0x55, 0xa1, 0x0b, 0x33, 0xcf, 0x5a, 0xd6, 0x49, 0xf8, 0x88, 0x94, 0x61,
+	0xca, 0xb5, 0xbb, 0x9d, 0x86, 0xb8, 0xd4, 0x15, 0x07, 0x25, 0x34, 0xcf, 0xd6, 0x7b, 0x66, 0xa7,
+	0xe9, 0x67, 0x0d, 0xe5, 0x44, 0xd6, 0xcb, 0xf3, 0x2c, 0x4d, 0x32, 0xa9, 0xb8, 0x2e, 0xba, 0x90,
+	0x3a, 0xb2, 0x4e, 0xff, 0x76, 0x31, 0x59, 0x48, 0x87, 0x69, 0x85, 0x9c, 0xfb, 0x30, 0x8b, 0xbb,
+	0xc6, 0x94, 0xd2, 0xd7, 0x91, 0x92, 0xfa, 0x90, 0xbb, 0xab, 0x0a, 0xba, 0x0a, 0x60, 0xe8, 0xee,
+	0x9f, 0x40, 0xee, 0x11, 0xfd, 0x68, 0xca, 0x11, 0x4f, 0xed, 0x03, 0xc8, 0x0f, 0x92, 0x8d, 0x54,
+	0xef, 0x3d, 0xc8, 0x1d, 0x50, 0x4b, 0xbc, 0xbc, 0xdf, 0xad, 0x4b, 0x1f, 0x8e, 0xbf, 0x7a, 0xdb,
+	0x74, 0xc8, 0x0f, 0x52, 0x8b, 0xad, 0x3b, 0xf7, 0xbf, 0xdc, 0xff, 0x84, 0xb0, 0x02, 0xe8, 0x2a,
+	0x72, 0x21, 0xed, 0x29, 0x93, 0x16, 0x7c, 0xfd, 0xf9, 0xa4, 0x2b, 0x49, 0x0b, 0x51, 0x69, 0x1f,
+	0x42, 0x35, 0x08, 0x16, 0xea, 0x28, 0xb6, 0xab, 0x52, 0xec, 0x69, 0xb8, 0x74, 0x6c, 0x77, 0x1a,
+	0xbc, 0xb9, 0xbc, 0x5c, 0xe3, 0x0f, 0xa2, 0xa3, 0x10, 0x0b, 0xc5, 0xcb, 0xcf, 0x21, 0xb3, 0xdf,
+	0xb1, 0x3d, 0xda, 0xf0, 0x9e, 0x53, 0xd7, 0x35, 0x9b, 0x74, 0xf8, 0xe7, 0x62, 0x01, 0xa0, 0xde,
+	0xb2, 0xcc, 0x4e, 0x6f, 0xc7, 0xf4, 0x4c, 0xd1, 0x6f, 0x4a, 0x23, 0xc6, 0x2b, 0xc8, 0x46, 0xe1,
+	0xfa, 0xe7, 0x40, 0x81, 0xb7, 0x0a, 0x29, 0x87, 0xaf, 0xa7, 0xaf, 0xb7, 0xa2, 0xc0, 0xaa, 0x29,
+	0xc3, 0x84, 0xdc, 0x91, 0xe5, 0x8c, 0x20, 0x79, 0x74, 0x8a, 0x7d, 0xc8, 0x0f, 0x52, 0x0c, 0x0d,
+	0xe3, 0x7d, 0x69, 0x59, 0x84, 0xf9, 0x83, 0x6e, 0xdd, 0x6d, 0x74, 0x5a, 0x75, 0x7a, 0x68, 0xef,
+	0xbe, 0xa1, 0x96, 0x77, 0xe0, 0x75, 0xa8, 0xd9, 0xf6, 0x3f, 0x1d, 0xbf, 0x68, 0x70, 0x09, 0x87,
+	0xc9, 0x32, 0x5c, 0xf4, 0x7a, 0x0e, 0xdf, 0xb9, 0xe9, 0xea, 0x15, 0x56, 0x13, 0x38, 0x71, 0xd8,
+	0x73, 0x68, 0x0d, 0xa7, 0xd8, 0xe9, 0xe7, 0x95, 0x2b, 0xfa, 0x58, 0xf1, 0x84, 0x77, 0x3f, 0x96,
+	0x0d, 0x1e, 0x7f, 0x76, 0xf7, 0xe3, 0x13, 0x59, 0x83, 0x44, 0x60, 0x43, 0xf2, 0x17, 0xb1, 0xd6,
+	0xf4, 0x32, 0x37, 0x2a, 0x65, 0xdf, 0xa8, 0x94, 0x0f, 0xfd, 0x15, 0xb5, 0xfe, 0xe2, 0xe2, 0x13,
+	0x48, 0x04, 0xe4, 0xe4, 0x0a, 0x24, 0x8e, 0xf6, 0x76, 0x76, 0x1f, 0x3e, 0xde, 0xdb, 0xdd, 0x49,
+	0x5e, 0x20, 0x19, 0x98, 0xd9, 0x7e, 0xf6, 0x78, 0x77, 0xef, 0xf0, 0xe5, 0xc1, 0xd1, 0xd6, 0xc1,
+	0x76, 0xed, 0xf1, 0xd6, 0xee, 0x4e, 0x52, 0x23, 0x39, 0x48, 0x89, 0xe1, 0xa3, 0x3d, 0x69, 0x62,
+	0xac, 0xfa, 0x43, 0x0e, 0xc6, 0xb6, 0xab, 0xe4, 0x33, 0x48, 0x04, 0x4d, 0x24, 0x49, 0xb3, 0xf0,
+	0xa2, 0x8e, 0x47, 0xcf, 0x44, 0x46, 0x45, 0xa9, 0x5e, 0xfd, 0xe6, 0xd7, 0xdf, 0x7e, 0x1e, 0x9b,
+	0x37, 0xf2, 0x15, 0x7a, 0xb7, 0xc2, 0x6f, 0xa6, 0xca, 0x39, 0xff, 0x2d, 0x33, 0xf7, 0xf4, 0x6e,
+	0x43, 0x2b, 0x92, 0x06, 0x4c, 0xc9, 0xa7, 0x92, 0xe4, 0x18, 0x96, 0xc2, 0xf4, 0xe8, 0xf9, 0xc1,
+	0x09, 0xc1, 0xb3, 0x84, 0x3c, 0x7a, 0x31, 0x96, 0x87, 0xbc, 0x82, 0x49, 0xe9, 0x3c, 0x92, 0x2c,
+	0x87, 0x8a, 0xba, 0x04, 0x3d, 0x37, 0x30, 0x1e, 0x66, 0xd0, 0xe3, 0x19, 0x8e, 0x61, 0x4a, 0x6e,
+	0xb5, 0x79, 0x18, 0x8a, 0xbe, 0x9d, 0x87, 0xa1, 0xec, 0xca, 0x45, 0xba, 0xaa, 0x43, 0xd3, 0x75,
+	0x00, 0x97, 0x7d, 0x93, 0x41, 0x52, 0x02, 0x4a, 0xee, 0x1a, 0xf5, 0x74, 0x78, 0x50, 0x60, 0x17,
+	0x10, 0x3b, 0x6b, 0xa4, 0x19, 0x36, 0x1e, 0x81, 0xca, 0x39, 0xfe, 0xfc, 0xaf, 0x58, 0x7c, 0x47,
+	0x5e, 0xb0, 0xf4, 0x04, 0xce, 0xc3, 0x4f, 0x4f, 0xd4, 0xb6, 0xe8, 0xb9, 0x81, 0xf1, 0x30, 0x7a,
+	0x51, 0x8d, 0xfe, 0x15, 0x4c, 0x87, 0xed, 0x21, 0x99, 0x95, 0x35, 0x86, 0xb7, 0x40, 0x57, 0x4d,
+	0x09, 0x9a, 0xdb, 0x48, 0xb3, 0xa2, 0xff, 0x27, 0x2e, 0x41, 0x83, 0xdc, 0xdf, 0x6a, 0x30, 0x33,
+	0xe0, 0x15, 0x49, 0x21, 0x12, 0x48, 0x58, 0xc2, 0x7c, 0xcc, 0x6c, 0x58, 0x45, 0x71, 0x04, 0x15,
+	0x3f, 0x6a, 0xa2, 0x57, 0x8e, 0x58, 0x11, 0xb2, 0x88, 0x5f, 0x90, 0x78, 0x2b, 0xa6, 0x2f, 0xc5,
+	0x2f, 0x10, 0x72, 0x4a, 0x28, 0xe7, 0x06, 0xb9, 0x3e, 0x5c, 0x8e, 0x5b, 0xc1, 0xd6, 0x82, 0xbc,
+	0xc5, 0x26, 0x3a, 0xaa, 0x03, 0x43, 0x8e, 0x75, 0x66, 0xfa, 0x42, 0xdc, 0xb4, 0xff, 0x41, 0x43,
+	0x0d, 0xcb, 0x64, 0xf1, 0x3d, 0x1a, 0xc8, 0xf7, 0x5a, 0xd8, 0x34, 0xf8, 0x8e, 0x44, 0x4a, 0x84,
+	0xda, 0x0c, 0x49, 0x89, 0x88, 0x31, 0x33, 0x46, 0x11, 0x45, 0x5c, 0x23, 0x86, 0xaa, 0x08, 0x85,
+	0x2a, 0x3f, 0x0b, 0x3d, 0xd9, 0x4a, 0x04, 0x22, 0xfc, 0x2c, 0xc4, 0x48, 0x58, 0x88, 0x9b, 0x16,
+	0x02, 0xae, 0xa1, 0x80, 0x05, 0x52, 0x18, 0x26, 0x80, 0xbc, 0x80, 0x29, 0x39, 0x0c, 0x7e, 0x51,
+	0x28, 0xfc, 0x15, 0xbf, 0x28, 0x54, 0x0e, 0xcb, 0x98, 0x45, 0xa2, 0x14, 0x99, 0xe9, 0xa7, 0xdb,
+	0x0f, 0x6c, 0x1f, 0xa0, 0xaf, 0x90, 0x64, 0xc2, 0x8a, 0x7d, 0xe4, 0x6c, 0x74, 0x58, 0xe0, 0xa6,
+	0x10, 0xf7, 0x0a, 0x99, 0x94, 0x70, 0xc9, 0xa7, 0x30, 0x29, 0xd5, 0x1f, 0xbf, 0x1b, 0x06, 0xad,
+	0x94, 0x9e, 0x1b, 0x18, 0x17, 0xa0, 0x79, 0x04, 0x25, 0x24, 0x19, 0x64, 0xc5, 0xd7, 0xfa, 0x0c,
+	0x12, 0x41, 0x4d, 0xf1, 0x0f, 0x4b, 0xd4, 0x5f, 0xe9, 0x99, 0xc8, 0xa8, 0xc0, 0x24, 0x88, 0x39,
+	0x45, 0xa0, 0x8f, 0x49, 0xde, 0x02, 0xf4, 0xad, 0x0b, 0x8f, 0x7c, 0xc0, 0x3f, 0xf1, 0xc8, 0x15,
+	0x0e, 0xe7, 0x3e, 0x02, 0xae, 0x1b, 0xf7, 0xe4, 0x02, 0x96, 0x3b, 0x3a, 0x51, 0xc6, 0xcc, 0x8d,
+	0x54, 0xce, 0xe5, 0x2e, 0x54, 0x5c, 0xff, 0xdf, 0x69, 0x30, 0x25, 0x9b, 0x15, 0xbe, 0xad, 0x0a,
+	0xd7, 0xc4, 0xb7, 0x55, 0xe9, 0x6b, 0x36, 0x51, 0xc4, 0x7f, 0x8b, 0xeb, 0xef, 0x11, 0xd1, 0xb5,
+	0x62, 0x65, 0x7c, 0xad, 0x09, 0x9f, 0x1b, 0xf2, 0x0e, 0xbc, 0xb0, 0x63, 0x3d, 0x13, 0x2f, 0xec,
+	0x78, 0x47, 0x64, 0xac, 0xa0, 0xb0, 0xeb, 0xe4, 0x6a, 0xec, 0xf1, 0x46, 0x41, 0x7c, 0x57, 0x3d,
+	0xb4, 0xc9, 0x61, 0xfe, 0x39, 0xb1, 0x8d, 0x4a, 0xf6, 0x82, 0x7a, 0x52, 0x70, 0x5f, 0x47, 0xee,
+	0x45, 0x32, 0x3f, 0x94, 0x9b, 0x38, 0x90, 0x8c, 0x9a, 0x0e, 0xce, 0x1a, 0xe3, 0x82, 0x38, 0x6b,
+	0xac, 0x4f, 0x59, 0x46, 0xd6, 0x39, 0x23, 0xcb, 0x58, 0x5d, 0x6a, 0xbd, 0x2e, 0x71, 0xca, 0x92,
+	0xd3, 0xad, 0x9f, 0xd0, 0x1e, 0xfb, 0x10, 0x7f, 0xe9, 0xff, 0xcb, 0x5e, 0x88, 0x73, 0x3e, 0xda,
+	0xa4, 0x84, 0x59, 0x17, 0xe2, 0xa6, 0x55, 0x1d, 0x53, 0x07, 0xd7, 0xc5, 0x30, 0x47, 0xcd, 0x85,
+	0xcf, 0x1c, 0xe3, 0x60, 0x7c, 0xe6, 0x58, 0x4f, 0x12, 0x61, 0x76, 0xa9, 0x17, 0x26, 0x76, 0x19,
+	0xf3, 0x3e, 0x36, 0x1f, 0xe8, 0x47, 0x82, 0xe6, 0x43, 0xb6, 0x31, 0x41, 0xf3, 0x11, 0xb6, 0x2c,
+	0xe2, 0xbe, 0x32, 0xa6, 0x19, 0xb6, 0x45, 0xcf, 0x4a, 0x8d, 0x6a, 0x49, 0xc4, 0xd2, 0x84, 0xe9,
+	0xb0, 0xfd, 0xe0, 0xbd, 0x81, 0xd2, 0xe1, 0xf0, 0xde, 0x40, 0xed, 0x56, 0x8c, 0x05, 0xe4, 0xc8,
+	0x1b, 0x29, 0xc6, 0x21, 0xac, 0x40, 0xa9, 0xcd, 0x17, 0x31, 0x22, 0x1b, 0x92, 0x51, 0x8b, 0xc0,
+	0x0b, 0x24, 0xc6, 0x9b, 0xf0, 0x02, 0x89, 0x73, 0x15, 0x7e, 0x43, 0x68, 0x64, 0x18, 0x5d, 0xd7,
+	0x52, 0x10, 0x3e, 0x81, 0xac, 0xda, 0x41, 0x90, 0x65, 0x2c, 0xbd, 0x61, 0xee, 0x42, 0x4f, 0x04,
+	0x2e, 0xc2, 0xb8, 0xb0, 0xaa, 0x6d, 0xed, 0xfc, 0xb4, 0xb9, 0x49, 0x2e, 0xc3, 0x44, 0xa3, 0x5a,
+	0x32, 0x9d, 0x96, 0x3e, 0x7d, 0xbb, 0x7a, 0xaf, 0xbc, 0x5a, 0x5e, 0x2d, 0xdf, 0xde, 0x58, 0x5b,
+	0x5b, 0x5b, 0x2b, 0x6a, 0x63, 0xd5, 0xa4, 0xe9, 0x38, 0xa7, 0xad, 0x06, 0xfe, 0xd7, 0x46, 0xe5,
+	0x73, 0xd7, 0xb6, 0x36, 0x06, 0x46, 0xea, 0x13, 0x68, 0x1d, 0xee, 0xfc, 0x1e, 0x00, 0x00, 0xff,
+	0xff, 0x6f, 0xbf, 0xd1, 0xf6, 0x4e, 0x19, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // C2Client is the client API for C2 service.
 //
@@ -1535,15 +2457,35 @@ type C2Client interface {
 	CountTopics(ctx context.Context, in *CountTopicsRequest, opts ...grpc.CallOption) (*CountTopicsResponse, error)
 	// Retrieve paginated topics
 	GetTopics(ctx context.Context, in *GetTopicsRequest, opts ...grpc.CallOption) (*GetTopicsResponse, error)
-	// Send a message on a topic
-	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
+	// Create a client-client link between on a target client
+	LinkClient(ctx context.Context, in *LinkClientRequest, opts ...grpc.CallOption) (*LinkClientResponse, error)
+	// Remove a client-client link on a target client
+	UnlinkClient(ctx context.Context, in *UnlinkClientRequest, opts ...grpc.CallOption) (*UnlinkClientResponse, error)
+	// Count clients linked to the given client
+	CountLinkedClients(ctx context.Context, in *CountLinkedClientsRequest, opts ...grpc.CallOption) (*CountLinkedClientsResponse, error)
+	// Retrieve clients linked to the given client
+	GetLinkedClients(ctx context.Context, in *GetLinkedClientsRequest, opts ...grpc.CallOption) (*GetLinkedClientsResponse, error)
+	// Send a client pubkey to another client (pubkey mode only)
+	SendClientPubKey(ctx context.Context, in *SendClientPubKeyRequest, opts ...grpc.CallOption) (*SendClientPubKeyResponse, error)
+	// Remove a client pubkey from another client (pubkey mode only)
+	RemoveClientPubKey(ctx context.Context, in *RemoveClientPubKeyRequest, opts ...grpc.CallOption) (*RemoveClientPubKeyResponse, error)
+	// Remove all pubkeys from a client
+	ResetClientPubKeys(ctx context.Context, in *ResetClientPubKeysRequest, opts ...grpc.CallOption) (*ResetClientPubKeysResponse, error)
+	// Generate a new C2 key
+	NewC2Key(ctx context.Context, in *NewC2KeyRequest, opts ...grpc.CallOption) (*NewC2KeyResponse, error)
+	// ProtectMessage returns base64 encoded data, representing the input data protected with the input topic key.
+	ProtectMessage(ctx context.Context, in *ProtectMessageRequest, opts ...grpc.CallOption) (*ProtectMessageResponse, error)
+	// UnprotectMessage returns base64 encoded data, representing the input data unprotected with the input topic key.
+	UnprotectMessage(ctx context.Context, in *UnprotectMessageRequest, opts ...grpc.CallOption) (*UnprotectMessageResponse, error)
+	// Provide a stream on C2 system events, grpc only
+	SubscribeToEventStream(ctx context.Context, in *SubscribeToEventStreamRequest, opts ...grpc.CallOption) (C2_SubscribeToEventStreamClient, error)
 }
 
 type c2Client struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewC2Client(cc *grpc.ClientConn) C2Client {
+func NewC2Client(cc grpc.ClientConnInterface) C2Client {
 	return &c2Client{cc}
 }
 
@@ -1691,13 +2633,126 @@ func (c *c2Client) GetTopics(ctx context.Context, in *GetTopicsRequest, opts ...
 	return out, nil
 }
 
-func (c *c2Client) SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error) {
-	out := new(SendMessageResponse)
-	err := c.cc.Invoke(ctx, "/pb.C2/SendMessage", in, out, opts...)
+func (c *c2Client) LinkClient(ctx context.Context, in *LinkClientRequest, opts ...grpc.CallOption) (*LinkClientResponse, error) {
+	out := new(LinkClientResponse)
+	err := c.cc.Invoke(ctx, "/pb.C2/LinkClient", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *c2Client) UnlinkClient(ctx context.Context, in *UnlinkClientRequest, opts ...grpc.CallOption) (*UnlinkClientResponse, error) {
+	out := new(UnlinkClientResponse)
+	err := c.cc.Invoke(ctx, "/pb.C2/UnlinkClient", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *c2Client) CountLinkedClients(ctx context.Context, in *CountLinkedClientsRequest, opts ...grpc.CallOption) (*CountLinkedClientsResponse, error) {
+	out := new(CountLinkedClientsResponse)
+	err := c.cc.Invoke(ctx, "/pb.C2/CountLinkedClients", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *c2Client) GetLinkedClients(ctx context.Context, in *GetLinkedClientsRequest, opts ...grpc.CallOption) (*GetLinkedClientsResponse, error) {
+	out := new(GetLinkedClientsResponse)
+	err := c.cc.Invoke(ctx, "/pb.C2/GetLinkedClients", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *c2Client) SendClientPubKey(ctx context.Context, in *SendClientPubKeyRequest, opts ...grpc.CallOption) (*SendClientPubKeyResponse, error) {
+	out := new(SendClientPubKeyResponse)
+	err := c.cc.Invoke(ctx, "/pb.C2/SendClientPubKey", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *c2Client) RemoveClientPubKey(ctx context.Context, in *RemoveClientPubKeyRequest, opts ...grpc.CallOption) (*RemoveClientPubKeyResponse, error) {
+	out := new(RemoveClientPubKeyResponse)
+	err := c.cc.Invoke(ctx, "/pb.C2/RemoveClientPubKey", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *c2Client) ResetClientPubKeys(ctx context.Context, in *ResetClientPubKeysRequest, opts ...grpc.CallOption) (*ResetClientPubKeysResponse, error) {
+	out := new(ResetClientPubKeysResponse)
+	err := c.cc.Invoke(ctx, "/pb.C2/ResetClientPubKeys", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *c2Client) NewC2Key(ctx context.Context, in *NewC2KeyRequest, opts ...grpc.CallOption) (*NewC2KeyResponse, error) {
+	out := new(NewC2KeyResponse)
+	err := c.cc.Invoke(ctx, "/pb.C2/NewC2Key", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *c2Client) ProtectMessage(ctx context.Context, in *ProtectMessageRequest, opts ...grpc.CallOption) (*ProtectMessageResponse, error) {
+	out := new(ProtectMessageResponse)
+	err := c.cc.Invoke(ctx, "/pb.C2/ProtectMessage", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *c2Client) UnprotectMessage(ctx context.Context, in *UnprotectMessageRequest, opts ...grpc.CallOption) (*UnprotectMessageResponse, error) {
+	out := new(UnprotectMessageResponse)
+	err := c.cc.Invoke(ctx, "/pb.C2/UnprotectMessage", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *c2Client) SubscribeToEventStream(ctx context.Context, in *SubscribeToEventStreamRequest, opts ...grpc.CallOption) (C2_SubscribeToEventStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_C2_serviceDesc.Streams[0], "/pb.C2/SubscribeToEventStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &c2SubscribeToEventStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type C2_SubscribeToEventStreamClient interface {
+	Recv() (*Event, error)
+	grpc.ClientStream
+}
+
+type c2SubscribeToEventStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *c2SubscribeToEventStreamClient) Recv() (*Event, error) {
+	m := new(Event)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // C2Server is the server API for C2 service.
@@ -1734,8 +2789,28 @@ type C2Server interface {
 	CountTopics(context.Context, *CountTopicsRequest) (*CountTopicsResponse, error)
 	// Retrieve paginated topics
 	GetTopics(context.Context, *GetTopicsRequest) (*GetTopicsResponse, error)
-	// Send a message on a topic
-	SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error)
+	// Create a client-client link between on a target client
+	LinkClient(context.Context, *LinkClientRequest) (*LinkClientResponse, error)
+	// Remove a client-client link on a target client
+	UnlinkClient(context.Context, *UnlinkClientRequest) (*UnlinkClientResponse, error)
+	// Count clients linked to the given client
+	CountLinkedClients(context.Context, *CountLinkedClientsRequest) (*CountLinkedClientsResponse, error)
+	// Retrieve clients linked to the given client
+	GetLinkedClients(context.Context, *GetLinkedClientsRequest) (*GetLinkedClientsResponse, error)
+	// Send a client pubkey to another client (pubkey mode only)
+	SendClientPubKey(context.Context, *SendClientPubKeyRequest) (*SendClientPubKeyResponse, error)
+	// Remove a client pubkey from another client (pubkey mode only)
+	RemoveClientPubKey(context.Context, *RemoveClientPubKeyRequest) (*RemoveClientPubKeyResponse, error)
+	// Remove all pubkeys from a client
+	ResetClientPubKeys(context.Context, *ResetClientPubKeysRequest) (*ResetClientPubKeysResponse, error)
+	// Generate a new C2 key
+	NewC2Key(context.Context, *NewC2KeyRequest) (*NewC2KeyResponse, error)
+	// ProtectMessage returns base64 encoded data, representing the input data protected with the input topic key.
+	ProtectMessage(context.Context, *ProtectMessageRequest) (*ProtectMessageResponse, error)
+	// UnprotectMessage returns base64 encoded data, representing the input data unprotected with the input topic key.
+	UnprotectMessage(context.Context, *UnprotectMessageRequest) (*UnprotectMessageResponse, error)
+	// Provide a stream on C2 system events, grpc only
+	SubscribeToEventStream(*SubscribeToEventStreamRequest, C2_SubscribeToEventStreamServer) error
 }
 
 // UnimplementedC2Server can be embedded to have forward compatible implementations.
@@ -1790,8 +2865,38 @@ func (*UnimplementedC2Server) CountTopics(ctx context.Context, req *CountTopicsR
 func (*UnimplementedC2Server) GetTopics(ctx context.Context, req *GetTopicsRequest) (*GetTopicsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTopics not implemented")
 }
-func (*UnimplementedC2Server) SendMessage(ctx context.Context, req *SendMessageRequest) (*SendMessageResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
+func (*UnimplementedC2Server) LinkClient(ctx context.Context, req *LinkClientRequest) (*LinkClientResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LinkClient not implemented")
+}
+func (*UnimplementedC2Server) UnlinkClient(ctx context.Context, req *UnlinkClientRequest) (*UnlinkClientResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnlinkClient not implemented")
+}
+func (*UnimplementedC2Server) CountLinkedClients(ctx context.Context, req *CountLinkedClientsRequest) (*CountLinkedClientsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CountLinkedClients not implemented")
+}
+func (*UnimplementedC2Server) GetLinkedClients(ctx context.Context, req *GetLinkedClientsRequest) (*GetLinkedClientsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLinkedClients not implemented")
+}
+func (*UnimplementedC2Server) SendClientPubKey(ctx context.Context, req *SendClientPubKeyRequest) (*SendClientPubKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendClientPubKey not implemented")
+}
+func (*UnimplementedC2Server) RemoveClientPubKey(ctx context.Context, req *RemoveClientPubKeyRequest) (*RemoveClientPubKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveClientPubKey not implemented")
+}
+func (*UnimplementedC2Server) ResetClientPubKeys(ctx context.Context, req *ResetClientPubKeysRequest) (*ResetClientPubKeysResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResetClientPubKeys not implemented")
+}
+func (*UnimplementedC2Server) NewC2Key(ctx context.Context, req *NewC2KeyRequest) (*NewC2KeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewC2Key not implemented")
+}
+func (*UnimplementedC2Server) ProtectMessage(ctx context.Context, req *ProtectMessageRequest) (*ProtectMessageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProtectMessage not implemented")
+}
+func (*UnimplementedC2Server) UnprotectMessage(ctx context.Context, req *UnprotectMessageRequest) (*UnprotectMessageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnprotectMessage not implemented")
+}
+func (*UnimplementedC2Server) SubscribeToEventStream(req *SubscribeToEventStreamRequest, srv C2_SubscribeToEventStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeToEventStream not implemented")
 }
 
 func RegisterC2Server(s *grpc.Server, srv C2Server) {
@@ -2086,22 +3191,205 @@ func _C2_GetTopics_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _C2_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendMessageRequest)
+func _C2_LinkClient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LinkClientRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(C2Server).SendMessage(ctx, in)
+		return srv.(C2Server).LinkClient(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pb.C2/SendMessage",
+		FullMethod: "/pb.C2/LinkClient",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(C2Server).SendMessage(ctx, req.(*SendMessageRequest))
+		return srv.(C2Server).LinkClient(ctx, req.(*LinkClientRequest))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _C2_UnlinkClient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnlinkClientRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).UnlinkClient(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.C2/UnlinkClient",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).UnlinkClient(ctx, req.(*UnlinkClientRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _C2_CountLinkedClients_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CountLinkedClientsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).CountLinkedClients(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.C2/CountLinkedClients",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).CountLinkedClients(ctx, req.(*CountLinkedClientsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _C2_GetLinkedClients_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLinkedClientsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).GetLinkedClients(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.C2/GetLinkedClients",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).GetLinkedClients(ctx, req.(*GetLinkedClientsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _C2_SendClientPubKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendClientPubKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).SendClientPubKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.C2/SendClientPubKey",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).SendClientPubKey(ctx, req.(*SendClientPubKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _C2_RemoveClientPubKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveClientPubKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).RemoveClientPubKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.C2/RemoveClientPubKey",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).RemoveClientPubKey(ctx, req.(*RemoveClientPubKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _C2_ResetClientPubKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetClientPubKeysRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).ResetClientPubKeys(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.C2/ResetClientPubKeys",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).ResetClientPubKeys(ctx, req.(*ResetClientPubKeysRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _C2_NewC2Key_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewC2KeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).NewC2Key(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.C2/NewC2Key",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).NewC2Key(ctx, req.(*NewC2KeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _C2_ProtectMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProtectMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).ProtectMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.C2/ProtectMessage",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).ProtectMessage(ctx, req.(*ProtectMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _C2_UnprotectMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnprotectMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).UnprotectMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.C2/UnprotectMessage",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).UnprotectMessage(ctx, req.(*UnprotectMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _C2_SubscribeToEventStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SubscribeToEventStreamRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(C2Server).SubscribeToEventStream(m, &c2SubscribeToEventStreamServer{stream})
+}
+
+type C2_SubscribeToEventStreamServer interface {
+	Send(*Event) error
+	grpc.ServerStream
+}
+
+type c2SubscribeToEventStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *c2SubscribeToEventStreamServer) Send(m *Event) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 var _C2_serviceDesc = grpc.ServiceDesc{
@@ -2173,10 +3461,52 @@ var _C2_serviceDesc = grpc.ServiceDesc{
 			Handler:    _C2_GetTopics_Handler,
 		},
 		{
-			MethodName: "SendMessage",
-			Handler:    _C2_SendMessage_Handler,
+			MethodName: "LinkClient",
+			Handler:    _C2_LinkClient_Handler,
+		},
+		{
+			MethodName: "UnlinkClient",
+			Handler:    _C2_UnlinkClient_Handler,
+		},
+		{
+			MethodName: "CountLinkedClients",
+			Handler:    _C2_CountLinkedClients_Handler,
+		},
+		{
+			MethodName: "GetLinkedClients",
+			Handler:    _C2_GetLinkedClients_Handler,
+		},
+		{
+			MethodName: "SendClientPubKey",
+			Handler:    _C2_SendClientPubKey_Handler,
+		},
+		{
+			MethodName: "RemoveClientPubKey",
+			Handler:    _C2_RemoveClientPubKey_Handler,
+		},
+		{
+			MethodName: "ResetClientPubKeys",
+			Handler:    _C2_ResetClientPubKeys_Handler,
+		},
+		{
+			MethodName: "NewC2Key",
+			Handler:    _C2_NewC2Key_Handler,
+		},
+		{
+			MethodName: "ProtectMessage",
+			Handler:    _C2_ProtectMessage_Handler,
+		},
+		{
+			MethodName: "UnprotectMessage",
+			Handler:    _C2_UnprotectMessage_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SubscribeToEventStream",
+			Handler:       _C2_SubscribeToEventStream_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api.proto",
 }

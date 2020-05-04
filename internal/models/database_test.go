@@ -1,6 +1,22 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package models
 
 import (
+	"context"
+	"database/sql"
 	"io/ioutil"
 	"log"
 	"os"
@@ -9,9 +25,10 @@ import (
 
 	"github.com/jinzhu/gorm"
 
-	"gitlab.com/teserakt/c2/internal/config"
-	e4 "gitlab.com/teserakt/e4common"
-	slibcfg "gitlab.com/teserakt/serverlib/config"
+	e4crypto "github.com/teserakt-io/e4go/crypto"
+	slibcfg "github.com/teserakt-io/serverlib/config"
+
+	"github.com/teserakt-io/c2/internal/config"
 )
 
 // setupFunc defines a database setup function,
@@ -58,7 +75,7 @@ func TestDBSQLite(t *testing.T) {
 
 func TestDBPostgres(t *testing.T) {
 	if os.Getenv("C2TEST_POSTGRES") == "" {
-		t.Skip("C2TEST_POSTGRES environment variable isn't set, skipping postgress tests")
+		t.Skip("C2TEST_POSTGRES environment variable isn't set, skipping postgres tests")
 	}
 
 	setup := func(t *testing.T) (Database, func()) {
@@ -71,7 +88,7 @@ func TestDBPostgres(t *testing.T) {
 			Username:         "e4_c2_test",
 			Password:         "teserakte4",
 			Schema:           "e4_c2_test_unit",
-			Logging:          true,
+			Logging:          false,
 		}
 
 		logger := log.New(os.Stdout, "", 0)
@@ -99,7 +116,6 @@ func TestDBPostgres(t *testing.T) {
 }
 
 func testDatabase(t *testing.T, setup setupFunc) {
-
 	t.Run("Insert and Get properly insert or update and retrieve", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
@@ -107,7 +123,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		expectedClient := Client{
 			ID:   1,
 			Name: "expectedName",
-			E4ID: e4.HashIDAlias("expectedName"),
+			E4ID: e4crypto.HashIDAlias("expectedName"),
 			Key:  []byte("someKey"),
 		}
 
@@ -209,7 +225,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		expectedClient := Client{
 			ID:   1,
 			Name: "someName",
-			E4ID: e4.HashIDAlias("someName"),
+			E4ID: e4crypto.HashIDAlias("someName"),
 			Key:  []byte("someKey"),
 		}
 
@@ -297,7 +313,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 				t.Errorf("Expected count to be %d, got %d", i, c)
 			}
 
-			err = db.InsertClient(name, e4.HashIDAlias(name), []byte("key"))
+			err = db.InsertClient(name, e4crypto.HashIDAlias(name), []byte("key"))
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
 			}
@@ -312,7 +328,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 				t.Errorf("Expected count to be %d, got %d", len(clients)-i, c)
 			}
 
-			err = db.DeleteClientByID(e4.HashIDAlias(name))
+			err = db.DeleteClientByID(e4crypto.HashIDAlias(name))
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
 			}
@@ -378,9 +394,9 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 
 		expectedClients := []Client{
-			Client{ID: 1, Name: "Client1", E4ID: e4.HashIDAlias("Client1"), Key: []byte("key1")},
-			Client{ID: 2, Name: "Client2", E4ID: e4.HashIDAlias("Client2"), Key: []byte("key2")},
-			Client{ID: 3, Name: "Client3", E4ID: e4.HashIDAlias("Client3"), Key: []byte("key3")},
+			Client{ID: 1, Name: "Client1", E4ID: e4crypto.HashIDAlias("Client1"), Key: []byte("key1")},
+			Client{ID: 2, Name: "Client2", E4ID: e4crypto.HashIDAlias("Client2"), Key: []byte("key2")},
+			Client{ID: 3, Name: "Client3", E4ID: e4crypto.HashIDAlias("Client3"), Key: []byte("key3")},
 		}
 
 		for _, client := range expectedClients {
@@ -440,7 +456,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		client := Client{ID: 1, Name: "i-1", E4ID: e4.HashIDAlias("i-1"), Key: []byte("key")}
+		client := Client{ID: 1, Name: "i-1", E4ID: e4crypto.HashIDAlias("i-1"), Key: []byte("key")}
 		if err := db.InsertClient(client.Name, client.E4ID, client.Key); err != nil {
 			t.Fatalf("Failed to insert Client: %v", err)
 		}
@@ -527,11 +543,11 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		}
 	})
 
-	t.Run("Link with unkow records return errors", func(t *testing.T) {
+	t.Run("Link with unknown records return errors", func(t *testing.T) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		client := Client{Name: "a", E4ID: e4.HashIDAlias("a"), Key: []byte("b")}
+		client := Client{Name: "a", E4ID: e4crypto.HashIDAlias("a"), Key: []byte("b")}
 		topicKey := TopicKey{Topic: "c", Key: []byte("d")}
 
 		if err := db.LinkClientTopic(client, topicKey); err != ErrClientNoPrimaryKey {
@@ -552,7 +568,7 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		db, tearDown := setup(t)
 		defer tearDown()
 
-		client := Client{Name: "a", E4ID: e4.HashIDAlias("a"), Key: []byte("b")}
+		client := Client{Name: "a", E4ID: e4crypto.HashIDAlias("a"), Key: []byte("b")}
 		topicKey := TopicKey{Topic: "c", Key: []byte("d")}
 
 		if err := db.UnlinkClientTopic(client, topicKey); err != ErrClientNoPrimaryKey {
@@ -620,6 +636,141 @@ func testDatabase(t *testing.T, setup setupFunc) {
 		err := db.Migrate()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Transactions properly commits", func(t *testing.T) {
+		db, tearDown := setup(t)
+		defer tearDown()
+
+		txDb, err := db.BeginTx(context.Background(), &sql.TxOptions{})
+		if err != nil {
+			t.Fatalf("got error '%v' when beginning tx", err)
+		}
+
+		clientName := "client1"
+		clientID := e4crypto.HashIDAlias(clientName)
+
+		if err := txDb.InsertClient(clientName, clientID, []byte("client1key")); err != nil {
+			t.Fatalf("got error '%v' when inserting client", err)
+		}
+
+		if _, err := db.GetClientByID(clientID); !IsErrRecordNotFound(err) {
+			t.Fatalf("Uncommitted transaction: got error '%v' fetching client, want '%v' ", err, gorm.ErrRecordNotFound)
+		}
+
+		if err := txDb.CommitTx(); err != nil {
+			t.Fatalf("got error '%v' when committing tx", err)
+		}
+
+		if _, err := db.GetClientByID(clientID); err != nil {
+			t.Fatalf("Committed transaction: got error '%v' fetching client", err)
+		}
+	})
+
+	t.Run("Transactions properly rollback", func(t *testing.T) {
+		db, tearDown := setup(t)
+		defer tearDown()
+
+		txDb, err := db.BeginTx(context.Background(), &sql.TxOptions{})
+		if err != nil {
+			t.Fatalf("got error '%v' when beginning tx", err)
+		}
+
+		clientName := "client1"
+		clientID := e4crypto.HashIDAlias(clientName)
+
+		if err := txDb.InsertClient(clientName, clientID, []byte("client1key")); err != nil {
+			t.Fatalf("got error '%v' when inserting client", err)
+		}
+
+		if _, err := db.GetClientByID(clientID); !IsErrRecordNotFound(err) {
+			t.Fatalf("Uncommitted transaction: got error '%v' fetching client, want '%v' ", err, gorm.ErrRecordNotFound)
+		}
+
+		if err := txDb.Rollback(); err != nil {
+			t.Fatalf("got error '%v' when committing tx", err)
+		}
+
+		if _, err := db.GetClientByID(clientID); !IsErrRecordNotFound(err) {
+			t.Fatalf("Rollback transaction: got error '%v' fetching client, want '%v' ", err, gorm.ErrRecordNotFound)
+		}
+	})
+
+	t.Run("LinkClient properly links a client to another", func(t *testing.T) {
+		db, tearDown := setup(t)
+		defer tearDown()
+
+		sourceClientName := "client1"
+		sourceClientID := e4crypto.HashIDAlias(sourceClientName)
+
+		targetClientName := "client2"
+		targetClientID := e4crypto.HashIDAlias(targetClientName)
+		db.InsertClient(sourceClientName, sourceClientID, []byte("client1key"))
+		db.InsertClient(targetClientName, targetClientID, []byte("client2key"))
+
+		sourceClient, err := db.GetClientByID(sourceClientID)
+		if err != nil {
+			t.Fatalf("failed to get sourceClient: %v", err)
+		}
+		targetClient, err := db.GetClientByID(targetClientID)
+		if err != nil {
+			t.Fatalf("failed to get sourceClient: %v", err)
+		}
+
+		if err := db.LinkClient(sourceClient, targetClient); err != nil {
+			t.Fatalf("failed to link clients: %v", err)
+		}
+
+		linked1Count, err := db.CountLinkedClients(targetClientID)
+		if err != nil {
+			t.Fatalf("failed to count linked clients for sourceClient: %v", err)
+		}
+		if linked1Count != 1 {
+			t.Fatalf("got %d linked clients, want %d", linked1Count, 1)
+		}
+
+		linked2Count, err := db.CountLinkedClients(sourceClientID)
+		if err != nil {
+			t.Fatalf("failed to count linked clients for targetClient: %v", err)
+		}
+		if linked2Count != 0 {
+			t.Fatalf("got %d linked clients, want %d", linked2Count, 0)
+		}
+
+		clients, err := db.GetLinkedClientsForClientByID(targetClientID, 0, 10)
+		if err != nil {
+			t.Fatalf("failed to get clients for client: %v", err)
+		}
+
+		want := []Client{sourceClient}
+		if !reflect.DeepEqual(clients, want) {
+			t.Fatalf("Invalid linked clients, got %#v, want %#v", clients, want)
+		}
+
+		clients2, err := db.GetLinkedClientsForClientByID(sourceClientID, 0, 10)
+		if err != nil {
+			t.Fatalf("failed to get clients for client: %v", err)
+		}
+		if g, w := len(clients2), 0; g != w {
+			t.Fatalf("Invalid linked clients count for targetClient, got %d, want %d", g, w)
+		}
+
+		if err := db.UnlinkClient(sourceClient, targetClient); err != nil {
+			t.Fatalf("failed to unlink clients: %v", err)
+		}
+
+		clients, err = db.GetLinkedClientsForClientByID(sourceClientID, 0, 10)
+		if err != nil {
+			t.Fatalf("failed to get clients for client: %v", err)
+		}
+		if len(clients) != 0 {
+			t.Fatalf("expected no linked clients, got %d", len(clients))
+		}
+
+		// Unlinking not linked clients just do nothing
+		if err := db.UnlinkClient(targetClient, sourceClient); err != nil {
+			t.Fatalf("failed to unlink clients: %v", err)
 		}
 	})
 }

@@ -1,8 +1,23 @@
+// Copyright 2020 Teserakt AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 syntax = "proto3";
 package pb;
 
 import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
+import "google/protobuf/timestamp.proto";
 
 option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
   host : "127.0.0.1:8888"
@@ -43,25 +58,25 @@ service C2 {
   // Create a new topic
   rpc NewTopic(NewTopicRequest) returns (NewTopicResponse) {
     option (google.api.http) = {
-      post : "/e4/topic/{topic}"
+      post : "/e4/topic/{topic=**}"
     };
   }
   // Remove a topic
   rpc RemoveTopic(RemoveTopicRequest) returns (RemoveTopicResponse) {
     option (google.api.http) = {
-      delete : "/e4/topic/{topic}"
+      delete : "/e4/topic/{topic=**}"
     };
   }
   // Associate a topic with a client
   rpc NewTopicClient(NewTopicClientRequest) returns (NewTopicClientResponse) {
     option (google.api.http) = {
-      put : "/e4/client/{client.name}/topic/{topic}"
+      put : "/e4/client/{client.name}/topic/{topic=**}"
     };
   }
   // Remove a topic / client association
   rpc RemoveTopicClient(RemoveTopicClientRequest) returns (RemoveTopicClientResponse) {
     option (google.api.http) = {
-      delete : "/e4/client/{client.name}/topic/{topic}"
+      delete : "/e4/client/{client.name}/topic/{topic=**}"
     };
   }
   // Count the number of topics for a client
@@ -79,13 +94,13 @@ service C2 {
   // Count the number of clients for a topic
   rpc CountClientsForTopic(CountClientsForTopicRequest) returns (CountClientsForTopicResponse) {
     option (google.api.http) = {
-      get : "/e4/topic/{topic}/clients/count"
+      get : "/e4/topic/{topic=**}/clients/count"
     };
   }
   // Retrieve paginated clients for a topic
   rpc GetClientsForTopic(GetClientsForTopicRequest) returns (GetClientsForTopicResponse) {
     option (google.api.http) = {
-      get : "/e4/topic/{topic}/clients"
+      get : "/e4/topic/{topic=**}/clients"
     };
   }
   // Count the number of clients
@@ -113,13 +128,85 @@ service C2 {
       get : "/e4/topics"
     };
   }
-  // Send a message on a topic
-  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {
+
+  // Create a client-client link between on a target client
+  rpc LinkClient(LinkClientRequest) returns (LinkClientResponse) {
     option (google.api.http) = {
-      post : "/e4/message"
-      body : "*"
+      post: "/e4/client/{targetClient.name}/link/{sourceClient.name}"
     };
   }
+
+  // Remove a client-client link on a target client
+  rpc UnlinkClient(UnlinkClientRequest) returns (UnlinkClientResponse) {
+    option (google.api.http) = {
+      delete: "/e4/client/{targetClient.name}/unlink/{sourceClient.name}"
+    };
+  }
+
+  // Count clients linked to the given client
+  rpc CountLinkedClients(CountLinkedClientsRequest) returns (CountLinkedClientsResponse) {
+    option (google.api.http) = {
+      get: "/e4/client/{client.name}/link/count"
+    };
+  }
+
+  // Retrieve clients linked to the given client
+  rpc GetLinkedClients(GetLinkedClientsRequest) returns (GetLinkedClientsResponse) {
+    option (google.api.http) = {
+      get: "/e4/client/{client.name}/link"
+    };
+  }
+
+  // Send a client pubkey to another client (pubkey mode only)
+  rpc SendClientPubKey(SendClientPubKeyRequest) returns (SendClientPubKeyResponse) {
+    option (google.api.http) = {
+      post: "/e4/send-client-pubkey"
+      body: "*"
+    };
+  }
+
+  // Remove a client pubkey from another client (pubkey mode only)
+  rpc RemoveClientPubKey(RemoveClientPubKeyRequest) returns (RemoveClientPubKeyResponse) {
+    option (google.api.http) = {
+      post: "/e4/remove-client-pubkey"
+      body: "*"
+    };
+  }
+
+  // Remove all pubkeys from a client
+  rpc ResetClientPubKeys(ResetClientPubKeysRequest) returns (ResetClientPubKeysResponse) {
+    option (google.api.http) = {
+      post: "/e4/reset-client-pubkeys"
+      body: "*"
+    };
+  }
+
+  // Generate a new C2 key
+  rpc NewC2Key(NewC2KeyRequest) returns (NewC2KeyResponse) {
+    option (google.api.http) = {
+      post: "/e4/new-c2-key"
+      body: "*"
+    };
+  }
+
+  // ProtectMessage returns base64 encoded data, representing the input data protected with the input topic key.
+  rpc ProtectMessage(ProtectMessageRequest) returns (ProtectMessageResponse) {
+    option (google.api.http) = {
+      post: "/e4/protect-message"
+      body: "*"
+    };
+  }
+
+  // UnprotectMessage returns base64 encoded data, representing the input data unprotected with the input topic key.
+  rpc UnprotectMessage(UnprotectMessageRequest) returns (UnprotectMessageResponse) {
+    option (google.api.http) = {
+      post: "/e4/unprotect-message"
+      body: "*"
+    };
+  }
+
+  // Provide a stream on C2 system events, grpc only
+  rpc SubscribeToEventStream(SubscribeToEventStreamRequest) returns (stream Event) {}
 }
 
 message Client {
@@ -227,8 +314,85 @@ message GetTopicsResponse {
   repeated string topics = 1;
 }
 
-message SendMessageRequest {
-  string topic = 1;
-  string message = 2;
+message LinkClientRequest {
+  Client sourceClient = 1;
+  Client targetClient = 2;
 }
-message SendMessageResponse {}
+message LinkClientResponse {}
+
+message UnlinkClientRequest {
+  Client sourceClient = 1;
+  Client targetClient = 2;
+}
+message UnlinkClientResponse {}
+
+message CountLinkedClientsRequest {
+  Client client = 1;
+}
+message CountLinkedClientsResponse {
+  int64 count = 1;
+}
+message GetLinkedClientsRequest {
+  Client client = 1;
+  int64 offset = 2;
+  int64 count = 3;
+}
+message GetLinkedClientsResponse {
+  repeated Client clients = 1;
+}
+
+message SendClientPubKeyRequest {
+  Client sourceClient = 1;
+  Client targetClient = 2;
+}
+message SendClientPubKeyResponse {}
+
+message RemoveClientPubKeyRequest {
+  Client sourceClient = 1;
+  Client targetClient = 2;
+}
+message RemoveClientPubKeyResponse {}
+
+message ResetClientPubKeysRequest {
+  Client targetClient = 1;
+}
+message ResetClientPubKeysResponse {}
+
+message NewC2KeyRequest {
+  bool force = 1; // ensure this doesn't run by just poking at the endpoint
+}
+message NewC2KeyResponse {}
+
+message ProtectMessageRequest {
+  string topic = 1;
+  bytes binaryData = 2;
+}
+message ProtectMessageResponse {
+  string topic = 1;
+  bytes protectedBinaryData = 2;
+}
+
+message UnprotectMessageRequest {
+  string topic = 1;
+  bytes protectedBinaryData = 2;
+}
+message UnprotectMessageResponse {
+  string topic = 1;
+  bytes binaryData = 2;
+}
+
+message SubscribeToEventStreamRequest {}
+
+enum EventType {
+  UNDEFINED = 0;
+  CLIENT_SUBSCRIBED = 1;
+  CLIENT_UNSUBSCRIBED = 2;
+}
+
+message Event {
+  EventType type = 1;
+  string source = 2;
+  string target = 3;
+  // Hold the time where event is sent
+  google.protobuf.Timestamp timestamp = 4;
+}
