@@ -29,11 +29,11 @@ This will start the MQTT broker (VerneMQ), Elasticsearch, Kibana, Prometheus, Ja
 
 ### Services list
 
-- [http://localhost:9200]: Elasticsearch endpoint
-- [http://localhost:5601]: Kibana UI
-- [http://localhost:16686]: Jaeger UI
-- [http://localhost:9999]: zPages
-- [http://localhost:9090]: Prometheus UI
+- http://localhost:9200: Elasticsearch endpoint
+- http://localhost:5601: Kibana UI
+- http://localhost:16686: Jaeger UI
+- http://localhost:9999: zPages
+- http://localhost:9090: Prometheus UI
 
 ### Run from Docker image
 
