@@ -207,6 +207,12 @@ service C2 {
 
   // Provide a stream on C2 system events, grpc only
   rpc SubscribeToEventStream(SubscribeToEventStreamRequest) returns (stream Event) {}
+
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse) {
+    option (google.api.http) = {
+      get: "/e4/health-check"
+    };
+  }
 }
 
 message Client {
@@ -395,4 +401,10 @@ message Event {
   string target = 3;
   // Hold the time where event is sent
   google.protobuf.Timestamp timestamp = 4;
+}
+
+message HealthCheckRequest {}
+message HealthCheckResponse {
+  int64 Code  = 1;
+  string Status  = 2;
 }

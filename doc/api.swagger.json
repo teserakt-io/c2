@@ -509,6 +509,28 @@
         ]
       }
     },
+    "/e4/health-check": {
+      "get": {
+        "operationId": "HealthCheck",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbHealthCheckResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "C2"
+        ]
+      }
+    },
     "/e4/new-c2-key": {
       "post": {
         "summary": "Generate a new C2 key",
@@ -1040,6 +1062,18 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "pbHealthCheckResponse": {
+      "type": "object",
+      "properties": {
+        "Code": {
+          "type": "string",
+          "format": "int64"
+        },
+        "Status": {
+          "type": "string"
         }
       }
     },

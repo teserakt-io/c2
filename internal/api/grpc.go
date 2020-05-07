@@ -589,6 +589,13 @@ func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamReques
 	}
 }
 
+func (s *grpcServer) HealthCheck(ctx context.Context, req *pb.HealthCheckRequest) (*pb.HealthCheckResponse, error) {
+	return &pb.HealthCheckResponse{
+		Code:   0,
+		Status: "OK",
+	}, nil
+}
+
 // validateE4NamedOrIDPair wrap around services.ValidateE4NameOrIDPair but will
 // convert the error to a suitable GRPC error
 func validateE4NameOrIDPair(name string, id []byte) ([]byte, error) {
