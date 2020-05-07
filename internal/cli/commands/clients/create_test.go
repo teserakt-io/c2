@@ -98,11 +98,6 @@ func TestCreate(t *testing.T) {
 				"key":      validKeyFile.Name(),
 				"password": validPasswordFile.Name(),
 			},
-			// Invalid key
-			map[string]string{
-				"name": "testClient1",
-				"key":  invalidKeyFile.Name(),
-			},
 			// Invalid name - too long
 			map[string]string{
 				"name":     strings.Repeat("a", e4crypto.NameMaxLen+1),
@@ -122,6 +117,19 @@ func TestCreate(t *testing.T) {
 		}
 	})
 
+	t.Run("Invalid key size are produce errors", func(t *testing.T) {
+		c2Client.EXPECT().GetCryptoMode(gomock.Any(), gomock.Any()).Return(&pb.GetCryptoModeResponse{CryptoMode: pb.CryptoMode_CRYPTOMODE_SYMKEY}, nil)
+		c2Client.EXPECT().Close()
+
+		cmd := newTestCreateCommand(c2ClientFactory)
+		cmd.CobraCmd().Flags().Set("name", "someClientName")
+		cmd.CobraCmd().Flags().Set("key", invalidKeyFile.Name())
+		err = cmd.CobraCmd().Execute()
+		if err == nil {
+			t.Error("Expected an error, got nil")
+		}
+	})
+
 	t.Run("Execute forward expected request to the c2Client when passing a password", func(t *testing.T) {
 		expectedClientName := "testClient1"
 
@@ -135,6 +143,7 @@ func TestCreate(t *testing.T) {
 			Key:    k,
 		}
 
+		c2Client.EXPECT().GetCryptoMode(gomock.Any(), gomock.Any()).Return(&pb.GetCryptoModeResponse{CryptoMode: pb.CryptoMode_CRYPTOMODE_SYMKEY}, nil)
 		c2Client.EXPECT().NewClient(gomock.Any(), expectedRequest).Return(&pb.NewClientResponse{}, nil)
 		c2Client.EXPECT().Close()
 
@@ -155,13 +164,13 @@ func TestCreate(t *testing.T) {
 			Key:    edPubKey,
 		}
 
+		c2Client.EXPECT().GetCryptoMode(gomock.Any(), gomock.Any()).Return(&pb.GetCryptoModeResponse{CryptoMode: pb.CryptoMode_CRYPTOMODE_PUBKEY}, nil)
 		c2Client.EXPECT().NewClient(gomock.Any(), expectedRequest).Return(&pb.NewClientResponse{}, nil)
 		c2Client.EXPECT().Close()
 
 		cmd := newTestCreateCommand(c2ClientFactory)
 		cmd.CobraCmd().Flags().Set("name", expectedClientName)
 		cmd.CobraCmd().Flags().Set("password", validPasswordFile.Name())
-		cmd.CobraCmd().Flags().Set("pubkey", "1")
 		err = cmd.CobraCmd().Execute()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)

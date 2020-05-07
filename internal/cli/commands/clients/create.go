@@ -39,7 +39,6 @@ type createCommandFlags struct {
 	Name         string
 	PasswordPath string
 	KeyPath      string
-	Pubkey       bool
 }
 
 var _ cli.Command = (*createCommand)(nil)
@@ -61,13 +60,6 @@ func NewCreateCommand(c2ClientFactory cli.APIClientFactory) cli.Command {
 	cobraCmd.Flags().StringVar(&createCmd.flags.Name, "name", "", "The client name")
 	cobraCmd.Flags().StringVar(&createCmd.flags.KeyPath, "key", "", fmt.Sprintf("Filepath to a %d bytes key", e4crypto.KeyLen))
 	cobraCmd.Flags().StringVar(&createCmd.flags.PasswordPath, "password", "", "Filepath to a plaintext password file")
-	// TODO: instead of requiring a flag from the user.
-	// we could expose an endpoint on the C2 server like `getMode` indicating if the server is
-	// running in public key or symmetric key mode.
-	// This will allow to guess which password derivation function to use without requiring user input.
-	// For now if the user omit the mode and try to create a pubkey client, no errors can be returned.
-	// This will makes all the C2 commands sent to the client fail.
-	cobraCmd.Flags().BoolVar(&createCmd.flags.Pubkey, "pubkey", false, "Required if the C2 server is in pubkey mode")
 
 	createCmd.cobraCmd = cobraCmd
 
@@ -92,6 +84,20 @@ func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid name: %v", err)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c2Client, err := c.c2ClientFactory.NewClient(cmd)
+	if err != nil {
+		return fmt.Errorf("cannot create c2 api client: %v", err)
+	}
+	defer c2Client.Close()
+
+	resp, err := c2Client.GetCryptoMode(ctx, &pb.GetCryptoModeRequest{})
+	if err != nil {
+		return fmt.Errorf("failed to get crypto-mode: %v", err)
+	}
+
 	var key []byte
 	if len(c.flags.KeyPath) > 0 {
 		var err error
@@ -106,39 +112,38 @@ func (c *createCommand) run(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to read password from file: %v", err)
 		}
 
-		if c.flags.Pubkey {
+		switch resp.CryptoMode {
+		case pb.CryptoMode_CRYPTOMODE_SYMKEY:
+			key, err = e4crypto.DeriveSymKey(string(password))
+			if err != nil {
+				return fmt.Errorf("failed to derive symKey from password: %v", err)
+			}
+			c.CobraCmd().Println("Derived symmetric key from password")
+		case pb.CryptoMode_CRYPTOMODE_PUBKEY:
 			privateKey, err := e4crypto.Ed25519PrivateKeyFromPassword(string(password))
 			if err != nil {
 				return fmt.Errorf("failed to derive ed25519 private key from password: %v", err)
 			}
 			publicKey := ed25519.PrivateKey(privateKey).Public()
 			key = publicKey.(ed25519.PublicKey)
-		} else {
-			key, err = e4crypto.DeriveSymKey(string(password))
-			if err != nil {
-				return fmt.Errorf("failed to derive symKey from password: %v", err)
-			}
+			c.CobraCmd().Println("Derivated Ed25519 key from password")
+		default:
+			return fmt.Errorf("unsupported crypto-mode: %v", resp.CryptoMode)
 		}
 	}
 
-	if c.flags.Pubkey {
-		if err := e4crypto.ValidateEd25519PubKey(key); err != nil {
-			return fmt.Errorf("invalid key: %v", err)
-		}
-	} else {
+	switch resp.CryptoMode {
+	case pb.CryptoMode_CRYPTOMODE_SYMKEY:
 		if err := e4crypto.ValidateSymKey(key); err != nil {
 			return fmt.Errorf("invalid key: %v", err)
 		}
+	case pb.CryptoMode_CRYPTOMODE_PUBKEY:
+		if err := e4crypto.ValidateEd25519PubKey(key); err != nil {
+			return fmt.Errorf("invalid key: %v", err)
+		}
+	default:
+		return fmt.Errorf("unsupported crypto-mode: %v", resp.CryptoMode)
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	c2Client, err := c.c2ClientFactory.NewClient(cmd)
-	if err != nil {
-		return fmt.Errorf("cannot create c2 api client: %v", err)
-	}
-	defer c2Client.Close()
 
 	newClientReq := &pb.NewClientRequest{
 		Client: &pb.Client{

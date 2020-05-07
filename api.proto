@@ -207,6 +207,13 @@ service C2 {
 
   // Provide a stream on C2 system events, grpc only
   rpc SubscribeToEventStream(SubscribeToEventStreamRequest) returns (stream Event) {}
+
+  // Returns the configured CryptoMode (symkey or pubkey) of the C2 instance
+  rpc GetCryptoMode(GetCryptoModeRequest) returns (GetCryptoModeResponse) {
+    option (google.api.http) = {
+      get: "/e4/crypto-mode"
+    };
+  }
 }
 
 message Client {
@@ -395,4 +402,17 @@ message Event {
   string target = 3;
   // Hold the time where event is sent
   google.protobuf.Timestamp timestamp = 4;
+}
+
+
+enum CryptoMode {
+  CRYPTOMODE_UNDEFINED = 0;
+  CRYPTOMODE_SYMKEY = 1;
+  CRYPTOMODE_PUBKEY = 2;
+}
+
+message GetCryptoModeRequest {}
+
+message GetCryptoModeResponse {
+  CryptoMode CryptoMode = 1;
 }
