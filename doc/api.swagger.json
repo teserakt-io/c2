@@ -509,6 +509,29 @@
         ]
       }
     },
+    "/e4/crypto-mode": {
+      "get": {
+        "summary": "Returns the configured CryptoMode (symkey or pubkey) of the C2 instance",
+        "operationId": "GetCryptoMode",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbGetCryptoModeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "C2"
+        ]
+      }
+    },
     "/e4/health-check": {
       "get": {
         "operationId": "HealthCheck",
@@ -982,6 +1005,15 @@
         }
       }
     },
+    "pbCryptoMode": {
+      "type": "string",
+      "enum": [
+        "CRYPTOMODE_UNDEFINED",
+        "CRYPTOMODE_SYMKEY",
+        "CRYPTOMODE_PUBKEY"
+      ],
+      "default": "CRYPTOMODE_UNDEFINED"
+    },
     "pbEvent": {
       "type": "object",
       "properties": {
@@ -1029,6 +1061,14 @@
           "items": {
             "$ref": "#/definitions/pbClient"
           }
+        }
+      }
+    },
+    "pbGetCryptoModeResponse": {
+      "type": "object",
+      "properties": {
+        "CryptoMode": {
+          "$ref": "#/definitions/pbCryptoMode"
         }
       }
     },

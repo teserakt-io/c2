@@ -243,6 +243,26 @@ func (mr *MockC2ClientMockRecorder) GetClientsForTopic(arg0, arg1 interface{}, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClientsForTopic", reflect.TypeOf((*MockC2Client)(nil).GetClientsForTopic), varargs...)
 }
 
+// GetCryptoMode mocks base method
+func (m *MockC2Client) GetCryptoMode(arg0 context.Context, arg1 *pb.GetCryptoModeRequest, arg2 ...grpc.CallOption) (*pb.GetCryptoModeResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetCryptoMode", varargs...)
+	ret0, _ := ret[0].(*pb.GetCryptoModeResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCryptoMode indicates an expected call of GetCryptoMode
+func (mr *MockC2ClientMockRecorder) GetCryptoMode(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCryptoMode", reflect.TypeOf((*MockC2Client)(nil).GetCryptoMode), varargs...)
+}
+
 // GetLinkedClients mocks base method
 func (m *MockC2Client) GetLinkedClients(arg0 context.Context, arg1 *pb.GetLinkedClientsRequest, arg2 ...grpc.CallOption) (*pb.GetLinkedClientsResponse, error) {
 	m.ctrl.T.Helper()

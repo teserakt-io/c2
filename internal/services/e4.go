@@ -128,6 +128,9 @@ type E4 interface {
 	ProtectMessage(ctx context.Context, topic string, data []byte) ([]byte, error)
 	// UnprotectMessage unprotect the given data with the given topic's key.
 	UnprotectMessage(ctx context.Context, topic string, data []byte) ([]byte, error)
+
+	// GetCryptoMode returns the current configured config.CryptoMode
+	GetCryptoMode() config.CryptoMode
 }
 
 type e4impl struct {
@@ -1184,6 +1187,10 @@ func (s *e4impl) UnprotectMessage(ctx context.Context, topic string, data []byte
 	logger.Info("success unprotecting message")
 
 	return clear, nil
+}
+
+func (s *e4impl) GetCryptoMode() config.CryptoMode {
+	return s.cfg.CryptoMode()
 }
 
 func (s *e4impl) sendCommandToClient(ctx context.Context, command commands.Command, client models.Client) error {

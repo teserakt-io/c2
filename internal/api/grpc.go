@@ -596,6 +596,23 @@ func (s *grpcServer) HealthCheck(ctx context.Context, req *pb.HealthCheckRequest
 	}, nil
 }
 
+func (s *grpcServer) GetCryptoMode(ctx context.Context, req *pb.GetCryptoModeRequest) (*pb.GetCryptoModeResponse, error) {
+	cmode := s.e4Service.GetCryptoMode()
+	pbCMode := pb.CryptoMode_CRYPTOMODE_UNDEFINED
+	switch cmode {
+	case config.SymKey:
+		pbCMode = pb.CryptoMode_CRYPTOMODE_SYMKEY
+	case config.PubKey:
+		pbCMode = pb.CryptoMode_CRYPTOMODE_PUBKEY
+	default:
+		return nil, grpcError(fmt.Errorf("invalid crypto-mode: %v", cmode))
+	}
+
+	return &pb.GetCryptoModeResponse{
+		CryptoMode: pbCMode,
+	}, nil
+}
+
 // validateE4NamedOrIDPair wrap around services.ValidateE4NameOrIDPair but will
 // convert the error to a suitable GRPC error
 func validateE4NameOrIDPair(name string, id []byte) ([]byte, error) {

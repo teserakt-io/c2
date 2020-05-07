@@ -213,6 +213,13 @@ service C2 {
       get: "/e4/health-check"
     };
   }
+
+  // Returns the configured CryptoMode (symkey or pubkey) of the C2 instance
+  rpc GetCryptoMode(GetCryptoModeRequest) returns (GetCryptoModeResponse) {
+    option (google.api.http) = {
+      get: "/e4/crypto-mode"
+    };
+  }
 }
 
 message Client {
@@ -407,4 +414,16 @@ message HealthCheckRequest {}
 message HealthCheckResponse {
   int64 Code  = 1;
   string Status  = 2;
+}
+
+enum CryptoMode {
+  CRYPTOMODE_UNDEFINED = 0;
+  CRYPTOMODE_SYMKEY = 1;
+  CRYPTOMODE_PUBKEY = 2;
+}
+
+message GetCryptoModeRequest {}
+
+message GetCryptoModeResponse {
+  CryptoMode CryptoMode = 1;
 }
