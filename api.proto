@@ -208,6 +208,12 @@ service C2 {
   // Provide a stream on C2 system events, grpc only
   rpc SubscribeToEventStream(SubscribeToEventStreamRequest) returns (stream Event) {}
 
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse) {
+    option (google.api.http) = {
+      get: "/e4/health-check"
+    };
+  }
+
   // Returns the configured CryptoMode (symkey or pubkey) of the C2 instance
   rpc GetCryptoMode(GetCryptoModeRequest) returns (GetCryptoModeResponse) {
     option (google.api.http) = {
@@ -404,6 +410,11 @@ message Event {
   google.protobuf.Timestamp timestamp = 4;
 }
 
+message HealthCheckRequest {}
+message HealthCheckResponse {
+  int64 Code  = 1;
+  string Status  = 2;
+}
 
 enum CryptoMode {
   CRYPTOMODE_UNDEFINED = 0;

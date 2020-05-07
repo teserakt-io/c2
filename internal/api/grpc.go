@@ -589,6 +589,13 @@ func (s *grpcServer) SubscribeToEventStream(req *pb.SubscribeToEventStreamReques
 	}
 }
 
+func (s *grpcServer) HealthCheck(ctx context.Context, req *pb.HealthCheckRequest) (*pb.HealthCheckResponse, error) {
+	return &pb.HealthCheckResponse{
+		Code:   0,
+		Status: "OK",
+	}, nil
+}
+
 func (s *grpcServer) GetCryptoMode(ctx context.Context, req *pb.GetCryptoModeRequest) (*pb.GetCryptoModeResponse, error) {
 	cmode := s.e4Service.GetCryptoMode()
 	pbCMode := pb.CryptoMode_CRYPTOMODE_UNDEFINED

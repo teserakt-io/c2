@@ -323,6 +323,26 @@ func (mr *MockC2ClientMockRecorder) GetTopicsForClient(arg0, arg1 interface{}, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopicsForClient", reflect.TypeOf((*MockC2Client)(nil).GetTopicsForClient), varargs...)
 }
 
+// HealthCheck mocks base method
+func (m *MockC2Client) HealthCheck(arg0 context.Context, arg1 *pb.HealthCheckRequest, arg2 ...grpc.CallOption) (*pb.HealthCheckResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "HealthCheck", varargs...)
+	ret0, _ := ret[0].(*pb.HealthCheckResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HealthCheck indicates an expected call of HealthCheck
+func (mr *MockC2ClientMockRecorder) HealthCheck(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HealthCheck", reflect.TypeOf((*MockC2Client)(nil).HealthCheck), varargs...)
+}
+
 // LinkClient mocks base method
 func (m *MockC2Client) LinkClient(arg0 context.Context, arg1 *pb.LinkClientRequest, arg2 ...grpc.CallOption) (*pb.LinkClientResponse, error) {
 	m.ctrl.T.Helper()
