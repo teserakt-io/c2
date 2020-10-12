@@ -20,7 +20,7 @@ For more details, you can check the [doc](./doc) folder.
 ### Start the services
 
 ```bash
-./script/build.sh
+./scripts/build.sh
 docker-compose up -d
 ./bin/c2
 ```
